@@ -22,7 +22,7 @@ PHP_FUNCTION(bbs_checknewmail)
 PHP_FUNCTION(bbs_mail_get_num)
 {
     char *userid;
-    int userid_len, total, newmail;
+    int userid_len, total, newmail, full;
     char qry_mail_dir[STRLEN];
 
     if (zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
@@ -35,12 +35,14 @@ PHP_FUNCTION(bbs_mail_get_num)
     setmailfile(qry_mail_dir, userid, DOT_DIR);
 
     newmail = check_query_mail(qry_mail_dir, &total);
+    full = (check_mail_perm(getCurrentUser(), NULL)==2) ? 1 : 0;
     if (array_init(return_value) == FAILURE) {
         RETURN_FALSE;
     }
 
     add_assoc_long(return_value, "total", total);
     add_assoc_bool(return_value, "newmail", newmail);
+    add_assoc_bool(return_value, "full", full);
 }
 
 /**

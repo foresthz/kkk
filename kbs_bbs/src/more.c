@@ -895,7 +895,7 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
         last_line = l.curr_line;
         if (l.total && l.total <= t_lines - 1)
             return 0;
-        if (l.line[last_line % 100] - ptr + l.s[last_line % 100] == size && (ch == KEY_RIGHT || ch == KEY_PGDN || ch == ' ' || ch == Ctrl('f'))) {
+        if (l.line[last_line % 100] - ptr + l.s[last_line % 100] == size && (ch == KEY_RIGHT || ch == KEY_PGDN || ch == ' ' || ch == Ctrl('f')) && (l.ty[last_line % 100] != LINE_ATTACHLINK)) {
             move(t_lines - 1, 0);
             clrtobot();
             return 0;

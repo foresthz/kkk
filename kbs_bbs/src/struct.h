@@ -260,6 +260,9 @@ struct public_data {
         int bid;
         unsigned int gid;
     } top[10];
+#ifdef READ_SEC_TOP
+    struct top_header sectop[SECNUM][10];
+#endif
 
     char unused[712];
 

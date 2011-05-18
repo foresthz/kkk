@@ -32,7 +32,7 @@ int scrint = 0;
 int local_article = 0;  //0:转信版面默认转信，1:非转信版面，2:转信版面默认不转信 - atppp
 int readpost;
 int helpmode = 0;
-struct boardheader* currboard=NULL;
+struct boardheader* currboard=NULL, *lastboard=NULL;
 int currboardent;
 char currBM[BM_LEN - 1];
 int check_upload = 0; //发表文章时是否要检查添加附件
@@ -2020,6 +2020,8 @@ int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     in_do_sendmsg=true;
     if ((ret=namecomplete(NULL,bname))=='#') { /* 提示输入 board 名 */
         super_select_board(bname);
+    } else if (ret=='-' && lastboard!=NULL && check_read_perm(getCurrentUser(), lastboard)) {
+        strncpy(bname, lastboard->filename, STRLEN);
     }
     in_do_sendmsg=0;
 
@@ -2047,6 +2049,8 @@ int do_select(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         return FULLUPDATE;
     }
 
+    /* 离开版面时记录至lastboard */
+    lastboard=currboard;
     board_setcurrentuser(uinfo.currentboard, -1);
     uinfo.currentboard = bid;
     UPDATE_UTMP(currentboard,uinfo);
@@ -2509,6 +2513,124 @@ int set_board_rule(struct boardheader *bh, int flag)
 static int select_top(void);
 #endif /* USE_PRIMORDIAL_TOP10 */
 
+#ifdef SHOW_SEC_TOP
+#ifdef READ_SEC_TOP
+static int select_sec_top(int secid);
+#endif
+
+void sec_top_endline(int secid, int selected)
+{
+    int i;
+    move(t_lines - 1, 0);
+    prints("\033[0;33m%s分区: ", selected?"查看":"选择");
+    for(i=0;i<SECNUM;i++) {
+        if(i==secid) {
+            prints("%s[%s]%s", selected?"\033[32m":"", seccode[i], selected?"\033[33m":"");
+        } else {
+            prints("%s", seccode[i]);
+        }
+    }
+    prints("\033[m");
+    move(t_lines - 1, 60);
+    prints("\033[0;33m%s\033[m","<H>查阅帮助信息");
+    move(t_lines - 1, 61);
+}
+
+void sec_top_help()
+{
+    move(0, 0);
+    clrtobot();
+    move(2, 0);
+    prints("    \033[1;32m[%s分区十大 操作信息]\033[m\n\n",
+#ifdef READ_SEC_TOP
+            "阅读"
+#else
+            "查看"
+#endif /* READ_SEC_TOP */
+          );
+    prints("      \033[1;31m选择分区    \033[1;33m上一个分区          左方向键\033[m\n"
+           "                  \033[1;36m下一个分区          右方向键\033[m\n"
+           "                  \033[1;33m第一个分区          <Home>\033[m\n"
+           "                  \033[1;36m最后一个分区        <End>\033[m\n"
+           "                  \033[1;33m直接选择分区        <0> <1> .. <%s>\033[m\n\n", seccode[SECNUM-1]);
+    prints("      \033[1;31m退出选单                        \033[1;36m<ESC> <Ctrl+C> <Q> <E>\n\n");
+#ifdef READ_SEC_TOP
+    prints("      \033[1;31m阅读分区十大                    \033[1;33m<Enter> <Space> <R>\n\n");
+#endif /* READ_SEC_TOP */
+    move(t_lines - 1, 0);
+    prints("\033[1;34;47m\t%s\033[K\033[m","帮助信息显示完成, 按回车键继续...");
+    WAIT_RETURN;
+}
+
+int read_sec_top()
+{
+    int secid, ch;
+    char topfile[STRLEN];
+
+    secid = 0;
+    while(1) {
+        sprintf(topfile, "etc/posts/day_sec_%s", seccode[secid]);
+        ansimore(topfile, 0);
+        sec_top_endline(secid, 0);
+        ch = toupper(igetkey());
+        if (ch>='0' && ch<='9') {
+            secid = ch - '0';
+        } else if (ch>='A' && ch<(SECNUM-10+'A')) {
+            secid = ch - 'A' + 10;
+        } else if (ch==KEY_LEFT) {
+            secid--;
+        } else if (ch==KEY_RIGHT) {
+            secid++;
+        } else if (ch==KEY_HOME) {
+            secid = 0;
+        } else if (ch==KEY_END) {
+            secid = SECNUM - 1;
+#ifdef READ_SEC_TOP
+        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R') {
+            const struct boardheader *bh;
+            int bid;
+            if (!((bid=select_sec_top(secid))>0))
+                continue;
+            /* 进入分区十大话题所在的版面... */
+#ifdef GRL_ACTIVE
+            if (GRL_GS_CURR.type != GS_NONE) {
+                GRL_GS_NEW.type = GS_BOARD;
+                GRL_GS_NEW.bid = bid;
+                GRL_GS_NEW.pos = 1;
+                GRL_GS_NEW.recur = 0;
+            }
+#else /* GRL_ACTIVE */
+            if (!(bh=getboard(bid))||!check_read_perm(getCurrentUser(),bh))
+                continue;
+            /* 进入分区十大话题所在版面时，先将当前版面记录至lastboard */
+            lastboard=currboard;
+            currboardent=bid;
+            currboard=(struct boardheader*)bh;
+#ifdef HAVE_BRC_CONTROL
+            brc_initial(getCurrentUser()->userid,currboard->filename,getSession());
+#endif
+            board_setcurrentuser(uinfo.currentboard,-1);
+            uinfo.currentboard=currboardent;
+            UPDATE_UTMP(currentboard,uinfo);
+            board_setcurrentuser(uinfo.currentboard,1);
+#endif /* GRL_ACTIVE */
+            return CHANGEMODE;
+#endif /* READ_SEC_TOP */
+        } else if (ch=='H') {
+            sec_top_help();
+            continue;
+        } else if (ch=='E' || ch=='Q' || ch==KEY_ESC || ch==Ctrl('C')) { /* 要确保分区标识不能到E */
+            break;
+        }
+        if (secid<0)
+            secid += SECNUM;
+        else if (secid>=SECNUM)
+            secid -= SECNUM;
+    }
+    return FULLUPDATE;
+}
+#endif /* SHOW_SEC_TOP */
+
 int read_hot_info(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char ans[4];
@@ -2544,8 +2666,16 @@ int read_hot_info(struct _select_def* conf,struct fileheader *fileinfo,void* ext
             pressanykey();
             break;
         case '5':
+#ifdef SHOW_SEC_TOP
+            if (read_sec_top()==CHANGEMODE) {
+                if (extraarg)
+                    *((int *)extraarg) = 0;
+                return CHANGEMODE;
+            }
+#else
             if (getCurrentUser()&&!HAS_PERM(getCurrentUser(),PERM_DENYRELAX))
                 exec_mbem("@mod:service/libcalendar.so#calendar_main");
+#endif /* SHOW_SEC_TOP */
             break;
 #ifdef NEWSMTH
         case '6':
@@ -2659,6 +2789,8 @@ int read_hot_info(struct _select_def* conf,struct fileheader *fileinfo,void* ext
 #else /* GRL_ACTIVE */
                 if (!(bh=getboard(bid))||!check_read_perm(getCurrentUser(),bh))
                     break;
+                /* 进入十大话题所在版面时，先将当前版面记录至lastboard */
+                lastboard=currboard;
                 currboardent=bid;
                 currboard=(struct boardheader*)bh;
 #ifdef HAVE_BRC_CONTROL
@@ -5863,6 +5995,8 @@ int Read()
     bmlog(getCurrentUser()->userid, currboard->filename, 0, time(0) - usetime);
     bmlog(getCurrentUser()->userid, currboard->filename, 1, 1);
 
+    /* 离开版面时记录至lastboard */
+    lastboard = currboard;
     board_setcurrentuser(uinfo.currentboard, -1);
     uinfo.currentboard = 0;
     UPDATE_UTMP(currentboard,uinfo);
@@ -6292,7 +6426,15 @@ static struct key_command read_top_comms[]={
     {0,NULL}
 };
 
+#ifdef READ_SEC_TOP
+/* 增加阅读分区十大主题功能
+ * secid: -1全站十大
+ *        0/1...分区十大
+ */
+static int read_top(int secid, int index, int force)
+#else
 static int read_top(int index,int force)
+#endif /* READ_SEC_TOP */
 {
     /*
      *  关于 RT_INTERVAL 和 RT_INTERVAL_FORCE 宏的作用 ----
@@ -6330,8 +6472,18 @@ static int read_top(int index,int force)
 #ifdef NEW_HELP
     save_helpmode=helpmode;
 #endif /* NEW_HELP */
+#ifdef READ_SEC_TOP
+    if (secid==-1) {
+        bid=publicshm->top[index].bid;
+        gid=publicshm->top[index].gid;
+    } else {
+        bid=publicshm->sectop[secid][index].bid;
+        gid=publicshm->sectop[secid][index].gid;
+    }
+#else
     bid=publicshm->top[index].bid;
     gid=publicshm->top[index].gid;
+#endif /* READ_SEC_TOP */
     do {
         ret=0;
         currboardent=bid;
@@ -6582,7 +6734,12 @@ static int select_top(void)
                     case '\n':
                     case ' ':
                     case 'R':
-                        switch ((ret=read_top(index,0))) {
+#ifdef READ_SEC_TOP
+                        switch ((ret=read_top(-1, index, 0)))
+#else
+                        switch ((ret=read_top(index,0)))
+#endif /* READ_SEC_TOP */
+                        {
                             case 0:
                                 break;
                             case 1:
@@ -6643,3 +6800,154 @@ static int select_top(void)
 
 /* END -- etnlegend, 2006.05.30, 阅读十大 ... */
 
+#ifdef READ_SEC_TOP
+static int select_sec_top(int secid)
+{
+#define ST_UPDATE_SECTOPINFO()                                                                      \
+    do{                                                                                             \
+        version=publicshm->top_version;                                                             \
+        for(total=0;total<10;total++){                                                              \
+            if(!(publicshm->sectop[secid][total].bid)||!(publicshm->sectop[secid][total].gid)){     \
+                break;                                                                              \
+            }                                                                                       \
+        }                                                                                           \
+        if(!total||(stat(topfile,&st)==-1||!S_ISREG(st.st_mode))){                               \
+            move(t_lines-1,0);                                                                      \
+            clrtoeol();                                                                             \
+            prints("\033[1;31;47m\t%s\033[K\033[m","本分区目前尚无十大热门话题, 按回车键继续...");  \
+            WAIT_RETURN;                                                                            \
+            return -1;                                                                              \
+        }                                                                                           \
+    }while(0)
+    struct stat st;
+    int total,index,key,valid_key,old_index,update,ret;
+    unsigned int version;
+    char topfile[STRLEN];
+    sprintf(topfile, "etc/posts/day_sec_%s", seccode[secid]);
+    index = 0;
+    update = 1;
+    ST_UPDATE_SECTOPINFO();
+    do {
+        if (update) {
+            ansimore(topfile, 0);
+            sec_top_endline(secid, 1);
+            update = 0;
+        }
+        move((2+2*index),3);
+        prints("\033[1;31m%2d\033[m",(index+1));
+        move((3+2*index),2);
+        prints("\033[1;33m%s\033[m","◆");
+        move(t_lines-1,61);
+        do {
+            valid_key = 1;
+            old_index = -1;
+            if (version!=publicshm->top_version) {
+                ST_UPDATE_SECTOPINFO();
+                update = 1;
+            } else {
+                switch (toupper(key=igetkey())) {
+                    case KEY_DOWN:
+                    case 'J':
+                        old_index=index++;
+                        if (index==total)
+                            index=0;
+                        break;
+                    case KEY_UP:
+                    case 'K':
+                        old_index=index--;
+                        if (index==-1)
+                            index=(total-1);
+                        break;
+                    case KEY_LEFT:
+                    case KEY_ESC:
+                    case 'Q':
+                    case 'E':
+                        return 0;
+                    case 'S':
+                        return publicshm->sectop[secid][index].bid;
+                    case KEY_HOME:
+                        if (index!=0) {
+                            old_index=index;
+                            index=0;
+                        } else
+                            valid_key=0;
+                        break;
+                    case KEY_END:
+                        if (index!=(total-1)) {
+                            old_index=index;
+                            index=(total-1);
+                        } else
+                            valid_key=0;
+                        break;
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                        key-='1';
+                        if (index!=key&&total>key) {
+                            old_index=index;
+                            index=key;
+                        } else
+                            valid_key=0;
+                        break;
+                    case '0':
+                        if (index!=9&&total==10) {
+                            old_index=index;
+                            index=9;
+                        } else
+                            valid_key=0;
+                        break;
+                    case KEY_RIGHT:
+                    case '\r':
+                    case '\n':
+                    case ' ':
+                    case 'R':
+                        switch ((ret=read_top(secid, index, 0)))
+                        {
+                            case 0:
+                                break;
+                            case 1:
+                                move(t_lines-1,0);
+                                clrtoeol();
+                                prints("\033[1;31;47m\t%s\033[K\033[m","该主题已被删除, 按回车键继续...");
+                                WAIT_RETURN;
+                            default:
+                                if (ret<0) {
+                                    move(t_lines-1,0);
+                                    clrtoeol();
+                                    prints("\033[1;31;47m\t%s\033[K\033[m","检索主题信息时发生错误, 按回车键继续...");
+                                    WAIT_RETURN;
+                                }
+                                break;
+                        }
+                        update=1;
+                        break;
+                    case 'H':
+                        clear();
+                        move(10, 10);
+                        prints("\033[1;32m会看普通十大么？会就行了！\033[m");
+                        move(t_lines - 1, 0);
+                        prints("\033[1;34;47m\t%s\033[K\033[m","帮助信息显示完成, 按回车键继续...");
+                        update = 1;
+                        WAIT_RETURN;
+                        break;
+                    default:
+                        valid_key=0;
+                        break;
+                }
+            }
+        } while (!valid_key);
+        if (old_index!=-1) {
+            move((2+2*old_index),3);
+            prints("\033[31m%2d\033[m",(old_index+1));
+            move((3+2*old_index),2);
+            prints("%s","  ");
+        }
+    } while (1);
+}
+#endif /* READ_SEC_TOP */

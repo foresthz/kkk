@@ -198,12 +198,15 @@ void resolve_boards()
                     /* ulock: get nowid from the last fileheader and idseq*/
                     setbfile(filename,bcache[i].filename,DOT_DIR);
                     count=get_num_records(filename,sizeof(struct fileheader));
-                    get_record(filename, &lastfh, sizeof(struct fileheader), count-1);
-                    brdshm->bstatus[i].nowid=lastfh.id+1;
-                    if (bcache[i].idseq>lastfh.id+1)
-                        brdshm->bstatus[i].nowid=bcache[i].idseq;
-                    else
+                    if (count > 0) {
+                        get_record(filename, &lastfh, sizeof(struct fileheader), count-1);
                         brdshm->bstatus[i].nowid=lastfh.id+1;
+                        if (bcache[i].idseq>lastfh.id+1)
+                            brdshm->bstatus[i].nowid=bcache[i].idseq;
+                        else
+                            brdshm->bstatus[i].nowid=lastfh.id+1;
+                    } else
+                        brdshm->bstatus[i].nowid=bcache[i].idseq;
                     /* update top title */
                     board_update_toptitle(i+1,false);
 

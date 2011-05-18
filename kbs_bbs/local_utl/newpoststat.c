@@ -457,6 +457,72 @@ int get_top(int type)
 
 }
 
+#ifdef SHOW_SEC_TOP
+/*
+ * 记录分区十大到文件
+ */
+void writesechot(int secid)
+{
+    FILE *fp;
+    char curfile[256], buf[256];
+    char *p;
+    int i;
+#ifdef READ_SEC_TOP
+    struct top_header curr_sectop[10];
+    memset(curr_sectop,0,(10*sizeof(struct top_header)));
+#endif /* READ_SEC_TOP */
+
+    sprintf(curfile, "etc/posts/day_sec_%s", seccode[secid]);
+    if ((fp = fopen(curfile, "w")) != NULL) {
+         fprintf(fp, "                \033[34m-----\033[37m=====\033[41m 本日%s区十大热门话题 \033[m=====\033[34m-----\033[m\n\n", seccode[secid]);
+        for (i = 0; i < sectopnum[secid]; i++) {
+            strcpy(buf, ctime(&sectop[secid][i].date));
+            buf[20] = NULL;
+            p = buf + 4;
+
+            fprintf(fp,"\033[37m第\033[31m%3d\033[37m 名 \033[37m信区 : \033[33m%-16s\033[37m【\033[32m%s\033[37m】"
+                        "\033[36m%4d \033[37m人\033[35m%16s\n     \033[37m标题 : \033[44m\033[37m%-60.60s\033[m\n",
+                        (i+1),sectop[secid][i].board,p,sectop[secid][i].number,
+                        sectop[secid][i].userid,sectop[secid][i].title);
+#ifdef READ_SEC_TOP
+            if (i<10) {
+                curr_sectop[i].bid=getbid(sectop[secid][i].board,NULL);
+                curr_sectop[i].gid=sectop[secid][i].groupid;
+            }
+#endif /* READ_SEC_TOP */
+        }
+#ifdef READ_SEC_TOP
+        /* 分区十大信息写入共享内存 */
+        if (1) {
+            const struct boardheader *bh;
+            char path[PATHLEN];
+            int k;
+            for (k=0;k<10;k++) {
+                if (!(bh=getboard(publicshm->sectop[secid][k].bid)))
+                    continue;
+                snprintf(path,PATHLEN,"boards/%s/.TOP.%u",bh->filename,publicshm->sectop[secid][k].gid);
+                unlink(path);
+            }
+            setpublicshmreadonly(0);
+            memcpy(publicshm->sectop[secid],curr_sectop,(10*sizeof(struct top_header)));
+            setpublicshmreadonly(1);
+        }
+#endif /* READ_SEC_TOP */
+
+        fclose(fp);
+    }
+}
+
+void writesecstat()
+{
+    int i;
+
+    for (i=0; i<SECNUM; i++) {
+        writesechot(i);
+    }
+}
+#endif /* SHOW_SEC_TOP */
+
 /*
  * mytype 0 本日
  *        1 本周
@@ -537,6 +603,10 @@ void writestat(int mytype)
 #endif
         fclose(fp);
     }
+#ifdef SHOW_SEC_TOP
+    if (mytype == 0)
+        writesecstat();
+#endif /* SHOW_SEC_TOP */
 }
 
 int backup_top()

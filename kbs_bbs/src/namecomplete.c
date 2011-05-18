@@ -347,7 +347,7 @@ char *prompt, *data;
                 continue;
             }
             if (isprint2(ch)) {
-                if (ch == '#' && count==0 && in_do_sendmsg) {
+                if ((ch == '#' || ch == '-')  && count==0 && in_do_sendmsg) {
                     *temp = '\0';
                     ClearSubList(cwlist);
                     ingetdata = false;
