@@ -2645,7 +2645,13 @@ int read_hot_info(struct _select_def* conf,struct fileheader *fileinfo,void* ext
 #else
              "2)十大祝福 "
 #endif
-             "3)近期热点 4)系统热点 5)日历日记 %s%s[1]: ",
+             "3)近期热点 4)系统热点 "
+#ifdef SHOW_SEC_TOP
+             "5)分区十大"
+#else
+             "5)日历日记"
+#endif
+             " %s%s[1]: ",
 #ifdef NEWSMTH
              addfav ? "6)百大版面 " : "", ((uinfo.mode==READING)?"6)治版方针 ":"")
 #else
