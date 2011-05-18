@@ -1116,7 +1116,7 @@ int printvote(struct votebal *ent, int idx, int *i)
         return 0;
     }
     (*i)++;
-    if (*i > page + 19 || *i > range)
+    if (*i > page + BBS_PAGESIZE || *i > range)
         return QUIT;
     else if (*i <= page)
         return 0;
