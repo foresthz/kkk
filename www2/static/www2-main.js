@@ -432,6 +432,8 @@ function footerStart() {
 			this.lastStay = str;
 			getObj("divStay").innerHTML = str;
 		}
+		if (MailFull)
+			getObj("mailnotice").innerHTML = "–≈œ‰≥¨»›";
 		var bF5 = (this.userid != getUserid());
 		if (bF5) {
 			if (top.menu) top.menu.location.href = isLogin() ? 'bbsleft.php' : 'bbsguestleft.html';
@@ -445,7 +447,7 @@ function footerStart() {
 	gTimer = new MyTimer();
 	gTimer.refresh();
 	
-	if (hasMail) newmailnotice();
+	if (hasMail || MailFull) newmailnotice();
 	gTimer.refreshTime = (new Date()).getTime() + 540000;
 }
 

@@ -55,7 +55,15 @@
 		{
 			bbs_delmail(".DELETED",$maildata[$i]["FILENAME"]);
 		}
-		header("Location:bbsmail.php");
+?>
+<script type="text/javascript"><!--
+alert('¹²É¾³ý<?php echo $mail_num; ?>·âÀ¬»øÓÊ¼þ');
+if(top.window['f4'])
+	top.window['f4'].location.reload();
+window.location='bbsmail.php';
+//-->
+</script>
+<?php
 		die();
 	}
 	/*

@@ -189,6 +189,13 @@ else
 ?>
 <input type="hidden" name="act2" value="delarea">
 <input type="submit" value="删除所选邮件" class="bt1" onclick="if(confirm('删除选中的邮件吗?')){submit();return true;}return false;">
+<?php
+	if ($mail_path == ".DELETED") {
+?>
+<input type="button" value="清空垃圾箱" class="bt1" onclick="bbsconfirm('bbsmailact.php?act=clear', '确定清空垃圾箱?');">
+<?php
+	}
+?>
 </td>
 <td class="b9" align="right">
 <?php
