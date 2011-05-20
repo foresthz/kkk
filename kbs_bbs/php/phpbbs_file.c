@@ -611,14 +611,16 @@ PHP_FUNCTION(bbs_originfile)
     int skip;
     const boardheader_t* bp;
 
-    if ((ZEND_NUM_ARGS() != 2) || (zend_parse_parameters(2 TSRMLS_CC, "ss", &board,&boardLen, &filename,&filenameLen) != SUCCESS)) {
+    if ((ZEND_NUM_ARGS() == 1) && (zend_parse_parameters(1 TSRMLS_CC, "s", &filename,&filenameLen) == SUCCESS)) {
+        fp = fopen(filename, "r");
+    }else if ((ZEND_NUM_ARGS() == 2) && (zend_parse_parameters(2 TSRMLS_CC, "ss", &board,&boardLen, &filename,&filenameLen) == SUCCESS)) {
+        if ((bp=getbcache(board))==0) {
+            RETURN_LONG(-1);
+        }
+        setbfile(path, bp->filename, filename);
+        fp = fopen(path, "r");
+    }else
         WRONG_PARAM_COUNT;
-    }
-    if ((bp=getbcache(board))==0) {
-        RETURN_LONG(-1);
-    }
-    setbfile(path, bp->filename, filename);
-    fp = fopen(path, "r");
     if (fp == 0)
         RETURN_LONG(-1); //文件无法读取
 
@@ -632,7 +634,7 @@ PHP_FUNCTION(bbs_originfile)
         i++;
         if (Origin2(buf))
             break;
-        if ((i==1) && (strncmp(buf,"发信人",6)==0)) {
+        if ((i==1) && (strncmp(buf,"发信人",6)==0 || strncmp(buf,"寄信人",6)==0)) {
             skip=1;
         }
         if ((skip) && (i<=4)) {
