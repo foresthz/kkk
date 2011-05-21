@@ -5669,6 +5669,9 @@ int split_thread(struct _select_def* conf, struct fileheader* fh, void* extraarg
     struct split_thread_arg func_arg;
     struct read_arg* arg=(struct read_arg*)conf->arg;
     struct write_dir_arg dirarg;
+#ifdef HAVE_REPLY_COUNT
+    int o_groupid;
+#endif
 
     if (fh==NULL)
         return DONOTHING;
@@ -5688,6 +5691,9 @@ int split_thread(struct _select_def* conf, struct fileheader* fh, void* extraarg
     }
 
     func_arg.num = 0;
+#ifdef HAVE_REPLY_COUNT
+    o_groupid = fh->groupid;
+#endif
 
     ent=conf->pos;
     init_write_dir_arg(&dirarg);
@@ -5721,6 +5727,12 @@ int split_thread(struct _select_def* conf, struct fileheader* fh, void* extraarg
     } else
         board_regenspecial(arg -> board -> filename, DIR_MODE_ORIGIN, NULL);
     /* .ORIGIN restored */
+    /* refresh replycount when splitted, fancyrabbit May 22 2011 */
+#ifdef HAVE_REPLY_COUNT
+    refresh_reply_count(currboard->filename, func_arg.oldid[0]);
+    refresh_reply_count(currboard->filename, o_groupid);
+#endif
+
     return DIRCHANGED;
 }
 
