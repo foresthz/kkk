@@ -794,7 +794,11 @@ int m_editbrd(void)
 }
 int modify_board(int bid)
 {
+#ifdef NFORUM
 #define MB_ITEMS 25
+#else
+#define MB_ITMES 24
+#endif
     FILE *fp;
     struct _select_item sel[MB_ITEMS+1];
     struct _select_def conf;
