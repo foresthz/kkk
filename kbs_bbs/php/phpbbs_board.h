@@ -6,9 +6,11 @@
 PHP_FUNCTION(bbs_getboard);
 PHP_FUNCTION(bbs_safe_getboard);
 PHP_FUNCTION(bbs_getboards);
+#ifdef NFORUM
 PHP_FUNCTION(bbs_getboard_bid);
 PHP_FUNCTION(bbs_getboard_nforum);
 PHP_FUNCTION(bbs_getboards_nforum);
+#endif
 
 PHP_FUNCTION(bbs_checkorigin);
 PHP_FUNCTION(bbs_checkmark);
@@ -38,7 +40,7 @@ PHP_FUNCTION(bbs_del_favboarddir);
 
 PHP_FUNCTION(bbs_deny_me);
 
-#define PHP_BBS_BOARD_EXPORT_FUNCTIONS \
+#define PHP_BBS_BOARD_EXPORT_FUNCTIONS_STD \
     PHP_FE(bbs_getboard, NULL) \
     PHP_FE(bbs_safe_getboard, NULL) \
     PHP_FE(bbs_getboards, NULL) \
@@ -62,10 +64,18 @@ PHP_FUNCTION(bbs_deny_me);
     PHP_FE(bbs_get_father,NULL) \
     PHP_FE(bbs_get_dirname,NULL) \
     PHP_FE(bbs_del_favboarddir,NULL) \
-    PHP_FE(bbs_deny_me,NULL)\
+    PHP_FE(bbs_deny_me,NULL)
+
+#ifdef NFORUM
+#define PHP_BBS_BOARD_EXPORT_FUNCTIONS \
+    PHP_BBS_BOARD_EXPORT_FUNCTIONS_STD\
     PHP_FE(bbs_getboard_bid,NULL)\
     PHP_FE(bbs_getboard_nforum,NULL)\
     PHP_FE(bbs_getboards_nforum,NULL)\
-    PHP_FE(bbs_fav_boards_nforum,NULL) 
+    PHP_FE(bbs_fav_boards_nforum,NULL)
+#else
+#define PHP_BBS_BOARD_EXPORT_FUNCTIONS PHP_BBS_BOARD_EXPORT_FUNCTIONS_STD
+#endif // NFORUM
+
 #endif //PHP_BBS_BOARD_H
 
