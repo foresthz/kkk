@@ -11,6 +11,7 @@ PHP_FUNCTION(bbs_upload_add_file);
 PHP_FUNCTION(bbs_attachment_add);
 PHP_FUNCTION(bbs_attachment_del);
 PHP_FUNCTION(bbs_attachment_list);
+PHP_FUNCTION(bbs_file_attachment_list);
 
 PHP_FUNCTION(bbs_postarticle);
 
@@ -23,6 +24,7 @@ PHP_FUNCTION(bbs_doforward);
 PHP_FUNCTION(bbs_docross);
 PHP_FUNCTION(bbs_docommend);
 PHP_FUNCTION(bbs_post_file_alt);
+PHP_FUNCTION(bbs_postfile);
 
 PHP_FUNCTION(bbs_brcaddread);
 PHP_FUNCTION(bbs_brcclear);
@@ -39,6 +41,7 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs_attachment_add,NULL) \
     PHP_FE(bbs_attachment_del,NULL) \
     PHP_FE(bbs_attachment_list,NULL) \
+    PHP_FE(bbs_file_attachment_list,NULL) \
     PHP_FE(bbs_postarticle,NULL) \
     PHP_FE(bbs_delpost,NULL) \
     PHP_FE(bbs_article_deny_modify,NULL) \
@@ -49,6 +52,7 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs_docross,NULL) \
     PHP_FE(bbs_docommend,NULL) \
     PHP_FE(bbs_post_file_alt,NULL) \
+    PHP_FE(bbs_postfile, NULL)\
     PHP_FE(bbs_brcaddread, NULL) \
     PHP_FE(bbs_brcclear, NULL) \
     PHP_FE(bbs2_brcdump, NULL) \

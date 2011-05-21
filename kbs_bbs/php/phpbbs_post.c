@@ -278,6 +278,31 @@ PHP_FUNCTION(bbs_attachment_del)
     }
 }
 
+PHP_FUNCTION(bbs_file_attachment_list)
+{
+    struct ea_attach_info ai[MAXATTACHMENTCOUNT];
+    char* filename;
+    int filename_len;
+    int ret,fd;    
+    int ac = ZEND_NUM_ARGS();
+
+    if (ac != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &filename, &filename_len) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }    
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0) 
+        RETURN_ERROR(GENERAL);
+
+    ret = ea_locate(fd, ai); 
+    close(fd);
+
+    if (ret<0 || dump_attachment_info(return_value, ai)) {
+        RETURN_ERROR(GENERAL);
+    }    
+
+}
+
 PHP_FUNCTION(bbs_attachment_list)
 {
     struct ea_attach_info ai[MAXATTACHMENTCOUNT];
@@ -1121,6 +1146,27 @@ PHP_FUNCTION(bbs_docommend)
 #endif
 }
 
+/** 
+ * bbs_postfile(filename, boardname, title)
+ * post via deliver
+ */
+PHP_FUNCTION(bbs_postfile)
+{
+    char *filename ,*boardname ,*filetitle;
+    int  filename_len ,boardname_len ,filetitle_len ,postid;
+        
+    int ac = ZEND_NUM_ARGS();
+    
+    if (ac != 3 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "sss" , &filename, &filename_len, &boardname, &boardname_len, &filetitle, &filetitle_len) == FAILURE)
+        WRONG_PARAM_COUNT;
+
+    init_all();
+    postid=post_file(NULL, "", filename, boardname, filetitle, 0, 1, getSession());
+    if ( postid< 0) {
+        RETURN_LONG(-1);
+    }
+    RETURN_LONG(postid);
+}
 
 PHP_FUNCTION(bbs_post_file_alt)
 {

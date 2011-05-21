@@ -1149,7 +1149,7 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
 #endif /* SMTH */
     if (after_post(user, &postfile, toboard->filename, NULL, !(Anony), session) == -2)
         return -2;
-    return 1;
+    return postfile.id;
 }
 
 
@@ -1164,8 +1164,7 @@ int post_file(struct userec *user, const char *fromboard, const char *filename, 
     if (getbid(nboard, &toboard) <= 0) {       /* 搜索要POST的版 ,判断是否存在该版 */
         return -1;
     }
-    post_cross(user, toboard, fromboard, posttitle, filename, Anony, false, 'l', mode, session);  /* post 文件 */
-    return 0;
+    return post_cross(user, toboard, fromboard, posttitle, filename, Anony, false, 'l', mode, session);  /* post 文件 */
 }
 
 
