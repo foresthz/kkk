@@ -6,6 +6,9 @@
 PHP_FUNCTION(bbs_getboard);
 PHP_FUNCTION(bbs_safe_getboard);
 PHP_FUNCTION(bbs_getboards);
+PHP_FUNCTION(bbs_getboard_bid);
+PHP_FUNCTION(bbs_getboard_nforum);
+PHP_FUNCTION(bbs_getboards_nforum);
 
 PHP_FUNCTION(bbs_checkorigin);
 PHP_FUNCTION(bbs_checkmark);
@@ -24,6 +27,7 @@ PHP_FUNCTION(bbs_set_onboard);
 /* favboard operation. by caltary  */
 PHP_FUNCTION(bbs_load_favboard);
 PHP_FUNCTION(bbs_fav_boards);
+PHP_FUNCTION(bbs_fav_boards_nforum);
 PHP_FUNCTION(bbs_is_favboard);
 PHP_FUNCTION(bbs_add_favboarddir);
 PHP_FUNCTION(bbs_add_favboard);
@@ -58,7 +62,10 @@ PHP_FUNCTION(bbs_deny_me);
     PHP_FE(bbs_get_father,NULL) \
     PHP_FE(bbs_get_dirname,NULL) \
     PHP_FE(bbs_del_favboarddir,NULL) \
-    PHP_FE(bbs_deny_me,NULL)
-
+    PHP_FE(bbs_deny_me,NULL)\
+    PHP_FE(bbs_getboard_bid,NULL)\
+    PHP_FE(bbs_getboard_nforum,NULL)\
+    PHP_FE(bbs_getboards_nforum,NULL)\
+    PHP_FE(bbs_fav_boards_nforum,NULL) 
 #endif //PHP_BBS_BOARD_H
 

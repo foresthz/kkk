@@ -312,6 +312,9 @@ extern long ti;
 #define BOARD_POSTSTAT      0x1000  /* 不统计十大 */
 #define BOARD_NOREPLY       0x2000  /* 不可 re 文 */
 #define BOARD_RULES         0x4000  /* 治版方针 ok */
+#ifdef NFORUM
+#define BOARD_TMP_POST		0x8000	/* 强制模板发文 */ /*Alex@bupt add on July 9th, 2010*/
+#endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 
 #define ZAPPED              0x1     /* For boards...tells if board is Zapped */

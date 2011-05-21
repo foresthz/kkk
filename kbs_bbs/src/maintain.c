@@ -794,7 +794,7 @@ int m_editbrd(void)
 }
 int modify_board(int bid)
 {
-#define MB_ITEMS 24
+#define MB_ITEMS 25
     FILE *fp;
     struct _select_item sel[MB_ITEMS+1];
     struct _select_def conf;
@@ -810,7 +810,11 @@ int modify_board(int bid)
         "[6]转信标签  :","[7]讨论区描述:","[8]匿名讨论区:","[9]统计文章数:","[A]统计十大  :",
         "[B]目录讨论区:","[C]所属目录  :","[D]向外转信  :","[E]上传附件  :","[F]E-mail发文:",
         "[G]不可回复  :","[H]读限制Club:","[I]写限制Club:","[J]隐藏Club  :","[K]精华区位置:",
-        "[L]权限限制  :","[M]身份限制  :","[N]积分限制  :","[Q][退出]    :"
+        "[L]权限限制  :","[M]身份限制  :","[N]积分限制  :",
+#ifdef NFORUM
+        "[P]强制模板  :",
+#endif
+        "[Q][退出]    :"
     };
     change=0; loop=1;
     /*选择讨论区*/
@@ -844,9 +848,14 @@ int modify_board(int bid)
         } else if (i==22) {
             sel[i].x=42;
             sel[i].y=17;
-        } else if (i==MB_ITEMS-1) {
+#ifdef NFORUM
+        } else if (i==23) {
             sel[i].x=2;
             sel[i].y=18;
+#endif
+        } else if (i==MB_ITEMS-1) {
+            sel[i].x=2;
+            sel[i].y=19;
         } else {
             sel[i].x=2;
             sel[i].y=i-4;
@@ -946,6 +955,11 @@ int modify_board(int bid)
 #else /* HAVE_USERSCORE */
     sprintf(menustr[22],"%-15s%s <%d>",menuldr[22],"无效选项",bh.score_level);
 #endif /* HAVE_USERSCORE */
+#ifdef NFORUM
+    /*强制模板发文*/
+    sel[23].hotkey='P';
+    sprintf(menustr[23],"%-15s%s",menuldr[23],(bh.flag&BOARD_TMP_POST)?"是":"否");
+#endif
     /*退出*/
     sel[MB_ITEMS-1].hotkey='Q';
     sprintf(menustr[MB_ITEMS-1],"%-15s%s",menuldr[MB_ITEMS-1],change?"\033[1;31m已修改\033[m":"未修改");
@@ -1598,6 +1612,20 @@ int modify_board(int bid)
                 }
 #endif /* HAVE_USERSCORE */
                 break;
+            /* 强制模板发文 */
+#ifdef NFORUM
+            case 23:
+                newbh.flag^=BOARD_TMP_POST;
+                /*标记修改状态*/
+                if ((bh.flag&BOARD_TMP_POST)^(newbh.flag&BOARD_TMP_POST)) {
+                    sprintf(menustr[23],"%-15s\033[1;32m%s\033[m",menuldr[23],(newbh.flag&BOARD_TMP_POST)?"是":"否");
+                    change|=(1<<23);
+                } else {
+                    sprintf(menustr[23],"%s",orig[23]);
+                    change&=~(1<<23);
+                }
+                break;
+#endif
                 /*退出*/
             case MB_ITEMS-1:
                 if (change) {

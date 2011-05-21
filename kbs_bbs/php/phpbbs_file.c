@@ -451,6 +451,47 @@ PHP_FUNCTION(bbs_printansifile)
     RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
 }
 
+#ifdef NFORUM
+/**
+ * output without attachment modify by xw 20090919
+ */
+PHP_FUNCTION(bbs_printansifile_noatt)
+{
+    char *filename;
+    int filename_len;
+    long is_preview;
+    char *ptr;
+    off_t ptrlen, mmap_ptrlen;
+    const int outbuf_len = 4096;
+    buffered_output_t *out;
+
+    if (ZEND_NUM_ARGS() == 1) {
+        if (zend_parse_parameters(1 TSRMLS_CC, "s", &filename, &filename_len) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+        }
+        is_preview=0;
+    } else if (ZEND_NUM_ARGS() == 2) {
+        if (zend_parse_parameters(2 TSRMLS_CC, "sl", &filename, &filename_len, &is_preview) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+        }
+    }
+    if (!is_preview) {
+        if (safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &mmap_ptrlen, NULL) == 0)
+            RETURN_LONG(-1);
+        ptrlen = mmap_ptrlen;
+    }
+    if ((out = alloc_output(outbuf_len)) == NULL) {
+        if (!is_preview) end_mmapfile(ptr, mmap_ptrlen, -1);
+        RETURN_LONG(2);
+    }
+    override_default_write(out, new_write);
+    output_ansi_html_noatt(ptr, ptrlen, out);
+    free_output(out);
+    if (!is_preview) end_mmapfile(ptr, mmap_ptrlen, -1);
+    RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
+}
+#endif
+
 PHP_FUNCTION(bbs_print_article)
 {
     char *filename;

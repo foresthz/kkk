@@ -31,6 +31,10 @@ void assign_user(zval * array, struct userec *user, int num)
     add_assoc_long(array, "signum", ud.signum);
     add_assoc_long(array, "userdefine0", user->userdefine[0]);
     add_assoc_long(array, "userdefine1", user->userdefine[1]);
+#ifdef NFORUM
+    add_assoc_long(array, "uid", num);
+    add_assoc_long(array, "mailbox_prop", getSession()->currentuinfo->mailbox_prop);
+#endif
 
 #ifdef HAVE_BIRTHDAY
     add_assoc_long(array,"gender",ud.gender);

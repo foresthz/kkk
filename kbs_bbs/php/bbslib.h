@@ -32,6 +32,7 @@ void www_data_detach();
 int is_BM(const struct boardheader *board,const struct userec *user);
 char *unix_string(char *str);
 void output_ansi_html(char *buf, size_t buflen, buffered_output_t *output,char* attachlink, int is_tex, char* preview_attach_dir);
+void output_ansi_html_noatt(char *buf, size_t buflen, buffered_output_t *output);
 
 struct WWW_GUEST_S* www_get_guest_entry(int idx);
 

@@ -1120,6 +1120,183 @@ void output_ansi_javascript(char *buf, size_t buflen,
 
 }
 
+#ifdef NFORUM
+/**
+ * make buf with ansi without attachment
+ * see more in output_ansi_html
+ * modify by xw 20090919
+ */
+
+void output_ansi_html_noatt(char *buf, size_t buflen, buffered_output_t * output)
+{
+    unsigned int font_style = 0;
+    unsigned int ansi_state;
+    unsigned int ansi_val[STRLEN];
+    int ival = 0;
+    size_t i;
+    char *ansi_begin = 0;
+    char *ansi_end;
+    size_t article_len = buflen;
+	long attach_len;
+	char *attachptr, *attachfilename;
+
+    if (buf == NULL)
+        return;
+    STATE_ZERO(ansi_state);
+    bzero(ansi_val, sizeof(ansi_val));
+
+	//find the length of artilce without attachment
+	for (i = 0; i < buflen ; i++) {
+		if (((attachfilename = checkattach(buf + i, buflen - i, &attach_len, &attachptr)) != NULL)) {
+			article_len = attachfilename - buf - ATTACHMENT_SIZE;
+			break;
+		}
+	}
+
+    for (i = 0; i < article_len; i++) {
+        if (STATE_ISSET(ansi_state, STATE_NEW_LINE)) {
+            STATE_CLR(ansi_state, STATE_NEW_LINE);
+            if (i < (buflen - 1) && !STATE_ISSET(ansi_state,STATE_TEX_SET) && (buf[i] == ':' && buf[i + 1] == ' ')) {
+                STATE_SET(ansi_state, STATE_QUOTE_LINE);
+                if (STATE_ISSET(ansi_state, STATE_FONT_SET))
+                    BUFFERED_OUTPUT(output, "</font>", 7);
+                /*
+                 * set quoted line styles
+                 */
+                STYLE_SET(font_style, FONT_STYLE_QUOTE);
+                STYLE_SET_FG(font_style, FONT_COLOR_QUOTE);
+                STYLE_CLR_BG(font_style);
+                print_font_style(font_style, output);
+                BUFFERED_OUTPUT(output, &buf[i], 1);
+                STATE_SET(ansi_state, STATE_FONT_SET);
+                STATE_CLR(ansi_state, STATE_ESC_SET);
+                /*
+                 * clear ansi_val[] array
+                 */
+                bzero(ansi_val, sizeof(ansi_val));
+                ival = 0;
+                continue;
+            } else
+                STATE_CLR(ansi_state, STATE_QUOTE_LINE);
+        }
+        /*
+        * is_tex 情况下，\[upload 优先匹配 \[ 而不是 [upload
+        * is_tex 情况下应该还有一个问题是 *[\[ 等，不过暂时不管了 - atppp
+        */
+        if (i < (buflen - 1) && !STATE_ISSET(ansi_state,STATE_TEX_SET) && (buf[i] == 0x1b && buf[i + 1] == '[')) {
+            if (STATE_ISSET(ansi_state, STATE_ESC_SET)) {
+                /*
+                 *[*[ or *[13;24*[ */
+                size_t len;
+
+                ansi_end = &buf[i - 1];
+                len = ansi_end - ansi_begin + 1;
+                print_raw_ansi(ansi_begin, len, output);
+            }
+            STATE_SET(ansi_state, STATE_ESC_SET);
+            ansi_begin = &buf[i];
+            i++;                /* skip the next '[' character */
+        } else if (buf[i] == '\n') {
+            if (STATE_ISSET(ansi_state, STATE_ESC_SET)) {
+                /*
+                 *[\n or *[13;24\n */
+                size_t len;
+
+                ansi_end = &buf[i - 1];
+                len = ansi_end - ansi_begin + 1;
+                print_raw_ansi(ansi_begin, len, output);
+                STATE_CLR(ansi_state, STATE_ESC_SET);
+            }
+            if (STATE_ISSET(ansi_state, STATE_QUOTE_LINE)) {
+                /*
+                 * end of a quoted line
+                 */
+                BUFFERED_OUTPUT(output, "</font>", 7);
+                STYLE_CLR(font_style, FONT_STYLE_QUOTE);
+                STATE_CLR(ansi_state, STATE_FONT_SET);
+            }
+            if (!STATE_ISSET(ansi_state,STATE_TEX_SET)) {
+                BUFFERED_OUTPUT(output, " <br /> ", 8);
+            }
+            STATE_CLR(ansi_state, STATE_QUOTE_LINE);
+            STATE_SET(ansi_state, STATE_NEW_LINE);
+        } else {
+            if (STATE_ISSET(ansi_state, STATE_ESC_SET)) {
+                if (buf[i] == 'm') {
+                    /*
+                     *[0;1;4;31m */
+                    if (STATE_ISSET(ansi_state, STATE_FONT_SET)) {
+                        BUFFERED_OUTPUT(output, "</font>", 7);
+                        STATE_CLR(ansi_state, STATE_FONT_SET);
+                    }
+                    if (i < buflen - 1) {
+                        generate_font_style(&font_style, ansi_val, ival + 1);
+                        if (STATE_ISSET(ansi_state, STATE_QUOTE_LINE))
+                            STYLE_SET(font_style, FONT_STYLE_QUOTE);
+                        print_font_style(font_style, output);
+                        STATE_SET(ansi_state, STATE_FONT_SET);
+                        STATE_CLR(ansi_state, STATE_ESC_SET);
+                        /*
+                         * STYLE_ZERO(font_style);
+                         */
+                        /*
+                         * clear ansi_val[] array
+                         */
+                        bzero(ansi_val, sizeof(ansi_val));
+                        ival = 0;
+                    }
+                } else if (isalpha(buf[i])) {
+                    /*
+                     *[23;32H */
+                    /*
+                     * ignore it
+                     */
+                    STATE_CLR(ansi_state, STATE_ESC_SET);
+                    STYLE_ZERO(font_style);
+                    /*
+                     * clear ansi_val[] array
+                     */
+                    bzero(ansi_val, sizeof(ansi_val));
+                    ival = 0;
+                    continue;
+                } else if (buf[i] == ';') {
+                    if (ival < sizeof(ansi_val) - 1) {
+                        ival++; /* go to next ansi_val[] element */
+                        ansi_val[ival] = 0;
+                    }
+                } else if (buf[i] >= '0' && buf[i] <= '9') {
+                    ansi_val[ival] *= 10;
+                    ansi_val[ival] += (buf[i] - '0');
+                } else {
+                    /*
+                     *[1;32/XXXX or *[* or *[[ */
+                    /*
+                     * not a valid ANSI string, just output it
+                     */
+                    size_t len;
+
+                    ansi_end = &buf[i];
+                    len = ansi_end - ansi_begin + 1;
+                    print_raw_ansi(ansi_begin, len, output);
+                    STATE_CLR(ansi_state, STATE_ESC_SET);
+                    /*
+                     * clear ansi_val[] array
+                     */
+                    bzero(ansi_val, sizeof(ansi_val));
+                    ival = 0;
+                }
+
+            } else
+                print_raw_ansi(&buf[i], 1, output);
+        }
+	}
+    if (STATE_ISSET(ansi_state, STATE_FONT_SET)) {
+        BUFFERED_OUTPUT(output, "</font>", 7);
+        STATE_CLR(ansi_state, STATE_FONT_SET);
+    }
+	BUFFERED_FLUSH(output);
+}
+#endif
 
 /**
  * Warning: Use of this function is deprecated. It's kept only for compatible

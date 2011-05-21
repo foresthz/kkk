@@ -19,7 +19,25 @@ static void assign_board(zval * array, const struct boardheader *board, const st
     add_assoc_long(array, "TOTAL", bstatus->total);
 }
 
-
+#ifdef NFORUM
+static void assign_board_nforum(zval * array, const struct boardheader *board, const struct BoardStatus* bstatus, int num)
+{
+    add_assoc_long(array, "BID", num);
+    add_assoc_string(array, "NAME", (char*)board->filename, 1);
+    add_assoc_string(array, "BM", (char*)board->BM, 1);
+    add_assoc_long(array, "FLAG", board->flag);
+    add_assoc_string(array, "DESC", (char*)board->title + 13, 1);
+    add_assoc_stringl(array, "CLASS", (char*)board->title + 1, 6, 1);
+    add_assoc_stringl(array, "SECNUM", (char*)board->title, 1, 1);
+    add_assoc_long(array, "LEVEL", board->level);
+    add_assoc_long(array, "CURRENTUSERS", bstatus->currentusers);
+    add_assoc_long(array, "GROUP", board->group);
+    add_assoc_long(array, "LASTPOST", bstatus->lastpost);
+    add_assoc_long(array, "ARTCNT", bstatus->total);
+    add_assoc_long(array, "UNREAD", 0);
+    add_assoc_long(array, "NPOS", getbid(board->filename,&board)-1);
+}
+#endif 
 
 char *brd_col_names[] = {
     "NAME",
@@ -79,6 +97,26 @@ static void bbs_make_board_zval(zval * value, char *col_name, struct newpostdata
     }
 }
 
+#ifdef NFORUM
+static void assign_board_zval_nforum(zval * array, struct newpostdata *brd,const struct boardheader *board, const struct BoardStatus* bstatus,int num)
+{
+    add_assoc_long(array, "BID", num);
+    add_assoc_string(array, "NAME", (char*)board->filename, 1);
+    add_assoc_string(array, "BM", (char*)board->BM, 1);
+    add_assoc_long(array, "FLAG", board->flag);
+    add_assoc_string(array, "DESC", (char*)board->title + 13, 1);
+    add_assoc_stringl(array, "CLASS", (char*)board->title + 1, 6, 1);
+    add_assoc_stringl(array, "SECNUM", (char*)board->title, 1, 1);
+    add_assoc_long(array, "LEVEL", board->level);
+    add_assoc_long(array, "GROUP", board->group);
+    add_assoc_long(array, "CURRENTUSERS", bstatus->currentusers);
+    add_assoc_long(array, "LASTPOST", bstatus->lastpost);
+    add_assoc_long(array, "ARTCNT", bstatus->total);
+    add_assoc_long(array, "UNREAD", brd->unread);
+    add_assoc_long(array, "NPOS", brd->pos);
+}
+#endif
+
 static void assign_board_zval(zval * array, struct newpostdata *brd)
 {
     add_assoc_string(array, "NAME", (char *)brd->name, 1);
@@ -137,7 +175,25 @@ static void assign_favdir_zval(zval * array, struct newpostdata *brd)
     add_assoc_long(array, "LASTPOST", 0);
 }
 
-
+#ifdef NFORUM
+static void assign_favdir_zval_nforum(zval * array,struct newpostdata *brd)
+{
+    add_assoc_long(array, "BID", brd->tag);
+    add_assoc_string(array, "NAME", (char *)brd->name, 1);
+    add_assoc_string(array, "BM", (char *)brd->BM, 1);
+    add_assoc_long(array, "FLAG", -1L);
+    add_assoc_string(array, "DESC", (char *)brd->title, 1);
+    add_assoc_string(array, "CLASS", "", 1);
+    add_assoc_long(array, "SECNUM", -1);
+    add_assoc_long(array, "LEVEL", -1);
+    add_assoc_long(array, "GROUP", -1);
+    add_assoc_long(array, "CURRENTUSERS", -1);
+    add_assoc_long(array, "LASTPOST", -1);
+    add_assoc_long(array, "ARTCNT", -1);
+    add_assoc_long(array, "UNREAD", -1);
+    add_assoc_long(array, "NPOS", brd->pos);
+}
+#endif
 
 /* TODO: move this function into bbslib. */
 /* no_brc added by atppp 20040706 */
@@ -173,8 +229,27 @@ static int check_newpost(struct newpostdata *ptr, bool no_brc)
     return 1;
 }
 
+#ifdef NFORUM
+PHP_FUNCTION(bbs_getboard_bid){
+    zval *array;
+    const struct boardheader *bh;
+    const struct BoardStatus *bs;
+    int b_num;
 
-
+    if (zend_parse_parameters(2 TSRMLS_CC, "la", &b_num, &array) != SUCCESS)
+        WRONG_PARAM_COUNT;
+    bh = getboard(b_num);
+    if(!bh)
+        RETURN_LONG(0);
+    bs = getbstatus(b_num);
+    if (array) {
+        if (array_init(array) != SUCCESS)
+            WRONG_PARAM_COUNT;
+        assign_board(array, bh, bs, b_num);
+    }
+    RETURN_LONG(b_num);
+}
+#endif
 
 PHP_FUNCTION(bbs_getboard)
 {
@@ -1102,3 +1177,231 @@ PHP_FUNCTION(bbs_deny_me)
     RETURN_LONG(deny_me(userid, bname));
 }
 
+#ifdef NFORUM
+
+PHP_FUNCTION(bbs_getboard_nforum)
+{
+    zval *array;
+    char *boardname;
+    int boardname_len;
+    const struct boardheader *bh; 
+    const struct BoardStatus *bs; 
+    int b_num;
+
+    if (ZEND_NUM_ARGS() == 1) { 
+        if (zend_parse_parameters(1 TSRMLS_CC, "s", &boardname, &boardname_len) != SUCCESS)
+            WRONG_PARAM_COUNT;
+        array = NULL;
+    } else {
+        if (ZEND_NUM_ARGS() == 2) { 
+            if (zend_parse_parameters(2 TSRMLS_CC, "sa", &boardname, &boardname_len, &array) != SUCCESS)
+                WRONG_PARAM_COUNT;
+        } else 
+            WRONG_PARAM_COUNT;
+    }    
+    if (boardname_len > BOARDNAMELEN)
+        boardname[BOARDNAMELEN] = 0; 
+    b_num = getbid(boardname, &bh);
+    if (b_num == 0)
+        RETURN_LONG(0);
+    bs = getbstatus(b_num);
+    if (array) {
+        if (array_init(array) != SUCCESS)
+            WRONG_PARAM_COUNT;
+        assign_board_nforum(array, bh, bs, b_num);
+    }    
+    RETURN_LONG(b_num);
+}
+
+PHP_FUNCTION(bbs_getboards_nforum)
+{
+    /*
+     * TODO: The name of "yank" must be changed, this name is totally
+     * shit, but I don't know which name is better this time.
+     */
+    char *prefix;
+    int plen;
+    long flag, group;
+    struct newpostdata *newpost_buffer;
+    struct newpostdata *ptr;
+    zval *element;
+    int i;
+    int j;
+    int ac = ZEND_NUM_ARGS();
+    int brdnum, yank, no_brc, all_boards;
+    int total;
+    const struct boardheader *bh; 
+    const struct BoardStatus *bs;
+    /*
+     * getting arguments
+     */
+    if (ac != 3 || zend_parse_parameters(3 TSRMLS_CC, "sll", &prefix, &plen, &group,&flag) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+    if (plen == 0) {
+        RETURN_FALSE;
+    }
+    if (getCurrentUser() == NULL) {
+        RETURN_FALSE;
+    }
+
+    total=get_boardcount();
+
+    yank = flag & 1;
+    no_brc = flag & 2;
+    all_boards = (flag & 4) && (group == 0);
+
+    brdnum = 0;
+    {
+        int n;
+        struct boardheader const *bptr;
+        const char** namelist;
+        int* indexlist;
+        time_t tnow;
+        int b_num;
+        tnow = time(0);
+        namelist=(const char**)emalloc(sizeof(char**)*(total));
+        if (namelist==NULL) {
+            RETURN_FALSE;
+        }
+        indexlist=(int*)emalloc(sizeof(int*)*(total));
+        if (indexlist==NULL) {
+            RETURN_FALSE;
+        }
+        for (n = 0; n < total; n++) {
+            bptr = getboard(n + 1);
+            if (!bptr)
+                continue;
+            if (*(bptr->filename)==0)
+                continue;
+            if (group == -2) {
+                if ((tnow - bptr->createtime) > 86400*30 || (bptr->flag & BOARD_GROUP))
+                    continue;
+            } else if (!all_boards && (bptr->group!=group))
+                continue;
+            if (!check_see_perm(getCurrentUser(),bptr)) {
+                continue;
+            }
+            if ((group==0)&&(strchr(prefix, bptr->title[0]) == NULL && prefix[0] != '*'))
+                continue;
+            /* if (yank || getSession()->zapbuf[n] != 0 || (bptr->level & PERM_NOZAP)) */ {
+                /*¶¼ÒªÅÅÐò*/
+                for (i=0;i<brdnum;i++) {
+                    if (strcasecmp(namelist[i], bptr->filename)>0)
+                        break;
+                }
+                for (j=brdnum;j>i;j--) {
+                    namelist[j]=namelist[j-1];
+                    indexlist[j]=indexlist[j-1];
+                }
+                namelist[i]=bptr->filename;
+                indexlist[i]=n;
+                brdnum++;
+            }
+        }
+        newpost_buffer = (struct newpostdata*)emalloc(sizeof(struct newpostdata) * brdnum);
+        for (i=0;i<brdnum;i++) {
+            ptr=&(newpost_buffer[i]);
+            bptr = getboard(indexlist[i]+1);
+            ptr->dir = bptr->flag&BOARD_GROUP?1:0;
+            ptr->name = (char*)bptr->filename;
+            ptr->title = (char*)bptr->title;
+            ptr->BM = (char*)bptr->BM;
+            ptr->flag = bptr->flag | ((bptr->level & PERM_NOZAP) ? BOARD_NOZAPFLAG : 0);
+            ptr->pos = indexlist[i];
+            if (bptr->flag&BOARD_GROUP) {
+                ptr->total = bptr->board_data.group_total;
+            } else ptr->total=-1;
+            ptr->zap = (getSession()->zapbuf[indexlist[i]] == 0);
+            check_newpost(ptr, no_brc);
+        }
+
+        if (array_init(return_value) == FAILURE) {
+            RETURN_FALSE;
+        }
+        for (i=0;i<brdnum;i++) {
+            MAKE_STD_ZVAL(element);
+            array_init(element);
+            b_num = getbid(newpost_buffer[i].name, &bh);
+            bs = getbstatus(b_num);
+            assign_board_zval_nforum(element, &(newpost_buffer[i]),bh,bs,b_num);
+            zend_hash_index_update(Z_ARRVAL_P(return_value), i, (void *)&element, sizeof(zval*), NULL);
+        }
+        efree(newpost_buffer);
+        efree(namelist);
+        efree(indexlist);
+    }
+
+}
+
+PHP_FUNCTION(bbs_fav_boards_nforum)
+{
+    long select;
+    long mode;
+    struct newpostdata newpost_buffer[FAVBOARDNUM];
+    struct newpostdata *ptr;
+    zval *element;
+    int i;
+    int brdnum;
+    const struct boardheader *bh; 
+    const struct BoardStatus *bs;
+    int b_num;
+    /*
+     * getting arguments
+     */
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ll", &select, &mode) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+    /*
+     * loading boards
+     */
+    /*
+     * handle some global variables: getCurrentUser(), yank, brdnum,
+     * * nbrd.
+     */
+    /*
+     * NOTE: getCurrentUser() SHOULD had been set in funcs.php,
+     * * but we still check it.
+     */
+
+    if (mode==2) {
+        load_favboard(2, getSession());
+        if (select>=0 && select<favbrd_list_t)
+            SetFav(select, getSession());
+    } else if (mode==3) {
+        load_favboard(3, getSession());
+        if (select>=0 && select<favbrd_list_t)
+            SetFav(select, getSession());
+    }
+
+    if (getCurrentUser() == NULL) {
+        RETURN_FALSE;
+    }
+    brdnum = 0;
+
+    if ((brdnum = fav_loaddata(newpost_buffer, select, 1, FAVBOARDNUM, 1, NULL, getSession())) <= -1) {
+        RETURN_FALSE;
+    }
+
+    /** fill data in output array.*/
+    if (array_init(return_value) == FAILURE) {
+        RETURN_FALSE;
+    }
+    for (i=0;i<brdnum;i++) {
+        MAKE_STD_ZVAL(element);
+        array_init(element);
+        ptr = &newpost_buffer[i];
+        if (ptr->flag == 0xffffffff){ /* the item is a directory */
+            assign_favdir_zval_nforum(element, &(newpost_buffer[i]));
+        }
+        else{
+            b_num = getbid(newpost_buffer[i].name, &bh);
+            bs = getbstatus(b_num);
+            assign_board_zval_nforum(element, &(newpost_buffer[i]),bh,bs,b_num);
+        }
+        zend_hash_index_update(Z_ARRVAL_P(return_value), i, (void *)&element, sizeof(zval*), NULL);
+    }
+}
+#endif
