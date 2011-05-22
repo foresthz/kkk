@@ -2555,7 +2555,7 @@ void sec_top_help()
            "                  \033[1;33m直接选择分区        <0> <1> .. <%s>\033[m\n\n", seccode[SECNUM-1]);
     prints("      \033[1;31m退出选单                        \033[1;36m<ESC> <Ctrl+C> <Q> <E>\n\n");
 #ifdef READ_SEC_TOP
-    prints("      \033[1;31m阅读分区十大                    \033[1;33m<Enter> <Space> <R> <Down>\n\n");
+    prints("      \033[1;31m阅读分区十大                    \033[1;33m<Enter> <Space> <R> 下方向键\n\n");
 #endif /* READ_SEC_TOP */
     move(t_lines - 1, 0);
     prints("\033[1;34;47m\t%s\033[K\033[m","帮助信息显示完成, 按回车键继续...");
@@ -6686,8 +6686,13 @@ static int select_top(void)
     do {
         if (update) {
             ansimore("etc/posts/day",0);
+#ifdef READ_SEC_TOP
+            move(t_lines - 1, 42);
+            prints("\033[0;33m%s\033[m", "<TAB>阅读分区十大 <H>查阅帮助信息");
+#else
             move(t_lines-1,60);
             prints("\033[0;33m%s\033[m","<H>查阅帮助信息");
+#endif
             update=0;
         }
         move((2+2*index),3);
