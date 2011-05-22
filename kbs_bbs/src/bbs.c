@@ -2525,7 +2525,7 @@ void sec_top_endline(int secid, int selected)
     prints("\033[0;33m%s分区: ", selected?"查看":"选择");
     for(i=0;i<SECNUM;i++) {
         if(i==secid) {
-            prints("%s[%s]%s", selected?"\033[32m":"", seccode[i], selected?"\033[33m":"");
+            prints("%s[%s/%s]%s", selected?"\033[32m":"", seccode[i], secname[i][0], selected?"\033[33m":"");
         } else {
             prints("%s", seccode[i]);
         }
@@ -2567,7 +2567,17 @@ int read_sec_top()
     int secid, ch;
     char topfile[STRLEN];
 
-    secid = 0;
+    /* 默认进入当前所在版面的分区十大 */
+    if (currboard!=NULL) {
+        char secbuf;
+        secbuf = currboard->title[0];
+        if (secbuf>='0' && secbuf<='9')
+            secid = secbuf - '0';
+        else
+            secid = secbuf - 'A' + 10;
+    } else {
+        secid = 0;
+    }
     while(1) {
         sprintf(topfile, "etc/posts/day_sec_%s", seccode[secid]);
         ansimore(topfile, 0);
@@ -2586,7 +2596,7 @@ int read_sec_top()
         } else if (ch==KEY_END) {
             secid = SECNUM - 1;
 #ifdef READ_SEC_TOP
-        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R') {
+        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R' || ch==KEY_DOWN) {
             const struct boardheader *bh;
             int bid;
             if (!((bid=select_sec_top(secid))>0))
@@ -6778,6 +6788,12 @@ static int select_top(void)
                         }
                         update=1;
                         break;
+#ifdef READ_SEC_TOP
+                    case KEY_TAB:
+                        read_sec_top();
+                        update=1;
+                        break;
+#endif
                     case 'H':
                         clear();
                         move(2,0);
