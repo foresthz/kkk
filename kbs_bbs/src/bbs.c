@@ -2555,7 +2555,7 @@ void sec_top_help()
            "                  \033[1;33m直接选择分区        <0> <1> .. <%s>\033[m\n\n", seccode[SECNUM-1]);
     prints("      \033[1;31m退出选单                        \033[1;36m<ESC> <Ctrl+C> <Q> <E>\n\n");
 #ifdef READ_SEC_TOP
-    prints("      \033[1;31m阅读分区十大                    \033[1;33m<Enter> <Space> <R>\n\n");
+    prints("      \033[1;31m阅读分区十大                    \033[1;33m<Enter> <Space> <R> <Down>\n\n");
 #endif /* READ_SEC_TOP */
     move(t_lines - 1, 0);
     prints("\033[1;34;47m\t%s\033[K\033[m","帮助信息显示完成, 按回车键继续...");
