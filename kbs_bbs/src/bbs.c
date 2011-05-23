@@ -2562,7 +2562,7 @@ void sec_top_help()
     WAIT_RETURN;
 }
 
-int read_sec_top()
+int read_sec_top(int *retbid)
 {
     int secid, ch;
     char topfile[STRLEN];
@@ -2624,6 +2624,8 @@ int read_sec_top()
             UPDATE_UTMP(currentboard,uinfo);
             board_setcurrentuser(uinfo.currentboard,1);
 #endif /* GRL_ACTIVE */
+            if (retbid)
+                *retbid = bid;
             return CHANGEMODE;
 #endif /* READ_SEC_TOP */
         } else if (ch=='H') {
@@ -2683,7 +2685,7 @@ int read_hot_info(struct _select_def* conf,struct fileheader *fileinfo,void* ext
             break;
         case '5':
 #ifdef SHOW_SEC_TOP
-            if (read_sec_top()==CHANGEMODE) {
+            if (read_sec_top(NULL)==CHANGEMODE) {
                 if (extraarg)
                     *((int *)extraarg) = 0;
                 return CHANGEMODE;
@@ -6795,7 +6797,9 @@ static int select_top(void)
                         break;
 #ifdef READ_SEC_TOP
                     case KEY_TAB:
-                        read_sec_top();
+                        read_sec_top(&ret);
+                        if (ret)
+                            return ret;
                         update=1;
                         break;
 #endif
