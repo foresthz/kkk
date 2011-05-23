@@ -1141,6 +1141,48 @@ int del_from_file(char filename[STRLEN], char str[STRLEN])
     return (f_mv(fnnew, filename));
 }
 
+#ifdef NEWSMTH
+// by oldbug
+int replace_from_file_by_id(const char * filename, const char * uident, const char *newline)
+{
+    FILE *fp, *nfp;
+    int changed = false;
+    char fnnew[256 /*STRLEN*/];
+    char buf[256 /*STRLEN*/];
+    char idbuf[IDLEN + 1];
+
+    if ((fp = fopen(filename, "r+")) == NULL)
+        return -1;
+    writew_lock(fileno(fp), 0, SEEK_SET, 0);
+    sprintf(fnnew, "%s.%d", filename, (int)getpid());
+    if ((nfp = fopen(fnnew, "w")) == NULL) {
+        un_lock(fileno(fp), 0, SEEK_SET, 0);
+        fclose(fp);
+        return -1;
+    }
+    while (fgets(buf, 256 /*STRLEN*/, fp) != NULL) {
+        memset(idbuf, 0x00, sizeof(idbuf));
+        strncpy(idbuf, buf, IDLEN);
+        trimstr(idbuf);
+        if (strcasecmp(idbuf, uident) == 0) {
+            changed = true;
+            fputs(newline, nfp);
+            fputs("\n", nfp);
+        } else if (*buf > ' ') {
+            fputs(buf, nfp);
+        }
+    }
+    un_lock(fileno(fp), 0, SEEK_SET, 0);
+    fclose(fp);
+    fclose(nfp);
+    if (!changed) {
+        my_unlink(fnnew);
+        return -1;
+    }
+    return (f_mv(fnnew, filename));
+}
+#endif
+
 sigjmp_buf* push_sigbus()
 {
     struct _sigjmp_stack* jumpbuf;

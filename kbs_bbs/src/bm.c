@@ -32,11 +32,297 @@
 /*Add by SmallPig*/
 
 extern int ingetdata;
+#ifdef NEWSMTH
+/* by oldbug, 超级封禁 */
+const char* FILE_SUPER_DENY_OPERATOR = "etc/deny_operator"; //超级封禁操作者定义文件
+const unsigned int MAX_DENY_DAYS = 999;                     //每次最多可以延长或者缩短封禁的天数
+const unsigned int OP_ADD_DENY = 0;         //常数：延长封禁
+const unsigned int OP_REDUCE_DENY = 1;        //常数：缩短封禁
+const char * MSG_OP[] = {"延长封禁", "缩短封禁"};
 
+
+//参考了 local_utl/autoundeny.c
+time_t atoul(char *p)
+{
+    time_t s;
+    char *t;
+
+    t = p;
+    s = 0;
+    while ((*t >= '0') && (*t <= '9')) {
+        s = s * 10 + *t - '0';
+        t++;
+    }
+    return s;
+}
+
+//判断是否是指定的超级封禁操作者（可以对已有封禁进行增减操作）
+bool issuperdenyoperator(const char * id) 
+{
+    char line[STRLEN + 1];
+    FILE *fp = fopen(FILE_SUPER_DENY_OPERATOR , "r");
+    if (fp == NULL) {
+        return false;
+    }
+    memset(line, 0x00, sizeof(line));
+    while (fgets(line, STRLEN, fp) != NULL) {
+        strtok(line, " \n\r\t");
+        if (0 == strcasecmp(id, line)) {
+            fclose(fp);
+            return true;        
+        }
+    }
+    fclose(fp);
+    return false;
+}
+
+//取得封禁信息
+char * getdenyinfo(const char *id, char * denyinfo) {
+    char buf[255 + 1];
+    char idbuf[IDLEN + 1];
+
+    FILE *fp = NULL;
+    setbfile(genbuf, currboard->filename, "deny_users");
+    if ((fp = fopen(genbuf, "r")) == NULL) {
+        denyinfo[0] = 0x00;
+        return denyinfo;
+    }
+    int len = strlen(id);
+    if (len) {
+        while (fgets(buf, 255 /*STRLEN*/, fp) != NULL) {
+            //去除行末尾的回车符
+            if ((buf[strlen(buf) - 1] == 0x0a) || (buf[strlen(buf) - 1] == 0x0d)) {
+                buf[strlen(buf) - 1] = 0x00;
+            }
+            if ((buf[strlen(buf) - 1] == 0x0a) || (buf[strlen(buf) - 1] == 0x0d)) {
+                buf[strlen(buf) - 1] = 0x00;
+            }
+            strncpy(idbuf, buf, IDLEN);
+            idbuf[IDLEN] = 0x00;
+            trimstr(idbuf);
+            if (0 == strcasecmp(idbuf, id)) {
+                strncpy(denyinfo, buf, strlen(buf));
+                fclose(fp);
+                return denyinfo;
+            }
+        }
+    }
+    denyinfo[0] = 0x00;
+    fclose(fp);
+    return denyinfo;
+    
+}
+
+//取得封禁到期时间（0为取得失败）
+time_t getdenytime(char *denyinfo) 
+{
+    if (denyinfo[0] == 0x00) {
+        return -1;    
+    }
+    //下面这段代码参考local_utl/autoundeny.c
+    char *p;
+    p = denyinfo;
+    while ((*p != 0) && (*p != 0x1b)) {
+        p++;
+    }
+    if (*p == 0) {
+        return 0;
+    }
+    p++;
+    if (*p == 0) {
+        return 0;
+    }
+    p++;
+    if (*p == 0) {
+        return 0;
+    }
+    time_t result = atoul(p);
+    return result;
+
+}
+//取得封禁剩余天数（不满一天的=0天，-1=未封禁）
+int getdenydays(char *denyinfo) 
+{
+    time_t nowtime;
+    int remaindays;
+    nowtime = time(NULL);
+    if (strlen(denyinfo) == 0) {
+        return -1;
+    }
+    
+    time_t time2 = getdenytime(denyinfo);
+    if (time2 == 0) {
+        return -1;
+    }
+    if (time2 <= nowtime) {
+        remaindays = 0;
+    } else {
+        remaindays = (time2 - nowtime) / (60 * 60 * 24);
+    }
+    return remaindays;
+}
+
+
+//更改封禁到期时间（offsetday > 0 : 延长封禁；offsetday < 0 : 缩短封禁）
+char * changedenydays(char *denyinfo, int offsetday) 
+{
+    time_t nowtime;
+    char buf[STRLEN + 1];
+    nowtime = time(NULL);
+
+    if (denyinfo[0] == 0x00) {
+        return denyinfo;    
+    }
+    //下面这段代码参考local_utl/autoundeny.c
+    char *p, *p2;
+    time_t time2;
+    struct tm *newtime;
+
+    p = denyinfo;
+    memset(buf, 0x00, sizeof(buf));
+    while ((*p != 0) && (*p != 0x1b)) {
+        p++;
+    }
+    if (*p == 0) {
+        return denyinfo;
+    }
+    //p2记录的汉字=后：自动解；解：手动解
+    p2 = p - 2;
+    p++;
+    if (*p == 0) {
+        return denyinfo;
+    }
+    p++;
+    if (*p == 0) {
+        return denyinfo;
+    }
+    time2 = atoul(p);
+    time2 += offsetday * 60 * 60 * 24;
+    newtime = gmtime(&time2);
+
+    sprintf(buf, "%2d月%2d日解\x1b[%lum", newtime->tm_mon + 1, newtime->tm_mday, time2);
+    //需要把“后”或者“解”保留下来
+    memcpy(buf + 8, p2, 2);
+    strcpy(p2 - 8, buf);
+    return denyinfo;
+
+}
+
+//修改封禁期限（op = OP_ADD_DENY ：延长封禁；op = OP_REDUCE_DENY ：缩短封禁）
+int changedeny(unsigned int op)
+{            
+    char uident[IDLEN + 1];
+    char denyinfo[255 + 1];
+    char reason[STRLEN + 1];
+    char inputdays[8];
+    int denydays;
+    int maxdays;
+    int gdataret;
+    time_t olddate, newdate;
+    move(1, 0);
+    sprintf(genbuf, "请输入要%s的使用者(此使用者必须已经被封禁，*退出): ", MSG_OP[op]);
+    getdata(1, 0, genbuf, uident, IDLEN, DOECHO, NULL, true);
+    trimstr(uident);
+    if (0 == strcmp(uident, "*")) {
+        return 0;
+    }
+    getdenyinfo(uident, denyinfo);
+    denydays = getdenydays(denyinfo);
+    if (denydays == -1) {
+        prints("该ID不在封禁名单内!");
+        clrtoeol();
+        pressreturn();
+        return -1;
+    }
+    if ((denydays == 0) && (op == OP_REDUCE_DENY)) {
+        prints("该ID剩余封禁天数小于1天，请通过删除封禁用户操作对其进行解封!");
+        clrtoeol();
+        pressreturn();
+        return -1;
+    }
+    maxdays = (op == OP_ADD_DENY ? MAX_DENY_DAYS : denydays);
+    olddate = getdenytime(denyinfo);
+    struct tm *olddenytime;
+    olddenytime = gmtime(&olddate);
+    
+    sprintf(genbuf, "目前封禁到期时间为%04d年%02d月%02d日，请输入要%s的天数（最多%d天，*退出）: ", olddenytime->tm_year + 1900 , olddenytime->tm_mon + 1, olddenytime->tm_mday, MSG_OP[op], maxdays);
+    getdata(2, 0, genbuf, inputdays, 4, DOECHO, NULL, true);
+    if (0 == strcmp(inputdays, "*")) {
+        return 0;
+    }
+    int days = atoi(inputdays);
+    if ((days == 0) || (days > maxdays)) {
+        prints("天数错误，请输入0以上， %d以下的天数", maxdays);
+        clrtoeol();
+        pressreturn();
+        return -1;
+    }
+    gdataret = 0;
+    strcpy(reason, "");
+    while (gdataret != -1 && 0 == strlen(reason)) {
+        gdataret = getdata(3, 0, "请输入本次操作的理由(按*取消): ", reason, 30, DOECHO, NULL, true);
+    }
+    if (0 == strcmp(reason, "*")) {
+        return 0;
+    }
+    
+    //延长封禁
+    if (op == OP_ADD_DENY) {
+        changedenydays(denyinfo, days);
+    } else {
+    //缩短封禁
+        changedenydays(denyinfo, -1 * days);
+    }
+    newdate = getdenytime(denyinfo);
+    setbfile(genbuf, currboard->filename, "deny_users");
+    replace_from_file_by_id(genbuf, uident, denyinfo);
+
+    //记录详细信息
+    char filename[256];
+    char buffer[256];
+    time_t now = time(0);
+
+    gettmpfilename(filename, "changedeny");
+    
+    FILE *fn = fopen(filename, "w+");
+    if (op == OP_ADD_DENY) {
+        sprintf(buffer, "%s 延长 %s 在 %s 版封禁期限 %d 天", getCurrentUser()->userid, uident, currboard->filename, days);
+    } else {
+        sprintf(buffer, "%s 缩短 %s 在 %s 版封禁期限 %d 天", getCurrentUser()->userid, uident, currboard->filename, days);
+    }
+
+    fprintf(fn, "寄信人: %s \n", getCurrentUser()->userid);
+    fprintf(fn, "标  题: %s\n", buffer);
+    fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime(&now));
+    fprintf(fn, "来  源: %s \n", SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
+    fprintf(fn, "\n");
+    fprintf(fn, "%s 在 %s 版对用户 %s 进行了%s操作\n", getCurrentUser()->userid, currboard->filename, uident, MSG_OP[op]);
+    fprintf(fn, "操作理由：%s\n", reason);
+    olddenytime = gmtime(&olddate);
+    fprintf(fn, "操作前封禁到期时间：%04d年 %02d月 %02d日\n", olddenytime->tm_year + 1900 , olddenytime->tm_mon + 1, olddenytime->tm_mday);
+
+    struct tm *newdenytime;
+    newdenytime = gmtime(&newdate);
+    fprintf(fn, "操作后封禁到期时间：%04d年 %02d月 %02d日\n", newdenytime->tm_year + 1900 , newdenytime->tm_mon + 1, newdenytime->tm_mday);
+    fprintf(fn, "本次操作：%s %d 天\n", MSG_OP[op], days);
+    fprintf(fn, "\n");
+    fclose(fn);
+    /*
+     * unlink(filename);
+     */
+    post_file(getCurrentUser(), "", filename, "denypost", buffer, 0, -1, getSession());
+    unlink(filename);
+    
+    return 0;
+}            
+#endif
 int listdeny(int page)
 {                               /* Haohmaru.12.18.98.为那些变态得封人超过一屏的版主而写 */
     FILE *fp;
     int x = 0, y = 3, cnt = 0, max = 0, len;
+#ifdef NEWSMTH
+    y = 4;
+#endif
     int i;
     char u_buf[STRLEN * 2], line[STRLEN * 2], *nick;
 
@@ -81,6 +367,9 @@ int listdeny(int page)
         cnt++;
         if ((++y) >= t_lines - 1) {
             y = 3;
+#ifdef NEWSMTH
+            y = 4;
+#endif
             x += max + 2;
             max = 0;
             /*
@@ -393,17 +682,36 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     while (1) {
         char querybuf[0xff];
         char LtNing[24];
+#ifdef NEWSMTH
+        // by oldbug, 超级封禁
+        char superop[80];
+        bool issuperoper = false;
+    
+        sprintf(superop, "(+)%s (-)%s", MSG_OP[OP_ADD_DENY], MSG_OP[OP_REDUCE_DENY]);
+        //判断是否超级封禁操作者
+        if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
+            issuperoper  = issuperdenyoperator(getCurrentUser()->userid);
+        }
+#endif
         if (fileinfo == NULL) LtNing[0] = '\0';
         else sprintf(LtNing, "(O)增加%s ", fileinfo->owner);
 
 Here:
         clear();
         count = listdeny(0);
-        if (count > 0 && count < 20)    /*Haohmaru.12.18,看下一屏 */
+        if (count > 0 && count < 20) {   /*Haohmaru.12.18,看下一屏 */
+#ifdef NEWSMTH
+            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 %s or (E)离开 [E]: ", LtNing , issuperoper ? superop : "");
+#else
             snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 or (E)离开 [E]: ", LtNing);
-        else if (count >= 20)
+#endif
+        } else if (count >= 20) {
+#ifdef NEWSMTH
+            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (N)后面第N屏 %s or (E)离开 [E]: ", LtNing, issuperoper ? superop : "");
+#else
             snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (N)后面第N屏 or (E)离开 [E]: ", LtNing);
-        else
+#endif
+        } else
             snprintf(querybuf, 0xff, "%s(A)增加 or (E)离开 [E]: ", LtNing);
 
         getdata(1, 0, querybuf, ans, 7, DOECHO, NULL, true);
@@ -520,6 +828,15 @@ Here:
                 if (deldeny(getCurrentUser(), currboard->filename, uident, 0, (ldenytime > now) ? 1 : 0, getSession())) {
                 }
             }
+#ifdef NEWSMTH
+        } else if (issuperoper && ((*ans == '+') || (*ans == '-'))) {
+            if (*ans == '+') {
+                changedeny(OP_ADD_DENY); //延长封禁
+            }
+            if (*ans == '-') {
+                changedeny(OP_REDUCE_DENY); //缩短封禁
+            }
+#endif
         } else if (count > 20 && isdigit(ans[0])) {
             if (ans[1] == 0)
                 page = *ans - '0';

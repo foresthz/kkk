@@ -195,6 +195,10 @@ extern "C"
     void enable_core_dump(int max_size);
     int getwwwguestcount(ARG_VOID);
     int del_from_file(char filename[STRLEN], char str[STRLEN]);
+#ifdef NEWSMTH
+    // by oldbug
+    int replace_from_file_by_id(const char * filename, const char * uident, const char *newline); //将一个文件中的一行替换掉（该文件必须是以uident开头）
+#endif
     int setpublicshmreadonly(int readonly);
     struct public_data *get_publicshm(ARG_VOID);        /*获得public shm指针 */
     char *sethomefile(char *buf, const char *userid, const char *filename);     /*取某用户文件 路径 */
