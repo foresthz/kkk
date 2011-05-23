@@ -38,7 +38,7 @@ const char* FILE_SUPER_DENY_OPERATOR = "etc/deny_operator"; //超级封禁操作者定义
 const unsigned int MAX_DENY_DAYS = 999;                     //每次最多可以延长或者缩短封禁的天数
 const unsigned int OP_ADD_DENY = 0;         //常数：延长封禁
 const unsigned int OP_REDUCE_DENY = 1;        //常数：缩短封禁
-const char * MSG_OP[] = {"延长封禁", "缩短封禁"};
+const char * MSG_OP[] = {"延长", "缩短"};
 
 
 //参考了 local_utl/autoundeny.c
@@ -245,7 +245,7 @@ int changedeny(unsigned int op)
     struct tm *olddenytime;
     olddenytime = gmtime(&olddate);
     
-    sprintf(genbuf, "目前封禁到期时间为%04d年%02d月%02d日，请输入要%s的天数（最多%d天，*退出）: ", olddenytime->tm_year + 1900 , olddenytime->tm_mon + 1, olddenytime->tm_mday, MSG_OP[op], maxdays);
+    sprintf(genbuf, "封禁到期时间为%04d年%02d月%02d日，请输入要%s的天数(最多%d天,*退出):", olddenytime->tm_year + 1900 , olddenytime->tm_mon + 1, olddenytime->tm_mday, MSG_OP[op], maxdays);
     getdata(2, 0, genbuf, inputdays, 4, DOECHO, NULL, true);
     if (0 == strcmp(inputdays, "*")) {
         return 0;
