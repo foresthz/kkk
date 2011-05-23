@@ -2111,9 +2111,9 @@ int add_edit_mark(char *fname, int mode, char *title, session_t* session)
                 added = 1;
                 now = time(0);
                 if (mode & 1)
-                    fprintf(out, "\033[36m※ 修改:·%s 于 %20.20s 修改本信·[FROM: %s]\033[m\n", session->currentuser->used, ctime_r(&now, timebuf) + 4, SHOW_USERIP(session->currentuser, session->fromhost));
+                    fprintf(out, "\033[36m※ 修改:·%s 于 %20.20s 修改本信·[FROM: %s]\033[m\n", session->currentuser->userid, ctime_r(&now, timebuf) + 4, SHOW_USERIP(session->currentuser, session->fromhost));
                 else
-                    fprintf(out, "\033[36m※ 修改:·%s 于 %20.20s 修改本文·[FROM: %s]\033[m\n", session->currentuser->used, ctime_r(&now, timebuf) + 4, SHOW_USERIP(session->currentuser, session->fromhost));
+                    fprintf(out, "\033[36m※ 修改:·%s 于 %20.20s 修改本文·[FROM: %s]\033[m\n", session->currentuser->userid, ctime_r(&now, timebuf) + 4, SHOW_USERIP(session->currentuser, session->fromhost));
             }
             put_attach(fp, out, asize);
         }
