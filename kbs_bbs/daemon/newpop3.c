@@ -253,10 +253,11 @@ static int readstr(int sock, char *s, int size)
 static void outs(str)
     char *str;
 {
+    if (!str) return;
     char sendbuf[BUFSIZE * 2];
 
     (void) bzero(sendbuf, sizeof(sendbuf));
-    (void) sprintf(sendbuf, "%s\r\n", str);
+    (void) snprintf(sendbuf, sizeof(sendbuf), "%s\r\n", str);
 #ifdef USE_SSL
     if (use_ssl)
         SSL_write(ssl, sendbuf, strlen(sendbuf));
@@ -567,7 +568,7 @@ int main(int argc, char **argv)
 #else
     struct sockaddr_in fsin, our;
 #endif
-    int on, alen, len, i, n;
+    int on = 1, alen, len, i, n;
     char *str;
     int childpid;
     FILE *fp;
