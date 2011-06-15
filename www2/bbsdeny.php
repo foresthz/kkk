@@ -27,6 +27,7 @@ if (!bbs_is_bm($bid, $usernum))
 	html_error_quit("你不是版主");
 $board = $brdarr['NAME'];
 $brd_encode = urlencode($board);
+$maxreason = bbs_getdenyreason($board, $denyreasons, 1);
 
 bbs_board_nav_header($brdarr, "封禁名单");
 
@@ -50,7 +51,7 @@ if (isset($_GET['act'])) {
 		case 'add':
 			$userid = ltrim(trim($_POST['userid']));
 			$denyday = intval($_POST['denyday']);
-			$exp = (trim($_POST['exp2']))?trim($_POST['exp2']):$denyreasons[intval($_POST['exp'])];
+			$exp = (trim($_POST['exp2']))?trim($_POST['exp2']):$denyreasons[intval($_POST['exp'])]['desc'];
 			if (!$userid || !$denyday || !$exp)
 				break;
 			if (!strcasecmp($userid,'guest') || !strcasecmp($userid,'SYSOP'))
@@ -132,11 +133,11 @@ $maxdenydays = ($currentuser["userlevel"]&BBS_PERM_SYSOP)?70:14;
 <?php
 	$i = 0;
 	foreach ($denyreasons as $reason) {
-		echo '<option value="'.$i.'">'.htmlspecialchars($reason).'</option>';
+		echo '<option value="'.$i.'">'.htmlspecialchars($reason['desc']).'</option>';
 		$i ++;
 	}
 ?>    
-			</select><br />
+			</select>&nbsp;&nbsp;<a href="bbsdenyreason.php?board=<?php echo $board; ?>">自定封禁理由</a><br />
 			或手动输入封禁理由：
 			<input type="text" name="exp2" size="20" maxlength="28" />
 		</div>
