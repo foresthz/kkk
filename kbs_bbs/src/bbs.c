@@ -2589,7 +2589,7 @@ int read_sec_top(int *retbid)
             secid = ch - 'A' + 10;
         } else if (ch==KEY_LEFT) {
             secid--;
-        } else if (ch==KEY_RIGHT) {
+        } else if (ch==KEY_RIGHT || ch==KEY_TAB) {
             secid++;
         } else if (ch==KEY_HOME) {
             secid = 0;
@@ -2631,8 +2631,10 @@ int read_sec_top(int *retbid)
         } else if (ch=='H') {
             sec_top_help();
             continue;
-        } else if (ch=='E' || ch=='Q' || ch==KEY_ESC || ch==Ctrl('C')) { /* 要确保分区标识不能到E */
+        } else if (ch=='E' || ch=='Q' || ch==KEY_ESC) { /* 要确保分区标识不能到E */
             break;
+        } else if (ch==Ctrl('C')) { /* 从全站十大进入时，^C直接退回版面列表或文章列表 */
+            return DOQUIT;
         }
         if (secid<0)
             secid += SECNUM;
@@ -4536,7 +4538,7 @@ int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* e
 #ifdef NEWSMTH
             " 4)治版方针"
 #endif
-            " [0]: ", ans, 3, DOECHO, NULL, true);
+            " 5)自定义封禁理由 [0]: ", ans, 3, DOECHO, NULL, true);
     if (ans[0]=='1') return b_notes_edit();
 #ifdef NEWSMTH
     else if (ans[0]=='4') return b_rules_edit();
@@ -4558,6 +4560,9 @@ int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* e
         return b_banner_edit();
     }
 #endif
+    else if (ans[0]=='5') {
+        return b_reason_edit();
+    }
 
     return FULLUPDATE;
 }
@@ -6797,7 +6802,9 @@ static int select_top(void)
                         break;
 #ifdef READ_SEC_TOP
                     case KEY_TAB:
-                        read_sec_top(&ret);
+                        ret = 0;
+                        if (read_sec_top(&ret)==DOQUIT)
+                            return 0;
                         if (ret)
                             return ret;
                         update=1;

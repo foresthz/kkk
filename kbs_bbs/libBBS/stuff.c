@@ -1141,7 +1141,6 @@ int del_from_file(char filename[STRLEN], char str[STRLEN])
     return (f_mv(fnnew, filename));
 }
 
-#ifdef NEWSMTH
 // by oldbug
 int replace_from_file_by_id(const char * filename, const char * uident, const char *newline)
 {
@@ -1181,7 +1180,6 @@ int replace_from_file_by_id(const char * filename, const char * uident, const ch
     }
     return (f_mv(fnnew, filename));
 }
-#endif
 
 sigjmp_buf* push_sigbus()
 {
@@ -3211,3 +3209,166 @@ int sock_readline(int socket, char *buf, unsigned int size)
     }
 }
 
+/* 去掉字符串首尾空格及控制符 */
+int remove_blank_ctrlchar(const char *src, char *des, bool head, bool end, bool cc)
+{
+    char *genbuf, *p, *q;
+
+    genbuf = (char *)malloc(strlen(src)+1);
+    strncpy(genbuf, src, strlen(src));
+    genbuf[strlen(src)] = '\0';
+    if (cc)
+        process_control_chars(genbuf, NULL);
+    p = genbuf;
+    if (head) {
+        while (1) {
+            /* 如果遇到'\0'，则该字符串全为空格 */
+            if (*p == '\0') {
+                des[0] = '\0';
+                return 0;
+            }
+            if (*p == ' ')
+                p++;
+            else if (!strncmp(p, "", 2) || // alt+55290
+                     !strncmp(p, "", 2) || // alt+55291
+                     !strncmp(p, "", 2) || // alt+55292
+                     !strncmp(p, "", 2) || // alt+55293
+                     !strncmp(p, "", 2) || // alt+55294
+                     !strncmp(p, "", 2) || // 不知道多少....
+                     !strncmp(p, "　", 2) )  // 普通全角
+                p = p + 2;
+            else
+                break;
+        }
+    }
+    strncpy(des, p, strlen(p));
+    des[strlen(p)] = '\0';
+    free(genbuf);
+    p = des + strlen(des) - 1;
+    if (end) {
+        while (1) {
+            if (*p == ' ') {
+                *p = '\0';
+                p--;
+            } else if (strlen(des)>1) {
+                q = p - 1;
+                if (!strncmp(q, "", 2) || // alt+55290
+                    !strncmp(q, "", 2) || // alt+55291
+                    !strncmp(q, "", 2) || // alt+55292
+                    !strncmp(q, "", 2) || // alt+55293
+                    !strncmp(q, "", 2) || // alt+55294 
+                    !strncmp(q, " ", 2)|| // 不知道多少....
+                    !strncmp(q, "　", 2) ) { // 普通全角
+                    p = q - 1;
+                    *q = '\0';
+                } else
+                    break;
+            } else
+                break;
+        }
+    }
+    return strlen(des);
+}
+
+char* gettmpfilename2(char *name,const char *format,...)
+{
+    char buf[STRLEN],file[STRLEN];
+    const char *p1, *p2, *p3, *p4, *p5;
+    va_list ap;
+    va_start(ap,format);
+    p1 = format;
+    //vsnprintf(file,STRLEN,format,ap);
+    p2 = va_arg(ap, char *);
+    p3 = va_arg(ap, char *);
+    p4 = va_arg(ap, char *);
+    p5 = va_arg(ap, char *);
+    //sprintf(file, "%s %s %s", format, va_arg(ap, char*), va_arg(ap, char *));
+    va_end(ap);
+    return name;
+}
+/* 使用参数的形式，从模板中发文
+ * format必须包含参数格式说明, 用一个s代表一个参数, 参数只支持字符串
+ */
+int write_formatted_file(const char *src, const char *dest, const char *format, ...)
+{
+    va_list ap;
+    FILE *fin, *fout;
+    char buf[256];
+    const char *fmt, *bp;
+    char va_str[10][STRLEN]; /* 暂时提供十个参数吧 */
+    int count;
+
+    va_start(ap, format);
+    for (fmt=format,count=0;count<10;fmt++,count++) {
+        if (*fmt=='\0')
+            break;
+        bp = va_arg(ap, char *);
+        strcpy(va_str[count], bp);
+    }
+    va_end(ap);
+
+    if (((fin=fopen(src, "r"))==NULL) || ((fout=fopen(dest, "w"))==NULL))
+        return -1;
+    while (fgets(buf, 255, fin)) {
+        int l, sign, fmtlen, sysdef;
+        char tmpbuf[STRLEN];
+        char *pn, *pe;
+
+        for (pn=buf; *pn!='\0'; pn++) {
+            if (*pn!='[' || *(pn+1)!='$') {
+                fputc(*pn, fout);
+            } else {
+                pe = strchr(pn, ']');
+                if (pe==NULL) {
+                    fputc(*pn, fout);
+                    continue;
+                }
+                
+                /* 获得[]中间的内容 */
+                strncpy(tmpbuf, pn+2, pe-pn-2);
+                tmpbuf[pe-pn-2] = '\0';
+                sysdef = 0;
+                sign = get_parameter_index_len(tmpbuf, &l, &fmtlen, &sysdef);
+                if (l<=0) {
+                    fputc('[', fout);
+                    continue;
+                }
+                
+                char *p;
+                if (sysdef==0) {
+                    p = malloc(STRLEN);
+                    if (l>count)
+                        sprintf(p, "[错误的参数$%d]", l);
+                    else
+                        strcpy(p, va_str[l-1]);
+                } else {
+                    sprintf(p, "[错误的参数$%s]", tmpbuf);
+                }
+                if (fmtlen>0) {
+                    int t1, t2;
+                    t1=strlen(p);
+                    if (t1 >= fmtlen)
+                        fprintf(fout,"%s",p);
+                    else {
+                        if (sign == -1) { /* 左对齐 */
+                            fprintf(fout, "%-*s", fmtlen, p);
+                        } else if (sign == 1) { /* 右对齐 */
+                            fprintf(fout, "%*s", fmtlen, p);
+                        } else { /* 居中对齐 */
+                            t2 = (fmtlen - t1)/2;
+                            fprintf(fout,"%*s%*s",t2+t1,p,t2 + t1%2, "");
+                        }
+                    }
+                } else
+                    fprintf(fout,"%s",p);
+                free(p);
+                pn = pe;
+                continue;
+            }
+        }
+    }
+    fclose(fin);
+    fclose(fout);
+    
+    return 0;
+}

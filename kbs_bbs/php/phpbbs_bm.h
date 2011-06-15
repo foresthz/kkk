@@ -13,6 +13,8 @@ PHP_FUNCTION(bbs_club_read);
 PHP_FUNCTION(bbs_club_flag);
 PHP_FUNCTION(bbs_club_write);
 PHP_FUNCTION(bbs_threads_bmfunc);
+PHP_FUNCTION(bbs_getdenyreason);
+PHP_FUNCTION(bbs_setdenyreason);
 
 
 #define PHP_BBS_BM_EXPORT_FUNCTIONS \
@@ -25,7 +27,9 @@ PHP_FUNCTION(bbs_threads_bmfunc);
     PHP_FE(bbs_club_read,NULL) \
     PHP_FE(bbs_club_flag,NULL) \
     PHP_FE(bbs_club_write,NULL) \
-    PHP_FE(bbs_threads_bmfunc,NULL)
+    PHP_FE(bbs_threads_bmfunc,NULL) \
+    PHP_FE(bbs_getdenyreason,NULL) \
+    PHP_FE(bbs_setdenyreason,NULL)
 
 #endif //PHP_BBS_BM_H
 
