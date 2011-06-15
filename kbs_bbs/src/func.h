@@ -256,19 +256,6 @@ extern "C"
     char* strnzhcpy(char *dest, const char *src, size_t n);
     void trimstr(char*);
     void securityreport(char *str, struct userec *lookupuser, char fdata[9][STRLEN], session_t *session);
-    int remove_blank_ctrlchar(const char *src, char *des, bool head, bool end, bool cc);
-    int get_textfile_string(const char *file, char **ptr, char *result[], int maxcount);
-    int get_deny_reason(const char *board, char denyreason[][STRLEN], int max);
-    int save_deny_reason(const char *board, char denyreason[][STRLEN], int count);
-    int write_formatted_file(const char *src, const char *dest, const char *format, ...);
-    int get_denied_reason(const char *buf, char *reason);
-    int get_denied_operator(const char *buf, char *opt);
-#ifdef DENY_MANUAL
-    int get_denied_freetype(const char *buf);
-#endif
-    time_t get_denied_time(const char *buf);
-    int deny_announce(char *uident, struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode);
-    int deny_mailuser(char *uident, struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode);
 
 #ifndef CYGWIN
 #define time(x) bbstime(x)

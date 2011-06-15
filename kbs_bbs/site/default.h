@@ -706,14 +706,6 @@ attach define
 #define MAXATTACHMENTSIZE 5*1024*1024                     //文章附件文件长度上限
 #endif
 
-/* 封禁相关 */
-#ifndef MAXDENYREASON
-#define MAXDENYREASON     18    //最大封禁理由数量
-#endif
-
-#ifndef MAXCUSTOMREASON
-#define MAXCUSTOMREASON    9    //最大自定义封禁理由
-#endif
 
 #if CHECK_IP_LINK==0
 #undef CHECK_IP_LINK
