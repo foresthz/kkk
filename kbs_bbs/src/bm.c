@@ -501,7 +501,7 @@ int set_denymsg(char *denymsg)
 
 int addtodeny(char *uident)
 {                               /* Ìí¼Ó ½ûÖ¹POSTÓÃ»§ */
-    char buf2[50], strtosave[256], date[STRLEN] = "0";
+    char /*buf2[50], */strtosave[256], date[STRLEN] = "0";
     int maxdeny;
 
     /*
@@ -512,10 +512,10 @@ int addtodeny(char *uident)
     FILE *fn;
     char filename[STRLEN];
     int autofree = 0;
-    char filebuf[STRLEN];
+    //char filebuf[STRLEN];
     char denymsg[STRLEN];
     int denyday;
-    int reasonfile;
+    //int reasonfile;
     int gdataret;
 
     now = time(0);

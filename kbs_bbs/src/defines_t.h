@@ -302,6 +302,7 @@ int delete_range(struct _select_def*,struct fileheader*,void*);
 int undelete_range(struct _select_def*,struct fileheader*,void*);/* Çø¶Î»Ö¸´ benogy@bupt 20080807 */
 int undelete_range_base(char* board, const char* src,int from,int to,int mode,struct stat *vst_src);
 #endif/*BATCHRECOVERY*/
+int b_reason_edit(void);
 
 /* zmodem */
 int read_zsend(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
