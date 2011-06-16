@@ -827,13 +827,13 @@ int modify_denytime(time_t *denytime, int *autofree)
         } else if (ch==KEY_DOWN) {
             if (days > 1) /* 至少需要1天 */
                 days--;
-        } else if (ch>='0' && ch<='9') { /* 直接输入日期，可输入两位数字 */
+        } else if (ch>='0' && ch<='9') { /* 直接输入日期，可输入三位数字 */
             if (!start)
                 days = ch - '0';
             else {
                 int day = ch - '0';
                 /* 先处理上次结果 */
-                if (days>10)
+                if (days>100)
                     days = day;
                 else
                     days = 10*days + ch - '0';
@@ -1052,15 +1052,15 @@ Here:
         count = listdeny(0);
         if (count > 0 && count < 20) {   /*Haohmaru.12.18,看下一屏 */
 #ifdef NEWSMTH
-            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 %s or (E)离开 [E]: ", LtNing , issuperoper ? superop : "");
+            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (M)调整 %s or (E)离开 [E]: ", LtNing , issuperoper ? superop : "");
 #else
-            snprintf(querybuf, 0xff, "%s(A)增加 (M)调整 or (E)离开 [E]: ", LtNing);
+            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (M)调整 or (E)离开 [E]: ", LtNing);
 #endif
         } else if (count >= 20) {
 #ifdef NEWSMTH
-            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (N)后面第N屏 %s or (E)离开 [E]: ", LtNing, issuperoper ? superop : "");
+            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (M)调整 (N)后面第N屏 %s or (E)离开 [E]: ", LtNing, issuperoper ? superop : "");
 #else
-            snprintf(querybuf, 0xff, "%s(A)增加 (M)调整 (N)后面第N屏 or (E)离开 [E]: ", LtNing);
+            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (M)调整 (N)后面第N屏 or (E)离开 [E]: ", LtNing);
 #endif
         } else
             snprintf(querybuf, 0xff, "%s(A)增加 or (E)离开 [E]: ", LtNing);
