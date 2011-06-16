@@ -32,6 +32,7 @@
 /*Add by SmallPig*/
 
 extern int ingetdata;
+int modify_denytime(time_t *denytime, int *autofree);
 #ifdef NEWSMTH
 /* by oldbug, 超级封禁 */
 const char* FILE_SUPER_DENY_OPERATOR = "etc/deny_operator"; //超级封禁操作者定义文件
@@ -354,7 +355,7 @@ int listdeny(int page)
             strcpy(line, u_buf);
         } else {
             if (cnt < 20)
-                sprintf(line, "%-12s%s", u_buf, nick);
+                sprintf(line, "%-12s %s", u_buf, nick);
         }
         if ((len = strlen(line)) > max)
             max = len;
@@ -382,6 +383,120 @@ int listdeny(int page)
     if (cnt == 0)
         prints("(none)\n");
     return cnt;
+}
+
+/* 选择封禁理由new */
+struct _simple_select_arg {
+    struct _select_item *items;
+    int flag;
+};
+static int denyreason_select(struct _select_def *conf)
+{
+    int pos = conf->pos;
+    if (pos == conf->item_count)
+        return SHOW_QUIT;
+    return SHOW_SELECT;
+}
+static int denyreason_show(struct _select_def *conf,int i)
+{
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    outs((char*)((arg->items[i-1]).data));
+    return SHOW_CONTINUE;
+}
+static int denyreason_key(struct _select_def *conf,int key)
+{
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    int i;
+    if (key==KEY_ESC)
+        return SHOW_QUIT;
+    for (i=0; i<conf->item_count; i++)
+        if (toupper(key)==toupper(arg->items[i].hotkey)) {
+            conf->new_pos=i+1;
+            return SHOW_SELCHANGE;
+        }
+    return SHOW_CONTINUE;
+}
+int select_deny_reason(char reason[][STRLEN], char *denymsg, int count)
+{
+    struct _select_item sel[count+2];
+    struct _select_def conf;
+    struct _simple_select_arg arg;
+    POINT pts[count+2];
+    char menustr[count+2][STRLEN];
+    int i, ret, pos;
+
+    for (i=0;i<count+2;i++) {
+        sel[i].x = (i<10) ? 2 : 40;
+        sel[i].y = (i<10) ? 4 + i : i - 6;
+        sel[i].hotkey = (i<9) ? '1' + i : 'A' + i - 9;
+        sel[i].type = SIT_SELECT;
+        sel[i].data = menustr[i];
+        if (i==count)
+            sprintf(menustr[i], "\033[33m[%c] %s\033[m", sel[i].hotkey, "手动输入封禁理由");
+        else if (i==count+1)
+            sprintf(menustr[i], "\033[31m[%c] %s\033[m", sel[i].hotkey, "放弃此次封禁操作");
+        else
+            sprintf(menustr[i], "[%c] %s", sel[i].hotkey, reason[i]);
+        pts[i].x = sel[i].x;
+        pts[i].y = sel[i].y;
+    }
+    sel[i].x = -1;
+    sel[i].y = -1;
+    sel[i].hotkey = -1;
+    sel[i].type = 0;
+    sel[i].data = NULL;
+
+    arg.items = sel;
+    arg.flag = SIF_SINGLE;
+    bzero(&conf, sizeof(struct _select_def));
+    conf.item_count = count + 2;
+    conf.item_per_page = MAXDENYREASON + 2;
+    conf.flag = LF_LOOP | LF_MULTIPAGE;
+    conf.prompt = "◆";
+    conf.item_pos = pts;
+    conf.arg = &arg;
+    conf.pos = 0;
+    conf.show_data = denyreason_show;
+    conf.key_command = denyreason_key;
+    conf.on_select = denyreason_select;
+
+    pos = 0;
+    move(3, 0);
+    clrtoeol();
+    prints("\033[33m请选择封禁理由\033[m");
+    while (1) {
+        move(4, 0);
+        clrtobot();
+        conf.pos = pos;
+        conf.flag=LF_LOOP;
+        ret = list_select_loop(&conf);
+        pos = conf.pos;
+        if (ret==SHOW_SELECT) {
+            if (pos==conf.item_count-1) {
+                getdata(arg.items[pos-1].y, arg.items[pos-1].x, "输入理由: ", denymsg, 30, DOECHO, NULL, true);
+                if (denymsg[0]=='\0')
+                    continue;
+                move(arg.items[pos-1].y, arg.items[pos-1].x);
+                clrtoeol();
+                sprintf(arg.items[pos-1].data, "[%c] %s", arg.items[pos-1].hotkey, denymsg);
+            } else
+                sprintf(denymsg, "%s", reason[pos-1]);
+            move(arg.items[pos-1].y, arg.items[pos-1].x);
+            prints("\033[32m%s\033[m", (char *)arg.items[pos-1].data);
+            return 1;
+        } else 
+            return 0;
+    }
+}
+
+int set_denymsg(char *denymsg)
+{
+    int count;
+    char reason[MAXDENYREASON][STRLEN];
+
+    count = get_deny_reason(currboard->filename, reason, MAXCUSTOMREASON);
+    count += get_deny_reason(NULL, &(reason[count]), MAXDENYREASON-count);
+    return select_deny_reason(reason, denymsg, count);
 }
 
 int addtodeny(char *uident)
@@ -414,6 +529,22 @@ int addtodeny(char *uident)
         maxdeny = 14;
 
     *denymsg = 0;
+    move(2, 0);
+    prints("增加 \033[31m%s\033[m 至 \033[33m%s\033[m 版封禁名单", uident, currboard->filename);
+    /* 选择封禁理由new */
+    if (set_denymsg(denymsg)==0)
+        return 0;
+    /*
+    {
+        int count;
+        char reason[MAXDENYREASON][STRLEN];
+
+        count = get_deny_reason(currboard->filename, reason, MAXCUSTOMREASON);
+        count += get_deny_reason(NULL, &(reason[count]), MAXDENYREASON-count);
+        if ((select_deny_reason(reason, denymsg, count))==0)
+            return 0;
+    }*/
+#if 0
     if ((reasonfile = open("etc/deny_reason", O_RDONLY)) != -1) {
         int reason = -1;
         int maxreason;
@@ -483,6 +614,7 @@ int addtodeny(char *uident)
         }
         close(reasonfile);
     }
+#endif
 
     gdataret = 0;
     while (gdataret != -1 && 0 == strlen(denymsg)) {
@@ -490,15 +622,21 @@ int addtodeny(char *uident)
     }
     if (gdataret == -1 || denymsg[0] == '*')
         return 0;
+#if 0
 #ifdef MANUAL_DENY
     autofree = askyn("该封禁是否自动解封？(选 \033[1;31mY\033[m 表示进行自动解封)", true);
 #else
     autofree = true;
 #endif
+#endif
+    autofree = 1;
+    if ((denyday=modify_denytime(NULL, &autofree))<0)
+        return 0;
+#if 0
     sprintf(filebuf, "输入天数(最长%d天)(按*取消封禁)", maxdeny);
     denyday = 0;
     while (!denyday) {
-        gdataret = getdata(3, 0, filebuf, buf2, 4, DOECHO, NULL, true);
+        gdataret = getdata(13, 0, filebuf, buf2, 4, DOECHO, NULL, true);
         if (gdataret == -1 || buf2[0] == '*')return 0;
         if ((buf2[0] < '0') || (buf2[0] > '9'))
             continue;           /*goto MUST1; */
@@ -510,6 +648,7 @@ int addtodeny(char *uident)
         else if ((HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) && !denyday && !autofree)
             break;
     }
+#endif
 #ifdef ZIXIA
     int ndenypic,dpcount;
     clear();
@@ -652,6 +791,218 @@ int addtodeny(char *uident)
     return 0;
 }
 
+/* 修改已封禁id的封禁时间 */
+int modify_denytime(time_t *denytime, int *autofree)
+{
+    struct tm *tm_time;
+    int days, maxdeny, ch, start;
+    time_t settime, now;
+
+    /* 设定时间从当前开始计算 */
+    now = time(0);
+    if (denytime)
+        days = ((*denytime)+28800)/86400 - (now+28800)/86400;
+    else
+        days = 1;
+    if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
+        maxdeny = 70;
+    else
+        maxdeny = 14;
+    move(16, 0);
+    prints("操作提示: \033[33m上/下键\033[m调整或直接输入天数，\033[33m回车\033[m确认，\033[33mESC\033[m放弃\n");
+    if (denytime) /* 表示是修改封禁时间 */
+        prints("特别提示: \033[31m确定修改后将按照新的时间计算封禁！\033[m");
+    start = 0;
+    while (1) {
+        settime = now + days * 86400;
+        tm_time = localtime(&settime);
+        move (15, 0);
+        prints("\033[33m设定封禁天数: \033[4;32m %d \033[0;32m天\033[0;33m\t解封日期: \033[32m%d年%2d月%2d日\033[m",
+                days, tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday);
+        move(15, 16);
+        ch = igetkey();
+        if(ch==KEY_UP) {
+            if (days < maxdeny)
+                days++;
+        } else if (ch==KEY_DOWN) {
+            if (days > 1) /* 至少需要1天 */
+                days--;
+        } else if (ch>='0' && ch<='9') { /* 直接输入日期，可输入两位数字 */
+            if (!start)
+                days = ch - '0';
+            else {
+                int day = ch - '0';
+                /* 先处理上次结果 */
+                if (days>10)
+                    days = day;
+                else
+                    days = 10*days + ch - '0';
+                /* 再处理此次结果 */
+                if (days>maxdeny)
+                    days = day;
+                if (days==0)
+                    days = 1;
+            }
+            start = 1;
+        } else if (ch=='\n' || ch=='\r') {
+#ifdef MANUAL_DENY
+            char ans[2];
+            getdata(15, 52, "是否自动解封? [Y]", ans, 2, DOECHO, NULL, true);
+            if (toupper(ans[0])=='N')
+                *autofree = 0;
+            else
+                *autofree = 1;
+#endif
+            if(denytime)
+                *denytime = settime;
+            break;
+        } else if (ch==KEY_ESC) {
+            if (denytime)
+                return ((*denytime)+28800)/86400 - (now+28800)/86400;
+            else
+                return -1;
+        } else
+            continue;
+    }
+    return days;
+}
+
+/* 修改已封禁的id */
+int modify_user_deny(char *uident, char *denystr)
+{
+#define MOD_DENY_REASON 0x001
+#define MOD_DENY_TIME   0x002
+#ifdef MANUAL_DENY
+#define MOD_DENY_TYPE   0x004
+#endif
+    time_t denytime, newtime;
+    char denymsg[STRLEN], newmsg[STRLEN], operator[IDLEN+1];
+    int ch, i, day;
+    struct tm *tm_time;
+    unsigned int flag;
+    int autofree, newfree;
+
+    flag = 0;
+    ch = 0;
+    i = 1;
+    get_denied_reason(denystr, denymsg);
+    get_denied_operator(denystr, operator);
+#ifdef MANUAL_DENY
+    autofree = get_denied_freetype(denystr);
+#else
+    autofree = 1;
+#endif
+    denytime = get_denied_time(denystr);
+
+    strcpy(newmsg, denymsg);
+    newfree = autofree;
+    newtime = denytime;
+    day = (denytime+28800)/86400 - (time(0)+28800)/86400;
+    while(1) {
+        tm_time = localtime(&newtime);
+        move(3, 0);
+        clrtobot();
+        prints("该用户的封禁情况如下: \n\n");
+        prints("  \033[33m被封禁ID:\033[m %s\n", uident);
+        prints("  \033[33m封禁理由:\033[m %s%s\033[m\n", (flag&MOD_DENY_REASON)?"\033[31m":"", newmsg);
+#ifdef MANUAL_DENY
+        prints("  \033[33m解封日期:\033[m %s%d年%2d月%2d日\033[m  %s[%s]\033[m\n", (flag&MOD_DENY_TIME)?"\033[31m":"",
+                tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday,
+                (flag&MOD_DENY_TYPE)?"\033[31m":"", newfree?"自动解封":"手动解封");
+#else
+        prints("  \033[33m解封日期:\033[m %s%d年%2d月%2d日\033[m\033[m\n", (flag&MOD_DENY_TIME)?"\033[31m":"",
+                tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday);
+#endif
+        prints("  \033[33m操作者ID:\033[m %s%s\033[m\n", (flag&&strcmp(getCurrentUser()->userid, operator))?"\033[31m":"",
+                flag?getCurrentUser()->userid:operator);
+        while (1) {
+            move(11, 0);
+            prints("\033[33m选择操作: \033[m%s[1.删除封禁用户]%s[2.修改封禁理由]%s[3.调整解封日期]%s[4.保存并退出]\033[m",
+                    i==1?"\033[32m":"\033[m", i==2?"\033[32m":"\033[m", i==3?"\033[32m":"\033[m", i==4?"\033[32m":"\033[m");
+            ch = igetkey();
+            if (ch>='1' && ch<='4') {
+                i = ch - '0';
+            } else if (ch==KEY_RIGHT || ch==KEY_TAB) {
+                i++;
+                if (i>4)
+                    i=1;
+            } else if (ch==KEY_LEFT) {
+                i--;
+                if (i<1)
+                    i=4;
+            } else if (ch=='\n'||ch=='\r') {
+                if (i==1) { /* 删除封禁ID */
+                    move(13, 0);
+                    prints("%s确定解封？[N]", (denytime>time(0))?"该用户封禁时限未到，":"");
+                    ch = igetkey();
+                    if (toupper(ch)=='Y') {
+                        if (deldeny(getCurrentUser(), currboard->filename, (char *)uident, 0, 1, getSession())<0) {
+                            move(15, 0);
+                            prints("\033[31m解封时发生错误 <Enter>");
+                            WAIT_RETURN;
+                        }
+                        return 0;
+                    }
+                } else if (i==2) { /* 修改封禁理由 */
+                    set_denymsg(newmsg);
+                    if (strcmp(denymsg, newmsg))
+                        flag |= MOD_DENY_REASON;
+                    else
+                        flag &= ~MOD_DENY_REASON;
+                } else if (i==3) { /* 调整封禁天数 */
+                    day = modify_denytime(&newtime, &newfree);
+                    if (denytime!=newtime)
+                        flag |= MOD_DENY_TIME;
+                    else
+                        flag &= ~MOD_DENY_TIME;
+#ifdef MANUAL_DENY
+                    if (newfree!=autofree)
+                        flag |= MOD_DENY_TYPE;
+                    else
+                        flag &= ~MOD_DENY_TYPE;
+#endif
+                } else { /* 保存并退出 */
+                    if (flag) { /* 如果发生修改 */
+                        char savestr[STRLEN], filename[STRLEN], ans[2];
+                        getdata(13, 0, "确定修改? [Y]", ans, 2, DOECHO, NULL, true);
+                        if (toupper(ans[0])=='N') {
+                            prints("\033[33m取消...<Enter>\033[m");
+                            WAIT_RETURN;
+                            return 0;
+                        }
+                        if (newfree)
+                            sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum",
+                                    uident, newmsg, getCurrentUser()->userid, tm_time->tm_mon+1, tm_time->tm_mday, newtime);
+                        else
+                            sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum",
+                                    uident, newmsg, getCurrentUser()->userid, tm_time->tm_mon+1, tm_time->tm_mday, newtime);
+                        setbfile(filename, currboard->filename, "deny_users");
+                        if (replace_from_file_by_id(filename, uident, savestr)<0) {
+                            move(13, 0);
+                            prints("\033[31m修改封禁时发生错误 <Enter>");
+                            WAIT_RETURN;
+                        }
+                        if (deny_announce(uident,currboard,newmsg,day,getCurrentUser(),time(0),1)<0 ||
+                            deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1)<0) {
+                            move(13, 0);
+                            prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+                        }
+                    }
+                    return 0;
+                }
+                break;
+            } else if (ch==KEY_ESC) { /* 不保存退出 */
+                return 0;
+            }
+        }
+    }
+#undef MOD_DENY_REASON
+#undef MOD_DENY_TIME
+#ifdef MANUAL_DENY
+#undef MOD_DENY_TYPE
+#endif
+    return 0;
+}
 
 int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {                               /* 禁止POST用户名单 维护主函数 */
@@ -703,13 +1054,13 @@ Here:
 #ifdef NEWSMTH
             snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 %s or (E)离开 [E]: ", LtNing , issuperoper ? superop : "");
 #else
-            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 or (E)离开 [E]: ", LtNing);
+            snprintf(querybuf, 0xff, "%s(A)增加 (M)调整 or (E)离开 [E]: ", LtNing);
 #endif
         } else if (count >= 20) {
 #ifdef NEWSMTH
             snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (N)后面第N屏 %s or (E)离开 [E]: ", LtNing, issuperoper ? superop : "");
 #else
-            snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (N)后面第N屏 or (E)离开 [E]: ", LtNing);
+            snprintf(querybuf, 0xff, "%s(A)增加 (M)调整 (N)后面第N屏 or (E)离开 [E]: ", LtNing);
 #endif
         } else
             snprintf(querybuf, 0xff, "%s(A)增加 or (E)离开 [E]: ", LtNing);
@@ -769,6 +1120,38 @@ Here:
             if (*uident != '\0') {
                 addtodeny(uident);
             }
+        } else if ((*ans == 'M') && count) {
+            int len;
+            move(1, 0);
+            namecomplete("修改本版无法POST的使用者: ", uident);
+            find = 0;
+            setbfile(genbuf, currboard->filename, "deny_users");
+            if ((fp = fopen(genbuf, "r")) == NULL) {
+                prints("(none)\n");
+                return 0;
+            }
+            len = strlen(uident);
+            if (len) {
+                while (fgets(genbuf, 256 /*STRLEN*/, fp) != NULL) {
+                    if (!strncasecmp(genbuf, uident, len)) {
+                        if (genbuf[len] == 32) {
+                            strncpy(uident, genbuf, len);
+                            uident[len] = 0;
+                            find = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+            fclose(fp);
+            if (!find) {
+                move(3, 0);
+                prints("该ID不在封禁名单内!");
+                clrtoeol();
+                pressreturn();
+                goto Here;
+            }
+            modify_user_deny(uident, genbuf);
         } else if ((*ans == 'D') && count) {
             int len;
 
@@ -1996,3 +2379,227 @@ int undelete_range(struct _select_def *conf,struct fileheader *fhptr,void *varg)
 
 /*--------------------------------end   区段恢复接口-------------------------------------*/
 #endif /*BATCHRECOVERY*/
+
+/*
+ * 修改封禁理由
+ */
+int modify_deny_reason(char reason[][STRLEN], int *count, int pos, int type, POINT pts)
+{
+    char buf[STRLEN];
+    int i;
+
+    if (type==0) { /* 添加 */
+        getdata(pts.y, pts.x, "请输入理由: ", buf, 30, DOECHO, NULL, true);
+        remove_blank_ctrlchar(buf, buf, true, true, true);
+        if (buf[0]=='\0')
+            return 0;
+        for (i=0;i<*count;i++) {
+            if (strcasecmp(reason[i], buf)==0) {
+                char ans[2];
+                getdata(pts.y, pts.x, "输入理由已经存在", ans, 1, DOECHO, NULL, true);
+                return 0;
+            }
+        }
+        strcpy(reason[pos-1], buf);
+        (*count)++;
+        return pos+1;
+    } else if (type==1) { /* 修改 */
+        strcpy(buf, reason[pos-1]);
+        getdata(pts.y+1, pts.x, "请输入理由: ", buf, 30, DOECHO, NULL, false);
+        remove_blank_ctrlchar(buf, buf, true, true, true);
+        if (buf[0]=='\0')
+            return 0;
+        for (i=0;i<*count;i++) {
+            if (strcasecmp(reason[i], buf)==0 && i!=pos-1) {
+                char ans[2];
+                getdata(pts.y+1, pts.x, "输入理由已经存在", ans, 1, DOECHO, NULL, true);
+                return 0;
+            }
+        }
+        strcpy(reason[pos-1], buf);
+        return pos;
+    } else if (type==2) { /* 移动 */
+        int newpos;
+        getdata(pts.y+1, pts.x, "请输入新的位置: ", buf, 3, DOECHO, NULL, true);
+        newpos = atoi(buf);
+        if (newpos<=0 || newpos>(*count)) {
+            getdata(pts.y+1, pts.x, "输入错误! ", buf, 1, DOECHO, NULL, true);
+            return 0;
+        } else if (newpos==pos)
+            return 0;
+        strcpy(buf, reason[pos-1]);
+        if (newpos>pos) {
+            for (i=pos;i<newpos;i++)
+                strcpy(reason[i-1], reason[i]);
+        } else {
+            for (i=pos-1;i>=newpos;i--)
+                strcpy(reason[i], reason[i-1]);
+        }
+        strcpy(reason[newpos-1], buf);
+        return newpos;
+    } else if (type==3) { /* 删除 */
+        move(pts.y+1, pts.x);
+        if (!askyn("确认删除", false))
+            return 0;
+        for (i=pos;i<(*count);i++) {
+            strcpy(reason[i-1], reason[i]);
+        }
+        (*count)--;
+        return pos;
+    }
+    return 0;
+}
+
+static int edit_denyreason_key(struct _select_def *conf,int key)
+{
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    int i;
+    if (key==KEY_ESC) {
+        return SHOW_QUIT;
+    }
+    for (i=0; i<conf->item_count; i++)
+        if (toupper(key)==toupper(arg->items[i].hotkey)) {
+            conf->new_pos=i+1;
+            return SHOW_SELCHANGE;
+        }
+    return SHOW_CONTINUE;
+}
+static int edit_denyreason_select(struct _select_def *conf)
+{
+    return SHOW_SELECT;
+}
+int edit_deny_reason(char reason[][STRLEN], int count, int max)
+{
+    struct _select_item sel[max+2];
+    struct _select_def conf;
+    struct _simple_select_arg arg;
+    POINT pts[max+2];
+    char menustr[max+2][STRLEN];
+    int i, ret, ch, pos, item_count;
+
+    pos = 1;
+    while(1) {
+        /* 当count==max时，不出现“添加”选项 */
+        item_count = (count<max)? count+2:count+1;
+        for (i=0;i<item_count;i++) {
+            sel[i].x = (i<10) ? 2 : 40;
+            sel[i].y = (i<10) ? 3 + i : i - 7;
+            sel[i].hotkey = (i<9) ? '1' + i : 'A' + i - 9;
+            sel[i].type = SIT_SELECT;
+            sel[i].data = menustr[i];
+            if (i==item_count-1) {
+                sprintf(menustr[i], "\033[31m[%c] %s\033[m", sel[i].hotkey, "保存并退出");
+            } else if (i==item_count-2 && count<max)
+                sprintf(menustr[i], "\033[33m[%c] %s\033[m", sel[i].hotkey, "添加封禁理由");
+            else
+                sprintf(menustr[i], "[%c] %s", sel[i].hotkey, reason[i]);
+            pts[i].x = sel[i].x;
+            pts[i].y = sel[i].y;
+        }
+        sel[i].x = -1;
+        sel[i].y = -1;
+        sel[i].hotkey = -1;
+        sel[i].type = 0;
+        sel[i].data = NULL;
+
+        arg.items = sel;
+        arg.flag = SIF_SINGLE;
+        bzero(&conf, sizeof(struct _select_def));
+        conf.item_count = item_count;
+        conf.item_per_page = MAXDENYREASON + 2;
+        conf.flag = LF_LOOP | LF_MULTIPAGE;
+        conf.prompt = "◆";
+        conf.item_pos = pts;
+        conf.arg = &arg;
+        conf.pos = pos;
+        conf.show_data = denyreason_show;
+        conf.key_command = edit_denyreason_key;
+        conf.on_select = edit_denyreason_select;
+
+        move(0, 0);
+        clrtoeol();
+        prints("\033[32m修改封禁理由\033[m");
+        while (1) {
+            move(3, 0);
+            clrtobot();
+            conf.pos = pos;
+            conf.flag=LF_LOOP;
+            ret = list_select_loop(&conf);
+            pos = conf.pos;
+            if (ret==SHOW_SELECT) { /* 添加、修改或退出 */
+                if (pos==conf.item_count) { /* 保存并退出 */
+                    move(arg.items[conf.item_count-1].y, arg.items[conf.item_count-1].x);
+                    prints("\033[31m确定保存并退出?[Y] \033[m");
+                    ch=igetkey();
+                    if(toupper(ch)=='N')
+                        continue;
+                    return count;
+                } else if (pos==conf.item_count-1 && count<max) { /* 添加 */
+                    ret=modify_deny_reason(reason, &count, pos, 0, pts[pos-1]);
+                    if (ret==0)
+                        continue;
+                    pos=ret;
+                    break;
+                } else { /* 修改移动及删除 */
+                    i=1;
+                    ret=0;
+                    while (1) {
+                        move(arg.items[pos-1].y, arg.items[pos-1].x);
+                        prints("%s[E.修改]%s[M.移动]%s[D.删除] \033[33m%s\033[m",
+                                i==1?"\033[32m":"\033[m", i==2?"\033[32m":"\033[m", i==3?"\033[32m":"\033[m", reason[pos-1]);
+                        ch=igetkey();
+                        if (ch==KEY_RIGHT || ch==KEY_TAB) {
+                            i++;
+                            if (i>3)
+                                i=1;
+                        } else if (ch==KEY_LEFT) {
+                            i--;
+                            if (i<1)
+                                i=3;
+                        } else if (toupper(ch)=='E') {
+                            i=1;
+                        } else if (toupper(ch)=='M') {
+                            i=2;
+                        } else if (toupper(ch)=='D') {
+                            i=3;
+                        } else if (ch=='\n'||ch=='\r') {
+                            ret=modify_deny_reason(reason, &count, pos, i, pts[pos-1]);
+                            break;
+                        } else if (ch==KEY_ESC) {
+                            break;
+                        }
+                    }
+                    if (ret==0)
+                        continue;
+                    pos=ret;
+                    break;
+                }
+            } else {/* ESC退出 */
+                move(arg.items[conf.item_count-1].y, arg.items[conf.item_count-1].x);
+                prints("\033[31m放弃保存并退出?[N] \033[m");
+                ch=igetkey();
+                if(toupper(ch)!='Y')
+                    continue;
+                return -1;
+            }
+        }
+    }
+}
+
+int b_reason_edit() {
+    char reason[MAXDENYREASON][STRLEN];
+    int i, count;
+
+    if (!chk_currBM(currBM, getCurrentUser())) {
+        return 0;
+    }
+    clear();
+
+    for (i=0;i<MAXDENYREASON;i++)
+        reason[i][0]='\0';
+    count = get_deny_reason(currboard->filename, reason, MAXCUSTOMREASON);
+    count = edit_deny_reason(reason, count, MAXCUSTOMREASON);
+    if (count!=-1)
+        save_deny_reason(currboard->filename, reason, count);
+    return SHOW_REFRESH;
+}
