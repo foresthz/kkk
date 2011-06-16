@@ -145,7 +145,7 @@ time_t get_denied_time(const char *buf)
  *      0:添加
  *      1:修改
  */
-int deny_announce(char *uident, struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
+int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], postfile[STRLEN], title[STRLEN], title1[STRLEN], timebuf[STRLEN];
@@ -215,7 +215,7 @@ int deny_announce(char *uident, struct boardheader *bh, char *reason, int day, s
  *      0:添加
  *      1:修改
  */
-int deny_mailuser(char *uident, struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
+int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
