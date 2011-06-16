@@ -1103,7 +1103,7 @@ PHP_FUNCTION(bbs_setdenyreason)
     long b_len, s_len;
     char reason[MAXCUSTOMREASON][STRLEN];
     char *p, *q;
-    int i, count;
+    int count;
 
     if (ac!=2 || zend_parse_parameters(2 TSRMLS_CC, "ss", &board, &b_len, &str, &s_len) == FAILURE) {
         WRONG_PARAM_COUNT;
