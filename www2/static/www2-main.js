@@ -1025,6 +1025,7 @@ docWriter.prototype.f = function(rss,related,isclub) {
 	if (isBM(this.bid)) {
 		ret += '<br/>管理链接：';
 		ret += '[<a href="bbsdeny.php?board=' + this.board + '">封禁名单</a>] ';
+		ret += '[<a href="bbsdenyreason.php?board=' + this.board + '">自定封禁理由</a>] ';
 		ret += '[<a href="bbsmnote.php?board=' + this.board + '">进版画面</a>] ';
 		ret += '[<a href="bbsmvote.php?board=' + this.board + '">管理投票</a>] ';
 		if (this.man != 1) {
