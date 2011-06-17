@@ -332,7 +332,7 @@ void draw_main()
         i0=0;
         while (wFtv[i0][0]) {
             if (getnum(wFtv[i0])==month&&(wFtv[i0][3]-'0'==get_week(year,month,day))&&
-                    ((wFtv[i0][2]-'1'==day/7)||('9'-wFtv[i0][2]==(get_day(year,month)+1-day)/7))) {
+                    ((wFtv[i0][2]-'1'==day/7)||('9'-wFtv[i0][2]==(get_day(year,month)-day)/7))) {
                 strcpy(buf, wFtv[i0]+5);
                 move(23, k);
                 k+=strlen(buf)+1;
@@ -734,11 +734,25 @@ int calendar_main()
                 break;
             case KEY_LEFT:
                 day--;
-                if (day<=0) day=1;
+                if (day<=0) {
+                    month--;
+                    if (month<=0) {
+                        year--;
+                        month=12;
+                    }
+                    day=get_day(year,month);
+                }
                 break;
             case KEY_RIGHT:
                 day++;
-                if (day>get_day(year,month)) day=get_day(year,month);
+                if (day>get_day(year,month)) {
+                    month++;
+                    if (month>12) {
+                        year++;
+                        month=1;
+                    }
+                    day=1;
+                }
                 break;
             case KEY_PGUP:
                 month--;
@@ -746,6 +760,7 @@ int calendar_main()
                     year--;
                     month=12;
                 }
+                if (day>get_day(year,month)) day=get_day(year,month);
                 break;
             case KEY_PGDN:
                 month++;
@@ -753,6 +768,7 @@ int calendar_main()
                     year++;
                     month=1;
                 }
+                if (day>get_day(year,month)) day=get_day(year,month);
                 break;
             case 13:
             case 10:
