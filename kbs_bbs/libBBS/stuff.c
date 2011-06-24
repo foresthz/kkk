@@ -1898,7 +1898,8 @@ char* gettmpfilename(char *name,const char *format,...)
     va_start(ap,format);
     vsnprintf(file,STRLEN,format,ap);
     va_end(ap);
-    snprintf(buf,STRLEN,"tmp/%d/%s/%s",(int)getpid(),getCurrentUser()->userid,file);
+    int pid = (int)getpid();
+    snprintf(buf,STRLEN,"tmp/%d/%d/%s/%s",(pid&0xf),pid,getCurrentUser()->userid,file);
     for (p=&buf[4];*p;p++) {
         if (*p=='/') {
             *p=0;
