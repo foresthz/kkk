@@ -3362,3 +3362,57 @@ int write_formatted_file(const char *src, const char *dest, const char *format, 
     
     return 0;
 }
+
+/*
+ * 系统文件修改, 删除备份
+ */
+void system_file_report(char *str, char *oldfile, char *newfile, session_t *session)
+{
+    FILE *fn, *fn2;
+    char filename[STRLEN], buf[256];
+
+    gettmpfilename(filename, "system_file", getpid());
+    if((fn=fopen(filename, "w"))!=NULL){
+        fprintf(fn, "系统安全记录系统\n\x1b[32m原因：%s\x1b[m\n", str);
+        if(strstr(str, "删除系统档案")){
+            fprintf(fn, "以下是文件备份信息\n\n");
+
+            if((fn2=fopen(oldfile, "r"))!=NULL){
+                while(fgets(buf, 256, fn2)!=NULL)
+                    fputs(buf, fn);
+                fclose(fn2);
+                fprintf(fn, "\n");
+            }
+            fclose(fn);
+        }else{
+            char genbuf[STRLEN*2], filediff[STRLEN];
+            gettmpfilename(filediff, "filediff", getpid());
+            if(!dashf(oldfile)){
+                f_touch(oldfile);
+            }
+            sprintf(genbuf, "diff -u %s %s > %s", oldfile, newfile, filediff);
+            system(genbuf);
+            fprintf(fn, "以下是文件修改信息\n\n");
+
+            if((fn2=fopen(filediff, "r"))!=NULL){
+                /* 跳过前2行 */
+                fgets(buf, 256, fn2);fgets(buf, 256, fn2);
+                while(fgets(buf, 256, fn2)!=NULL){
+                    if(buf[0]=='-')
+                        fprintf(fn, "\033[1;35m%s\033[m", buf);
+                    else if(buf[0]=='+')
+                        fprintf(fn, "\033[1;36m%s\033[m", buf);
+                    else
+                        fputs(buf, fn);
+                }
+                fclose(fn2);
+                fprintf(fn, "\n");
+            }
+            fclose(fn);
+            unlink(filediff);
+        }
+        post_file(session->currentuser, "", filename, "syssecurity", str, 0, 2, session);
+        unlink(filename);
+    }
+}
+

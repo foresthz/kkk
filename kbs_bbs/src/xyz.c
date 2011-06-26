@@ -1102,6 +1102,230 @@ int x_edits(void)
     return 0;
 }
 
+/* NEW修改系统档案 */
+struct _simple_select_arg {
+    struct _select_item *items;
+    int flag;
+};
+static int systemfile_select(struct _select_def *conf)
+{
+    int pos = conf->pos;
+    if (pos == conf->item_count)
+        return SHOW_QUIT;
+    return SHOW_SELECT;
+}
+static int systemfile_show(struct _select_def *conf,int i)
+{
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    outs((char*)((arg->items[i-1]).data));
+    return SHOW_CONTINUE;
+}
+static int systemfile_title(struct _select_def *conf)
+{
+    move(0, 0);
+    clrtobot();
+    prints("\033[33m编修系统档案\033[m");
+    return SHOW_CONTINUE;
+}
+static int systemfile_key(struct _select_def *conf,int key)
+{
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    int i;
+    if (key==KEY_ESC)
+        return SHOW_QUIT;
+    for (i=0; i<conf->item_count; i++)
+        if (toupper(key)==toupper(arg->items[i].hotkey)) {
+            conf->new_pos=i+1;
+            return SHOW_SELCHANGE;
+        }
+    return SHOW_CONTINUE;
+}
+int a_edits_new(void){
+    struct _select_item sel[40];
+    struct _select_def conf;
+    struct _simple_select_arg arg;
+    POINT pts[40];
+    char menustr[40][STRLEN];
+    int i, ret, pos, ch;
+
+    static const char *e_file[] = { "../Welcome", "../vote/notes", "issue", "movie", "logout", "menu.ini", "proxyIP",
+        "mailcheck", "s_fill", "f_fill.realname", "f_fill.unit", "f_fill.address", "f_fill.telephone", "f_fill.real",
+        "f_fill.chinese", "f_fill.toomany", "f_fill.proxy", "smail", "f_fill", "../.badname", "../.badIP", "badword",
+        "sysconf.ini", "www_menu.js", "../0Announce/hotinfo", "../0Announce/systeminfo","forbm", "forcloak", "forlongid",
+        "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", "../" USER_TITLE_FILE,
+#ifdef FLOWBANNER
+        "banner",
+#endif
+#ifdef FB2KENDLINE
+        "whatdate",
+#endif
+#ifdef ZIXIA
+        "flinks.wForum",
+#endif
+        NULL
+    };
+    static const char *explain_file[] = { "Welcome", "公用备忘录", "进站欢迎档", "活动看版", "离站画面", "menu.ini",
+        "穿梭IP", "身份确认档", "注册单完成档", "注册单失败档(真实姓名)", "注册单失败档(服务单位)","注册单失败档(居住地址)",
+        "注册单失败档(联络电话)", "注册单失败档(真实资料)", "注册单失败档(中文填写)", "注册单失败档(过多的ID)",
+        "注册单失败档(不能穿梭注册)", "身份确认完成档", "身份确认失败档", "不可注册的 ID", "不可登录的 IP",
+        "系统自动过滤的词语", "sysconf.ini", "WWW主菜单", "近期热点", "系统热点", "给新任版主的信", "给隐身用户的信",
+        "给长期用户的信", "转信版和新闻组对应", "封禁理由列表", "新用户个人定制区","给新注册用户的信", "用户职务表",
+#ifdef FLOWBANNER
+        "全站流动信息",
+#endif
+#ifdef FB2KENDLINE
+        "节日信息",
+#endif
+#ifdef ZIXIA
+        "web 友情链接",
+#endif
+        NULL
+    };
+#ifdef SOURCE_PERM_CHECK
+    if (!HAS_PERM(getCurrentUser(), PERM_ADMIN)) {
+        move(3, 0);
+        clrtobot();
+        prints("抱歉, 您没有 ADMIN 权限!");
+        pressreturn();
+        return 0;
+    }
+#endif
+    modify_user_mode(ADMIN);
+    if (!check_systempasswd()) {
+        return 0;
+    }
+
+    for (i=0;;i++) {
+        sel[i].x = (i%2)? 40:2;
+        sel[i].y = i/2 + 2;
+        sel[i].hotkey = (i<10) ? '0' + i : 'A' + i - 10;
+        sel[i].type = SIT_SELECT;
+        sel[i].data = menustr[i];
+        pts[i].x = sel[i].x;
+        pts[i].y = sel[i].y;
+        if (e_file[i]==NULL) {
+            sprintf(menustr[i], "[%c] 退出", sel[i].hotkey);
+            break;
+        }
+        sprintf(menustr[i], "[%c] %s", sel[i].hotkey, explain_file[i]);
+    }
+    i++;
+    sel[i].x = -1;
+    sel[i].y = -1;
+    sel[i].hotkey = -1;
+    sel[i].type = 0;
+    sel[i].data = NULL;
+
+    arg.items = sel;
+    arg.flag = SIF_SINGLE;
+    bzero(&conf, sizeof(struct _select_def));
+    conf.item_count = i;
+    conf.item_per_page = 40;
+    conf.flag = LF_VSCROLL | LF_LOOP | LF_MULTIPAGE;
+    conf.prompt = "◆";
+    conf.item_pos = pts;
+    conf.arg = &arg;
+    conf.pos = 0;
+    conf.show_data = systemfile_show;
+    conf.show_title = systemfile_title;
+    conf.key_command = systemfile_key;
+    conf.on_select = systemfile_select;
+
+    pos = 0;
+    while (1) {
+        move(1, 0);
+        clrtobot();
+        conf.pos = pos;
+        conf.flag= LF_LOOP | LF_MULTIPAGE;
+        ret = list_select_loop(&conf);
+        pos = conf.pos;
+        if (ret==SHOW_SELECT) {
+            i=1;
+            while (1) {
+                char ans[2], genbuf[STRLEN], buf[STRLEN], secu[STRLEN];
+                sprintf(genbuf, "etc/%s", e_file[pos-1]);
+                move(t_lines - 2, 0);clrtoeol();
+                prints("%s[E.修改]%s[D.删除] \033[33m%s\033[m",
+                        i==1?"\033[32m":"\033[m", i==2?"\033[32m":"\033[m", explain_file[pos-1]);
+                ch=igetkey();
+                if (ch==KEY_RIGHT || ch==KEY_LEFT || ch==KEY_TAB) {
+                    i = (i==1) ? 2 : 1;
+                } else if (toupper(ch)=='E') {
+                    i=1;
+                } else if (toupper(ch)=='D') {
+                    i=2;
+                } else if (ch=='\n'||ch=='\r') {
+                    if (i==1) { /* 修改系统文件 */
+                        char oldfilename[STRLEN];
+                        gettmpfilename(oldfilename, "system_file_old", getpid());
+                        f_cp(genbuf, oldfilename, 0);
+                        if (vedit(genbuf, false, NULL, NULL, 0)!=-1) {
+                            move(t_lines - 2, 0);
+                            prints("%s 更新过...", explain_file[pos-1]);
+                            sprintf(buf, "edit %s", explain_file[pos-1]);
+                            bbslog("user","%s",buf);
+                            sprintf(secu, "修改系统档案：%s", explain_file[pos-1]);
+                            system_file_report(secu, oldfilename, genbuf, getSession());
+                            /* 编辑后需要重新配置的项目 */
+                            if (!strcmp(e_file[pos-1], "../Welcome")) {
+                                my_unlink("Welcome.rec");
+                            }
+#ifdef FILTER
+                            if (!strcmp(e_file[pos-1], "badword")) {
+                                my_unlink(BADWORD_IMG_FILE);
+                            }
+#endif
+                            if (!strcmp(e_file[pos-1],"../" USER_TITLE_FILE)) {
+                                load_user_title();
+                            }
+#ifdef FLOWBANNER
+                            if (!strcmp(e_file[pos-1],"banner")) {
+                                load_site_banner(0);
+                            }
+#endif
+#ifdef FB2KENDLINE
+                            if (!strcmp(e_file[pos-1],"whatdate")) {
+                                setpublicshmreadonly(0);
+                                publicshm->nextfreshdatetime = time(0);
+                                setpublicshmreadonly(0);
+                            }
+#endif
+#ifdef ZIXIA
+                            if (!strcmp(e_file[pos-1],"flinks.wForum")) {
+                                my_unlink("etc/flinks.wForum.html");
+                            }
+#endif
+                        } else {
+                            move(t_lines - 2, 0);
+                            prints("放弃修改 %s ...", explain_file[pos-1]);
+                        }
+                        my_unlink(oldfilename);
+                    } else { /* 删除系统文件 */
+                        sprintf(buf, "确定删除 %s ?[N]", explain_file[pos-1]);
+                        getdata(t_lines-1, 0, buf, ans, 2, DOECHO, NULL, true);
+                        if (toupper(ans[0])!='Y')
+                            continue;
+                        sprintf(secu, "删除系统档案：%s", explain_file[pos-1]);
+                        system_file_report(secu, genbuf, NULL, getSession());
+                        my_unlink(genbuf);
+                        move(t_lines - 2, 0);clrtoeol();
+                        prints("%s 已删除...", explain_file[pos-1]);
+                        sprintf(buf, "delete %s", explain_file[pos-1]);
+                        bbslog("user","%s",buf);
+                    }
+                    pressreturn();
+                    break;
+                } else if (ch==KEY_ESC) {
+                    break;
+                }
+            }
+        } else
+            break;
+    }
+    return 0;
+}
+/* NEW修改系统档案-END */
+
 int a_edits(void)
 {
     int aborted;

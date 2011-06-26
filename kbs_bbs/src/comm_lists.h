@@ -27,7 +27,7 @@ typedef struct _cmd_menu {
 }
 CMD_MENU;
 
-KBS_COMM_LISTS_FUNC_V(a_edits);
+KBS_COMM_LISTS_FUNC_V(a_edits_new);
 KBS_COMM_LISTS_FUNC_V(AllBoard);
 KBS_COMM_LISTS_FUNC_V(Announce);
 KBS_COMM_LISTS_FUNC_V(badlist);

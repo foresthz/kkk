@@ -7,7 +7,7 @@ KBS_COMM_LISTS_GENERATE(V,t_query_null,t_query,(NULL))
 KBS_COMM_LISTS_GENERATE(V,d_user_nul,d_user,(""))
 
 static const CMD_LIST CMD[]={
-    {"EditSFiles",          a_edits,                                0},
+    {"EditSFiles",          a_edits_new,                            0},
     {"AllBoard",            AllBoard,                               0},
     {"Announce",            Announce,                               0},
     {"BadList",             badlist,                                0},
