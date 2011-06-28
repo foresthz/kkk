@@ -3340,7 +3340,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     else
         Anony = 0;
 #ifdef NFORUM
-	if (bp->flag&BOARD_TMP_POST) use_tmpl = 1;
+	if (currboard->flag&BOARD_TMP_POST) use_tmpl = 1;
 #endif
 #ifdef FREE
 #define RAND_SIG_KEY 'X'
@@ -3414,7 +3414,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         } else if (ooo == 'P') {
             if (use_tmpl >= 0
 #ifdef NFORUM
-                    && !(bp->flag&BOARD_TMP_POST)
+                    && !(currboard->flag&BOARD_TMP_POST)
 #endif
                     )
                 use_tmpl = use_tmpl ? 0 : 1;
