@@ -3339,7 +3339,9 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         Anony = ANONYMOUS_DEFAULT;
     else
         Anony = 0;
-
+#ifdef NFORUM
+	if (bp->flag&BOARD_TMP_POST) use_tmpl = 1;
+#endif
 #ifdef FREE
 #define RAND_SIG_KEY 'X'
 #define RAND_SIG_KEYS "X"
@@ -3410,7 +3412,11 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         } else if (ooo == 'T') {
             buf4[0] = '\0';
         } else if (ooo == 'P') {
-            if (use_tmpl >= 0)
+            if (use_tmpl >= 0
+#ifdef NFORUM
+                    && !(bp->flag&BOARD_TMP_POST)
+#endif
+                    )
                 use_tmpl = use_tmpl ? 0 : 1;
             /*
             if( replymode == 0 ){
@@ -3527,9 +3533,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     if (!anonyboard)
 #endif
         modify_user_mode(POSTING);
-#ifdef NFORUM
-	if (bp->flag&BOARD_TMP_POST) use_tmpl = 1;
-#endif
+
     if (use_tmpl > 0) {
         FILE *fp,*fp1;
         char filepath1[STRLEN];
