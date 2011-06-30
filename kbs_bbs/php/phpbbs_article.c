@@ -439,6 +439,7 @@ PHP_FUNCTION(bbs_countarticles)
 {
     long brdnum;
     long mode;
+    int incl_top = 0;
     const struct boardheader *bp = NULL;
     char dirpath[STRLEN];
     int total;
@@ -448,7 +449,9 @@ PHP_FUNCTION(bbs_countarticles)
      * getting arguments
      */
     if (ac != 2 || zend_parse_parameters(2 TSRMLS_CC, "ll", &brdnum, &mode) == FAILURE) {
-        WRONG_PARAM_COUNT;
+        if (ac != 3 || zend_parse_parameters(3 TSRMLS_CC, "lll", &brdnum, &mode, &incl_top) == FAILURE) {
+            WRONG_PARAM_COUNT;
+        }
     }
     if ((bp = getboard(brdnum)) == NULL) {
         RETURN_LONG(-1);
@@ -463,7 +466,7 @@ PHP_FUNCTION(bbs_countarticles)
 
     total = get_num_records(dirpath, sizeof(struct fileheader));
     /* add by stiger */
-    if (mode == DIR_MODE_NORMAL || mode == DIR_MODE_ORIGIN) {
+    if (mode == DIR_MODE_NORMAL || incl_top) {
         sprintf(dirpath,"boards/%s/%s",bp->filename, DING_DIR);
         total += get_num_records(dirpath, sizeof(struct fileheader));
     }
@@ -488,6 +491,7 @@ PHP_FUNCTION(bbs_getarticles)
     long start;
     long num;
     long mode;
+    int incl_top = 0;
     char dirpath[STRLEN];
     char dirpath1[STRLEN]; /* add by stiger */
     int total;
@@ -504,7 +508,9 @@ PHP_FUNCTION(bbs_getarticles)
      * getting arguments
      */
     if (ac != 4 || zend_parse_parameters(4 TSRMLS_CC, "slll", &board, &blen, &start, &num, &mode) == FAILURE) {
-        WRONG_PARAM_COUNT;
+        if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sllll", &board, &blen, &start, &num, &mode, &incl_top) == FAILURE) {
+            WRONG_PARAM_COUNT;
+        }
     }
 
     /*
@@ -518,7 +524,7 @@ PHP_FUNCTION(bbs_getarticles)
     setbdir(mode, dirpath, bp->filename);
     total = get_num_records(dirpath, sizeof(struct fileheader));
     /* add by stiger */
-    if (mode == DIR_MODE_NORMAL || mode == DIR_MODE_ORIGIN) {
+    if (mode == DIR_MODE_NORMAL || incl_top) {
         sprintf(dirpath1,"boards/%s/" DING_DIR,bp->filename);
         total += get_num_records(dirpath1, sizeof(struct fileheader));
     }
@@ -542,7 +548,7 @@ PHP_FUNCTION(bbs_getarticles)
         RETURN_FALSE;
     }
     /* modified by stiger */
-    if (mode == DIR_MODE_NORMAL || mode == DIR_MODE_ORIGIN)
+    if (mode == DIR_MODE_NORMAL || incl_top)
         rows = read_get_records(dirpath, dirpath1, (char *)articles, sizeof(struct fileheader), start, num);
     else
         rows = get_records(dirpath, articles, sizeof(struct fileheader), start, num);
