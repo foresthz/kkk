@@ -116,7 +116,7 @@ int main(int argc,char* argv[])
     }
 
     /*保存累计数据*/
-    substitute_record(STATIC_COUNT_FILE,&total_st,sizeof(total_st),1);
+    substitute_record(STATIC_COUNT_FILE,&total_st,sizeof(total_st),1, NULL, NULL);
     if (now_tm.tm_hour==23) {
         /*晚上12点显示累计数据*/
         if ((fp = fopen("0Announce/bbslists/count", "w")) == NULL) {

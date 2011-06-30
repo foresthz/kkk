@@ -296,7 +296,7 @@ PHP_FUNCTION(bbs_vote_num)
     sprintf(controlfile,"vote/%s/flag.%lu",bname,vbal.opendate);
     if ((pos = search_record(controlfile, &tmpball, sizeof(tmpball),
                              (RECORD_FUNC_ARG) cmpvuid, getCurrentUser()->userid))>0) {
-        substitute_record(controlfile, &uservote, sizeof(uservote), pos);
+        substitute_record(controlfile, &uservote, sizeof(uservote), pos, NULL, NULL);
     } else {
         if (append_record(controlfile, &uservote, sizeof(uservote)) == -1)
             RETURN_LONG(-11);

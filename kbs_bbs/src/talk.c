@@ -1745,7 +1745,7 @@ int friend_edit(struct _select_def* conf,struct friends *fh,void* extraarg)
         sprintf(buf, "请输入 %s 的新好友说明: ", fh->id);
         getdata(t_lines - 2, 0, buf, nh.exp, 15, DOECHO, NULL, false);
     }
-    if (substitute_record(read_arg->direct, &nh, sizeof(nh), pos) < 0)
+    if (substitute_record(read_arg->direct, &nh, sizeof(nh), pos, NULL, NULL) < 0)
         bbslog("user","%s","Friend files subs err");
     move(t_lines - 2, 0);
     clrtoeol();

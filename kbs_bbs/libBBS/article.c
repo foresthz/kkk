@@ -682,7 +682,7 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
 
     updatelastpost(boardname);
     fileinfo->filename[0] = '\0';
-    substitute_record(dirfname, fileinfo, sizeof(*fileinfo), num);
+    substitute_record(dirfname, fileinfo, sizeof(*fileinfo), num, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
     sprintf(buf, "undeleted %s's ¡°%s¡± on %s", UFile.owner, UFile.title, boardname);
     bbslog("user", "%s", buf);
 

@@ -1083,7 +1083,7 @@ int user_vote(int num)
             search_record(fname, &tmpbal, sizeof(tmpbal),
                           (RECORD_FUNC_ARG) cmpvuid, getCurrentUser()->userid);
         if (pos) {
-            substitute_record(fname, &uservote, sizeof(uservote), pos);
+            substitute_record(fname, &uservote, sizeof(uservote), pos, NULL, NULL);
         } else if (append_record(fname, &uservote, sizeof(uservote)) == -1) {
             move(2, 0);
             clrtoeol();

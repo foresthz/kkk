@@ -836,7 +836,7 @@ PHP_FUNCTION(bbs_edittitle)
             }
         }
         if (i!=0) {
-            substitute_record(dirpath, &f, sizeof(f), ent);
+            substitute_record(dirpath, &f, sizeof(f), ent, (RECORD_FUNC_ARG) cmpname, f.filename);
             if (mode == DIR_MODE_ZHIDING)
                 board_update_toptitle(bid, true);
         }
@@ -857,7 +857,7 @@ PHP_FUNCTION(bbs_edittitle)
                     close(fd);
                 } else {
                     close(fd);
-                    substitute_record(olddirect, &f, sizeof(f), ent);
+                    substitute_record(olddirect, &f, sizeof(f), ent, (RECORD_FUNC_ARG) cmpname, f.filename);
                 }
             }
         }

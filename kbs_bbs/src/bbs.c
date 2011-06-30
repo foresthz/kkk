@@ -341,7 +341,7 @@ int top_noreply(struct _select_def* conf, struct fileheader *fileinfo)
     close(fd);
     if (i > 0) {
         fileinfo -> accessed[1] ^= FILE_READ;
-        substitute_record(arg -> dingdirect, fileinfo, sizeof(*fileinfo), ent);
+        substitute_record(arg -> dingdirect, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
         board_update_toptitle(arg -> bid, true);
         return FULLUPDATE;
     } else {
@@ -3833,10 +3833,10 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
             if (conf->pos>arg->filecount) {
                 close(fd);
                 if (i!=0)
-                    substitute_record(arg->dingdirect, fileinfo, sizeof(*fileinfo), ent);
+                    substitute_record(arg->dingdirect, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
                 board_update_toptitle(arg->bid, true);
             } else if (i!=0)
-                substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
+                substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
         }
         if (0 == i)
             return PARTUPDATE;
@@ -3856,7 +3856,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
                         close(fd);
                     } else {
                         close(fd);
-                        substitute_record(olddirect, fileinfo, sizeof(*fileinfo), ent);
+                        substitute_record(olddirect, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
                     }
                 }
                 //setboardorigin(currboard->filename, 1);
@@ -6400,14 +6400,14 @@ static int read_top_edit_title(struct _select_def *conf,struct fileheader *fh,vo
     strnzhcpy(fh->title,buf,ARTICLE_TITLE_LEN);
     setbdir(DIR_MODE_NORMAL,path,currboard->filename);
     if ((index=get_ent_from_id(DIR_MODE_NORMAL,fh->id,currboard->filename))!=0)
-        substitute_record(path,fh,sizeof(struct fileheader),index);
+        substitute_record(path,fh,sizeof(struct fileheader),index, (RECORD_FUNC_ARG) cmpname, fh->filename);
     if (fh->id==fh->groupid) {
         if (setboardorigin(currboard->filename,-1))
             board_regenspecial(currboard->filename,DIR_MODE_ORIGIN,NULL);
         else {
             setbdir(DIR_MODE_ORIGIN,path,currboard->filename);
             if ((index=get_ent_from_id(DIR_MODE_ORIGIN,fh->id,currboard->filename))!=0)
-                substitute_record(path,fh,sizeof(struct fileheader),index);
+                substitute_record(path,fh,sizeof(struct fileheader),index, (RECORD_FUNC_ARG) cmpname, fh->filename);
         }
     }
     if (fh->accessed[0]&FILE_MARKED) {
@@ -6416,7 +6416,7 @@ static int read_top_edit_title(struct _select_def *conf,struct fileheader *fh,vo
         else {
             setbdir(DIR_MODE_MARK,path,currboard->filename);
             if ((index=get_ent_from_id(DIR_MODE_MARK,fh->id,currboard->filename))!=0)
-                substitute_record(path,fh,sizeof(struct fileheader),index);
+                substitute_record(path,fh,sizeof(struct fileheader),index, (RECORD_FUNC_ARG) cmpname, fh->filename);
         }
     }
     setboardtitle(currboard->filename,1);

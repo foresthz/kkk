@@ -874,7 +874,7 @@ int read_new_mail(struct fileheader *fptr, int idc, char *direct)
             fptr->accessed[1] |= FILE_COMMEND;
         }
     }
-    if (substitute_record(direct, fptr, sizeof(*fptr), idc))
+    if (substitute_record(direct, fptr, sizeof(*fptr), idc, (RECORD_FUNC_ARG) cmpname, fptr->filename))
         return -1;
     setmailcheck(getCurrentUser()->userid);
     clear();
@@ -1123,7 +1123,7 @@ int mail_read(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         return mail_del(conf, fileinfo,NULL);
     else if ((fileinfo->accessed[0] & FILE_READ) != FILE_READ) {
         fileinfo->accessed[0] |= FILE_READ;
-        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
+        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
         setmailcheck(getCurrentUser()->userid);
     }
     if (readnext == true)
@@ -1187,7 +1187,7 @@ static int mail_reply(int ent, struct fileheader *fileinfo,char* direct)
         default:
             prints("信件已寄出\n");
             fileinfo->accessed[0] |= FILE_REPLIED;  /*added by alex, 96.9.7 */
-            substitute_record(direct, fileinfo, sizeof(*fileinfo), ent);
+            substitute_record(direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
     }
     pressreturn();
     return FULLUPDATE;
@@ -1291,7 +1291,7 @@ static int mail_edit(struct _select_def* conf, struct fileheader *fileinfo,void*
             fileinfo->eff_size = 0;
         }
         fileinfo->attachment=attachpos;
-        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
+        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
     }
 
     newbbslog(BBSLOG_USER, "edited mail '%s' ", fileinfo->title);
@@ -1326,7 +1326,7 @@ static int mail_edit_title(struct _select_def* conf, struct fileheader *fileinfo
         if ((t = strrchr(tmp,'/')) != NULL)*t='\0';
         sprintf(genbuf,"%s/%s",tmp,fileinfo->filename);
         add_edit_mark(genbuf,3,buf,getSession()); /* 3 means edit mail and title */
-        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
+        substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
         newbbslog(BBSLOG_USER, "edited mail '%s' ", fileinfo->title);
     }
     return FULLUPDATE;
@@ -1421,7 +1421,7 @@ int mail_forward_internal(int ent, struct fileheader *fileinfo, char* direct, in
             prints("文章转寄完成!\n");
             if (inmail) {
                 fileinfo->accessed[0] |= FILE_FORWARDED;        /*added by alex, 96.9.7 */
-                substitute_record(direct, fileinfo, sizeof(*fileinfo), ent);
+                substitute_record(direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
             }
             break;
         case -1:
@@ -1462,7 +1462,7 @@ int mail_mark(struct _select_def* conf, struct fileheader *fileinfo,void* extraa
         fileinfo->accessed[0] &= ~FILE_MARKED;
     else
         fileinfo->accessed[0] |= FILE_MARKED;
-    substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent);
+    substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
     return (PARTUPDATE);
 }
 
@@ -1474,7 +1474,7 @@ int mail_token(struct _select_def *conf,struct fileheader *file,void *varg)
     if (arg->mode == DIR_MODE_SUPERFITER)
         return DONOTHING;
     file->accessed[1]^=FILE_DEL;
-    substitute_record(arg->direct,file,sizeof(struct fileheader),conf->pos);
+    substitute_record(arg->direct,file,sizeof(struct fileheader),conf->pos, (RECORD_FUNC_ARG) cmpname, file->filename);
     return PARTUPDATE;
 }
 

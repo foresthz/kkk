@@ -600,7 +600,7 @@ while(0)
     int delete_record(char *dirname, int size, int ent, RECORD_FUNC_ARG filecheck, void *arg);
     int apply_record(char *filename, APPLY_FUNC_ARG fptr, int size, void *arg, int applycopy, bool reverse);
     int append_record(char *filename, void *record, int size);
-    int substitute_record(char *filename, void *rptr, int size, int id);
+    int substitute_record(char *filename, void *rptr, int size, int id, RECORD_FUNC_ARG filecheck, void *arg);
     int move_record(char *filename, int size, int id, int toid, RECORD_FUNC_ARG filecheck, void *arg);
     int search_record_back_lite(int fd, int size, int start, int num, RECORD_FUNC_ARG fptr, void *farg, void *rptr, int sorted);
     int search_record(char *filename, void *rptr, int size, RECORD_FUNC_ARG fptr, void *farg);

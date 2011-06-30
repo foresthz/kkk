@@ -505,6 +505,7 @@ int size, id, number;
 
 /* add end */
 
+#if 0
 int substitute_record(filename, rptr, size, id)
 char *filename;
 void *rptr;
@@ -563,8 +564,47 @@ int size, id;
     */
     return 0;
 }
+#endif
 
+int substitute_record(char *filename, void *rptr, int size, int id, RECORD_FUNC_ARG filecheck, void *arg)
+{
+    int fdr;
+    off_t filesize;
+    char *ptr;
+    int ret;
 
+    if (id <= 0)
+        return 0;
+    BBS_TRY {
+        if (safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &filesize, &fdr) == 0)
+            BBS_RETURN(-1);
+        ret = 0;
+        if (id * size > filesize) {
+            ret = -2;
+        } else {
+            if (filecheck) {
+                if (!(*filecheck)(ptr + (id - 1) * size, arg)) {
+                    for (id = 1; id * size <= filesize; id++)
+                        if ((*filecheck)(ptr + (id - 1) * size, arg))
+                            break;
+                    if (id * size > filesize)
+                        ret = -2;
+                }
+            }
+        }
+        if (ret == 0) {
+            memcpy(ptr + (id - 1) * size, rptr, size);
+        }
+    }
+    BBS_CATCH {
+        ret = -3;
+    }
+    BBS_END;
+    end_mmapfile(ptr, filesize, -1);
+    close(fdr);
+
+    return ret;
+}
 
 int delete_record(char *filename, int size, int id, RECORD_FUNC_ARG filecheck, void *arg)
 {

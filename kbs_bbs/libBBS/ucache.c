@@ -296,9 +296,9 @@ int flush_ucache(char *fname)
 {
     int ret;
     if (fname)
-        ret= substitute_record(fname, uidshm->passwd, MAXUSERS * sizeof(struct userec), 1);
+        ret= substitute_record(fname, uidshm->passwd, MAXUSERS * sizeof(struct userec), 1, NULL, NULL);
     else
-        ret= substitute_record(PASSFILE, uidshm->passwd, MAXUSERS * sizeof(struct userec), 1);
+        ret= substitute_record(PASSFILE, uidshm->passwd, MAXUSERS * sizeof(struct userec), 1, NULL, NULL);
     /*flush_user_title();*/
     return ret;
 }

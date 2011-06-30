@@ -810,7 +810,7 @@ void call_alias(int unum, char *msg)
                 }
             if (has) {
                 sprintf(buf, "%s %s", emoteid, arg);
-                if (substitute_record(path, buf, 128, nIdx + 1) == 0) {
+                if (substitute_record(path, buf, 128, nIdx + 1, NULL, NULL) == 0) {
                     send_to_unum(unum, "*** 自定义emote已经设定 ***");
                     strncpy(users[unum].lpEmote[nIdx], buf, 128);
                     users[unum].lpEmote[nIdx][128] = 0;
