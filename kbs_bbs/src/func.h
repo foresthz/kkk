@@ -261,6 +261,7 @@ extern "C"
     int get_deny_reason(const char *board, char denyreason[][STRLEN], int max);
     int save_deny_reason(const char *board, char denyreason[][STRLEN], int count);
     int write_formatted_file(const char *src, const char *dest, const char *format, ...);
+    void system_file_report(char *str, char *oldfile, char *newfile, session_t *session);
     int get_denied_reason(const char *buf, char *reason);
     int get_denied_operator(const char *buf, char *opt);
 #ifdef DENY_MANUAL
