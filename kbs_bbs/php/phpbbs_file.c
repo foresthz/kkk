@@ -461,7 +461,7 @@ PHP_FUNCTION(bbs_printansifile_noatt)
     int filename_len;
     long is_preview;
     char *ptr;
-    off_t ptrlen, mmap_ptrlen;
+    off_t ptrlen = 0, mmap_ptrlen;
     const int outbuf_len = 4096;
     buffered_output_t *out;
 
