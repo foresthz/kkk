@@ -280,7 +280,7 @@ int show_boardinfo(const char *bname)
     prints("\n");
 #endif /* HAVE_USERSCORE */
     prints("\033[1;33m°æÃæ°æÖ÷\033[m: %s \n", bp->BM);
-#ifdef NEWSMTH
+#if defined(NEWSMTH) && !defined(SECONSITE)
     prints("\033[1;31m°æÃæwebµØÖ·\033[m: http://%s.board.newsmth.net/ \n", bp->filename);
 #endif
     prints("\033[1;33m°æÃæ¹Ø¼ü×Ö\033[m: %s \n\n", bp->des);
