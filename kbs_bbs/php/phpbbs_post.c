@@ -1093,6 +1093,10 @@ PHP_FUNCTION(bbs_docommend)
     src_bp = getbcache(board);
     if (src_bp == NULL)
         RETURN_LONG(-1);
+    /* cannot recommend in recommend, fancyrabbit */
+    if (!strcmp(src_bp->filename, COMMEND_ARTICLE))
+        RETURN_LONG(-1);
+
     strcpy(board, src_bp->filename);
     if (!check_read_perm(u, src_bp))
         RETURN_LONG(-2);
