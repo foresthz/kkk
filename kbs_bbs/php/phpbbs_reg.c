@@ -340,6 +340,7 @@ PHP_FUNCTION(bbs_createregform)
     ud.address[STRLEN-1] = '\0';
     ud.reg_email[STRLEN-1] = '\0';
 
+#ifndef NEWSMTH
     if (strcmp(mobile_phone,"")) {
         ud.mobileregistered = true;
         strncpy(ud.mobilenumber,mobile_phone,MOBILE_NUMBER_LEN);
@@ -347,6 +348,7 @@ PHP_FUNCTION(bbs_createregform)
     } else {
         ud.mobileregistered = false;
     }
+#endif
 
 #ifdef HAVE_BIRTHDAY
     ud.birthyear=(year > 1900 && year < 2050)?(year-1900):0;
