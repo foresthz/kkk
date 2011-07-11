@@ -504,7 +504,18 @@ PHP_FUNCTION(bbs_searchtitle)
             if (ptr1[i].flags & FILE_ON_TOP) continue;
             else break; //normal article, lastreply out of range, so we can break
         }
+        // fancy Jul 11 2011, modify the behavior of mmode
+        // mmode == 1: m||g (精华帖子 by wForum)
+        // mmode == 2: m&&!g
+        // mmode == 3: g&&!m
+        // mmode == 4: m&&g (就是b)
         if (mmode && !(ptr1[i].origin.accessed[0] & FILE_MARKED) && !(ptr1[i].origin.accessed[0] & FILE_DIGEST))
+            continue;
+        else if (mmode == 2 && (ptr1[i].origin.accessed[0] & FILE_DIGEST))
+            continue;
+        else if (mmode == 3 && (ptr1[i].origin.accessed[0] & FILE_MARKED))
+            continue;
+        else if (mmode == 4 && (!(ptr1[i].origin.accessed[0] & FILE_MARKED) || !(ptr1[i].origin.accessed[0] & FILE_DIGEST)))
             continue;
         if (attach && ptr1[i].origin.attachment==0)
             continue;
