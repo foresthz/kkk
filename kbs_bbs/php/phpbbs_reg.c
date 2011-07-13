@@ -301,6 +301,7 @@ PHP_FUNCTION(bbs_createregform)
     strncpy(ud.realname, realname, NAMELEN);
     strncpy(ud.address, address, STRLEN);
     strncpy(ud.reg_email,email,STRLEN);
+    strncpy(ud.email,email,STRLEN);
 #ifdef HAVE_WFORUM
     if (!bReFill) {
         strncpy(ud.OICQ,OICQ,STRLEN);
@@ -339,6 +340,7 @@ PHP_FUNCTION(bbs_createregform)
     ud.realname[NAMELEN-1] = '\0';
     ud.address[STRLEN-1] = '\0';
     ud.reg_email[STRLEN-1] = '\0';
+    ud.email[STRLEN-1] = '\0';
 
 #ifndef NEWSMTH
     if (strcmp(mobile_phone,"")) {
