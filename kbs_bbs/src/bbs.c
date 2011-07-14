@@ -1875,7 +1875,20 @@ static int sb_prekey(struct _select_def *conf, int *key)
 
 static int sb_key(struct _select_def *conf, int key)
 {
+    const struct boardheader *bp;
+    int *result = (int *)(conf->arg);
+
     switch (key) {
+        case Ctrl('A'):
+            bp=getboard(result[conf->pos-1]);
+            if (bp==NULL) {
+                prints(" ERROR ");
+                return SHOW_CONTINUE;
+            }
+            if (bp->flag&BOARD_GROUP)
+                return SHOW_CONTINUE;
+            show_boardinfo(bp->filename);
+            return SHOW_REFRESH;
         default:
             break;
     }
@@ -2515,7 +2528,7 @@ static int select_top(void);
 
 #ifdef SHOW_SEC_TOP
 #ifdef READ_SEC_TOP
-static int select_sec_top(int secid);
+static int select_sec_top(int secid, int down);
 #endif
 
 void sec_top_endline(int secid, int selected)
@@ -2596,11 +2609,24 @@ int read_sec_top(int *retbid)
         } else if (ch==KEY_END) {
             secid = SECNUM - 1;
 #ifdef READ_SEC_TOP
-        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R' || ch==KEY_DOWN) {
+        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R' || ch==KEY_DOWN || ch==KEY_UP) {
             const struct boardheader *bh;
             int bid;
+            while (1) {
+                bid=select_sec_top(secid, ch==KEY_DOWN?1:0);
+                if (bid==-1) {
+                    secid++;
+                    if (secid>=SECNUM)
+                        secid-=SECNUM;
+                } else
+                    break;
+            }
+            if (bid==0)
+                continue;
+            /*
             if (!((bid=select_sec_top(secid))>0))
                 continue;
+            */
             /* 进入分区十大话题所在的版面... */
 #ifdef GRL_ACTIVE
             if (GRL_GS_CURR.type != GS_NONE) {
@@ -3722,6 +3748,10 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     attachpos = fileinfo->attachment;
     if (vedit_post(buf, false, &eff_size,&attachpos, public_board(currboard)) != -1) {
         int changemark=0;
+        if (ADD_EDITMARK) {
+            add_edit_mark(buf, 0, /*NULL*/ fileinfo->title,getSession());
+            get_effsize_attach(buf, (unsigned int*)&attachpos);
+        }
         if (attachpos != fileinfo->attachment) {
             fileinfo->attachment=attachpos;
             changemark |= FILE_ATTACHPOS_FLAG;
@@ -3739,8 +3769,6 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
                              fileinfo,changemark, fileinfo,dobmlog,getSession());
             free_write_dir_arg(&dirarg);
         }
-        if (ADD_EDITMARK)
-            add_edit_mark(buf, 0, /*NULL*/ fileinfo->title,getSession());
     }
     newbbslog(BBSLOG_USER, "edited post '%s' on %s", fileinfo->title, currboard->filename);
     return FULLUPDATE;
@@ -6857,7 +6885,7 @@ static int select_top(void)
 /* END -- etnlegend, 2006.05.30, 阅读十大 ... */
 
 #ifdef READ_SEC_TOP
-static int select_sec_top(int secid)
+static int select_sec_top(int secid, int down)
 {
 #define ST_UPDATE_SECTOPINFO()                                                                      \
     do{                                                                                             \
@@ -6867,12 +6895,12 @@ static int select_sec_top(int secid)
                 break;                                                                              \
             }                                                                                       \
         }                                                                                           \
-        if(!total||(stat(topfile,&st)==-1||!S_ISREG(st.st_mode))){                               \
+        if(!total||(stat(topfile,&st)==-1||!S_ISREG(st.st_mode))){                                  \
             move(t_lines-1,0);                                                                      \
             clrtoeol();                                                                             \
             prints("\033[1;31;47m\t%s\033[K\033[m","本分区目前尚无十大热门话题, 按回车键继续...");  \
             WAIT_RETURN;                                                                            \
-            return -1;                                                                              \
+            return 0;                                                                               \
         }                                                                                           \
     }while(0)
     struct stat st;
@@ -6880,9 +6908,9 @@ static int select_sec_top(int secid)
     unsigned int version;
     char topfile[STRLEN];
     sprintf(topfile, "etc/posts/day_sec_%s", seccode[secid]);
-    index = 0;
     update = 1;
     ST_UPDATE_SECTOPINFO();
+    index = down?0:total-1;
     do {
         if (update) {
             ansimore(topfile, 0);
@@ -6983,6 +7011,9 @@ static int select_sec_top(int secid)
                         }
                         update=1;
                         break;
+                    /* tab键直接切换至查看下一分区 */
+                    case KEY_TAB:
+                        return -1;
                     case 'H':
                         clear();
                         move(10, 10);

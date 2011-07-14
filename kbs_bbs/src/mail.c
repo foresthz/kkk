@@ -2357,6 +2357,33 @@ int doforward(char *direct, struct fileheader *fh)
          */
     }
 
+    /* 如果带有附件，选择是否连同附件一起转寄, jiangjun, 20110708 */
+    struct fileheader finfo;
+    memcpy(&finfo, fh, sizeof(struct fileheader));
+    if (finfo.attachment) {
+        if (askyn("您转寄的文章包含附件，是否连同附件一起转寄", 1) == 0) {
+            FILE *fin, *fout;
+            char buf[256];
+            int size;
+            gettmpfilename(tmp_buf, "forward.no.attach");
+            if (!(fin=fopen(fname,"r")))
+                return -1;
+            if (!(fout=fopen(tmp_buf,"w"))) {
+                fclose(fin);
+                return -1;
+            }
+            while ((size=-attach_fgets(buf,256,fin))) {
+                if (size<0)
+                    fprintf(fout,"%s",buf);
+                else
+                    break;
+            }
+            fclose(fin);
+            fclose(fout);
+            f_mv(tmp_buf, fname);
+            finfo.attachment = 0;
+        }
+    }
 
 
 
@@ -2398,7 +2425,7 @@ int doforward(char *direct, struct fileheader *fh)
                 mail_file(getCurrentUser()->userid, fname, getCurrentUser()->userid, title, BBSPOST_COPY, NULL);
                 return -4;
             }
-            return_no = mail_file(getCurrentUser()->userid, fname, lookupuser->userid, title, BBSPOST_COPY, fh);
+            return_no = mail_file(getCurrentUser()->userid, fname, lookupuser->userid, title, BBSPOST_COPY, &finfo);
             /* fancyrabbit Jun 5 2007 转寄信件保存到发件箱，F 判断太多就不判断了，按设置来吧 ...*/
             if (HAS_MAILBOX_PROP(&uinfo, MBP_SAVESENTMAIL) && strcmp(lookupuser -> userid, getCurrentUser() -> userid))
                 mail_file_sent(lookupuser -> userid, fname, getCurrentUser()->userid, title, BBSPOST_COPY, getSession());

@@ -879,12 +879,12 @@ PHP_FUNCTION(bbs_doforward)
     int board_len,filename_len,tit_len,target_len;
     const struct boardheader *bh;
     char fname[STRLEN];
-    long big5,noansi;
+    long big5,noansi,noattach;
     char title[512];
     struct userec *u;
     int ret;
 
-    if (ZEND_NUM_ARGS() != 6 || zend_parse_parameters(6 TSRMLS_CC, "ssssll", &board, &board_len,&filename, &filename_len, &tit, &tit_len, &target, &target_len, &big5, &noansi) != SUCCESS) {
+    if (ZEND_NUM_ARGS() != 7 || zend_parse_parameters(7 TSRMLS_CC, "sssslll", &board, &board_len,&filename, &filename_len, &tit, &tit_len, &target, &target_len, &big5, &noansi, &noattach) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
 
@@ -911,19 +911,44 @@ PHP_FUNCTION(bbs_doforward)
     if (!file_exist(fname))
         RETURN_LONG(-7);
 
+    /* 不转寄附件 */
+    if (noattach) {
+        FILE *fin, *fout;
+        char tmpfile[STRLEN], buf[256];
+        int size;
+        gettmpfilename(tmpfile, "forward.no.attach");
+        if (!(fin=fopen(fname,"r")))
+            RETURN_LONG(-1);
+        if (!(fout=fopen(tmpfile,"w"))) {
+            fclose(fin);
+            RETURN_LONG(-1);
+        }
+        while ((size=-attach_fgets(buf,256,fin))) {
+            if (size<0)
+                fprintf(fout,"%s",buf);
+            else
+                break;
+        }
+        fclose(fin);
+        fclose(fout);
+        strcpy(fname, tmpfile);
+    }
     snprintf(title, 511, "%.50s(转寄)", tit);
 
     if (!strchr(target, '@')) {
         mail_file(getCurrentUser()->userid, fname, u->userid, title,0, NULL);
-        RETURN_LONG(1);
+        ret = 1;;
     } else {
         if (big5 == 1)
             conv_init(getSession());
         if (bbs_sendmail(fname, title, target, big5, noansi, getSession()) == 0) {
-            RETURN_LONG(1);
+            ret = 1;
         } else
-            RETURN_LONG(-10);
+            ret = -10;
     }
+    if (noattach)
+        unlink(fname);
+    RETURN_LONG(ret);
 }
 
 /**

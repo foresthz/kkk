@@ -312,6 +312,9 @@ int mail_file(char *fromid, char *tmpfile, char *userid, char *title, int unlink
     memset(&newmessage, 0, sizeof(newmessage));
     if (fh) {
         newmessage.attachment=fh->attachment;
+    } else {
+        get_effsize_attach(tmpfile, &newmessage.attachment);
+        //newmessage.attachment=get_attachment(tmpfile, NULL);
     }
     strcpy(buf, fromid);        /* Leeward 98.04.14 */
     strncpy(newmessage.owner, buf, OWNER_LEN);
