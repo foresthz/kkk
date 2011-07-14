@@ -47,6 +47,13 @@
 			<input type="text" name="target" size="40" maxlength="69" id="sselect" value="<?php echo $currentuser["email"];?>"><br/>
 			<input type="checkbox" name="big5" id="big5" value="1"/><label for="big5" class="clickable">使用BIG5码</label>
 			<input type="checkbox" name="noansi" id="noansi" value="1" checked /><label for="noansi" class="clickable">过滤ANSI控制符</label>
+<?php
+if ($articles[1]["ATTACHPOS"]) {
+?>
+			<input type="checkbox" name="noattach" id="noattach" value="1"/><label for="noattach" class="clickable">不包含附件</label>
+<?php
+}
+?>
 		</div>
 	</fieldset>
 	<div class="oper"><input type="submit" value="确定转寄"></div>
@@ -72,7 +79,13 @@
 			$noansi=0;
 		settype($noansi, "integer");
 
-		$ret = bbs_doforward($brdarr["NAME"], $articles[1]["FILENAME"], $articles[1]["TITLE"], $target, $big5, $noansi);
+		if( isset($_POST["noattach"]) )
+			$noattach = $_POST["noattach"];
+		else
+			$noattach=0;
+		settype($noansi, "integer");
+
+		$ret = bbs_doforward($brdarr["NAME"], $articles[1]["FILENAME"], $articles[1]["TITLE"], $target, $big5, $noansi, $noattach);
 		if($ret < 0)
 			html_error_quit("系统错误:".$ret);
 		
