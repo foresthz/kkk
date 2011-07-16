@@ -916,7 +916,7 @@ PHP_FUNCTION(bbs_autopass)
     FILE *fh, *fout;
 
     struct userdata ud;
-    struct userec *user;
+    struct userec *user, *user_sysop;
 
     int ac = ZEND_NUM_ARGS();
 
@@ -986,7 +986,14 @@ PHP_FUNCTION(bbs_autopass)
                 fprintf(fout, "----\n");
                 fclose(fout);
             }
+
+            getuser("SYSOP", user_sysop);
+            setcurrentuser(user_sysop);
+            mail_file("SYSOP", "etc/s_fill", user->userid, "恭禧你，你已经完成注册。", BBSPOST_LINK, NULL);
+            sprintf(buf, "自动处理程序[手机] 让 %s 通过身份确认.", user->userid);
+            securityreport(buf, user, fdata, getSession());
             bbslog("user","%s","new account from mobile reg");
+            
 
             sethomefile(buf, user->userid, "pre_register");
             unlink(buf);
