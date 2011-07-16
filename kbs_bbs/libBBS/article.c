@@ -2381,7 +2381,8 @@ int get_effsize_attach(char *ffn, unsigned int *att)
             k--;
             p++;
         }
-    }
+    } else
+        return 0;
     end_mmapfile((void *) op, fsize, -1);
     return abssize;
 }
