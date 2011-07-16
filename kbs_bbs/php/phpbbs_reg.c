@@ -947,7 +947,7 @@ PHP_FUNCTION(bbs_autopass)
                 }
             }
         } else {
-            close(fh);
+            fclose(fh);
             memset(&ud,0,sizeof(ud));
             if (read_user_memo(user->userid, &(getSession()->currentmemo)) <= 0) RETURN_LONG(-2);
 
