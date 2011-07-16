@@ -904,46 +904,96 @@ PHP_FUNCTION(bbs_autopass)
 {
     char* userid;
     int userid_len;
-    char* realname;
-    int realname_len;
-    char* number;
-    int number_len;
-    char* dept;
-    int dept_len;
-    char genbuf[STRLEN];
+
+    const char *field[] = { "usernum", "userid", "realname", "career",
+        "addr", "phone", "birth", "IP", NULL
+    };
+    const char *finfo[] = { "帐号位置", "申请代号", "真实姓名", "服务单位",
+        "目前住址", "联络电话", "生    日", "注册 IP ", NULL
+    };
+    char buf[PATHLEN], fdata[STRLEN][9], *ptr;
+    int n;
+    FILE *fh, *fout;
 
     struct userdata ud;
+    struct userec *user;
 
     int ac = ZEND_NUM_ARGS();
 
 
-    if (ac != 4 || zend_parse_parameters(4 TSRMLS_CC, "ssss", &userid, &userid_len,&realname,&realname_len,&number,&number_len,&dept,&dept_len) == FAILURE) {
+    if (ac != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
 
-    if (userid_len > IDLEN || realname_len > NAMELEN || dept_len > STRLEN)
+    if (userid_len > IDLEN)
         RETURN_LONG(-1);
 
-    memset(&ud,0,sizeof(ud));
-    if (read_user_memo(userid, &(getSession()->currentmemo)) <= 0) RETURN_LONG(-2);
 
-    if (read_userdata(userid,&ud) < 0)RETURN_LONG(-2);
+    if (!getuser(userid, &user))
+        RETURN_LONG(-2);
 
-    strncpy(ud.realname, realname, NAMELEN);
-    strncpy(ud.address,dept,STRLEN);
-    sprintf(genbuf,"%s#%s#%s#TH",realname,number,dept);
-    if (strlen(genbuf) >= STRLEN - 16) //too long
-        sprintf(genbuf,"%s#%s#TH",realname,number);//must < STRLEN - 16
-    strncpy(ud.realemail,genbuf,STRLEN-16);
+    memset(fdata, 0, sizeof(fdata));
+    sethomefile(buf, user->userid, "pre_register");
+    if (!(fh = fopen(buf, "r")))
+        RETURN_LONG(-2);
+    while (fgets(buf, STRLEN, fh)) {
+        if ((ptr = (char *) strstr(buf, ": ")) != NULL) {
+            *ptr = '\0';
+            for (n = 0; field[n] != NULL; n++) {
+                if (strcmp(buf, field[n]) == 0) {
+                    strcpy(fdata[n], ptr + 2);
+                    if ((ptr = (char *) strchr(fdata[n], '\n')) != NULL)
+                        *ptr = '\0';
+                }
+            }
+        } else {
+            close(fh);
+            memset(&ud,0,sizeof(ud));
+            if (read_user_memo(user->userid, &(getSession()->currentmemo)) <= 0) RETURN_LONG(-2);
 
-    memcpy(&((getSession()->currentmemo)->ud), &ud, sizeof(ud));
-    end_mmapfile((getSession()->currentmemo), sizeof(struct usermemo), -1);
+            if (read_userdata(user->userid,&ud) < 0)RETURN_LONG(-2);
 
-    if (write_userdata(userid,&ud) < 0)RETURN_LONG(-2);
+            sprintf(buf,"%s#%s@手机",fdata[3],fdata[5]);
+            if (strlen(buf) >= STRLEN - 16) //too long
+                sprintf(buf,"%s@手机",fdata[5]);//must < STRLEN - 16
+            strncpy(ud.realemail,buf,STRLEN-16);
 
-    bbslog("user","%s","new account from tsinghua www");
+            memcpy(&((getSession()->currentmemo)->ud), &ud, sizeof(ud));
+            end_mmapfile((getSession()->currentmemo), sizeof(struct usermemo), -1);
 
-    RETURN_LONG(0);
+            if (write_userdata(user->userid,&ud) < 0)RETURN_LONG(-2);
+
+            sethomefile(buf, user->userid, "register");
+            if ((fout = fopen(buf, "w")) != NULL) {
+                for (n = 0; field[n] != NULL; n++)
+                    fprintf(fout, "%s     : %s\n", finfo[n], fdata[n]);
+                fprintf(fout, "您的昵称     : %s\n", user->username);
+                fprintf(fout, "电子邮件信箱 : %s\n", ud.email);
+                fprintf(fout, "真实 E-mail  : %s\n", ud.realemail);
+                fprintf(fout, "注册日期     : %s\n", ctime(&(user->firstlogin)));
+                fprintf(fout, "Approved: SYSOP\n");
+                fclose(fout);
+            }
+
+            if ((fout = fopen("register.list", "a")) != NULL) {
+                time_t now;
+
+                for (n = 0; field[n] != NULL; n++)
+                    fprintf(fout, "%s: %s\n", field[n], fdata[n]);
+                now = time(NULL);
+                fprintf(fout, "Date: %s\n", Ctime(now));
+                fprintf(fout, "Approved: SYSOP\n");
+                fprintf(fout, "----\n");
+                fclose(fout);
+            }
+            bbslog("user","%s","new account from mobile reg");
+
+            sethomefile(buf, user->userid, "pre_register");
+            unlink(buf);
+            RETURN_LONG(0);
+        }
+    }
+    RETURN_LONG(-2);
 }
 
 #endif /* defined(NEWSMTH) && defined(HAVE_ACTIVATION) */
