@@ -367,6 +367,7 @@ PHP_FUNCTION(bbs_createregform)
 #ifdef NEWSMTH
         char buf[PATHLEN];
         sethomefile(buf, userid, "pre_register");
+        fn = fopen(buf, "w");
 #else
         fn = fopen("pre_register", "a");
 #endif
