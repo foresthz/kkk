@@ -971,6 +971,8 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
                             if (seek_MemMoreLines(&l, i) <
                                     0)
                                 break;
+                            if (l.currty == LINE_ATTACHMENT || l.currty == LINE_ATTACHLINK || l.currty == LINE_ATTACHALLLINK)
+                                continue;
                             memcpy(buf, l.curr,
                                    (l.currlen >=
                                     256) ? 255 : l.currlen);
