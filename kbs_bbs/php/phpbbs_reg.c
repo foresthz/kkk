@@ -342,7 +342,6 @@ PHP_FUNCTION(bbs_createregform)
     ud.reg_email[STRLEN-1] = '\0';
     ud.email[STRLEN-1] = '\0';
 
-#ifndef NEWSMTH
     if (strcmp(mobile_phone,"")) {
         ud.mobileregistered = true;
         strncpy(ud.mobilenumber,mobile_phone,MOBILE_NUMBER_LEN);
@@ -350,7 +349,6 @@ PHP_FUNCTION(bbs_createregform)
     } else {
         ud.mobileregistered = false;
     }
-#endif
 
 #ifdef HAVE_BIRTHDAY
     ud.birthyear=(year > 1900 && year < 2050)?(year-1900):0;
@@ -365,9 +363,14 @@ PHP_FUNCTION(bbs_createregform)
     write_userdata(userid, &ud);
 
     sprintf(genbuf,"%ld.%ld.%ld",year,month,day);
-    if (bAuto)
+    if (bAuto) {
+#ifdef NEWSMTH
+        char buf[PATHLEN];
+        sethomefile(buf, userid, "pre_register");
+#else
         fn = fopen("pre_register", "a");
-    else
+#endif
+    } else
         fn = fopen("new_register", "a");
 
     if (fn) {
