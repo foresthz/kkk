@@ -911,7 +911,7 @@ PHP_FUNCTION(bbs_autopass)
     const char *finfo[] = { "帐号位置", "申请代号", "真实姓名", "服务单位",
         "目前住址", "联络电话", "生    日", "注册 IP ", NULL
     };
-    char buf[PATHLEN], fdata[STRLEN][9], *ptr;
+    char buf[PATHLEN], fdata[9][STRLEN], *ptr;
     int n;
     FILE *fh, *fout;
 
@@ -987,8 +987,8 @@ PHP_FUNCTION(bbs_autopass)
                 fclose(fout);
             }
 
-            getuser("SYSOP", user_sysop);
-            setcurrentuser(user_sysop);
+            getuser("SYSOP", &user_sysop);
+            setCurrentUser(user_sysop);
             mail_file("SYSOP", "etc/s_fill", user->userid, "恭禧你，你已经完成注册。", BBSPOST_LINK, NULL);
             sprintf(buf, "自动处理程序[手机] 让 %s 通过身份确认.", user->userid);
             securityreport(buf, user, fdata, getSession());
