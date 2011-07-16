@@ -932,6 +932,9 @@ PHP_FUNCTION(bbs_autopass)
     if (!getuser(userid, &user))
         RETURN_LONG(-2);
 
+    if (!(user->flags & ACTIVATED_FLAG)) {
+        RETURN_LONG(-3);
+
     memset(fdata, 0, sizeof(fdata));
     sethomefile(buf, user->userid, "pre_register");
     if (!(fh = fopen(buf, "r")))
