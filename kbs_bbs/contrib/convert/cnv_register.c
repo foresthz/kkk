@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
     writew_lock(fileno(fin), 0, SEEK_SET, 0);
 	while(!exit){
-	    for(i = 0; i < 8;i++)
+	    for(i = 0; i < 9;i++)
 		{
             if(fgets(genbuf[i], 256, fin) == NULL){
 			    exit = 1;
@@ -60,14 +60,14 @@ int main(int argc, char **argv)
 			}
 			if((now - uc->firstlogin) > REGISTER_WAIT_TIME)
 			{
-            		for(i = 0; i < 8;i++)fputs(genbuf[i],fout2);
+            		for(i = 0; i < 9;i++)fputs(genbuf[i],fout2);
 			}
 			else{
 				goonsearch=0;
-            			for(i = 0; i < 8;i++)fputs(genbuf[i],fout1);
+            			for(i = 0; i < 9;i++)fputs(genbuf[i],fout1);
 			}
 		}else{
-			for(i = 0;i< 8; i++)fputs(genbuf[i],fout1);
+			for(i = 0;i< 9; i++)fputs(genbuf[i],fout1);
 		}
     }
 //    rewind(fout1);
