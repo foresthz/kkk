@@ -6,7 +6,7 @@
 
 #define MAX_COMMEND 5
 
-int gen_commend_xml(void)
+int gen_commend_xml(const char *bname, const char *fn, int max)
 {
     int dirfd;
     FILE *fp;
@@ -23,14 +23,14 @@ int gen_commend_xml(void)
     char *c;
     struct boardheader *bh;
 
-    setbfile(dirpath, COMMEND_ARTICLE, DIGEST_DIR);
+    setbfile(dirpath, bname, DIGEST_DIR);
     if (stat(dirpath, &st) < 0)
         return -1;
     numrecords = st.st_size / sizeof(struct fileheader) ;
     if (numrecords <= 0)
         return -1;
 
-    if ((fp = fopen("xml/commend.xml", "w")) == NULL)
+    if ((fp = fopen(fn, "w")) == NULL)
         return -1;
 
     fprintf(fp, "<?xml version=\"1.0\" encoding=\"GBK\"?>\n");
@@ -38,14 +38,14 @@ int gen_commend_xml(void)
 
     dirfd = open(dirpath, O_RDONLY);
     if (dirfd >= 0) {
-        if (numrecords > MAX_COMMEND)
-            lseek(dirfd, sizeof(struct fileheader)*(numrecords - MAX_COMMEND), SEEK_SET);
+        if (numrecords > max)
+            lseek(dirfd, sizeof(struct fileheader)*(numrecords - max), SEEK_SET);
 
-        numrecords -= MAX_COMMEND;
+        numrecords -= max;
 
         while (read(dirfd, &dirfh, sizeof(dirfh)) >= sizeof(dirfh)) {
 
-            setbfile(dirfile, COMMEND_ARTICLE, dirfh.filename);
+            setbfile(dirfile, bname, dirfh.filename);
 
             if ((fp1=fopen(dirfile, "r"))==NULL)
                 continue;
@@ -56,7 +56,7 @@ int gen_commend_xml(void)
             fprintf(fp, "<title>%s</title>\n", encode_url(url_buf,encode_xml(xml_buf, dirfh.title, sizeof(xml_buf)),sizeof(url_buf)));
             fprintf(fp, "<author>%s</author>\n", encode_url(url_buf,dirfh.owner,sizeof(url_buf)));
             fprintf(fp, "<time>%ld</time>\n", get_posttime(&dirfh));
-            fprintf(fp, "<board>%s</board>\n", encode_url(url_buf,COMMEND_ARTICLE,sizeof(url_buf)));
+            fprintf(fp, "<board>%s</board>\n", encode_url(url_buf,bname,sizeof(url_buf)));
             fprintf(fp, "<id>%d</id>\n", dirfh.id);
             fprintf(fp, "<groupid>%d</groupid>\n", dirfh.groupid);
             bh = (struct boardheader *) getboard(dirfh.o_bid);
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 {
     chdir(BBSHOME);
     resolve_boards();
-    gen_commend_xml();
+    gen_commend_xml(COMMEND_ARTICLE, "xml/commend.xml", MAX_COMMEND);
     return 0;
 }
 #else
