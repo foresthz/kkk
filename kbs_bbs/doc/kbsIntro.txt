@@ -129,8 +129,6 @@ typedef struct fileheader {
 libBBS/article.c upload_post_append() 和 get_mimetype() 函数
 
 fancyrabbit 2011.07.02: attachment字段实际设成了ftell + 1，所以和 att.php 的 pos 参数相差 7 而不是 8。
-然后如果帖子的 editmark 有变化的话，fh->attachment 的值是错误的。建议参考 ea_locate 之类的函数，不要依赖于 fh->attachment。
-如果哪天修好了的话再说吧。
 
 
 1.5 .BOARDS 文件，boardheader 结构
