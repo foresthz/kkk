@@ -10,6 +10,17 @@
 
 #ifdef NEWPOSTSTAT
 
+#ifdef NEWSMTH
+char *myfile[] = { "day", "week", "month", "year", "bless", "pic" };
+int mytop[] = { 10, 50, 100, 100, 10, 10 };
+char *mytitle[] = { "日十大热门话题",
+                    "周五十大热门话题",
+                    "月百大热门话题",
+                    "年度百大热门话题",
+                    "日十大衷心祝福",
+                    "日十大热门图片"
+                  };
+#else
 char *myfile[] = { "day", "week", "month", "year", "bless" };
 int mytop[] = { 10, 50, 100, 100, 10 };
 char *mytitle[] = { "日十大热门话题",
@@ -18,6 +29,7 @@ char *mytitle[] = { "日十大热门话题",
                     "年度百大热门话题",
                     "日十大衷心祝福"
                   };
+#endif
 
 #define TOPCOUNT 100
 #define SECTOPCOUNT 10
@@ -80,7 +92,7 @@ static char * get_file_name(char *boardname, int threadid, char *fname)
     struct fileheader fh;
 
     fname[0]='\0';
-    sprintf(dirfile, "boards/%s/.DIR", boardname);
+    setbdir(DIR_MODE_NORMAL, dirfile, boardname);
     if ((fd = open(dirfile, O_RDWR, 0644)) < 0)
         return fname;
 
@@ -94,14 +106,14 @@ static char * get_file_name(char *boardname, int threadid, char *fname)
     return fname;
 }
 
-static char * get_file_info(char *boardname, int threadid, char *title, char *userid, char *filename)
+static char * get_file_info(char *boardname, int threadid, char *title, char *userid, char *filename, int pic)
 {
 
     char dirfile[256];
     int fd;
     struct fileheader fh;
 
-    sprintf(dirfile, "boards/%s/.DIR", boardname);
+    setbdir(DIR_MODE_NORMAL, dirfile, boardname);
     if ((fd = open(dirfile, O_RDWR, 0644)) < 0)
         return NULL;
 
@@ -118,6 +130,70 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
         return NULL;
     }
 #endif /* NEWSMTH */
+
+    if (pic) {
+        if (!fh.attachment) {
+            return NULL;
+        } else {
+            // 读取楼主的第一个附件，判断是否为图片，是则输出该图以备缩略之用，否则返回NULL
+            char fn[PATHLEN];
+            char mime[STRLEN];
+            size_t pos;
+            int fd_pic;
+            char *src, *dst;
+            off_t size_src, size_dst;
+            struct ea_attach_info ai; // 借用一下
+
+            setbfile(fn, boardname, fh.filename);
+            if ((fd = open(fn, O_RDONLY)) == -1)
+                return NULL;
+            if (readw_lock(fd, 0, SEEK_SET, 0) == -1) {
+                close(fd);
+                return NULL;
+            }
+            if (safe_mmapfile_handle(fd, PROT_READ, MAP_PRIVATE, &src, &size_src) == 0) {
+                un_lock(fd, 0, SEEK_SET, 0);
+                close(fd);
+                return NULL;
+            }
+            pos = fh.attachment + ATTACHMENT_SIZE - 1;
+            strcpy(ai.name, src + pos);
+            pos += strlen(ai.name) + 1;
+            memcpy(&ai.size, src + pos, sizeof(int));
+            ai.size = ntohl(ai.size);
+            pos += sizeof(int);
+
+            sprintf(mime, "%s", get_mime_type(ai.name));
+            // 是否图片？
+            if (memcmp(mime, "image/", 6)) {
+                end_mmapfile(src, size_src, -1);
+                un_lock(fd, 0, SEEK_SET, 0);
+                close(fd);
+                return NULL;
+            }
+            sprintf(fn, "hotpic/%s_%d", boardname, threadid);
+            if ((fd_pic = open(fn, O_RDWR | O_CREAT, 0600)) == -1) {
+                end_mmapfile(src, size_src, -1);
+                un_lock(fd, 0, SEEK_SET, 0);
+                close(fd);
+                return NULL;
+            }
+            ftruncate(fd_pic, ai.size);
+            if (safe_mmapfile_handle(fd_pic, PROT_WRITE, MAP_SHARED, &dst, &size_dst) == 0) {
+                close(fd_pic);
+                un_lock(fd, 0, SEEK_SET, 0);
+                close(fd);
+                return NULL;
+            }
+            printf("board: %s title: %s pos: %ld\n", boardname, fh.title, pos);
+            memcpy(dst, src + pos, ai.size);
+            end_mmapfile(dst, size_dst, -1);
+            end_mmapfile(src, size_src, -1);
+            close(fd_pic);
+            un_lock(fd, 0, SEEK_SET, 0);
+            close(fd);
+        }
+    }
 
     strncpy(title, fh.title, 80);
     title[80]=0;
@@ -271,7 +347,7 @@ int get_top(int type)
 
     topnum = 0;
 
-    if (type < 0 || type > 4)
+    if (type < 0 || type > 5)
         return 0;
 
     mysql_init(&s);
@@ -280,7 +356,7 @@ int get_top(int type)
         return 0;;
     }
 
-    if (type==0 || type==4) {
+    if (type==0 || type==4 || type == 5) {
         //sprintf(cmptime,"YEAR(time)=YEAR(CURDATE()) AND MONTH(time)=MONTH(CURDATE()) AND DAYOFMONTH(time)=DAYOFMONTH(CURDATE())");
         sprintf(cmptime,"time>curdate()");
     } else if (type==1) {
@@ -312,7 +388,7 @@ int get_top(int type)
         if (start > MAXCMP)
             break;
 
-        if (type==0 || type==4)
+        if (type==0 || type==4 || type == 5)
             sprintf(sqlbuf,"SELECT bname,threadid,MAX(UNIX_TIMESTAMP(time)) AS maxtime,count(DISTINCT userid) AS count FROM postlog WHERE %s GROUP BY bname,threadid ORDER BY count desc LIMIT %d,%d;", cmptime, start, INTERVAL);
         else
             sprintf(sqlbuf,"SELECT bname,threadid,UNIX_TIMESTAMP(time),count,title,userid FROM toplog WHERE %s ORDER BY count desc LIMIT %d,%d",cmptime,start, INTERVAL);
@@ -339,7 +415,7 @@ int get_top(int type)
             if (!normal_board(bh->filename))
                 continue;
 #ifdef BLESS_BOARD
-            if (type==0) {
+            if (type==0 || type == 5) {
                 if (! strcasecmp(row[0], BLESS_BOARD)) {
                     continue;
                 }
@@ -356,8 +432,8 @@ int get_top(int type)
                 continue;
 
             threadid = atoi(row[1]);
-            if (type==0 || type==4) {
-                if (get_file_info(row[0], threadid, title, userid, filename) == NULL) {
+            if (type==0 || type==4 || type == 5) {
+                if (get_file_info(row[0], threadid, title, userid, filename, (type == 5)) == NULL) {
                     continue;
                 }
             } else {
