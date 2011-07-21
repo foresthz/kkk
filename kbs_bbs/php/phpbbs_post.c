@@ -277,7 +277,7 @@ PHP_FUNCTION(bbs_attachment_del)
         update_index_attpos(brd, ent, &f, ai[0].offset);
     }
 }
-
+#ifdef NFORUM
 PHP_FUNCTION(bbs_file_attachment_list)
 {
     struct ea_attach_info ai[MAXATTACHMENTCOUNT];
@@ -302,7 +302,7 @@ PHP_FUNCTION(bbs_file_attachment_list)
     }    
 
 }
-
+#endif
 PHP_FUNCTION(bbs_attachment_list)
 {
     struct ea_attach_info ai[MAXATTACHMENTCOUNT];
