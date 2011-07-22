@@ -12,13 +12,13 @@
 
 #ifdef NEWSMTH
 char *myfile[] = { "day", "week", "month", "year", "bless", "pic" };
-int mytop[] = { 10, 50, 100, 100, 10, 10 };
+int mytop[] = { 10, 50, 100, 100, 10, 11 };
 char *mytitle[] = { "日十大热门话题",
                     "周五十大热门话题",
                     "月百大热门话题",
                     "年度百大热门话题",
                     "日十大衷心祝福",
-                    "日十大热门图片"
+                    "日十一大热门图片"
                   };
 #else
 char *myfile[] = { "day", "week", "month", "year", "bless" };
@@ -140,7 +140,7 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
             char mime[STRLEN];
             size_t pos;
             int fd_pic;
-            char *src, *dst;
+            char *src, *dst, *dot;
             off_t size_src, size_dst;
             struct ea_attach_info ai; // 借用一下
 
@@ -163,9 +163,10 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
             ai.size = ntohl(ai.size);
             pos += sizeof(int);
 
+            dot = strrchr(ai.name, '.');
             sprintf(mime, "%s", get_mime_type(ai.name));
             // 是否图片？
-            if (memcmp(mime, "image/", 6)) {
+            if (get_attachment_type_from_ext(dot) != ATTACH_IMG) {
                 end_mmapfile(src, size_src, -1);
                 un_lock(fd, 0, SEEK_SET, 0);
                 close(fd);
@@ -185,7 +186,7 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
                 close(fd);
                 return NULL;
             }
-            printf("board: %s title: %s pos: %ld\n", boardname, fh.title, pos);
+            printf("HOTPIC: %s_%d\n", boardname, threadid);
             memcpy(dst, src + pos, ai.size);
             end_mmapfile(dst, size_dst, -1);
             end_mmapfile(src, size_src, -1);
