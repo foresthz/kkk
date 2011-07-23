@@ -1004,7 +1004,7 @@ static int getcross(const char *filepath,const char *quote_file,struct userec *u
 }
 
 #ifdef COMMEND_ARTICLE
-int post_commend(struct userec *user, const char *fromboard, struct fileheader *fileinfo)
+static int post_commend_core(struct userec *user, const char *fromboard, const char *toboard, struct fileheader *fileinfo)
 {                               /* ÍÆ¼ö */
     struct fileheader postfile;
     char filepath[STRLEN];
@@ -1015,13 +1015,13 @@ int post_commend(struct userec *user, const char *fromboard, struct fileheader *
 
     memset(&postfile, 0, sizeof(postfile));
 
-    setbfile(filepath, COMMEND_ARTICLE, "");
+    setbfile(filepath, toboard, "");
 
     if ((aborted = GET_POSTFILENAME(postfile.filename, filepath)) != 0) {
         return -1;
     }
 
-    setbfile(filepath, COMMEND_ARTICLE, postfile.filename);
+    setbfile(filepath, toboard, postfile.filename);
     setbfile(oldfilepath, fromboard, fileinfo->filename);
 
     if (f_cp(oldfilepath, filepath, 0) < 0)
@@ -1042,7 +1042,7 @@ int post_commend(struct userec *user, const char *fromboard, struct fileheader *
     postfile.replycount = 1;
 #endif /* HAVE_REPLY_COUNT */
 
-    setbfile(buf, COMMEND_ARTICLE, DOT_DIR);
+    setbfile(buf, toboard, DOT_DIR);
 
     if ((fd = open(buf, O_WRONLY | O_CREAT, 0664)) == -1) {
         err = 1;
@@ -1050,7 +1050,7 @@ int post_commend(struct userec *user, const char *fromboard, struct fileheader *
 
     if (!err) {
         writew_lock(fd, 0, SEEK_SET, 0);
-        nowid = get_nextid(COMMEND_ARTICLE);
+        nowid = get_nextid(toboard);
         postfile.id = nowid;
         postfile.groupid = postfile.id;
         postfile.reid = postfile.id;
@@ -1064,17 +1064,22 @@ int post_commend(struct userec *user, const char *fromboard, struct fileheader *
         close(fd);
     }
     if (err) {
-        bbslog("3error", "Posting '%s' on '%s': append_record failed!", postfile.title, COMMEND_ARTICLE);
+        bbslog("3error", "Posting '%s' on '%s': append_record failed!", postfile.title, toboard);
         my_unlink(filepath);
         return -1;
     }
-    updatelastpost(COMMEND_ARTICLE);
+    updatelastpost(toboard);
 
-    setboardorigin(COMMEND_ARTICLE, 1);
-    setboardtitle(COMMEND_ARTICLE, 1);
+    setboardorigin(toboard, 1);
+    setboardtitle(toboard, 1);
 
     return 0;
 }
+
+int post_commend(struct userec *user, const char *fromboard, struct fileheader *fileinfo) {
+    return post_commend(user, fromboard, COMMEND_ARTICLE, fileinfo);
+}
+
 #endif
 
 /* Add by SmallPig */
