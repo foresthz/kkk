@@ -1077,7 +1077,7 @@ static int post_commend_core(struct userec *user, const char *fromboard, const c
 }
 
 int post_commend(struct userec *user, const char *fromboard, struct fileheader *fileinfo) {
-    return post_commend(user, fromboard, COMMEND_ARTICLE, fileinfo);
+    return post_commend_core(user, fromboard, COMMEND_ARTICLE, fileinfo);
 }
 
 #endif
