@@ -765,17 +765,18 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle)(struct _
 }
 
 
-/* TODO: 滤掉附件... - atppp */
 static int searchpattern(char *filename, char *query, int qlen)
 {
-    char *ptr;
+    char *ptr, *att=NULL;
     off_t size;
     int ret=0;
 
     BBS_TRY {
         if (safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL) == 0)
             BBS_RETURN(0);
-        if (memmem(ptr, size, query, qlen)) ret=1;
+        att=memmem(ptr, size, ATTACHMENT_PAD, ATTACHMENT_SIZE);
+        /* 有附件时不搜寻附件内容 */
+        if (memmem(ptr, att?att-ptr:size, query, qlen)) ret=1;
     }
     BBS_CATCH {
     }
