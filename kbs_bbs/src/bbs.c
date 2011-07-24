@@ -987,7 +987,18 @@ void readtitle(struct _select_def* conf)
     setfcolor(WHITE, DEFINE(getCurrentUser(), DEF_HIGHCOLOR));
     setbcolor(BLUE);
     clrtoeol();
-    prints("  编号   %-12s %6s %s", "刊 登 者", "日  期", " 文章标题");
+    /* 文章数超过10000时版面列表自动调整对其, jiangjun 20110717 */
+    char strbuf[4];
+    int no;
+    /* 确定当前列表页面的第一篇编号 */
+    no = conf->pos - (conf->pos - 1) % conf->item_per_page;
+    if (no<=9999)
+        strbuf[0] = '\0';
+    else if (no>9999 && no<=99999)
+        sprintf(strbuf, " ");
+    else
+        sprintf(strbuf, "  ");
+    prints("  编号   %s%-12s %6s %s", strbuf, "刊 登 者", "日  期", " 文章标题");
     sprintf(title, "在线:%4d [%4s模式]", bs->currentusers, readmode);
     move(2, -strlen(title)-1);
     prints("%s", title);
