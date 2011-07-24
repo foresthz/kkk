@@ -860,13 +860,15 @@ static int fav_show(struct _select_def *conf, int pos)
                  * Leeward: 97.12.15: extended display
                  */
                 check_newpost(ptr);
-                prints(" %4d%s%s ", ptr->total, ptr->total > 9999 ? " " : "  ", ptr->unread ? "¡ô" : "¡ó"); /*ÊÇ·ñÎ´¶Á */
+                //prints(" %4d%s%s ", ptr->total, ptr->total > 9999 ? " " : "  ", ptr->unread ? "¡ô" : "¡ó"); /*ÊÇ·ñÎ´¶Á */
+                prints(" %4d%s%s ", ptr->total, ptr->total < 9999 ? "  " : ptr->total < 99999 ? " ": "" , ptr->unread ? "¡ô" : "¡ó"); /*ÊÇ·ñÎ´¶Á edit by major*/ 
             } else {
                 if (ptr->total == -1) {
                     /*refresh();*/
                     check_newpost(ptr);
                 }
-                prints(" %4d%s%s ", ptr->total, ptr->total > 9999 ? " " : "  ", ptr->unread ? "¡ô" : "¡ó"); /*ÊÇ·ñÎ´¶Á */
+                //prints(" %4d%s%s ", ptr->total, ptr->total > 9999 ? " " : "  ", ptr->unread ? "¡ô" : "¡ó"); /*ÊÇ·ñÎ´¶Á */
+                prints(" %4d%s%s ", ptr->total, ptr->total < 9999 ? "  " : ptr->total < 99999 ? " ": "" , ptr->unread ? "¡ô" : "¡ó"); /*ÊÇ·ñÎ´¶Á edit by major*/
             }
         }
     }
