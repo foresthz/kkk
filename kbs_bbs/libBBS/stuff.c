@@ -514,24 +514,41 @@ int id_invalid(const char *userid)
     }
     return 0;
 }
+
 int seek_in_file(const char* filename, const char* seekstr)
 {
-    FILE *fp;
-    char buf[STRLEN];
-    char *p;
+    int len, slen, retv=0;
+    char *ptr, *head, *end;
+    off_t filesize;
+    char file[STRLEN];
 
-    if ((fp = fopen(filename, "r")) == NULL)
-        return 0;
-    while (fgets(buf, STRLEN, fp) != NULL) {
-        if ((p = strpbrk(buf, ": \n\r\t")))
-            *p = 0;
-        if (!strcasecmp(buf, seekstr)) {
-            fclose(fp);
-            return 1;
+    strcpy(file, filename);
+    BBS_TRY {
+        if (safe_mmapfile(file, O_RDONLY, PROT_READ, MAP_SHARED, &head, &filesize, NULL) == 0)
+            BBS_RETURN(0);
+        len = filesize;
+        slen= strlen(seekstr);
+        ptr = head;
+        end = head + filesize;
+        while(len>0){
+            ptr = (char *)memmem(ptr, len, seekstr, slen);
+            if(!ptr)
+                break;
+            if( (ptr==head || ptr[-1]=='\n')    /* 文件开头或者一行开头 */
+              &&(len<=slen || !isalnum(ptr[slen]))){    /* 文件末尾或者下个字符为非数字字母 */
+                retv = 1;
+                break;
+            }
+            ptr += slen;
+            len = end - ptr;
         }
     }
-    fclose(fp);
-    return 0;
+    BBS_CATCH {
+    }
+    BBS_END;
+    end_mmapfile((void *) head, filesize, -1);
+
+    return retv;
 }
 
 struct public_data *get_publicshm() {
