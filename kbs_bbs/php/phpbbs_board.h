@@ -29,7 +29,9 @@ PHP_FUNCTION(bbs_set_onboard);
 /* favboard operation. by caltary  */
 PHP_FUNCTION(bbs_load_favboard);
 PHP_FUNCTION(bbs_fav_boards);
+#ifdef NFORUM
 PHP_FUNCTION(bbs_fav_boards_nforum);
+#endif
 PHP_FUNCTION(bbs_is_favboard);
 PHP_FUNCTION(bbs_add_favboarddir);
 PHP_FUNCTION(bbs_add_favboard);
