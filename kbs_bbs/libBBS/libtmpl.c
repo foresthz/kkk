@@ -106,7 +106,6 @@ int orig_tmpl_save(struct a_template * ptemp, int temp_num, char *board)
     return 0;
 }
 
-#ifdef ENHANCED_TEMPLATE
 int get_parameter_index_len(char *buf, int *index, int *fmtlen, int *def)
 {
     int ret=0;
@@ -145,4 +144,3 @@ int get_parameter_index_len(char *buf, int *index, int *fmtlen, int *def)
         *index = atoi(buf);
     return ret;
 }
-#endif
