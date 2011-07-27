@@ -111,6 +111,62 @@ int killdir(char *basedir, char *filename)
     return deleted;
 }
 
+int killanonydir(char *board)
+{
+    int fd;
+    struct stat st;
+    struct fileheader *files;
+    int deleted=0, i, num;
+    char buf[STRLEN], buf1[STRLEN], buf2[STRLEN];
+
+    setbfile(genbuf1, board, ".ANONYDIR");
+    if(!dashf(genbuf1))
+        return 0;
+
+    fd = open(genbuf1, O_RDWR);
+    if (fd < 0)
+        return 0;
+    if (flock(fd, LOCK_EX) < 0) {
+        close(fd);
+        return 0;
+    }
+    if (fstat(fd, &st) < 0) {
+        flock(fd, LOCK_UN);
+        close(fd);
+        return 0;
+    }
+    if ((files = (struct fileheader *) malloc(st.st_size)) == NULL) {
+        flock(fd, LOCK_UN);
+        close(fd);
+        return 0;
+    }
+    if (read(fd, files, st.st_size) < 0) {
+        free(files);
+        flock(fd, LOCK_UN);
+        close(fd);
+        return 0;
+    }
+    flock(fd, LOCK_UN);
+    close(fd);
+    num = st.st_size / sizeof(struct fileheader);
+    for(i=0;i<num;i++){
+        setbfile(buf1, board, files[i].filename);
+        sprintf(buf, files[i].filename);
+        buf[0]='D';
+        setbfile(buf2, board, buf);
+        if(!dashf(buf1) && !dashf(buf2)){
+            if(delete_record(genbuf1, sizeof(struct fileheader), i+1, (RECORD_FUNC_ARG) cmpname, files[i].filename)!=0){
+                newbbslog(BBSLOG_USIES, "delete anony board %s anony dir wrong", board);
+                break;
+            }
+            deleted ++;
+        }
+    }
+    free(files);
+    newbbslog(BBSLOG_USIES, "deleted %d anony dirs in %s board", deleted, board);
+    return deleted;
+}
+
 int dokilldir(char *board)
 {
     char hehe[255];
@@ -122,6 +178,10 @@ int dokilldir(char *board)
     strcat(hehe, "/");
     strcat(hehe, board);
     killed = killdir(hehe, ".DELETED") + killdir(hehe, ".JUNK");
+    resolve_boards();
+    if(anonymousboard(board)){
+        killed += killanonydir(board);
+    }
     if (killed > 0)
         newbbslog(BBSLOG_USIES, "deleted %d files in %s board", killed, board);
     return killed;
