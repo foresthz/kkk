@@ -935,6 +935,9 @@ PHP_FUNCTION(bbs_autopass)
     if (!(user->flags & ACTIVATED_FLAG))
         RETURN_LONG(-3);
 
+    if (user->userlevel & PERM_LOGINOK)
+        RETURN_LONG(-4);
+
     memset(fdata, 0, sizeof(fdata));
     sethomefile(buf, user->userid, "pre_register");
     if (!(fh = fopen(buf, "r")))
@@ -966,7 +969,7 @@ PHP_FUNCTION(bbs_autopass)
 
             if (write_userdata(user->userid,&ud) < 0)RETURN_LONG(-2);
 
-            user->userlevel |= PERM_LOGINOK;
+            user->userlevel |= PERM_DEFAULT;
 
             sethomefile(buf, user->userid, "register");
             if ((fout = fopen(buf, "w")) != NULL) {
