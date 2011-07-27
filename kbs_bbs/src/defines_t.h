@@ -168,7 +168,7 @@ int chkmail();
 int getmailnum(char recmaildir[STRLEN]);
 int get_mailnum();
 int invalidaddr(char *addr);
-int doforward(char *direct, struct fileheader *fh);
+int doforward(struct _select_def* conf, char *direct, struct fileheader *fh);
 int set_mailbox_prop();
 int set_mailgroup_list();
 

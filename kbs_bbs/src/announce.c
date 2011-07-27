@@ -600,7 +600,7 @@ void a_forward(char *path, ITEM *pitem)
         strnzhcpy(fhdr.title, pitem->title, ARTICLE_TITLE_LEN);
         strncpy(fhdr.filename, pitem->fname, FILENAME_LEN - 1);
         fhdr.filename[FILENAME_LEN - 1] = '\0';
-        switch (doforward(path, &fhdr)) {
+        switch (doforward(NULL, path, &fhdr)) {
             case 0:
                 mesg = "文章转寄完成!\n";
                 break;

@@ -1380,15 +1380,16 @@ int mail_to_tmp(struct _select_def* conf, struct fileheader *fileinfo,void* extr
 }
 
 
-int mail_forward_internal(int ent, struct fileheader *fileinfo, char* direct, int inmail)
+int mail_forward_internal(struct _select_def* conf, struct fileheader *fh, char* direct, int inmail)
 {
     char buf[STRLEN];
     char *p;
+    struct fileheader *fileinfo;
+
 //    int ent=conf->pos;
 //    struct read_arg* arg=conf->arg;
-    if (fileinfo==NULL)
+    if (fh==NULL)
         return DONOTHING;
-
 
     if (strcmp("guest", getCurrentUser()->userid) == 0) {
         clear();
@@ -1416,12 +1417,15 @@ int mail_forward_internal(int ent, struct fileheader *fileinfo, char* direct, in
     if ((p = strrchr(buf, '/')) != NULL)
         *p = '\0';
     clear();
-    switch (doforward(buf, fileinfo)) {
+    /* 防止doforward修改fh内容 */
+    fileinfo=(struct fileheader *)malloc(sizeof(struct fileheader));
+    memcpy(fileinfo, fh, sizeof(struct fileheader));
+    switch (doforward(conf, buf, fileinfo)) {
         case 0:
             prints("文章转寄完成!\n");
             if (inmail) {
-                fileinfo->accessed[0] |= FILE_FORWARDED;        /*added by alex, 96.9.7 */
-                substitute_record(direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
+                fh->accessed[0] |= FILE_FORWARDED;        /*added by alex, 96.9.7 */
+                substitute_record(direct, fh, sizeof(*fh), conf->pos, (RECORD_FUNC_ARG) cmpname, fh->filename);
             }
             break;
         case -1:
@@ -1438,15 +1442,164 @@ int mail_forward_internal(int ent, struct fileheader *fileinfo, char* direct, in
         default:
             prints("取消转寄...\n");
     }
+    free(fileinfo);
     pressreturn();
     clear();
     return FULLUPDATE;
 }
 
+/* 生成同主题文件，格式与合集类似，用于同主题转寄 */
+int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref, char *userid)
+{
+    FILE *inf, *outf;
+    char qfile[STRLEN], filepath[STRLEN], genbuf[PATHLEN];
+    char buf[256];
+    struct fileheader savefileheader;
+    char userinfo[STRLEN],posttime[STRLEN];
+    char* t;
+
+    sprintf(qfile, "boards/%s/%s", board, fileinfo->filename);
+    gettmpfilename(filepath, "ut", getpid());
+    outf = fopen(filepath, "a");
+    if (*qfile != '\0' && (inf = fopen(qfile, "r")) != NULL) {
+        fgets(buf, 256, inf);
+
+        t = strrchr(buf,')');
+        if (t) {
+            *(t+1)='\0';
+            memcpy(userinfo,buf+8,STRLEN);
+        } else strcpy(userinfo,"未知发信人");
+        fgets(buf, 256, inf);
+        fgets(buf, 256, inf);
+        t = strrchr(buf,')');
+        if (t) {
+            *(t+1)='\0';
+            if (NULL!=(t = strchr(buf,'(')))
+                memcpy(posttime,t,STRLEN);
+            else
+                strcpy(posttime,"未知时间");
+        } else
+            strcpy(posttime,"未知时间");
+
+        fprintf(outf, "\033[0;1;32m☆─────────────────────────────────────☆\033[0;37m\n");
+        fprintf(outf, "  \033[0;1;32m %s \033[0;1;37m于 \033[0;1;36m %s \033[0;1;37m  在\n", userinfo, posttime);
+        fprintf(outf, "  \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", fileinfo->title);
+
+        fprintf(outf,"\n");
+        while (fgets(buf, 256, inf) != NULL)
+            if (buf[0] == '\n')
+                break;
+
+        while (fgets(buf, 256, inf) != NULL) {
+            /*结束*/
+            if (!strcmp(buf,"--\n"))
+                break;
+            /*引文*/
+            if (no_ref&&(strstr(buf,": ")==buf||(strstr(buf,"【 在")==buf&&strstr(buf,") 的大作中提到: 】"))))
+                continue;
+            /*来源和修改信息*/
+            if ((strstr(buf,"\033[m\033")==buf&&strstr(buf,"※ 来源:·")==buf+10)
+                    ||(strstr(buf,"\033[36m※ 修改:·")==buf))
+                continue;
+            fprintf(outf, "%s", buf);
+        }
+        fprintf(outf, "\n\n");
+        fclose(inf);
+    }
+
+    fclose(outf);
+    memcpy(&savefileheader,fileinfo,sizeof(savefileheader));
+    savefileheader.attachment=0;
+    if (fileinfo->attachment) {
+        int fsrc,fdst;
+        char *src = (char *) malloc(BLK_SIZ);
+        if ((fsrc = open(qfile, O_RDONLY)) >= 0) {
+            lseek(fsrc,fileinfo->attachment-1,SEEK_SET);
+            gettmpfilename(genbuf, "ut.attach", getpid());
+            if ((fdst=open(genbuf,O_WRONLY | O_CREAT | O_APPEND, 0600)) >= 0) {
+                long ret;
+                do {
+                    ret = read(fsrc, src, BLK_SIZ);
+                    if (ret <= 0)
+                        break;
+                } while (write(fdst, src, ret) > 0);
+                close(fdst);
+            }
+            close(fsrc);
+        }
+        free(src);
+    }
+
+    return 1;
+}
+/* 获得同主题第一篇文章标题 */
+static int get_thread_title(struct _select_def* conf, struct fileheader* fh, int ent, void* extraarg)
+{
+    strcpy((char*)extraarg, fh->title);
+    return APPLY_QUIT;
+}
+
+/*用户同主题函数，用于apply_record的回调函数, 用于同主题转寄, added by jiangjun, 20110720 */
+static int user_thread_mail(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
+{
+    struct read_arg* arg=(struct read_arg*)conf->arg;
+    int no_ref=0, ret=APPLY_CONTINUE;
+
+    if (extraarg)
+        no_ref = *((int *)extraarg);
+    conf->pos=ent;
+    if (arg->writearg) {
+        arg->writearg->ent=ent;
+    }
+    /* 读取并保存同主题的正文和回复 */
+    user_thread_save(currboard->filename, fh, no_ref, getCurrentUser()->userid);
+
+    return ret;
+}
+
+/* 生成同主题转寄的临时文件 */
+int get_thread_forward(struct _select_def* conf, struct fileheader* fh, char *title, void* extraarg)
+{
+    struct read_arg* arg=conf->arg;
+    struct write_dir_arg dirarg;
+    int ent;
+    char ut_file[STRLEN], ut_attach[STRLEN];
+
+    ent=conf->pos;
+    init_write_dir_arg(&dirarg);
+    dirarg.fd=arg->fd;
+    dirarg.needlock=false;
+    arg->writearg=&dirarg;
+    writew_lock(arg->fd, 0, SEEK_SET, 0);
+
+    /*走到第一篇*/
+    conf->new_pos=0;
+    apply_thread(conf,fh,fileheader_thread_read,false,false,(void*)SR_FIRST);
+    if (conf->new_pos!=0)
+        conf->pos=conf->new_pos;
+    /* 获得第一篇的标题, 因为已经走到第一篇 */
+    apply_thread(conf,fh,get_thread_title,true,false,(void*)title);
+    /* 清空临时文件, 防止意外 */
+    gettmpfilename(ut_file, "ut", getpid());
+    unlink(ut_file);
+    gettmpfilename(ut_attach, "ut.attach", getpid());
+    unlink(ut_attach);
+    apply_thread(conf,fh,user_thread_mail,true,true,extraarg);
+    if (dashf(ut_attach)) {
+        f_catfile(ut_attach, ut_file);
+        unlink(ut_attach);
+    }
+    un_lock(arg->fd, 0, SEEK_SET, 0);
+    free_write_dir_arg(&dirarg);
+    arg->writearg=NULL;
+    conf->pos=ent;
+    return 0;
+}
+
 int mail_forward(struct _select_def* conf, struct fileheader *fileinfo,void* extraarg)
 {
     int inmail=(((struct read_arg*)conf -> arg) -> mode == DIR_MODE_MAIL);
-    return mail_forward_internal(conf->pos, fileinfo, ((struct read_arg*)conf->arg)->direct, inmail);
+    return mail_forward_internal(conf, fileinfo, ((struct read_arg*)conf->arg)->direct, inmail);
 }
 
 
@@ -2249,7 +2402,7 @@ int cnt;
     return 0;
 }
 
-int doforward(char *direct, struct fileheader *fh)
+int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
 {
     static char address[STRLEN];
     char fname[STRLEN];
@@ -2330,9 +2483,27 @@ int doforward(char *direct, struct fileheader *fh)
      * sprintf( tmp_buf, "cp %s/%s %s",
      * direct, fh->filename, fname);
      */
-    sprintf(tmp_buf, "%s/%s", direct, fh->filename);
-    f_cp(tmp_buf, fname, 0);
-    sprintf(title, "%.50s(转寄)", fh->title);   /*Haohmaru.00.05.01,moved here */
+    /* 添加普通模式下同主题转寄功能, jiangjun, 2011-07-23 */
+    while (1) {
+        if (conf!=NULL && ((struct read_arg*)conf->arg)->mode==DIR_MODE_NORMAL) {
+            if (askyn("是否以合集方式转寄同主题所有文章", 0) == 1) {
+                int no_ref;
+                no_ref=!askyn("是否保留引文", 1);
+                get_thread_forward(conf, fh, title, &no_ref);
+                gettmpfilename(tmp_buf, "ut", getpid());
+                get_effsize_attach(tmp_buf, &fh->attachment);
+                f_mv(tmp_buf, fname);
+                strcat(title, "(合集转寄)");
+                if (!strncmp(title, "Re: ", 4))
+                    strcpy(title, title+4);
+                break;
+            }
+        }
+        sprintf(tmp_buf, "%s/%s", direct, fh->filename);
+        f_cp(tmp_buf, fname, 0);
+        sprintf(title, "%.50s(转寄)", fh->title);   /*Haohmaru.00.05.01,moved here */
+        break;
+    }
     if (askyn("是否修改文章内容", 0) == 1) {
         int oldmode = uinfo.mode;
         long attachpos = fh->attachment;
@@ -2358,9 +2529,7 @@ int doforward(char *direct, struct fileheader *fh)
     }
 
     /* 如果带有附件，选择是否连同附件一起转寄, jiangjun, 20110708 */
-    struct fileheader finfo;
-    memcpy(&finfo, fh, sizeof(struct fileheader));
-    if (finfo.attachment) {
+    if (fh->attachment) {
         if (askyn("您转寄的文章包含附件，是否连同附件一起转寄", 1) == 0) {
             FILE *fin, *fout;
             char buf[256];
@@ -2370,6 +2539,7 @@ int doforward(char *direct, struct fileheader *fh)
                 return -1;
             if (!(fout=fopen(tmp_buf,"w"))) {
                 fclose(fin);
+                unlink(fname);
                 return -1;
             }
             while ((size=-attach_fgets(buf,256,fin))) {
@@ -2381,7 +2551,7 @@ int doforward(char *direct, struct fileheader *fh)
             fclose(fin);
             fclose(fout);
             f_mv(tmp_buf, fname);
-            finfo.attachment = 0;
+            fh->attachment = 0;
         }
     }
 
@@ -2425,7 +2595,7 @@ int doforward(char *direct, struct fileheader *fh)
                 mail_file(getCurrentUser()->userid, fname, getCurrentUser()->userid, title, BBSPOST_COPY, NULL);
                 return -4;
             }
-            return_no = mail_file(getCurrentUser()->userid, fname, lookupuser->userid, title, BBSPOST_COPY, &finfo);
+            return_no = mail_file(getCurrentUser()->userid, fname, lookupuser->userid, title, BBSPOST_COPY, fh);
             /* fancyrabbit Jun 5 2007 转寄信件保存到发件箱，F 判断太多就不判断了，按设置来吧 ...*/
             if (HAS_MAILBOX_PROP(&uinfo, MBP_SAVESENTMAIL) && strcmp(lookupuser -> userid, getCurrentUser() -> userid))
                 mail_file_sent(lookupuser -> userid, fname, getCurrentUser()->userid, title, BBSPOST_COPY, getSession());
