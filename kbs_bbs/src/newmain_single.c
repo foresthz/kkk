@@ -1028,6 +1028,8 @@ void notepad_init()
         } else lastnote=0;
         if ((check = fopen("etc/autopost", "r")) != NULL) {
             while (fgets(tmp, STRLEN, check) != NULL) {
+                if(tmp[0] == '#')
+                    continue;
                 fname = strtok(tmp, " \n\t:@");
                 bname = strtok(NULL, " \n\t:@");
                 ntitle = strtok(NULL, " \n\t:@");
