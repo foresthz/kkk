@@ -2539,7 +2539,7 @@ static int select_top(void);
 
 #ifdef SHOW_SEC_TOP
 #ifdef READ_SEC_TOP
-static int select_sec_top(int secid, int down);
+static int select_sec_top(int secid, int pos);
 #endif
 
 void sec_top_endline(int secid, int selected)
@@ -2623,9 +2623,11 @@ int read_sec_top(int *retbid)
         } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R' || ch==KEY_DOWN || ch==KEY_UP) {
             const struct boardheader *bh;
             int bid;
+            bid=(ch==KEY_UP)?10:1;
             while (1) {
-                bid=select_sec_top(secid, ch==KEY_DOWN?1:0);
-                if (bid==-1) {
+                bid=select_sec_top(secid, bid);
+                if (bid<0) {
+                    bid=-bid;
                     secid++;
                     if (secid>=SECNUM)
                         secid-=SECNUM;
@@ -6896,7 +6898,7 @@ static int select_top(void)
 /* END -- etnlegend, 2006.05.30, 阅读十大 ... */
 
 #ifdef READ_SEC_TOP
-static int select_sec_top(int secid, int down)
+static int select_sec_top(int secid, int pos)
 {
 #define ST_UPDATE_SECTOPINFO()                                                                      \
     do{                                                                                             \
@@ -6921,7 +6923,7 @@ static int select_sec_top(int secid, int down)
     sprintf(topfile, "etc/posts/day_sec_%s", seccode[secid]);
     update = 1;
     ST_UPDATE_SECTOPINFO();
-    index = down?0:total-1;
+    index = (pos<total)?pos-1:total-1;
     do {
         if (update) {
             ansimore(topfile, 0);
@@ -7024,7 +7026,7 @@ static int select_sec_top(int secid, int down)
                         break;
                     /* tab键直接切换至查看下一分区 */
                     case KEY_TAB:
-                        return -1;
+                        return -(index+1);
                     case 'H':
                         clear();
                         move(10, 10);
