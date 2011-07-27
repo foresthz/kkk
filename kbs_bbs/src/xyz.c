@@ -970,9 +970,9 @@ void myexec_cmd(int umode,const char *cmdfile,const char *param)
         dup2(0, 1);
         //dup2(0, 2);
         if (param1[0]) {
-            execl(cmdfile, cmdfile, param1, getCurrentUser()->userid, NULL);
+            execl(cmdfile, cmdfile, param1, getCurrentUser()->userid, (char *)NULL);
         } else {
-            execl(cmdfile, cmdfile, getCurrentUser()->userid, NULL);
+            execl(cmdfile, cmdfile, getCurrentUser()->userid, (char *)NULL);
         }
         exit(0);
     } else if (childpid > 0) {
