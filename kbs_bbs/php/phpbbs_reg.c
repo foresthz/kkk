@@ -966,6 +966,8 @@ PHP_FUNCTION(bbs_autopass)
 
             if (write_userdata(user->userid,&ud) < 0)RETURN_LONG(-2);
 
+            user->userlevel |= PERM_LOGINOK;
+
             sethomefile(buf, user->userid, "register");
             if ((fout = fopen(buf, "w")) != NULL) {
                 for (n = 0; field[n] != NULL; n++)
