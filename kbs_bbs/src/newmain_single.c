@@ -1168,6 +1168,11 @@ static void check_activation()
         doactivation(&ai, getCurrentUser(), getSession());
         return;
     }
+#ifdef NEWSMTH
+    sethomefile(buf, getCurrentUser()->userid, "pre_register");
+    if (dashf(buf))
+        return;
+#endif
     clear();
     strcpy(buf, ai.reg_email);
     while (1) {

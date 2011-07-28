@@ -234,10 +234,12 @@ int addtodeny(char *uident)
     setbfile(genbuf, currboard->filename, "deny_users");
     if (seek_in_file(genbuf, uident) || !strcmp(currboard->filename, "denypost"))
         return -1;
+    /*
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
         maxdeny = 70;
     else
         maxdeny = 14;
+    */
 
     *denymsg = 0;
     move(2, 0);
