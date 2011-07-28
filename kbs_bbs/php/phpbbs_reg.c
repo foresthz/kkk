@@ -904,6 +904,8 @@ PHP_FUNCTION(bbs_autopass)
 {
     char* userid;
     int userid_len;
+    char *mobile;
+    int mobile_len;
 
     const char *field[] = { "usernum", "userid", "realname", "career",
         "addr", "phone", "birth", "IP", NULL
@@ -921,7 +923,7 @@ PHP_FUNCTION(bbs_autopass)
     int ac = ZEND_NUM_ARGS();
 
 
-    if (ac != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) == FAILURE) {
+    if (ac != 2 || zend_parse_parameters(2 TSRMLS_CC, "s", &userid, &userid_len, &mobile, &mobile_len) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
 
@@ -954,6 +956,7 @@ PHP_FUNCTION(bbs_autopass)
             }
         } else {
             fclose(fh);
+            memcpy(fdata[5], mobile, mobile_len);
             memset(&ud,0,sizeof(ud));
             if (read_user_memo(user->userid, &(getSession()->currentmemo)) <= 0) RETURN_LONG(-2);
 
