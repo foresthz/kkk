@@ -213,7 +213,7 @@ int set_denymsg(char *denymsg)
 int addtodeny(char *uident)
 {                               /* Ìí¼Ó ½ûÖ¹POSTÓÃ»§ */
     char /*buf2[50], */strtosave[256], date[STRLEN] = "0";
-    int maxdeny;
+    //int maxdeny;
 
     /*
      * Haohmaru.99.4.1.auto notify
