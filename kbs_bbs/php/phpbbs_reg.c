@@ -923,7 +923,7 @@ PHP_FUNCTION(bbs_autopass)
     int ac = ZEND_NUM_ARGS();
 
 
-    if (ac != 2 || zend_parse_parameters(2 TSRMLS_CC, "s", &userid, &userid_len, &mobile, &mobile_len) == FAILURE) {
+    if (ac != 2 || zend_parse_parameters(2 TSRMLS_CC, "ss", &userid, &userid_len, &mobile, &mobile_len) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
 
