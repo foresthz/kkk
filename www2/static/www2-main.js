@@ -1165,6 +1165,7 @@ tconWriter.prototype.h = function() {
 	{
 		ret += '[<a href="bbsthreads.php?board=' + this.board + '&gid=' + this.gid + '&start=' + this.start + '">同主题操作</a>] ';
 	}
+	ret += '[<a href="bbstfwd.php?board=' + this.board + '&gid=' + this.gid + '&start=' + this.start + '">合集转寄</a>] ';
 	ret += '[<a href="bbstcon.php?board=' + this.board + '&gid=' + this.prevgid + '">上一主题</a>] ';
 	ret += '[<a href="bbstcon.php?board=' + this.board + '&gid=' + this.nextgid + '">下一主题</a>]';
 	ret += '</span>【分页： ';

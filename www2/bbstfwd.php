@@ -21,15 +21,22 @@
 		html_error_quit("错误的讨论区");
 	}
 
-	if( !isset($_GET["id"]) && !isset($_POST["id"]))
+	if( !isset($_GET["gid"]) && !isset($_POST["gid"]))
 		html_error_quit("错误的文章号");
-	if( isset($_GET["id"]) )
-		$id = $_GET["id"];
+	if( isset($_GET["gid"]) )
+		$gid = $_GET["gid"];
 	else
-		$id = $_POST["id"];
+		$gid = $_POST["gid"];
+
+	if( !isset($_GET["start"]) && !isset($_POST["start"]))
+		html_error_quit("错误的参数");
+	if( isset($_GET["start"]) )
+		$start = $_GET["start"];
+	else
+		$start = $_POST["start"];
 
 	$articles = array ();
-	$num = bbs_get_records_from_id($brdarr["NAME"], $id, $dir_modes["NORMAL"] , $articles);
+	$num = bbs_get_records_from_id($brdarr["NAME"], $start, $dir_modes["NORMAL"] , $articles);
 	if($num == 0)
 		html_error_quit("错误的文章号");
 	$brd_encode = urlencode($board);
@@ -37,23 +44,20 @@
 	bbs_board_nav_header($brdarr, "文章转寄");
 	if (!isset($_GET["do"])){
 ?>
-<form action="bbsfwd.php?do" method="post" class="medium"/>
+<form action="bbstfwd.php?do" method="post" class="medium"/>
 <input type="hidden" name="board" value="<?php echo $brdarr["NAME"];?>"/>
-<input type="hidden" name="id" value="<?php echo $id;?>"/>
+<input type="hidden" name="gid" value="<?php echo $gid;?>"/>
+<input type="hidden" name="start" value="<?php echo $start;?>"/>
 	<fieldset>
-		<legend>转寄文章：<?php echo $articles[1]["OWNER"];?> 的 <a href="bbscon.php?bid=<?php echo $brdnum; ?>&id=<?php echo $id; ?>"><?php echo htmlspecialchars($articles[1]["TITLE"]); ?></a></legend>
+		<legend>同主题合集转寄文章：<?php echo $articles[1]["OWNER"];?> 的 <a href="bbscon.php?bid=<?php echo $brdnum; ?>&id=<?php echo $id; ?>"><?php echo htmlspecialchars($articles[1]["TITLE"]); ?></a></legend>
 		<div class="inputs">
 			<label>把文章转寄给 (请输入对方的id或email地址):</label>
 			<input type="text" name="target" size="40" maxlength="69" id="sselect" value="<?php echo $currentuser["email"];?>"><br/>
 			<input type="checkbox" name="big5" id="big5" value="1"/><label for="big5" class="clickable">使用BIG5码</label>
 			<input type="checkbox" name="noansi" id="noansi" value="1" checked /><label for="noansi" class="clickable">过滤ANSI控制符</label>
-<?php
-if ($articles[1]["ATTACHPOS"]) {
-?>
-			<input type="checkbox" name="noattach" id="noattach" value="1"/><label for="noattach" class="clickable">不包含附件</label>
-<?php
-}
-?>
+            </br>
+			<input type="checkbox" name="noref" id="noref" value="1"/><label for="noattach" class="clickable">不包含引文</label>
+			<input type="checkbox" name="noattach" id="noattach" value="1"/><label for="noattach" class="clickable">不包含附件(如果存在)</label>
 		</div>
 	</fieldset>
 	<div class="oper"><input type="submit" value="确定转寄"></div>
@@ -79,13 +83,19 @@ if ($articles[1]["ATTACHPOS"]) {
 			$noansi=0;
 		settype($noansi, "integer");
 
+		if( isset($_POST["noref"]) )
+			$noref = $_POST["noref"];
+		else
+			$noref=0;
+		settype($noref, "integer");
+
 		if( isset($_POST["noattach"]) )
 			$noattach = $_POST["noattach"];
 		else
 			$noattach=0;
 		settype($noattach, "integer");
 
-		$ret = bbs_doforward($brdarr["NAME"], $articles[1]["FILENAME"], $articles[1]["TITLE"], $target, $big5, $noansi, $noattach);
+		$ret = bbs_dotforward($brdarr["NAME"], $gid, $start, $target, $big5, $noansi, $noref, $noattach);
 		if($ret < 0)
 			html_error_quit("系统错误:".$ret);
 		
