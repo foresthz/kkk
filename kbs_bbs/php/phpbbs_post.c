@@ -819,8 +819,8 @@ PHP_FUNCTION(bbs_edittitle)
     if (add_edit_mark(path, 2, title, getSession()) != 1)
         RETURN_LONG(-10);
     get_effsize_attach(path, (unsigned int *)&attachpos);
-    if (attachpos != f.attachpos) {
-        f.attachpos = attachpos;
+    if (attachpos != f.attachment) {
+        f.attachment = attachpos;
     }
 
     /* update .DIR START */
