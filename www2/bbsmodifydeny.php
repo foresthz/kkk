@@ -55,7 +55,7 @@ bbs_board_nav_header($brdarr, "修改用户封禁");
 			或手动输入封禁理由：
 			<input type="text" name="exp2" size="20" maxlength="28" />
 		</div>
-		<div class="oper"><input type="submit" value="修改封禁" onclick="if(confirm('确定修改封禁?')){submit();return true;}return false;"/>&nbsp;&nbsp;<input type="button" value="放弃修改" onclick="history.go(-1);"></div>
+		<div class="oper"><input type="submit" value="修改封禁" onclick="if(confirm('确定修改封禁?')){return true;}return false;"/>&nbsp;&nbsp;<input type="button" value="放弃修改" onclick="history.go(-1);"></div>
 	</fieldset>
 </form>
 <?php
