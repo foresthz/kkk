@@ -3802,6 +3802,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     long i=0;
     struct fileheader xfh;
     int fd, ret;
+    long attachpos;
 
     ret = deny_modify_article(currboard, fileinfo, arg->mode, getSession());
     if (ret) {
@@ -3851,6 +3852,10 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
 
         if (strcmp(tmp2,buf)) {
             add_edit_mark(genbuf, 2, buf,getSession());
+            get_effsize_attach(genbuf, (unsigned int*)&attachpos);
+            if (attachpos != fileinfo->attachment) {
+                fileinfo->attachment=attachpos;
+            }
             newbbslog(BBSLOG_USER,"edit_title %s %s %s",currboard->filename, tmp2 , buf);
         }
         /*
