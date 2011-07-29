@@ -717,6 +717,8 @@ while(0)
     int check_mail_perm(struct userec *fromuser, struct userec *touser);
     int bbs_sendmail(char *fname, char *title, char *receiver, int isbig5, int noansi,session_t* session);
     int check_query_mail(char *qry_mail_dir, int *total_mail);
+    int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref, int no_attach);
+    int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, int no_attach, char *title);
     /* convcode.c */
     void conv_init(session_t* session);
     char *gb2big(char *s, int *plen, int inst, session_t* session);

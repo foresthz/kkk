@@ -587,8 +587,7 @@ PHP_FUNCTION(bbs_article_deny_modify)
     int ac = ZEND_NUM_ARGS();
 
     if (ac != 2 || zend_parse_parameters(2 TSRMLS_CC, "sl", &board, &board_len,&id) == FAILURE) {
-        WRONG_PARAM_COUNT;
-    }
+        WRONG_PARAM_COUNT; }
 
     brd = getbcache(board);
     if (!brd)
@@ -953,6 +952,87 @@ PHP_FUNCTION(bbs_doforward)
     }
     if (noattach)
         unlink(fname);
+    RETURN_LONG(ret);
+}
+
+/* web同主题合集转寄函数, jiangjun */
+PHP_FUNCTION(bbs_dotforward)
+{
+    char *board, *target;
+    int board_len,target_len;
+    const struct boardheader *bh;
+    char fname[STRLEN];
+    long gid,start,big5,noansi,noref,noattach;
+    char title[512];
+    struct userec *u;
+    int ret;
+
+    if (ZEND_NUM_ARGS() != 8 || zend_parse_parameters(8 TSRMLS_CC, "sllsllll", &board, &board_len, &gid, &start, &target, &target_len, &big5, &noansi, &noref, &noattach) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    if (target[0] == 0)
+        RETURN_LONG(-8);
+    if (!strchr(target, '@')) {
+        if (getuser(target,&u) == 0)
+            RETURN_LONG(-8);
+        ret = check_mail_perm(getCurrentUser(), u);
+        if (ret) {
+            RETURN_LONG(-ret);
+        }
+        big5=0;
+        noansi=0;
+    }
+
+    if (getbid(board, &bh) == 0)
+        RETURN_LONG(-11); //"错误的讨论区";
+    if (!check_read_perm(getCurrentUser(), bh))
+        RETURN_LONG(-11); //您无权阅读本版;
+
+    if ((ret=get_thread_forward_mail(board, gid, start, noref, noattach, title))<=0)
+        RETURN_LONG(-1);
+    gettmpfilename(fname, "ut");
+    if (!file_exist(fname))
+        RETURN_LONG(-7);
+
+#if 0 //似乎前面已经考虑到了，这里就用不着了
+    /* 不转寄附件 */
+    if (noattach) {
+        FILE *fin, *fout;
+        char tmpfile[STRLEN], buf[256];
+        int size;
+        gettmpfilename(tmpfile, "forward.no.attach");
+        if (!(fin=fopen(fname,"r")))
+            RETURN_LONG(-1);
+        if (!(fout=fopen(tmpfile,"w"))) {
+            fclose(fin);
+            RETURN_LONG(-1);
+        }
+        while ((size=-attach_fgets(buf,256,fin))) {
+            if (size<0)
+                fprintf(fout,"%s",buf);
+            else
+                break;
+        }
+        fclose(fin);
+        fclose(fout);
+        strcpy(fname, tmpfile);
+    }
+#endif
+    strcat(title, "(合集转寄)");
+
+    if (!strchr(target, '@')) {
+        mail_file(getCurrentUser()->userid, fname, u->userid, title,0, NULL);
+        ret = 1;;
+    } else {
+        if (big5 == 1)
+            conv_init(getSession());
+        if (bbs_sendmail(fname, title, target, big5, noansi, getSession()) == 0) {
+            ret = 1;
+        } else
+            ret = -10;
+    }
+    unlink(fname);
     RETURN_LONG(ret);
 }
 

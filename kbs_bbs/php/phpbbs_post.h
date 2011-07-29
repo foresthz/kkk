@@ -21,6 +21,7 @@ PHP_FUNCTION(bbs_article_modify);
 PHP_FUNCTION(bbs_updatearticle);
 PHP_FUNCTION(bbs_edittitle);
 PHP_FUNCTION(bbs_doforward);
+PHP_FUNCTION(bbs_dotforward);
 PHP_FUNCTION(bbs_docross);
 PHP_FUNCTION(bbs_docommend);
 PHP_FUNCTION(bbs_post_file_alt);
@@ -49,6 +50,7 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs_updatearticle, NULL) \
     PHP_FE(bbs_edittitle, NULL) \
     PHP_FE(bbs_doforward, NULL) \
+    PHP_FE(bbs_dotforward, NULL) \
     PHP_FE(bbs_docross,NULL) \
     PHP_FE(bbs_docommend,NULL) \
     PHP_FE(bbs_post_file_alt,NULL) \

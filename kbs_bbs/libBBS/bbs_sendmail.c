@@ -807,3 +807,167 @@ int bbs_sendmail(char *fname, char *title, char *receiver, int isbig5, int noans
 }
 #endif
 
+/* 同主题合集转寄问题 */
+
+/* 生成同主题文件，格式与合集类似，用于同主题转寄 */
+int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref, int no_attach)
+{
+    FILE *inf, *outf;
+    char qfile[STRLEN], filepath[STRLEN], genbuf[PATHLEN];
+    char buf[256];
+    struct fileheader savefileheader;
+    char userinfo[STRLEN],posttime[STRLEN];
+    char* t;
+
+    sprintf(qfile, "boards/%s/%s", board, fileinfo->filename);
+    gettmpfilename(filepath, "ut");
+    outf = fopen(filepath, "a");
+    if (*qfile != '\0' && (inf = fopen(qfile, "r")) != NULL) {
+        fgets(buf, 256, inf);
+
+        t = strrchr(buf,')');
+        if (t) {
+            *(t+1)='\0';
+            memcpy(userinfo,buf+8,STRLEN);
+        } else strcpy(userinfo,"未知发信人");
+        fgets(buf, 256, inf);
+        fgets(buf, 256, inf);
+        t = strrchr(buf,')');
+        if (t) {
+            *(t+1)='\0';
+            if (NULL!=(t = strchr(buf,'(')))
+                memcpy(posttime,t,STRLEN);
+            else
+                strcpy(posttime,"未知时间");
+        } else
+            strcpy(posttime,"未知时间");
+
+        fprintf(outf, "\033[0;1;32m☆─────────────────────────────────────☆\033[0;37m\n");
+        fprintf(outf, " \033[0;1;32m %s \033[0;1;37m于 \033[0;1;36m %s \033[0;1;37m 在\n", userinfo, posttime);
+        fprintf(outf, " \033[0;1;32m【\033[1;33;4m%s\033[0;1;32m】 \033[m版 \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", board, fileinfo->title);
+
+        fprintf(outf,"\n");
+        while (fgets(buf, 256, inf) != NULL)
+            if (buf[0] == '\n')
+                break;
+
+        while (fgets(buf, 256, inf) != NULL) {
+            /*结束*/
+            if (!strcmp(buf,"--\n"))
+                break;
+            /*引文*/
+            if (no_ref&&(strstr(buf,": ")==buf||(strstr(buf,"【 在")==buf&&strstr(buf,") 的大作中提到: 】"))))
+                continue;
+            /*来源和修改信息*/
+            if ((strstr(buf,"\033[m\033")==buf&&strstr(buf,"※ 来源:·")==buf+10)
+                    ||(strstr(buf,"\033[36m※ 修改:·")==buf))
+                continue;
+            fprintf(outf, "%s", buf);
+        }
+        fprintf(outf, "\n\n");
+        fclose(inf);
+    }
+
+    fclose(outf);
+    memcpy(&savefileheader,fileinfo,sizeof(savefileheader));
+    savefileheader.attachment=0;
+    if (no_attach==0 && fileinfo->attachment) {
+        int fsrc,fdst;
+        char *src = (char *) malloc(BLK_SIZ);
+        if ((fsrc = open(qfile, O_RDONLY)) >= 0) {
+            lseek(fsrc,fileinfo->attachment-1,SEEK_SET);
+            gettmpfilename(genbuf, "ut.attach");
+            if ((fdst=open(genbuf,O_WRONLY | O_CREAT | O_APPEND, 0600)) >= 0) {
+                long ret;
+                do {
+                    ret = read(fsrc, src, BLK_SIZ);
+                    if (ret <= 0)
+                        break;
+                } while (write(fdst, src, ret) > 0);
+                close(fdst);
+            }
+            close(fsrc);
+        }
+        free(src);
+    }
+
+    return 1;
+}
+struct thread_mail_set {
+    char *board;
+    char title[STRLEN];
+    int groupid;
+    int start;
+    int no_ref;
+    int no_ansi;
+    int no_attach;
+};
+
+static int get_thread_mail(int fd, fileheader_t *base, int ent, int total, bool match, void *arg)
+{
+    struct thread_mail_set *ts = (struct thread_mail_set *) arg;
+    struct fileheader *fh;
+    int i;
+    int count = 0;
+    int start = ent;
+    int end = total;
+
+    fh = (struct fileheader *)malloc(total * sizeof(struct fileheader));
+    memcpy(fh, base, total * sizeof(struct fileheader));
+    for (i = start; i <= end; i++) {
+        if (fh[i - 1].groupid == ts->groupid) {
+            if (fh[i - 1].id < ts->start)
+                continue;
+            user_thread_save(ts->board, &(fh[i-1]), ts->no_ref, ts->no_attach);
+            count++;
+            if (count==1) { /* 保留第一篇标题 */
+                if (strncmp(fh[i-1].title, "Re: ", 4)==0)
+                    strcpy(ts->title, fh[i-1].title+4);
+                else
+                    strcpy(ts->title, fh[i-1].title);
+            }
+        }
+    }
+    free(fh);
+
+    return count;
+}
+
+/* web同主题合集转寄专用，用mmap_dir_search获得同主题文章*/
+int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, int no_attach, char *title)
+{
+    struct thread_mail_set ts;
+    struct fileheader fh;
+    int fd;
+    int ret;
+    char ut_file[STRLEN], ut_attach[STRLEN], fname[STRLEN];
+
+    setbdir(DIR_MODE_NORMAL, fname, board);
+    if ((fd = open(fname, O_RDWR, 0644)) < 0)
+        return -1;
+    /* 清空临时文件, 防止意外 */
+    gettmpfilename(ut_file, "ut");
+    unlink(ut_file);
+    gettmpfilename(ut_attach, "ut.attach");
+    unlink(ut_attach);
+
+    bzero(&ts, sizeof(ts));
+    ts.board = (char*)board;
+    ts.groupid = gid;
+    ts.start = start;
+    ts.no_ref = no_ref;
+    ts.no_attach = no_attach;
+    fh.id = gid;
+    ret = mmap_dir_search(fd, &fh, get_thread_mail, &ts);
+    close(fd);
+
+    if (dashf(ut_attach)) {
+        if(no_attach==0)
+            f_catfile(ut_attach, ut_file);
+        unlink(ut_attach);
+    }
+
+    if (title)
+        strcpy(title, ts.title);
+    return ret;
+}

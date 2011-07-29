@@ -1448,6 +1448,8 @@ int mail_forward_internal(struct _select_def* conf, struct fileheader *fh, char*
     return FULLUPDATE;
 }
 
+/* 定义挪到libBBS中去 */
+#if 0
 /* 生成同主题文件，格式与合集类似，用于同主题转寄 */
 int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref, char *userid)
 {
@@ -1532,14 +1534,15 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
 
     return 1;
 }
+#endif
 /* 获得同主题第一篇文章标题 */
-static int get_thread_title(struct _select_def* conf, struct fileheader* fh, int ent, void* extraarg)
+static int get_thread_title(struct _select_def* conf, struct fileheader* fh, int ent, void *title)
 {
-    strcpy((char*)extraarg, fh->title);
+    strcpy((char*)title, fh->title);
     return APPLY_QUIT;
 }
 
-/*用户同主题函数，用于apply_record的回调函数, 用于同主题转寄, added by jiangjun, 20110720 */
+/*用户同主题函数，用于apply_thread的回调函数, 用于同主题转寄, added by jiangjun, 20110720 */
 static int user_thread_mail(struct _select_def* conf, struct fileheader* fh,int ent, void* extraarg)
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
@@ -1552,7 +1555,7 @@ static int user_thread_mail(struct _select_def* conf, struct fileheader* fh,int 
         arg->writearg->ent=ent;
     }
     /* 读取并保存同主题的正文和回复 */
-    user_thread_save(currboard->filename, fh, no_ref, getCurrentUser()->userid);
+    user_thread_save(currboard->filename, fh, no_ref, 0);
 
     return ret;
 }
