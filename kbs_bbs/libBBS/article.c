@@ -3037,7 +3037,7 @@ int upload_post_append(FILE *fp, struct fileheader *post_file, session_t *sessio
             if (-1 == (fd = open(buf, O_RDONLY)))
                 continue;
             if (post_file->attachment == 0) {
-                post_file->attachment = ftell(fp) + 1;
+                post_file->attachment = ftell(fp);
             }
             fwrite(ATTACHMENT_PAD, ATTACHMENT_SIZE, 1, fp);
             fwrite(name, strlen(name) + 1, 1, fp);
