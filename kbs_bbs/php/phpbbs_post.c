@@ -729,6 +729,7 @@ PHP_FUNCTION(bbs_edittitle)
     int bid,ent,i=0;
     int fd,ret;
     bool find;
+    long attachpos;
 
     int ac = ZEND_NUM_ARGS();
     if (ac == 4) {
@@ -817,6 +818,10 @@ PHP_FUNCTION(bbs_edittitle)
     setbfile(path, brd->filename, f.filename);
     if (add_edit_mark(path, 2, title, getSession()) != 1)
         RETURN_LONG(-10);
+    get_effsize_attach(path, (unsigned int *)&attachpos);
+    if (attachpos != f.attachpos) {
+        f.attachpos = attachpos;
+    }
 
     /* update .DIR START */
     strnzhcpy(f.title, title, ARTICLE_TITLE_LEN);
