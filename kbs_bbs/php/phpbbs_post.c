@@ -699,6 +699,243 @@ PHP_FUNCTION(bbs_updatearticle)
 
 
 /*
+ * function bbs_updatearticle2(string boardName , int id , string newTitle , int dirMode[, int is_tex])
+ * 修改文章标题和正文，并更新对应的fileheader
+ * @author: jiangjun 20110730, change from edittitle
+ * return 0 : 成功
+ *        -1: 版面错误
+ *        -2: 该版不能修改文章
+ *        -3: 只读讨论区
+ *        -4: 文件错误
+ *        -5: 封禁中
+ *        -6: 无权修改
+ *        -7: 被过滤掉
+ *        -8: 当前模式不能编辑标题
+ *        -9: 标题过长或为空
+ *        -10:system error
+ */
+
+PHP_FUNCTION(bbs_updatearticle2)
+{
+    char *board,*title,*content;
+    int  board_len,title_len,clen;
+    long  id , mode, is_tex=-1;
+    char path[STRLEN];
+    char dirpath[STRLEN];
+    struct fileheader f;
+    struct fileheader xfh;
+    const struct boardheader *brd;
+    int bid,ent,i=0;
+    int fd,ret;
+    bool find;
+    long attachpos;
+    char infile[STRLEN], outfile[STRLEN];
+    char buf2[256];
+    int effsize, asize;
+    FILE *fin, *fout;
+
+    int ac = ZEND_NUM_ARGS();
+    if (ac == 5) {
+        if (zend_parse_parameters(5 TSRMLS_CC, "slss/l", &board, &board_len, &id , &title, &title_len , &content, &clen, &mode) == FAILURE)
+            WRONG_PARAM_COUNT;
+    } else if (ac == 6) {
+        if (zend_parse_parameters(6 TSRMLS_CC, "slss/ll", &board, &board_len, &id , &title, &title_len , &content, &clen, &mode, &is_tex) == FAILURE)
+            WRONG_PARAM_COUNT;
+    } else
+        WRONG_PARAM_COUNT;
+
+    if (title_len == 0)
+        RETURN_LONG(-9);
+    bid = getbid(board, &brd);
+    if (bid==0)
+        RETURN_LONG(-1); //版面名称错误
+    if (brd->flag&BOARD_GROUP)
+        RETURN_LONG(-1); //二级目录版
+
+    if (mode != DIR_MODE_ZHIDING)
+        mode = DIR_MODE_NORMAL;
+    setbdir(mode, dirpath, brd->filename);
+
+    if ((fd = open(dirpath, O_RDWR, 0644)) < 0)
+        RETURN_LONG(-10);
+    if (mode == DIR_MODE_ZHIDING) { /* find "zhiding" record, by pig2532 */
+        ent = 0;
+        find = 0;
+        while (1) {
+            if (read(fd, &f, sizeof(struct fileheader)) <= 0)
+                break;
+            ent++;
+            if (f.id == id) {
+                find = 1;
+                break;
+            }
+        }
+        if (!find) {
+            close(fd);
+            RETURN_LONG(-4);
+        }
+    } else if (!get_records_from_id(fd,id,&f,1,&ent)) {
+        close(fd);
+        RETURN_LONG(-4); //无法取得文件记录
+    }
+    close(fd);
+
+    ret = deny_modify_article(brd, &f, mode, getSession());
+    if (ret) {
+        switch (ret) {
+            case -1:
+                RETURN_LONG(-10);
+                break;
+            case -4:
+                RETURN_LONG(-8);
+                break;
+            case -3:
+                RETURN_LONG(-2); //不允许修改文章
+                break;
+            case -5:
+                RETURN_LONG(-3); //只读讨论区
+                break;
+            case -2:
+                RETURN_LONG(-5);
+                break;
+            case -6:
+                RETURN_LONG(-6); //他人文章
+                break;
+            default:
+                RETURN_LONG(-10);
+                break;
+        }
+    }
+    if (title_len > 256) {
+        title[256] = '\0';
+    }
+    process_control_chars(title,NULL);
+    if (((f.accessed[1] & FILE_TEX) && (is_tex == 1)) || (!(f.accessed[1] & FILE_TEX) && (is_tex == 0)))
+        is_tex = -1;
+    /* 此处不需要返回
+    if (!strcmp(title,f.title) && (is_tex == -1))
+        RETURN_LONG(0);
+    */
+
+    if (clen == 0)
+        content = "";
+    else
+        content = unix_string(content);
+#ifdef FILTER
+    if (check_badword_str(title, strlen(title), getSession()) || check_badword_str(content, strlen(content),getSession()))
+        RETURN_LONG(-7); // 标题或正文过滤
+#endif
+
+    /* 修改标题开始 */
+    if (strcmp(title, f.title))
+        strnzhcpy(f.title, title, ARTICLE_TITLE_LEN);
+    if (is_tex == 0)
+        f.accessed[1] &= ~FILE_TEX;
+    else if (is_tex == 1)
+        f.accessed[1] |= FILE_TEX;
+    /* 修改标题结束 */
+
+    /* 修改正文开始 */
+    setbfile(infile, brd->filename, f.filename);
+    sprintf(outfile, "tmp/%s.%d.editpost", getCurrentUser()->userid, getpid());
+    if ((fin = fopen(infile, "r")) == NULL)
+        RETURN_LONG(-10);
+    if ((fout = fopen(outfile, "w")) == NULL) {
+        fclose(fin);
+        RETURN_LONG(-10);
+    }
+    for (i = 0; i < 4; i++) {
+        fgets(buf2, sizeof(buf2), fin);
+        if ((i==0) && (strncmp(buf2,"发信人",6)!=0)) {
+            break;
+        }
+        fprintf(fout, "%s", buf2);
+    }
+
+    /* 解决很猪的问题之一 by pig2532 */
+    if (clen>0) {
+        fprintf(fout, "%s", content);
+        if (content[clen-1] != '\n')
+            fprintf(fout, "\n");
+    }
+
+    while ((asize = -attach_fgets(buf2, sizeof(buf2), fin)) != 0) {
+        if (asize <= 0) {
+            if (Origin2(buf2)) {
+                fprintf(fout, "%s", buf2);
+            }
+        } else {
+            put_attach(fin, fout, asize);
+        }
+    }
+    fclose(fin);
+    fclose(fout);
+    f_cp(outfile, infile, O_TRUNC);
+    unlink(outfile);
+    /* 修改正文结束 */
+
+    /* 添加edit标记，更新attachment、effsize */
+    setbfile(path, brd->filename, f.filename);
+    if (add_edit_mark(path, 2, f.title, getSession()) != 1)
+        RETURN_LONG(-10);
+    effsize = get_effsize_attach(path, (unsigned int *)&attachpos);
+    if (attachpos != f.attachment) {
+        f.attachment = attachpos;
+    }
+    if (effsize != f.eff_size) {
+        f.eff_size = effsize;
+    }
+
+    /* 更新索引开始 */
+    setbdir(mode, dirpath, brd->filename);
+    fd = open(dirpath, O_RDONLY, 0);
+    if (fd!=-1) {
+        for (i = ent; i > 0; i--) {
+            if (0 == get_record_handle(fd, &xfh, sizeof(xfh), i)) {
+                if (0 == strcmp(xfh.filename, f.filename)) {
+                    ent = i;
+                    break;
+                }
+            }
+        }
+        if (i!=0) {
+            substitute_record(dirpath, &f, sizeof(f), ent, (RECORD_FUNC_ARG) cmpname, f.filename);
+            if (mode == DIR_MODE_ZHIDING)
+                board_update_toptitle(bid, true);
+        }
+        close(fd);
+    }
+    if (0 == i)
+        RETURN_LONG(-10);
+
+    if (f.id == f.groupid) {
+        if (setboardorigin(board, -1)) {
+            board_regenspecial(brd->filename,DIR_MODE_ORIGIN,NULL);
+        } else {
+            char olddirect[PATHLEN];
+            setbdir(DIR_MODE_ORIGIN, olddirect, brd->filename);
+            if ((fd = open(olddirect, O_RDWR, 0644)) >= 0) {
+                struct fileheader tmpfh;
+                if (get_records_from_id(fd, f.id, &tmpfh, 1, &ent) == 0) {
+                    close(fd);
+                } else {
+                    close(fd);
+                    substitute_record(olddirect, &f, sizeof(f), ent, (RECORD_FUNC_ARG) cmpname, f.filename);
+                }
+            }
+        }
+    }
+    setboardtitle(brd->filename, 1);
+    if (is_tex != -1) {
+        setbfile(dirpath, brd->filename, f.filename);
+        if (dashf(dirpath))
+            f_touch(dirpath);
+    }
+    /* 更新索引结束 */
+    RETURN_LONG(0);
+}
+
+/*
  * function bbs_edittitle(string boardName , int id , string newTitle , int dirMode[, int is_tex])
  * 修改文章标题
  * @author: windinsn apr 28,2004

@@ -19,6 +19,7 @@ PHP_FUNCTION(bbs_delpost);
 PHP_FUNCTION(bbs_article_deny_modify);
 PHP_FUNCTION(bbs_article_modify);
 PHP_FUNCTION(bbs_updatearticle);
+PHP_FUNCTION(bbs_updatearticle2);
 PHP_FUNCTION(bbs_edittitle);
 PHP_FUNCTION(bbs_doforward);
 PHP_FUNCTION(bbs_dotforward);
@@ -48,6 +49,7 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs_article_deny_modify,NULL) \
     PHP_FE(bbs_article_modify,NULL) \
     PHP_FE(bbs_updatearticle, NULL) \
+    PHP_FE(bbs_updatearticle2, NULL) \
     PHP_FE(bbs_edittitle, NULL) \
     PHP_FE(bbs_doforward, NULL) \
     PHP_FE(bbs_dotforward, NULL) \
