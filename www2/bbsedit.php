@@ -54,7 +54,10 @@
 			$is_tex = 1;
 		else
 			$is_tex = 0;
+		/*
 		$ret = bbs_edittitle($board, $id, rtrim($_POST["title"]), $ftype, $is_tex);
+		*/
+		$ret = bbs_updatearticle2($board, $id, rtrim($_POST["title"]), $_POST['text'], $ftype, $is_tex);
 		if($ret != 0)
 		{
 			switch($ret)
@@ -78,7 +81,7 @@
 					html_error_quit("对不起，您无权修改本文");
 					break;
 				case -7:
-					html_error_quit("标题含有不雅用字");
+					html_error_quit("标题或正文含有不雅用字");
 					break;
 				case -8:
 					html_error_quit("对不起，当前模式无法修改标题");
@@ -86,11 +89,17 @@
 				case -9:
 					html_error_quit("标题过长");
 					break;
+				case -10:
+					html_error_quit("系统错误");
+					break;
 				default:
 					html_error_quit("系统错误，请联系管理员");
 			}
 		}
-
+		html_success_quit("文章修改成功",
+		array("<a href='bbsdoc.php?board=" . $brd_encode . "'>返回 " . $brdarr['DESC'] . "</a>",
+		"<a href='bbscon.php?bid=" . $brdnum . "&id=" . $id . "&ftype=" . $ftype . "'>返回《" . htmlspecialchars($_POST["title"]) . "》</a>"));
+		/*
 		$ret=bbs_updatearticle($board,$articles[1]['FILENAME'],$_POST['text']);
 		switch ($ret) {
 			case -1:
@@ -107,6 +116,7 @@
 			default:
 		}
 		html_error_quit("系统错误");
+		*/
 	}
 ?>
 <form name="postform" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>?board=<?php echo $brd_encode; ?>&id=<?php echo $id; ?>&ftype=<?php echo $ftype; ?>&do" class="large">
