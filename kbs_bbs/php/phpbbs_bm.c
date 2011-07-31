@@ -317,7 +317,7 @@ PHP_FUNCTION(bbs_denyadd)
     int autofree;
     const struct boardheader *brd;
     struct userec *lookupuser;
-    char buf[256];
+    char buf[256], denystr[32];
     struct tm *tmtime;
     time_t now,undenytime;
     char path[STRLEN];
@@ -345,6 +345,7 @@ PHP_FUNCTION(bbs_denyadd)
 
     if (!*exp)
         RETURN_LONG(-6);
+    strnzhcpy(denystr, exp, 30);
 
     if (denyday < 1 || denyday > (HAS_PERM(getCurrentUser(), PERM_SYSOP)?70:14))
         RETURN_LONG(-5);
@@ -364,12 +365,15 @@ PHP_FUNCTION(bbs_denyadd)
     tmtime = gmtime(&undenytime);
 
     if (autofree)
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, exp, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
     else
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", userid, exp, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
 
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
+        deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
+/*
         struct userec *saveptr;
         int my_flag = 0;
         struct userec saveuser;
@@ -446,6 +450,7 @@ PHP_FUNCTION(bbs_denyadd)
             sprintf(buffer, "%s 封 %s 在 %s", getCurrentUser()->userid, userid, board);
         post_file(getCurrentUser(), "", path, "denypost", buffer, 0, -1, getSession());
         unlink(path);
+*/
         bmlog(getCurrentUser()->userid, board, 10, 1);
     }
 
@@ -474,7 +479,7 @@ PHP_FUNCTION(bbs_denymod)
     int autofree;
     const struct boardheader *brd;
     struct userec *lookupuser;
-    char buf[256];
+    char buf[256], denystr[32];
     struct tm *tmtime;
     time_t now,undenytime;
     char path[STRLEN];
@@ -502,6 +507,7 @@ PHP_FUNCTION(bbs_denymod)
 
     if (!*exp)
         RETURN_LONG(-6);
+    strnzhcpy(denystr, exp, 30);
 
     if (denyday < 1 || denyday > (HAS_PERM(getCurrentUser(), PERM_SYSOP)?70:14))
         RETURN_LONG(-5);
@@ -521,14 +527,14 @@ PHP_FUNCTION(bbs_denymod)
     tmtime = gmtime(&undenytime);
 
     if (autofree)
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, exp, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
     else
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", userid, exp, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
 
     setbfile(path, board, "deny_users");
     if (replace_from_file_by_id(path, userid, buf)>=0) {
-        deny_announce(userid,brd,exp,denyday,getCurrentUser(),time(0),1);
-        deny_mailuser(userid,brd,exp,denyday,getCurrentUser(),time(0),1);
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1);
+        deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),1);
 /*
         struct userec *saveptr;
         int my_flag = 0;
