@@ -1211,7 +1211,7 @@ void output_ansi_html_noatt(char *buf, size_t buflen, buffered_output_t * output
                 /*
                  * end of a quoted line
                  */
-                BUFFERED_OUTPUT(output, "</font>", 7);
+                BUFFERED_OUTPUT(output, " </font>", 8);
                 STYLE_CLR(font_style, FONT_STYLE_QUOTE);
                 STATE_CLR(ansi_state, STATE_FONT_SET);
             }
