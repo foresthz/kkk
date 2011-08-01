@@ -36,6 +36,9 @@ static void assign_board_nforum(zval * array, const struct boardheader *board, c
     add_assoc_long(array, "ARTCNT", bstatus->total);
     add_assoc_long(array, "UNREAD", 0);
     add_assoc_long(array, "NPOS", getbid(board->filename,&board)-1);
+#ifdef HAVE_USERSCORE
+    add_assoc_long(array, "SCORELEVEL", board->score_level);
+#endif
 }
 #endif 
 
