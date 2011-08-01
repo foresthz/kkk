@@ -175,7 +175,7 @@ PHP_FUNCTION(bbs_checkpasswd)
         s[IDLEN] = 0;
     if (pw_len > PASSLEN)
         pw[PASSLEN] = 0;
-    if (pw[0] == '\0')
+    if (!ismd5 && pw[0] == '\0')
         ret = 1;
     else if ((s[0] != 0) && !(unum = getuser(s, &user)))
         ret = 2;
