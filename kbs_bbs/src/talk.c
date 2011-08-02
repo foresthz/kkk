@@ -1900,7 +1900,7 @@ int wait_friend(void)
         modify_user_mode(oldmode);
         return 0;
     }
-    if (!(tuid = getuser(uid, NULL))) {
+    if (!(tuid = searchuser(uid))) {
         move(2, 0);
         prints("\033[1m不正确的使用者代号\033[m\n");
         pressanykey();

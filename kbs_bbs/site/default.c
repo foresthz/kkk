@@ -561,7 +561,7 @@ int check_see_perm(const struct userec* user,const struct boardheader* board)
 #ifndef NOT_USE_DEFAULT_SMS_FUNCTIONS
 int smsid2uid(char* smsid)
 {
-    return getuser(smsid,NULL);
+    return searchuser(smsid);
 }
 
 void uid2smsid(struct user_info* uin,char* smsid)

@@ -214,7 +214,7 @@ static char genbuf1[255];
 int killauser(struct userec *theuser, void *data)
 {
     int a;
-    struct userec *ft,copyuser;
+    struct userec copyuser;
 
     if (!theuser || theuser->userid[0] == 0)
         return 0;
@@ -227,8 +227,8 @@ int killauser(struct userec *theuser, void *data)
 
     if ((a <= 0)&&strcmp(copyuser.userid,"guest")) {
         newbbslog(BBSLOG_USIES, "kill user %s", copyuser.userid);
-        kick_user_utmp(getuser(copyuser.userid, NULL), NULL, SIGKILL);
-        a = getuser(copyuser.userid, &ft);
+        a = searchuser(copyuser.userid);
+        kick_user_utmp(searchuser(a), NULL, SIGKILL);
         setmailpath(tmpbuf, copyuser.userid);
         sprintf(genbuf1, "/bin/rm -rf %s", tmpbuf);
         system(genbuf1);
