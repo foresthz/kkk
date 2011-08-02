@@ -177,7 +177,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         char daystr[4], opbuf[STRLEN];
         sprintf(daystr, "%d", day);
         if (sysop)
-            sprintf(opbuf, NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "£º\x1b[4m%s\x1b[m", operator->userid);
+            sprintf(opbuf, "%s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "£º\x1b[4m%s\x1b[m",  NAME_BBS_CHINESE, operator->userid);
         else
             sprintf(opbuf, NAME_BM ":\x1b[4m%s\x1b[m", operator->userid);
         if (write_formatted_file(tmplfile, postfile, "ssssss",
@@ -242,7 +242,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             sprintf(sender, "SYSOP (%s) ", NAME_SYSOP);
             sprintf(sitename, "%s (%24.24s)", BBS_FULL_NAME, ctime_r(&time, timebuf));
             sprintf(opfrom, "%s", NAME_BBS_ENGLISH);
-            sprintf(opbuf, NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "£º\x1b[4m%s\x1b[m", operator->userid);
+            sprintf(opbuf, "%s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "£º\x1b[4m%s\x1b[m",NAME_BBS_CHINESE, operator->userid);
         } else {
             sprintf(sender, "%s ", operator->userid);
             sprintf(sitename, "%s (%24.24s)", BBS_FULL_NAME, ctime_r(&time, timebuf));
