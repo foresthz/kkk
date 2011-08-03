@@ -138,11 +138,11 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
             // 读取楼主的第一个附件，判断是否为图片，是则输出该图以备缩略之用，否则返回NULL
             char fn[PATHLEN];
             char mime[STRLEN];
-            size_t pos;
             int fd_pic;
             char *src, *dst, *dot;
             off_t size_src, size_dst;
-            struct ea_attach_info ai; // 借用一下
+            char *aname, *start;
+            long asize;
 
             setbfile(fn, boardname, fh.filename);
             if ((fd = open(fn, O_RDONLY)) == -1)
@@ -156,15 +156,11 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
                 close(fd);
                 return NULL;
             }
-            pos = fh.attachment + ATTACHMENT_SIZE - 1;
-            strcpy(ai.name, src + pos);
-            pos += strlen(ai.name) + 1;
-            memcpy(&ai.size, src + pos, sizeof(int));
-            ai.size = ntohl(ai.size);
-            pos += sizeof(int);
+            if (!(aname = checkattach(src + fh.attachment, size_src - fh.attachment, &asize, &start)))
+                return NULL;
 
-            dot = strrchr(ai.name, '.');
-            sprintf(mime, "%s", get_mime_type(ai.name));
+            dot = strrchr(aname, '.');
+            sprintf(mime, "%s", get_mime_type(aname));
             // 是否图片？
             if (get_attachment_type_from_ext(dot) != ATTACH_IMG) {
                 end_mmapfile(src, size_src, -1);
@@ -179,7 +175,7 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
                 close(fd);
                 return NULL;
             }
-            ftruncate(fd_pic, ai.size);
+            ftruncate(fd_pic, asize);
             if (safe_mmapfile_handle(fd_pic, PROT_WRITE, MAP_SHARED, &dst, &size_dst) == 0) {
                 close(fd_pic);
                 un_lock(fd, 0, SEEK_SET, 0);
@@ -187,7 +183,7 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
                 return NULL;
             }
             printf("HOTPIC: %s_%d\n", boardname, threadid);
-            memcpy(dst, src + pos, ai.size);
+            memcpy(dst, start, asize);
             end_mmapfile(dst, size_dst, -1);
             end_mmapfile(src, size_src, -1);
             close(fd_pic);
