@@ -137,7 +137,6 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
         } else {
             // 读取楼主的第一个附件，判断是否为图片，是则输出该图以备缩略之用，否则返回NULL
             char fn[PATHLEN];
-            char mime[STRLEN];
             int fd_pic;
             char *src, *dst, *dot;
             off_t size_src, size_dst;
@@ -160,7 +159,6 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
                 return NULL;
 
             dot = strrchr(aname, '.');
-            sprintf(mime, "%s", get_mime_type(aname));
             // 是否图片？
             if (get_attachment_type_from_ext(dot) != ATTACH_IMG) {
                 end_mmapfile(src, size_src, -1);
