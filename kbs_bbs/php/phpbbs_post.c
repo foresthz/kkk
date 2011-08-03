@@ -621,6 +621,7 @@ PHP_FUNCTION(bbs_article_modify)
  *  更新编辑文章
  *
  */
+// this is a deprecated function, use bbs_updatearticle2() instead.
 PHP_FUNCTION(bbs_updatearticle)
 {
     char *boardName, *filename, *content;
@@ -951,7 +952,7 @@ PHP_FUNCTION(bbs_updatearticle2)
  *        -9: 标题过长或为空
  *        -10:system error
  */
-
+// this is a deprecated function, use bbs_updatearticle2() instead.
 PHP_FUNCTION(bbs_edittitle)
 {
     char *board,*title;
