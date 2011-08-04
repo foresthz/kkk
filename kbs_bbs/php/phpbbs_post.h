@@ -11,8 +11,9 @@ PHP_FUNCTION(bbs_upload_add_file);
 PHP_FUNCTION(bbs_attachment_add);
 PHP_FUNCTION(bbs_attachment_del);
 PHP_FUNCTION(bbs_attachment_list);
+#ifdef NFORUM
 PHP_FUNCTION(bbs_file_attachment_list);
-
+#endif
 PHP_FUNCTION(bbs_postarticle);
 
 PHP_FUNCTION(bbs_delpost);
@@ -34,7 +35,7 @@ PHP_FUNCTION(bbs2_brcdump);
 PHP_FUNCTION(bbs2_brcsync);
 
 
-#define PHP_BBS_POST_EXPORT_FUNCTIONS \
+#define PHP_BBS_POST_EXPORT_FUNCTIONS_STD \
     PHP_FE(bbs_getattachtmppath, NULL) \
     PHP_FE(bbs_filteruploadfilename,NULL) \
     PHP_FE(bbs_upload_read_fileinfo,NULL) \
@@ -62,6 +63,13 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs2_brcdump, NULL) \
     PHP_FE(bbs2_brcsync, NULL) \
      
+#ifdef NFORUM
+#define PHP_BBS_POST_EXPORT_FUNCTIONS \
+        PHP_BBS_POST_EXPORT_FUNCTIONS_STD \
+        PHP_FE(bbs_file_attachment_list,NULL)
+#else
+#define PHP_BBS_POST_EXPORT_FUNCTIONS PHP_BBS_POST_EXPORT_FUNCTIONS_STD
+#endif //NFORUM
 
 #endif //PHP_BBS_POST_H
 
