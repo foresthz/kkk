@@ -1762,10 +1762,10 @@ reget:
                 goto reget;
             } else return READ_NEXT;
         case '~':            /*Haohmaru.98.12.05,系统管理员直接查作者资料 */
-            ret=read_authorinfo(conf,fileinfo,NULL);
+            read_authorinfo(conf,fileinfo,NULL);
             break;
         case Ctrl('W'):            /*cityhunter 00.10.18察看版主信息 */
-            ret=read_showauthorBM(conf, fileinfo, NULL);
+            read_showauthorBM(conf, fileinfo, NULL);
             break;
         case Ctrl('O'):
             clear();
