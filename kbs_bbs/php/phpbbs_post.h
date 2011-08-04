@@ -44,7 +44,6 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs_attachment_add,NULL) \
     PHP_FE(bbs_attachment_del,NULL) \
     PHP_FE(bbs_attachment_list,NULL) \
-    PHP_FE(bbs_file_attachment_list,NULL) \
     PHP_FE(bbs_postarticle,NULL) \
     PHP_FE(bbs_delpost,NULL) \
     PHP_FE(bbs_article_deny_modify,NULL) \
