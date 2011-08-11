@@ -1176,12 +1176,12 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 //    TITLE = ent->title;         /*文章标题TITLE */
 // sprintf(TITLE,"%s(%d)",ent->title,ent->eff_size);
     if ((type=='d')||(type=='D')) { //置顶文章
-        sprintf(buf, " \x1b[1;33m[提示]\x1b[m %-12.12s %s %s" FIRSTARTICLE_SIGN " %s ", ent->owner, date, attachch, TITLE);
+        sprintf(buf, " \x1b[1;33m[提示]\x1b[m %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ", ent->owner, date, attachch, TITLE);
         return buf;
     }
 
     if (toupper(type)=='Y') {
-        sprintf(buf," \033[1;33m[备份]\033[m %-12.12s %s %s" FIRSTARTICLE_SIGN " %s ",ent->owner,date,attachch,TITLE);
+        sprintf(buf," \033[1;33m[备份]\033[m %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",ent->owner,date,attachch,TITLE);
         return buf;
     }
 
@@ -1216,11 +1216,11 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 #endif /* HAVE_REPLY_COUNT */
 
 #if defined(COLOR_ONLINE)
-    sprintf(buf, " %s%4d%s %s%c%s \033[1;3%dm%-12.12s\033[m %s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
+    sprintf(buf, " %s%4d%s %s%c%s \033[1;3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
 #elif defined(LOWCOLOR_ONLINE)
-    sprintf(buf, " %s%4d%s %s%c%s \033[3%dm%-12.12s\033[m %s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
+    sprintf(buf, " %s%4d%s %s%c%s \033[3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
 #else
-    sprintf(buf, " %s%4d%s %s%c%s %-12.12s %s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
+    sprintf(buf, " %s%4d%s %s%c%s %-13.13s%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
 #endif
 
     return buf;
@@ -6222,7 +6222,7 @@ static char* read_top_ent(char *buf,int num,struct fileheader *fh,struct filehea
         threadprefix[1][1]=0;
         threadsuffix[0]=0;
     }
-    sprintf(buf," %s%4d%s %c %-12.12s %s%s%c%s%s%s ",threadprefix[0],num,threadsuffix,type,fh->owner,date,
+    sprintf(buf," %s%4d%s %c %-13.13s%s%s%c%s%s%s ",threadprefix[0],num,threadsuffix,type,fh->owner,date,
             threadprefix[1],attachch,(isreply?"":FIRSTARTICLE_SIGN" "),title,threadsuffix);
     return buf;
 }
