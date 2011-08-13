@@ -789,6 +789,7 @@ int del_mail(int ent, struct fileheader *fh, char *direct)
             strcpy(buf, direct);
             t = strrchr(buf, '/') + 1;
             strcpy(t, ".DELETED");
+            fh->accessed[sizeof(fh->accessed) - 1] = time(0) / (3600 * 24) % 100;
             append_record(buf, fh, sizeof(*fh));
         }
         setmailcheck(getCurrentUser()->userid);
@@ -1703,6 +1704,9 @@ int mail_move(struct _select_def* conf, struct fileheader *fileinfo,void* extraa
         }
         if (strcmp(buf,arg->direct))
             if (!delete_record(arg->direct,sizeof(*fileinfo),ent,(RECORD_FUNC_ARG)cmpname,fileinfo->filename))
+                /* 移到垃圾箱时更新access[3] */
+                if (strstr(buf, ".DELETED")==0)
+                    fileinfo->accessed[sizeof(fileinfo->accessed) - 1] = time(0) / (3600 * 24) % 100;
                 append_record(buf,fileinfo,sizeof(*fileinfo));
     }
     free(sel);

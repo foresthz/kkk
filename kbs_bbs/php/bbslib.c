@@ -50,6 +50,7 @@ int del_mail(int ent, struct fileheader *fh, char *direct)
             strcpy(buf, direct);
             t = strrchr(buf, '/') + 1;
             strcpy(t, ".DELETED");
+            fh->accessed[sizeof(fh->accessed) - 1] = time(0) / (3600 * 24) % 100;
             append_record(buf, fh, sizeof(*fh));
         }
         return 0;
@@ -559,6 +560,8 @@ int www_user_login(struct userec *user, int useridx, int kick_multi, char *fromh
             */
             /* Load getCurrentUser()'s mailbox properties, added by atppp */
             u->mailbox_prop = load_mailbox_prop(user->userid);
+            if (HAS_MAILBOX_PROP(u, MBP_AUTOCLEARJUNK))
+                clear_junk_mail(getCurrentUser());
 
             getfriendstr(getCurrentUser(), u, getSession());
             do_after_login(getCurrentUser(),utmpent,0);

@@ -1335,6 +1335,8 @@ void user_login()
     }
     /* Load getCurrentUser()'s mailbox properties, added by flyriver, 2003.1.5 */
     uinfo.mailbox_prop = load_mailbox_prop(getCurrentUser()->userid);
+    if (HAS_MAILBOX_PROP(&uinfo, MBP_AUTOCLEARJUNK))
+        clear_junk_mail(getCurrentUser());
     move(t_lines - 1, 0);
     sethomefile(fname, getCurrentUser()->userid, BADLOGINFILE);
     if (ansimore(fname, false) != -1) {

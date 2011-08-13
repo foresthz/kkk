@@ -971,3 +971,63 @@ int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, i
         strcpy(title, ts.title);
     return ret;
 }
+
+/*
+ * 清除垃圾箱过期邮件，jiangjun 20110803
+ */
+int clear_junk_mail(struct userec *user)
+{
+    char filename[STRLEN], buf[STRLEN];
+    char *ptr;
+    struct fileheader *fh;
+    int fd;
+    int i, total, ret;
+    off_t filesize;
+    struct stat st;
+    int now=(time(0)/86400)%100;
+
+    if (strcmp(user->userid, "guest")==0)
+        return 0;
+
+    setmailfile(filename, user->userid, ".DELETED");
+    BBS_TRY {
+        if (safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &filesize, &fd) == 0)
+            BBS_RETURN(-1);
+        ret = 0;
+        fh = (struct fileheader*)ptr;
+        total = filesize / sizeof(struct fileheader);
+        for (i=0;i<total;i++) {
+            int delta;
+            delta = now - fh[i].accessed[sizeof(fh[i].accessed) - 1];
+            if (delta<0)
+                delta+=100;
+            if (delta > DAY_DELETED_CLEAN) {
+                setmailfile(buf, user->userid, fh[i].filename);
+                if (lstat(buf, &st) == 0 && S_ISREG(st.st_mode) && st.st_nlink == 1) {
+                    if (user->usedspace > st.st_size)
+                        user->usedspace -= st.st_size;
+                    else
+                        user->usedspace = 0;
+                }
+                unlink(buf);
+            } else
+                break;
+        }
+        if (i>0 && i<total)
+            memcpy(ptr, &(fh[i]), (total - i) * sizeof(struct fileheader));
+    }
+
+    BBS_CATCH {
+        ret = -1;
+    }
+    BBS_END;
+    end_mmapfile(ptr, filesize, -1);
+    if (ret==0 && i>0) {
+        ftruncate(fd, filesize - i * sizeof(struct fileheader));
+        ret = i;
+    }
+    close(fd);
+
+    return ret;
+}
+

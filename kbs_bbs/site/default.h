@@ -645,8 +645,9 @@ typedef struct fileheader fileheader_t;
 #define MBP_SAVESENTMAIL      0x00000001
 #define MBP_FORCEDELETEMAIL   0x00000002
 #define MBP_MAILBOXSHORTCUT   0x00000004
+#define MBP_AUTOCLEARJUNK     0x00000008
 
-#define MBP_NUMS 3
+#define MBP_NUMS 4
 
 #ifndef MBP_DEFAULT
 #define MBP_DEFAULT           0x00000001  //默认（新注册用户）的邮箱属性
