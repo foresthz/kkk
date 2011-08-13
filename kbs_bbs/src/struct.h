@@ -574,3 +574,20 @@ typedef struct word {
     struct word *next;
 }NLNode;
 
+/* utmpd «Î«ÛΩ·ππ */
+#define UTMP_NEW 1
+#define UTMP_CLR 3
+struct utmpreqhdr {
+    int command;
+    union {
+        struct {
+            struct user_info utmp;
+            int is_www;
+        } new;
+        struct {
+            int uent;
+            int uid;
+            int pid;
+        } clr;
+    } arg;
+};

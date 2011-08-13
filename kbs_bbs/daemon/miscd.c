@@ -317,13 +317,14 @@ int ismonday()
 static char *username;
 static char *cmd;
 static int num;
-struct requesthdr {
+/*struct requesthdr {
     int command;
     union {
         struct user_info utmp;
         int uent;
     } u_info;
-} utmpreq;
+} utmpreq;*/
+static struct utmpreqhdr utmpreq;
 int getutmprequest(int m_socket)
 {
     int len;
@@ -354,6 +355,7 @@ int getutmprequest(int m_socket)
             close(s);
             continue;
         }
+        break;
         close(s);
     }
     return s;
@@ -479,6 +481,7 @@ void userd()
     return;
 }
 
+void clear_utmp3(int uent, int useridx, int pid);
 void utmpd()
 {
     int m_socket;
@@ -520,6 +523,7 @@ void utmpd()
         int sock, id;
 
         sock = getutmprequest(m_socket);
+
 #if 0
         {                       /*kill user */
             time_t now;
@@ -547,15 +551,14 @@ void utmpd()
 #endif
         /* utmp */
         switch (utmpreq.command) {
-        case 1:                // getnewutmp
-            id = getnewutmpent2(&utmpreq.u_info.utmp, 0 /* TODO ! */);
+        case UTMP_NEW:                // getnewutmp
+            id = getnewutmpent2(&utmpreq.arg.new.utmp, utmpreq.arg.new.is_www);
             break;
-        case 2:
+        /*case 2:
             id = -1;
-            break;              // clear, by uentp
-        case 3:                // clear, by id
-            /*这个代码有错误的，因为pid不能不判断 */
-            clear_utmp(utmpreq.u_info.uent, 0, 0);
+            break;              // clear, by uentp*/
+        case UTMP_CLR:                // clear, by id
+            clear_utmp3(utmpreq.arg.clr.uent, utmpreq.arg.clr.uid, utmpreq.arg.clr.pid);
             id = 0;
             break;
         default:
@@ -779,6 +782,11 @@ static int miscd_dodaemon(char *argv1, char *daemon)
     if (((daemon == NULL) || (!strcmp(daemon, "userd"))) && ((argv1 == NULL) || fork())) {
         strcpy(commandline, "userd");
         userd();
+        exit(0);
+    }
+    if (((daemon == NULL) || (!strcmp(daemon, "utmpd"))) && ((argv1 == NULL) || fork())) {
+        strcpy(commandline, "utmpd");
+        utmpd();
         exit(0);
     }
     if ((daemon == NULL) || (!strcmp(daemon, "flushd"))) {

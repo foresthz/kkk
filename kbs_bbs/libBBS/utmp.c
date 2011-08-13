@@ -127,41 +127,41 @@ struct requesthdr {
         int uent;
     } u_info;
 } utmpreq;
-
-int sendutmpreq(struct requesthdr *req)
+*/
+static struct utmpreqhdr utmpreq;
+int sendutmpreq(struct utmpreqhdr *req)
 {
-
-        int m_socket;
-        struct sockaddr_in sin;
-        fd_set rfds;
-        int result;
-        struct  timeval tv;
-        m_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
-        if (m_socket<0) return -1;
-        sin.sin_family=AF_INET;
-        sin.sin_port=htons(60002);
-        inet_aton("127.0.0.1",&sin.sin_addr);
-        if (connect(m_socket,(struct sockaddr*)&sin,sizeof(sin))!=0) {
-                close(m_socket);
-                return -1;
-        }
-        write(m_socket,req,sizeof(*req));
-        FD_ZERO(&rfds);
-        FD_SET(m_socket,&rfds);
-        tv.tv_sec=5;
-        tv.tv_usec=0;
-        result = select(m_socket+1,&rfds,NULL,NULL,&tv);
-        if (result)
-        {
-                int len=read(m_socket,&result,sizeof(result));
-                close(m_socket);
-                if (len!=sizeof(result)) return -1 ;
-                return result ;
-        }
+    int m_socket;
+    struct sockaddr_in sin;
+    fd_set rfds;
+    int result;
+    struct  timeval tv;
+    m_socket = socket(PF_INET,SOCK_STREAM,IPPROTO_TCP);
+    if (m_socket<0) return -1;
+    sin.sin_family=AF_INET;
+    sin.sin_port=htons(60002);
+    inet_aton("127.0.0.1",&sin.sin_addr);
+    if (connect(m_socket,(struct sockaddr*)&sin,sizeof(sin))!=0) {
         close(m_socket);
         return -1;
+    }
+    write(m_socket,req,sizeof(*req));
+    FD_ZERO(&rfds);
+    FD_SET(m_socket,&rfds);
+    tv.tv_sec=5;
+    tv.tv_usec=0;
+    result = select(m_socket+1,&rfds,NULL,NULL,&tv);
+    if (result)
+    {
+        int len=read(m_socket,&result,sizeof(result));
+        close(m_socket);
+        if (len!=sizeof(result)) return -1 ;
+        return result ;
+    }
+    close(m_socket);
+    return -1;
 }
-*/
+
 
 static void logloop()
 {
@@ -198,16 +198,15 @@ static void logloop()
     }
 }
 
-#if 0
-int getnewutmpent(struct user_info *up)
+int getnewutmpent(struct user_info *up, int is_www)
 {
-    utmpreq.command = 1;
-    memcpy(&utmpreq.u_info.utmp, up, sizeof(*up));
+    utmpreq.command = UTMP_NEW;
+    memcpy(&utmpreq.arg.new.utmp, up, sizeof(*up));
+    utmpreq.arg.new.is_www = is_www;
     /* connect and send request */
     return sendutmpreq(&utmpreq);
 }
-#endif
-int getnewutmpent(struct user_info *up, int is_www)
+int getnewutmpent2(struct user_info *up, int is_www)
 {
     struct user_info *uentp;
     time_t now;
@@ -300,7 +299,7 @@ int getnewutmpent(struct user_info *up, int is_www)
             setpublicshmreadonly(1);
         }
         now = time(NULL);
-        if ((now > utmphead->uptime + 120) || (now < utmphead->uptime - 120)) {
+        if (!is_www && ((now > utmphead->uptime + 120) || (now < utmphead->uptime - 120))) {
             utmphead->uptime = now;
             newbbslog(BBSLOG_USIES, "UTMP:Clean user utmp cache");
             for (n = 0; n < USHM_SIZE; n++) {
@@ -329,6 +328,7 @@ int getnewutmpent(struct user_info *up, int is_www)
 /* same as getnewutmpent() except no updating of utmpshm
  * only called in www
  */
+#if 0
 int getnewutmpent2(struct user_info *up, int is_www)
 {
     int pos, i,ret;
@@ -417,7 +417,7 @@ int getnewutmpent2(struct user_info *up, int is_www)
     utmp_unlock(utmpfd);
     return ret;
 }
-
+#endif
 static int rebuild_list(struct user_info *up, char *arg, int p)
 {
     int pos = p - 1;
@@ -585,15 +585,15 @@ int search_ulist(struct user_info *uentp, int (*fptr)(int, struct user_info *), 
     return 0;
 }
 
-#if 0
-void clear_utmp(int uent)
+void clear_utmp(int uent, int useridx, int pid)
 {
-    utmpreq.command = 3;
-    utmpreq.u_info.uent = uent;
+    utmpreq.command = UTMP_CLR;
+    utmpreq.arg.clr.uent = uent;
+    utmpreq.arg.clr.uid = useridx;
+    utmpreq.arg.clr.pid = pid;
     /* connect and clear */
     sendutmpreq(&utmpreq);
 }
-#endif
 
 void clear_utmp2(int uent)
 {
@@ -674,8 +674,7 @@ void clear_utmp2(int uent)
     }
     utmpshm->uinfo[uent - 1] = zeroinfo;
 }
-
-void clear_utmp(int uent, int useridx, int pid)
+void clear_utmp3(int uent, int useridx, int pid)
 {
     int lockfd;
 
@@ -690,7 +689,6 @@ void clear_utmp(int uent, int useridx, int pid)
     utmp_setreadonly(1);
     utmp_unlock(lockfd);
 }
-
 
 struct kickuser_save {
     int count;

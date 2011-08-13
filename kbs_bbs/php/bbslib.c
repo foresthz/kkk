@@ -386,7 +386,7 @@ int www_user_init(int useridx, char *userid, int key, struct userec **x, struct 
         /*
          * 非guest在线用户处理
          */
-        if (useridx < 1 || useridx >= MAXACTIVE) {
+        if (useridx < 1 || useridx >= MAXACTIVE + SYSOP_EXTRA_USHM) {
             return -1;
         }
         (*y) = get_utmpent(useridx);
@@ -535,7 +535,7 @@ int www_user_login(struct userec *user, int useridx, int kick_multi, char *fromh
         strncpy(ui.userid, user->userid, 20);
         strncpy(ui.realname, ud.realname, 20);
         strncpy(ui.username, user->username, 40);
-        utmpent = getnewutmpent2(&ui, 1);
+        utmpent = getnewutmpent(&ui, 1);
         if (utmpent == -1)
             ret = 1;
         else {
