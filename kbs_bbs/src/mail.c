@@ -1568,6 +1568,7 @@ int get_thread_forward(struct _select_def* conf, struct fileheader* fh, char *ti
     struct write_dir_arg dirarg;
     int ent;
     char ut_file[STRLEN], ut_attach[STRLEN];
+    FILE *fn;
 
     ent=conf->pos;
     init_write_dir_arg(&dirarg);
@@ -1588,6 +1589,12 @@ int get_thread_forward(struct _select_def* conf, struct fileheader* fh, char *ti
     unlink(ut_file);
     gettmpfilename(ut_attach, "ut.attach", getpid());
     unlink(ut_attach);
+
+    if ((fn=fopen(ut_file, "w"))==NULL)
+        return -1;
+    fprintf(fn, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄，原文发表于 \033[32m%s\033[33m 版】\n\n", getCurrentUser()->userid, currboard->filename);
+    fclose(fn);
+
     apply_thread(conf,fh,user_thread_mail,true,true,extraarg);
     if (dashf(ut_attach)) {
         f_catfile(ut_attach, ut_file);
