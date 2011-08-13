@@ -844,7 +844,7 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
 
         fprintf(outf, "\033[0;1;32m☆─────────────────────────────────────☆\033[0;37m\n");
         fprintf(outf, " \033[0;1;32m %s \033[0;1;37m于 \033[0;1;36m %s \033[0;1;37m 在\n", userinfo, posttime);
-        fprintf(outf, " \033[0;1;32m【\033[1;33;4m%s\033[0;1;32m】 \033[m版 \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", board, fileinfo->title);
+        fprintf(outf, " \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", fileinfo->title);
 
         fprintf(outf,"\n");
         while (fgets(buf, 256, inf) != NULL)
@@ -941,6 +941,7 @@ int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, i
     int fd;
     int ret;
     char ut_file[STRLEN], ut_attach[STRLEN], fname[STRLEN];
+    FILE *fn;
 
     setbdir(DIR_MODE_NORMAL, fname, board);
     if ((fd = open(fname, O_RDWR, 0644)) < 0)
@@ -950,6 +951,11 @@ int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, i
     unlink(ut_file);
     gettmpfilename(ut_attach, "ut.attach");
     unlink(ut_attach);
+
+    if ((fn=fopen(ut_file, "w"))==NULL)
+        return -1;
+    fprintf(fn, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄，原文发表于 \033[32m%s\033[33m 版】\n\n", getCurrentUser()->userid, board);
+    fclose(fn);
 
     bzero(&ts, sizeof(ts));
     ts.board = (char*)board;
