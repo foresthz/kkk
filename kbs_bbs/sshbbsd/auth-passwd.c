@@ -84,6 +84,7 @@ int auth_password(const char *server_user, const char *password)
         getSession()->fromhost[IPLEN-1] = 0;
         
         if((fp=fopen("/home/bbs/LOCALCHECK", "r"))) {
+            dosearchuser(useridbuf);
 #endif /* SECONDSITE */
     if(check_ip_acl(getCurrentUser()->userid, host)) {
     	return 0;

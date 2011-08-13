@@ -557,7 +557,7 @@ void login_query()
         }
 
         if (uid[strlen(uid) - 1] == '^') {
-            localcheck = 1;
+            //localcheck = 1;
             uid[strlen(uid) - 1] = 0;
         }
         if (strcasecmp(uid, "new") == 0) {
