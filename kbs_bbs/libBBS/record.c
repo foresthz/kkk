@@ -579,6 +579,8 @@ int substitute_record(char *filename, void *rptr, int size, int id, RECORD_FUNC_
         if (safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &filesize, &fdr) == 0)
             BBS_RETURN(-1);
         ret = 0;
+        // fancy Aug 14 2011, 暂时 lock 上以避免 edit_title() 等函数写破 .DIR FIXME
+        writew_lock(fdr, 0, SEEK_SET, 0);
         if (id * size > filesize) {
             ret = -2;
         } else {
@@ -595,6 +597,7 @@ int substitute_record(char *filename, void *rptr, int size, int id, RECORD_FUNC_
         if (ret == 0) {
             memcpy(ptr + (id - 1) * size, rptr, size);
         }
+        un_lock(fdr, 0, SEEK_SET, 0);
     }
     BBS_CATCH {
         ret = -3;
