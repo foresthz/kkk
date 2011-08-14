@@ -1335,7 +1335,7 @@ static void  board_attach_link(char* buf,int buf_len,char *ext,int len,long atta
             memcpy(base64_info, info, 9);
             to64frombits((unsigned char*)base64_info+9, (unsigned char*)info+9, 24);
             snprintf(buf,buf_len,"http://%s/att.php?%s%s",
-                     get_my_webdomain(1),base64_info,ext);
+                     get_my_webdomain(0),base64_info,ext);
             return;
 #else
             ktype = 'n';
