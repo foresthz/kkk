@@ -684,7 +684,7 @@ int www_user_logoff(struct userec *user, int useridx, struct user_info *puinfo, 
 
 
 
-static void print_font_style(unsigned int style, buffered_output_t * output)
+void print_font_style(unsigned int style, buffered_output_t * output)
 {
     char font_class[8];
     char font_style[STRLEN];
@@ -738,7 +738,7 @@ static void html_output(char *buf, size_t buflen, buffered_output_t * output)
         } \
     } while(0)
 
-static void print_raw_ansi(char *buf, size_t buflen, buffered_output_t * output)
+void print_raw_ansi(char *buf, size_t buflen, buffered_output_t * output)
 {
     size_t i;
 
@@ -753,7 +753,7 @@ static void print_raw_ansi(char *buf, size_t buflen, buffered_output_t * output)
     }
 }
 
-static void generate_font_style(unsigned int *style, unsigned int *ansi_val, size_t len)
+void generate_font_style(unsigned int *style, unsigned int *ansi_val, size_t len)
 {
     size_t i;
     unsigned int color;

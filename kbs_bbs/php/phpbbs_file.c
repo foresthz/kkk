@@ -241,7 +241,156 @@ PHP_FUNCTION(bbs2_readfile_text)
 
     RETVAL_STRINGL(output_buffer, last_return, 0);
 }
+#ifdef NFORUM
+/* fancy Aug 14 2011，nForum 不带颜色的正文 + 附件输出
+   return array(
+       'content' => 'blablabla',
+       'attachment' => array(
+           array('name' => 'filename.jpg', size => 12345, pos => 678),
+           ...
+       )
+   );
+*/
+PHP_FUNCTION(bbs2_readfile_nforum)
+{
+    char *filename;
+    int filename_len;
+    long maxchar;
+    long escape_flag; /* 0(default) - escape <>&\n, 1 - double escape <>&\n, 2 - escape <>&\n and space */
+    char *output_buffer;
+    int output_buffer_len, output_buffer_size, last_return = 0;
+    char c;
+    char *ptr, *cur_ptr;
+    off_t ptrlen, mmap_ptrlen;
+    int in_escape = false, is_last_space = false;
+    int i;
+    char escape_seq[4][16], escape_seq_len[4];
+    zval *attachment;
 
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sll", &filename, &filename_len, &maxchar, &escape_flag) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+
+    if (safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &mmap_ptrlen, NULL) == 0)
+        RETURN_LONG(-1);
+
+    ptrlen = mmap_ptrlen;
+
+    if (!maxchar) {
+        maxchar = ptrlen;
+    } else if (ptrlen > maxchar) {
+        ptrlen = maxchar;
+    }
+    output_buffer_size = 2 * maxchar;
+    output_buffer = (char*)emalloc(output_buffer_size);
+    output_buffer_len = 0;
+    cur_ptr = ptr;
+    if (escape_flag == 1) {
+        strcpy(escape_seq[0], "&amp;amp;");
+        strcpy(escape_seq[1], "&amp;lt;");
+        strcpy(escape_seq[2], "&amp;gt;");
+        strcpy(escape_seq[3], "&lt;br/&gt;");
+    } else {
+        strcpy(escape_seq[0], "&amp;");
+        strcpy(escape_seq[1], "&lt;");
+        strcpy(escape_seq[2], "&gt;");
+        strcpy(escape_seq[3], "<br/>");
+    }
+    for (i=0;i<4;i++) escape_seq_len[i] = strlen(escape_seq[i]);
+    while (ptrlen > 0) {
+        c = *cur_ptr;
+        if (c == '\0') { //assume ATTACHMENT_PAD[0] is '\0'
+            if (ptrlen >= ATTACHMENT_SIZE + sizeof(int) + 2) {
+                if (!memcmp(cur_ptr, ATTACHMENT_PAD, ATTACHMENT_SIZE)) {
+                    ptrlen = -ptrlen;
+                    break;
+                }
+            }
+        } else if (c == '\033') {
+            in_escape = true;
+        } else if (!in_escape) {
+            if (output_buffer_len + 16 > output_buffer_size) {
+                output_buffer = (char*)erealloc(output_buffer, output_buffer_size += 128);
+            }
+            if (escape_flag == 2 && c == ' ') {
+                if (!is_last_space) {
+                    output_buffer[output_buffer_len++] = ' ';
+                } else {
+                    strcpy(output_buffer + output_buffer_len, "&nbsp;");
+                    output_buffer_len += 6;
+                }
+                is_last_space = !is_last_space;
+            } else {
+                is_last_space = false;
+                switch (c) {
+                    case '&':
+                        strcpy(output_buffer + output_buffer_len, escape_seq[0]);
+                        output_buffer_len += escape_seq_len[0];
+                        break;
+                    case '<':
+                        strcpy(output_buffer + output_buffer_len, escape_seq[1]);
+                        output_buffer_len += escape_seq_len[1];
+                        break;
+                    case '>':
+                        strcpy(output_buffer + output_buffer_len, escape_seq[2]);
+                        output_buffer_len += escape_seq_len[2];
+                        break;
+                    case '\n':
+                        strcpy(output_buffer + output_buffer_len, escape_seq[3]);
+                        output_buffer_len += escape_seq_len[3];
+                        last_return = output_buffer_len;
+                        is_last_space = true;
+                        break;
+                    default:
+                        if (c < 0 || c >= 32)
+                            output_buffer[output_buffer_len++] = c;
+                        break;
+                }
+            }
+        } else if (isalpha(c)) {
+            in_escape = false;
+        }
+        ptrlen--; cur_ptr++;
+    }
+
+    MAKE_STD_ZVAL(attachment);
+    array_init(return_value);
+    array_init(attachment);
+
+    add_assoc_stringl(return_value, "content", output_buffer, last_return, 1);
+
+    if (ptrlen < 0) { //attachment
+        char *attachfilename, *attachptr;
+        long attach_len, attach_pos, newlen;
+        zval *item;
+
+        ptrlen = -ptrlen;
+        while (ptrlen > 0) {
+            if (((attachfilename = checkattach(cur_ptr, ptrlen,
+                                               &attach_len, &attachptr)) == NULL)) {
+                break;
+            }
+            attach_pos = attachfilename - ptr;
+            newlen = attachptr - cur_ptr + attach_len;
+            cur_ptr += newlen;
+            ptrlen -= newlen;
+            if (ptrlen < 0) break;
+            MAKE_STD_ZVAL(item);
+            array_init(item);
+            add_assoc_string(item, "name", attachfilename, 1);
+            add_assoc_long(item, "size", attach_len);
+            add_assoc_long(item, "pos", attach_pos);
+            add_next_index_zval(attachment, item);
+        }
+    }
+    add_assoc_zval(return_value, "attachment", attachment);
+
+    end_mmapfile(ptr, mmap_ptrlen, -1);
+
+}
+
+
+#endif
 
 PHP_FUNCTION(bbs_file_output_attachment)
 {
@@ -489,6 +638,250 @@ PHP_FUNCTION(bbs_printansifile_noatt)
     free_output(out);
     if (!is_preview) end_mmapfile(ptr, mmap_ptrlen, -1);
     RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
+}
+
+
+static void output_ansi_nforum(char *buf, size_t buflen,
+                      buffered_output_t * output, zval *attachment)
+{
+    unsigned int font_style = 0;
+    unsigned int ansi_state;
+    unsigned int ansi_val[STRLEN];
+    int ival = 0;
+    size_t i;
+    bool att = false;
+    char *ansi_begin = NULL;
+    char *ansi_end;
+    size_t article_len = buflen;
+
+    if (buf == NULL)
+        return;
+
+    STATE_ZERO(ansi_state);
+    bzero(ansi_val, sizeof(ansi_val));
+
+    for (i = 0; i < article_len; i++) {
+        if (buf[i] == '\0') { //assume ATTACHMENT_PAD[0] is '\0'
+            if (article_len - i >= ATTACHMENT_SIZE + sizeof(int) + 2) {
+                if (!memcmp(buf + i, ATTACHMENT_PAD, ATTACHMENT_SIZE)) {
+                    att = true;
+                    break;
+                }
+            }
+        }
+        if (STATE_ISSET(ansi_state, STATE_NEW_LINE)) {
+            STATE_CLR(ansi_state, STATE_NEW_LINE);
+            if (i < (buflen - 1) && !STATE_ISSET(ansi_state,STATE_TEX_SET) && (buf[i] == ':' && buf[i + 1] == ' ')) {
+                STATE_SET(ansi_state, STATE_QUOTE_LINE);
+                if (STATE_ISSET(ansi_state, STATE_FONT_SET))
+                    BUFFERED_OUTPUT(output, "</font>", 7);
+                /*  
+                 * set quoted line styles
+                 */
+                STYLE_SET(font_style, FONT_STYLE_QUOTE);
+                STYLE_SET_FG(font_style, FONT_COLOR_QUOTE);
+                STYLE_CLR_BG(font_style);
+                print_font_style(font_style, output);
+                BUFFERED_OUTPUT(output, &buf[i], 1);
+                STATE_SET(ansi_state, STATE_FONT_SET);
+                STATE_CLR(ansi_state, STATE_ESC_SET);
+                /*
+                 * clear ansi_val[] array
+                 */
+                bzero(ansi_val, sizeof(ansi_val));
+                ival = 0;
+                continue;
+            } else
+                STATE_CLR(ansi_state, STATE_QUOTE_LINE);
+        }
+        /*
+        * is_tex 情况下，\[upload 优先匹配 \[ 而不是 [upload
+        * is_tex 情况下应该还有一个问题是 *[\[ 等，不过暂时不管了 - atppp
+        */
+        if (i < (buflen - 1) && !STATE_ISSET(ansi_state,STATE_TEX_SET) && (buf[i] == 0x1b && buf[i + 1] == '[')) {
+            if (STATE_ISSET(ansi_state, STATE_ESC_SET)) {
+                /*
+                 *[*[ or *[13;24*[ */
+                size_t len;
+
+                ansi_end = &buf[i - 1];
+                len = ansi_end - ansi_begin + 1;
+                print_raw_ansi(ansi_begin, len, output);
+            }
+            STATE_SET(ansi_state, STATE_ESC_SET);
+            ansi_begin = &buf[i];
+            i++;                /* skip the next '[' character */
+        } else if (buf[i] == '\n') {
+            if (STATE_ISSET(ansi_state, STATE_ESC_SET)) {
+                /*
+                 *[\n or *[13;24\n */
+                size_t len;
+
+                ansi_end = &buf[i - 1];
+                len = ansi_end - ansi_begin + 1;
+                print_raw_ansi(ansi_begin, len, output);
+                STATE_CLR(ansi_state, STATE_ESC_SET);
+            }
+            if (STATE_ISSET(ansi_state, STATE_QUOTE_LINE)) {
+                /*
+                 * end of a quoted line
+                 */
+                BUFFERED_OUTPUT(output, " </font>", 8);
+                STYLE_CLR(font_style, FONT_STYLE_QUOTE);
+                STATE_CLR(ansi_state, STATE_FONT_SET);
+            }
+            if (!STATE_ISSET(ansi_state,STATE_TEX_SET)) {
+                BUFFERED_OUTPUT(output, " <br /> ", 8);
+           }
+            STATE_CLR(ansi_state, STATE_QUOTE_LINE);
+            STATE_SET(ansi_state, STATE_NEW_LINE);
+        } else {
+            if (STATE_ISSET(ansi_state, STATE_ESC_SET)) {
+                if (buf[i] == 'm') {
+                    /*
+                     *[0;1;4;31m */
+                    if (STATE_ISSET(ansi_state, STATE_FONT_SET)) {
+                        BUFFERED_OUTPUT(output, "</font>", 7);
+                        STATE_CLR(ansi_state, STATE_FONT_SET);
+                    }
+                    if (i < buflen - 1) {
+                        generate_font_style(&font_style, ansi_val, ival + 1);
+                        if (STATE_ISSET(ansi_state, STATE_QUOTE_LINE))
+                            STYLE_SET(font_style, FONT_STYLE_QUOTE);
+                        print_font_style(font_style, output);
+                        STATE_SET(ansi_state, STATE_FONT_SET);
+                        STATE_CLR(ansi_state, STATE_ESC_SET);
+                        /*
+                         * STYLE_ZERO(font_style);
+                         */
+                        /*
+                         * clear ansi_val[] array
+                         */
+                        bzero(ansi_val, sizeof(ansi_val));
+                        ival = 0;
+                    }
+                } else if (isalpha(buf[i])) {
+                    /*
+                     *[23;32H */
+                    /*
+                     * ignore it
+                     */
+                    STATE_CLR(ansi_state, STATE_ESC_SET);
+                    STYLE_ZERO(font_style);
+                    /*
+                     * clear ansi_val[] array
+                     */
+                    bzero(ansi_val, sizeof(ansi_val));
+                    ival = 0;
+                    continue;
+                } else if (buf[i] == ';') {
+                    if (ival < sizeof(ansi_val) - 1) {
+                        ival++; /* go to next ansi_val[] element */
+                        ansi_val[ival] = 0;
+                    }
+                } else if (buf[i] >= '0' && buf[i] <= '9') {
+                    ansi_val[ival] *= 10;
+                    ansi_val[ival] += (buf[i] - '0');
+                } else {
+                    /*
+                     *[1;32/XXXX or *[* or *[[ */
+                    /*
+                     * not a valid ANSI string, just output it
+                     */
+                    size_t len;
+
+                    ansi_end = &buf[i];
+                    len = ansi_end - ansi_begin + 1;
+                    print_raw_ansi(ansi_begin, len, output);
+                    STATE_CLR(ansi_state, STATE_ESC_SET);
+                    /*  
+                     * clear ansi_val[] array
+                     */
+                    bzero(ansi_val, sizeof(ansi_val));
+                    ival = 0;
+                }
+                
+            } else  
+                print_raw_ansi(&buf[i], 1, output);
+        }           
+    }                   
+    if (STATE_ISSET(ansi_state, STATE_FONT_SET)) {
+        BUFFERED_OUTPUT(output, "</font>", 7);
+        STATE_CLR(ansi_state, STATE_FONT_SET);
+    }
+
+    if (att) { //attachment
+        char *cur_ptr, *attachfilename, *attachptr;
+        long attach_len, attach_pos, newlen;
+        off_t ptrlen;
+        zval *item;
+
+        cur_ptr = buf + i;
+        ptrlen = article_len - i;
+        while (ptrlen > 0) {
+            if (((attachfilename = checkattach(cur_ptr, ptrlen,
+                                               &attach_len, &attachptr)) == NULL)) {
+                break;
+            }
+            attach_pos = attachfilename - buf;
+            newlen = attachptr - cur_ptr + attach_len;
+            cur_ptr += newlen;
+            ptrlen -= newlen;
+            if (ptrlen < 0) break;
+            MAKE_STD_ZVAL(item);
+            array_init(item);
+            add_assoc_string(item, "name", attachfilename, 1);
+            add_assoc_long(item, "size", attach_len);
+            add_assoc_long(item, "pos", attach_pos);
+            add_next_index_zval(attachment, item);
+        }
+    }
+    BUFFERED_FLUSH(output);
+
+}
+
+/* fancy Aug 14 2011，nForum 带颜色的正文 + 附件输出
+   return array(
+       'content' => 'blablabla',
+       'attachment' => array(
+           array('name' => 'filename.jpg', size => 12345, pos => 678),
+           ...
+       )
+   );
+*/
+PHP_FUNCTION(bbs_printansifile_nforum)
+{
+    char *filename;
+    int filename_len;
+    char *ptr;
+    off_t ptrlen = 0, mmap_ptrlen;
+    const int outbuf_len = 4096;
+    buffered_output_t *out;
+    zval *attachment;
+
+    if (ZEND_NUM_ARGS() == 1) {
+        if (zend_parse_parameters(1 TSRMLS_CC, "s", &filename, &filename_len) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+        }
+    } else
+        WRONG_PARAM_COUNT;
+    if (safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &mmap_ptrlen, NULL) == 0)
+        RETURN_LONG(-1);
+    ptrlen = mmap_ptrlen;
+    if ((out = alloc_output(outbuf_len)) == NULL) {
+        end_mmapfile(ptr, mmap_ptrlen, -1);
+        RETURN_LONG(2);
+    }
+    override_default_write(out, new_write);
+    MAKE_STD_ZVAL(attachment);
+    array_init(attachment);
+    output_ansi_nforum(ptr, ptrlen, out, attachment);
+    free_output(out);
+    end_mmapfile(ptr, mmap_ptrlen, -1);
+    array_init(return_value);
+    add_assoc_stringl(return_value, "content", get_output_buffer(), get_output_buffer_len(), 1);
+    add_assoc_zval(return_value, "attachment", attachment);
+    //RETURN_STRINGL(get_output_buffer(), get_output_buffer_len(),1);
 }
 #endif
 

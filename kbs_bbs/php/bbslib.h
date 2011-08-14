@@ -35,6 +35,9 @@ void output_ansi_html(char *buf, size_t buflen, buffered_output_t *output,char* 
 #ifdef NFORUM
 void output_ansi_html_noatt(char *buf, size_t buflen, buffered_output_t *output);
 #endif
+void print_font_style(unsigned int style, buffered_output_t * output);
+void print_raw_ansi(char *buf, size_t buflen, buffered_output_t * output);
+void generate_font_style(unsigned int *style, unsigned int *ansi_val, size_t len);
 
 struct WWW_GUEST_S* www_get_guest_entry(int idx);
 

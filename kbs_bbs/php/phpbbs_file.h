@@ -8,7 +8,9 @@ PHP_FUNCTION(bbs2_readfile_text);
 PHP_FUNCTION(bbs_file_output_attachment);
 PHP_FUNCTION(bbs_printansifile);
 #ifdef NFORUM
+PHP_FUNCTION(bbs2_readfile_nforum);
 PHP_FUNCTION(bbs_printansifile_noatt);
+PHP_FUNCTION(bbs_printansifile_nforum);
 #endif
 PHP_FUNCTION(bbs_print_article);
 PHP_FUNCTION(bbs_print_article_js);
@@ -33,7 +35,9 @@ PHP_FUNCTION(bbs_parse_article);
 #ifdef NFORUM
 #define PHP_BBS_FILE_EXPORT_FUNCTIONS\
     PHP_BBS_FILE_EXPORT_FUNCTIONS_STD\
-    PHP_FE(bbs_printansifile_noatt, NULL)
+    PHP_FE(bbs2_readfile_nforum, NULL)\
+    PHP_FE(bbs_printansifile_noatt, NULL)\
+    PHP_FE(bbs_printansifile_nforum, NULL)
 #else
 #define PHP_BBS_FILE_EXPORT_FUNCTIONS PHP_BBS_FILE_EXPORT_FUNCTIONS_STD
 #endif // NFORUM
