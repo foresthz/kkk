@@ -926,6 +926,16 @@ PHP_FUNCTION(bbs_updatearticle2)
             }
         }
     }
+    if (f.accessed[0]&FILE_MARKED) {
+        if (setboardmark(board,-1))
+            board_regenspecial(brd->filename,DIR_MODE_MARK,NULL);
+        else {
+            char olddirect[PATHLEN];
+            setbdir(DIR_MODE_MARK,olddirect,brd->filename);
+            if ((ent=get_ent_from_id(DIR_MODE_MARK,f.id,brd->filename))!=0)
+                substitute_record(path,&f,sizeof(struct fileheader),ent, (RECORD_FUNC_ARG) cmpname, f.filename);
+        }
+    }
     setboardtitle(brd->filename, 1);
     if (is_tex != -1) {
         setbfile(dirpath, brd->filename, f.filename);
@@ -1104,6 +1114,17 @@ PHP_FUNCTION(bbs_edittitle)
             }
         }
     }
+    if (f.accessed[0]&FILE_MARKED) {
+        if (setboardmark(board,-1))
+            board_regenspecial(brd->filename,DIR_MODE_MARK,NULL);
+        else {
+            char olddirect[PATHLEN];
+            setbdir(DIR_MODE_MARK,olddirect,brd->filename);
+            if ((ent=get_ent_from_id(DIR_MODE_MARK,f.id,brd->filename))!=0)
+                substitute_record(path,&f,sizeof(struct fileheader),ent, (RECORD_FUNC_ARG) cmpname, f.filename);
+        }
+    }
+
     setboardtitle(brd->filename, 1);
     if (is_tex != -1) {
         setbfile(dirpath, brd->filename, f.filename);

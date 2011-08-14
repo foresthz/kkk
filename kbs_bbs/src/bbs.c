@@ -3908,6 +3908,16 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
                 //setboardorigin(currboard->filename, 1);
             }
         }
+        if (fileinfo->accessed[0]&FILE_MARKED) {
+            if (setboardmark(currboard->filename,-1))
+                board_regenspecial(currboard->filename,DIR_MODE_MARK,NULL);
+            else {
+                char olddirect[PATHLEN];
+                setbdir(DIR_MODE_MARK,olddirect,currboard->filename);
+                if ((ent=get_ent_from_id(DIR_MODE_MARK,fileinfo->id,currboard->filename))!=0)
+                    substitute_record(olddirect,fileinfo,sizeof(struct fileheader),ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
+            }
+        }
         setboardtitle(currboard->filename, 1);
     }
     return PARTUPDATE;
