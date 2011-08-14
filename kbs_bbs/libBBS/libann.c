@@ -1105,7 +1105,7 @@ int a_SeSave(char *path, const char *key, struct fileheader *fileinfo, bool appe
         int fsrc,fdst;
         char *src = (char *) malloc(BLK_SIZ);
         if ((fsrc = open(qfile, O_RDONLY)) >= 0) {
-            lseek(fsrc,fileinfo->attachment-1,SEEK_SET);
+            lseek(fsrc,fileinfo->attachment,SEEK_SET);
             sprintf(genbuf,"tmp/bm.%s.attach",userid);
             if ((fdst=open(genbuf,O_WRONLY | O_CREAT | O_APPEND, 0600)) >= 0) {
                 long ret;
@@ -1161,8 +1161,8 @@ int a_Save(char *path, const char *key, struct fileheader *fileinfo, bool append
                     if (ret <= 0)
                         break;
                     if (fileinfo->attachment) {
-                        if (saved+ret>fileinfo->attachment-1) {
-                            needsave=fileinfo->attachment-1-saved;
+                        if (saved+ret>fileinfo->attachment) {
+                            needsave=fileinfo->attachment-saved;
                         } else needsave=ret;
                     } else needsave=ret;
                     saved+=needsave;
