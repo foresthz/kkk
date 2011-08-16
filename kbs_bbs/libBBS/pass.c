@@ -211,12 +211,12 @@ int remote_auth(const char *passwd, const char *userid, char *permstr)
 
             if (u->userid[0]) {
                 rm_userid_stuff(u->userid);
-                setuserid2(uid, "");
+                setuserid(uid, "");
             }
 
             if ((id=getuser(auth.userid, &u1))!=0) {
                 rm_userid_stuff(u1->userid);
-                setuserid2(id, "");
+                setuserid(id, "");
                 memset(u1, 0, sizeof(struct userec));
             }
 
