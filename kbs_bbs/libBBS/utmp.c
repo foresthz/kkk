@@ -206,6 +206,8 @@ int getnewutmpent(struct user_info *up, int is_www)
     /* connect and send request */
     return sendutmpreq(&utmpreq);
 }
+
+// this can only be called in miscd utmpd
 int getnewutmpent2(struct user_info *up, int is_www)
 {
     struct user_info *uentp;
@@ -595,7 +597,7 @@ void clear_utmp(int uent, int useridx, int pid)
     sendutmpreq(&utmpreq);
 }
 
-void clear_utmp2(int uent)
+static void clear_utmp2(int uent)
 {
     int hashkey, find;
     struct user_info zeroinfo;
@@ -674,6 +676,8 @@ void clear_utmp2(int uent)
     }
     utmpshm->uinfo[uent - 1] = zeroinfo;
 }
+
+// this can only be called in miscd utmpd
 void clear_utmp3(int uent, int useridx, int pid)
 {
     int lockfd;

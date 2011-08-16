@@ -59,9 +59,6 @@ extern "C"
 
     void load_user_title(ARG_VOID);
     struct userec *getuserbynum(int num);
-#ifndef SECONDSITE
-    int getnewuserid2(char *userid);
-#endif
     unsigned int ucache_hash(const char *userid);       /* hash function export for utmp usage */
 
     int resolve_ucache(ARG_VOID);
@@ -120,7 +117,6 @@ extern "C"
     void newbbslog(int type, const char *fmt, ...);
 
     /* defined in utmp.c */
-    int getnewutmpent2(struct user_info *up, int is_www);
     typedef int (*APPLY_UTMP_FUNC)(struct user_info *, void *, int pos);
     void resolve_utmp(ARG_VOID);
     void detach_utmp(ARG_VOID);
@@ -132,8 +128,7 @@ extern "C"
 #define UPDATE_UTMP_STR(field,entp) { if (CHECK_UENT((entp).uid)) \
             strcpy(utmpshm->uinfo[ getSession()->utmpent- 1 ].field,(entp).field); }
     int search_ulist(struct user_info *uentp, int (*fptr)(int, struct user_info *), int farg);  /* ulist 中 search 符合fptr函数的 user */
-    void clear_utmp2(int uent);
-    void clear_utmp(int uentp, int useridx, int pid);   /*先锁住utmp调用clear_utmp2,并校验useridx */
+    void clear_utmp(int uentp, int useridx, int pid);
     int kick_user_utmp(int uid, struct user_info *uentp, int signal);
     int apply_ulist(APPLY_UTMP_FUNC fptr, void *arg);
     int apply_utmpuid(APPLY_UTMP_FUNC fptr, int uid, void *arg);

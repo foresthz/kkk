@@ -641,7 +641,7 @@ set_safe_record()
 */
 
 #ifndef SECONDSITE
-int getnewuserid3(char *userid)
+static int getnewuserid3(char *userid)
 {
 
     int m_socket;
@@ -701,6 +701,7 @@ int getnewuserid3(char *userid)
     return -1;
 }
 
+// this can only be called in miscd userd
 int getnewuserid2(char *userid)
 {
     int result = getnewuserid3(userid);
