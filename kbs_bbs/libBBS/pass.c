@@ -221,7 +221,7 @@ int remote_auth(const char *passwd, const char *userid, char *permstr)
             }
 
             memset(u, 0, sizeof(struct userec));
-            setuserid2(uid, auth.userid);
+            setuserid(uid, auth.userid);
             setpasswd(passwd, u);
             create_userid_stuff(u);
         }
