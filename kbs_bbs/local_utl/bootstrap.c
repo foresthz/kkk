@@ -95,6 +95,7 @@ void clean_ids_boards(void)
 }
 
 /* 创建以username为名，以passwd为密码的用户 */
+int getnewuserid(char *userid);
 void add_bbsid(char *username, char *passwd)
 {
     struct userec *newuser;
