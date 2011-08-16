@@ -701,7 +701,6 @@ static int getnewuserid3(char *userid)
     return -1;
 }
 
-// this can only be called in miscd userd
 int getnewuserid2(char *userid)
 {
     int result = getnewuserid3(userid);
@@ -718,6 +717,7 @@ struct userec *getuserbynum(int num) {
     return &uidshm->passwd[num - 1];
 }
 
+// this can only be called in miscd userd
 #ifndef SECONDSITE
 int getnewuserid(char *userid)
 {

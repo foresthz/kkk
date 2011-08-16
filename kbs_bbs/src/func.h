@@ -59,6 +59,9 @@ extern "C"
 
     void load_user_title(ARG_VOID);
     struct userec *getuserbynum(int num);
+#ifndef SECONDSITE
+    int getnewuserid2(char *userid);
+#endif
     unsigned int ucache_hash(const char *userid);       /* hash function export for utmp usage */
 
     int resolve_ucache(ARG_VOID);
@@ -74,9 +77,6 @@ extern "C"
     int update_user(struct userec *user, int num, int all);
     int apply_users(int(*func)(struct userec*,void*),void *arg);
     int apply_uids(int(*func)(struct userec*,int,void*),void *arg);
-#ifndef SECONDSITE
-    int getnewuserid(char *userid);
-#endif
 
     int flush_ucache(char *fname);
     int load_ucache(ARG_VOID);

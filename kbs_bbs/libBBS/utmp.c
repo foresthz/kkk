@@ -13,6 +13,7 @@
 #endif
 
 static int rebuild_list(struct user_info *up, char *arg, int p);
+static void clear_utmp2(int uent);
 struct UTMPFILE *get_utmpshm_addr() {
     return utmpshm;
 }
