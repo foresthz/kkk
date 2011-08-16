@@ -209,6 +209,7 @@ static char genbuf1[255];
 #define SAVELIVE
 #endif
 
+int setuserid2(int num, const char *userid);        /* 设置user num的id为user id,userd使用 */
 #ifndef SAVELIVE
 
 int killauser(struct userec *theuser, void *data)
@@ -410,6 +411,9 @@ void putrequest(int sock, int id)
     close(sock);
 }
 
+#ifndef SECONDSITE
+int getnewuserid(char *userid);
+#endif
 void userd()
 {
     int m_socket;
@@ -481,6 +485,7 @@ void userd()
     return;
 }
 
+int getnewutmpent2(struct user_info *up, int is_www);
 void clear_utmp3(int uent, int useridx, int pid);
 void utmpd()
 {

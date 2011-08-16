@@ -431,6 +431,7 @@ static int setuserid_internal(int num, const char *userid)
     return 0;
 }
 
+// this can only be called in miscd userd
 int setuserid2(int num, const char *userid)
 {
     int lockfd, ret;

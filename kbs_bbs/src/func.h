@@ -69,7 +69,6 @@ extern "C"
 
     int getuserid(char *userid, int uid);
     void setuserid(int num, const char *userid);        /* 设置user num的id为user id */
-    int setuserid2(int num, const char *userid);        /* 设置user num的id为user id,userd使用 */
     int searchuser(const char *userid);
     int getuser(const char *userid,struct userec **lookupuser);        /* 取用户信息 ，返回值在lookupuser里面 */
     char *u_namearray(char buf[][IDLEN + 1], int *pnum, char *tag);
