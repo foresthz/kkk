@@ -581,7 +581,7 @@ PHP_FUNCTION(bbs_createnewid)
 
     memset(&newuser,0,sizeof(newuser));
     strncpy(newuser.lasthost,getSession()->fromhost,IPLEN);
-    newuser.lasthost[IPLEN]=0;
+    newuser.lasthost[IPLEN-1]=0;
     strncpy(newuser.userid ,userid,IDLEN);
     strncpy(newuser.username,nickname,NAMELEN-1);
     newuser.username[NAMELEN-1] = '\0';
