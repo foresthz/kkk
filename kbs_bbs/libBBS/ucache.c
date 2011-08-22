@@ -690,7 +690,7 @@ static int getnewuserid3(char *userid)
     tv.tv_sec = 5;
     tv.tv_usec = 0;
     result = select(m_socket + 1, &rfds, NULL, NULL, &tv);
-    if (result) {
+    if (result > 0) {
         int len = read(m_socket, &result, sizeof(result));
 
         close(m_socket);
