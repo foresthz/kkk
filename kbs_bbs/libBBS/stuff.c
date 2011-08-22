@@ -3433,3 +3433,15 @@ void system_file_report(char *str, char *oldfile, char *newfile, session_t *sess
     }
 }
 
+int www_sync_stay(struct userec *user, struct user_info *uinfo)
+{
+    time_t now,stay;
+    if (((stay=(now=time(NULL))-uinfo->logintime)<300)&&(user->numlogins>5))
+        user->numlogins--;
+    else {
+        if (!(now-uinfo->freshtime<IDLE_TIMEOUT))
+            stay-=IDLE_TIMEOUT;
+        user->stay+=stay;
+    }
+    return (int)stay;
+}

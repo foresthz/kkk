@@ -276,7 +276,8 @@ int getnewutmpent2(struct user_info *up, int is_www)
         if (utmpshm->uinfo[pos].active)
             if (utmpshm->uinfo[pos].pid) {
                 bbslog("3system", "utmp: alloc a active utmp! old:%s new:%s", utmpshm->uinfo[pos].userid, up->userid);
-                kill(utmpshm->uinfo[pos].pid, SIGHUP);
+                if (utmpshm->uinfo[pos].pid != 1)
+                    kill(utmpshm->uinfo[pos].pid, SIGHUP);
             }
         utmpshm->uinfo[pos] = *up;
         hashkey = utmp_hash(up->userid);
@@ -312,10 +313,14 @@ int getnewutmpent2(struct user_info *up, int is_www)
                         && ((now - uentp->freshtime) < IDLE_TIMEOUT)) {
                     continue;
                 }
-                if (uentp->active && uentp->pid && kill(uentp->pid, 0) == -1) {     /*uentp检查 */
+                if (uentp->active && uentp->pid && (uentp->pid == 1 || kill(uentp->pid, 0) == -1)) {     /*uentp检查 */
                     char buf[STRLEN];
 
                     strncpy(buf, uentp->userid, IDLEN + 2);
+                    if (uentp->pid == 1) { // web 用户超时离线 fancy Aug 21 2011
+                        struct userec *user = getuserbynum(uentp->uid);
+                        www_sync_stay(user, uentp);
+                    }
                     clear_utmp2(n + 1);     /* 不需要再lock了 */
                     RemoveMsgCountFile(buf);
                 }

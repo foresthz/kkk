@@ -632,8 +632,8 @@ static void setflags(struct userec *u, int mask, int value)
 }
 int www_user_logoff(struct userec *user, int useridx, struct user_info *puinfo, int userinfoidx)
 {
+#if 0 // fancy Aug 21 2011
     int stay = 0;
-
     stay = time(0) - puinfo->logintime;
     if (stay < 0) stay = 0;
 #if 0 // atppp 20060221
@@ -649,6 +649,8 @@ int www_user_logoff(struct userec *user, int useridx, struct user_info *puinfo, 
     } else {
         user->stay += stay;
     }
+#endif
+    time_t stay = www_sync_stay(user, puinfo);
     user->exittime = time(0);
     if (strcmp(user->userid, "guest")) {
         newbbslog(BBSLOG_USIES, "EXIT: Stay:%3ld (%s)[%d %d](www)", stay / 60, user->username, getSession()->utmpent, useridx);
