@@ -333,9 +333,11 @@ int getutmprequest(int m_socket)
     int s;
     char *phdr = (char *) &utmpreq;
     int totalread=0;
-
-    len = sizeof(sin);
-    for (s = accept(m_socket, (struct sockaddr*)&sin, (socklen_t *) &len);; s = accept(m_socket, (struct sockaddr *)&sin, (socklen_t *) &len)) {
+    fd_set rfds;
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    for (len = sizeof(sin), s = accept(m_socket, (struct sockaddr*)&sin, (socklen_t *) &len);; len = sizeof(sin), s = accept(m_socket, (struct sockaddr *)&sin, (socklen_t *) &len)) {
         if ((s <= 0) && errno != EINTR) {
             bbslog("3system", "utmpd:accept %s", strerror(errno));
             exit(-1);
@@ -346,10 +348,16 @@ int getutmprequest(int m_socket)
         len = 1;
 
         while (totalread < sizeof(utmpreq) && len > 0) {
-            len = read(s, phdr, sizeof(utmpreq) - totalread);
-            if (len > 0) {
-                totalread += len;
-                phdr += len;
+            FD_ZERO(&rfds);
+            FD_SET(s, &rfds);
+            if (select(s + 1, &rfds, NULL, NULL, &tv) > 0) {
+                len = read(s, phdr, sizeof(utmpreq) - totalread);
+                if (len > 0) {
+                    totalread += len;
+                    phdr += len;
+                }
+            } else {
+                len = -1;
             }
         }
         if (len <= 0) {
@@ -357,7 +365,7 @@ int getutmprequest(int m_socket)
             continue;
         }
         break;
-        close(s);
+        //close(s);
     }
     return s;
 }
@@ -368,10 +376,12 @@ int getrequest(int m_socket)
     struct sockaddr_in sin;
     int s;
     char *pnum;
+    fd_set rfds;
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
 
-    len = sizeof(sin);
-
-    for (s = accept(m_socket, (struct sockaddr*)&sin, (socklen_t *) &len);; s = accept(m_socket, (struct sockaddr *)&sin, (socklen_t *) &len)) {
+    for (len = sizeof(sin), s = accept(m_socket, (struct sockaddr*)&sin, (socklen_t *) &len);; len = sizeof(sin), s = accept(m_socket, (struct sockaddr *)&sin, (socklen_t *) &len)) {
         if ((s <= 0) && errno != EINTR) {
             bbslog("3system", "userd:accept %s", strerror(errno));
             exit(-1);
@@ -379,7 +389,13 @@ int getrequest(int m_socket)
         if (s <= 0)
             continue;
         memset(tmpbuf, 0, 255);
-        len = read(s, tmpbuf, 255);
+        FD_ZERO(&rfds);
+        FD_SET(s, &rfds);
+        if (select(s + 1, &rfds, NULL, NULL, &tv) > 0) {
+            len = read(s, tmpbuf, 255);
+        } else {
+            len = -1;
+        }
         if (len <= 0) {
             close(s);
             continue;
