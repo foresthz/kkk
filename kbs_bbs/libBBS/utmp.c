@@ -18,11 +18,11 @@ struct UTMPFILE *get_utmpshm_addr() {
     return utmpshm;
 }
 
-static void longlock(int signo)
+/*static void longlock(int signo)
 {
     bbslog("5system", "utmp lock for so long time!!!.");
     exit(-1);
-}
+}*/
 
 #ifndef USE_SEM_LOCK
 int utmp_lock()
@@ -33,12 +33,12 @@ int utmp_lock()
     if (utmpfd < 0) {
         exit(-1);
     }
-    signal(SIGALRM, longlock);
-    alarm(10);
+    //signal(SIGALRM, longlock);
+    //alarm(10);
     if (writew_lock(utmpfd, 0, SEEK_SET, 0) == -1) {
         exit(-1);
     }
-    signal(SIGALRM, SIG_IGN);
+    //signal(SIGALRM, SIG_IGN);
     return utmpfd;
 }
 
@@ -50,10 +50,10 @@ void utmp_unlock(int fd)
 #else
 static int utmp_lock()
 {
-    signal(SIGALRM, longlock);
-    alarm(10);
+    //signal(SIGALRM, longlock);
+    //alarm(10);
     lock_sem(UTMP_SEMLOCK);
-    signal(SIGALRM, SIG_IGN);
+    //signal(SIGALRM, SIG_IGN);
     return 0;
 }
 
@@ -152,7 +152,7 @@ int sendutmpreq(struct utmpreqhdr *req)
     tv.tv_sec=5;
     tv.tv_usec=0;
     result = select(m_socket+1,&rfds,NULL,NULL,&tv);
-    if (result)
+    if (result > 0)
     {
         int len=read(m_socket,&result,sizeof(result));
         close(m_socket);
