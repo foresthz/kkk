@@ -1348,7 +1348,7 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
     int bid;
 
     if ((re == NULL) && (!strncmp(fh->title, "Re: ", 4))) {
-        strncpy(fh->title, fh->title + 4, ARTICLE_TITLE_LEN);
+        memmove(fh->title, fh->title + 4, ARTICLE_TITLE_LEN);
     }
     bid = getbid(boardname, &bh);
 #ifdef FILTER
