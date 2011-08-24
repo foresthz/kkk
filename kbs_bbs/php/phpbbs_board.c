@@ -877,7 +877,7 @@ PHP_FUNCTION(bbs_set_onboard)
     if (getCurrentUser()==NULL) RETURN_FALSE;
     if (getSession()->currentuinfo==NULL) RETURN_FALSE;
 
-#ifdef NEWSMTH
+#ifdef 0
     // pig2532: ignore wwwguest to check if board online number is ok
     if (strcmp(getCurrentUser()->userid, "guest") == 0) {
         RETURN_FALSE;
