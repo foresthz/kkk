@@ -751,7 +751,7 @@ struct BoardStatus {            /* use this to speed up board list */
     bool updateorigin;
         是否原作文章有变动，决定下次使用 .ORIGIN 时是否需要重新产生
     int currentusers;
-        当前该版面在线用户数，不包括 wwwguest。
+        当前该版面在线用户数，包括 wwwguest。
     int nowid;
         该版面文章当前已经使用到的 id 号，注意这个字段不一定等于 lastpost，比如
         有人发表了两片文章 id=79,80，然后删掉 id=80 的文章，这时候 lastpost=79，
