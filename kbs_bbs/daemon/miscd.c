@@ -335,8 +335,6 @@ int getutmprequest(int m_socket)
     int totalread=0;
     fd_set rfds;
     struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
     for (len = sizeof(sin), s = accept(m_socket, (struct sockaddr*)&sin, (socklen_t *) &len);; len = sizeof(sin), s = accept(m_socket, (struct sockaddr *)&sin, (socklen_t *) &len)) {
         if ((s <= 0) && errno != EINTR) {
             bbslog("3system", "utmpd:accept %s", strerror(errno));
@@ -350,6 +348,8 @@ int getutmprequest(int m_socket)
         while (totalread < sizeof(utmpreq) && len > 0) {
             FD_ZERO(&rfds);
             FD_SET(s, &rfds);
+            tv.tv_sec = 1;
+            tv.tv_usec = 0;
             if (select(s + 1, &rfds, NULL, NULL, &tv) > 0) {
                 len = read(s, phdr, sizeof(utmpreq) - totalread);
                 if (len > 0) {
@@ -378,8 +378,6 @@ int getrequest(int m_socket)
     char *pnum;
     fd_set rfds;
     struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
 
     for (len = sizeof(sin), s = accept(m_socket, (struct sockaddr*)&sin, (socklen_t *) &len);; len = sizeof(sin), s = accept(m_socket, (struct sockaddr *)&sin, (socklen_t *) &len)) {
         if ((s <= 0) && errno != EINTR) {
@@ -391,6 +389,8 @@ int getrequest(int m_socket)
         memset(tmpbuf, 0, 255);
         FD_ZERO(&rfds);
         FD_SET(s, &rfds);
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
         if (select(s + 1, &rfds, NULL, NULL, &tv) > 0) {
             len = read(s, tmpbuf, 255);
         } else {
