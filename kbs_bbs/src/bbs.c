@@ -6507,6 +6507,7 @@ static struct key_command read_top_comms[]={
     {'\'',(READ_KEY_FUNC)post_search,(void*)0UL},
     {'\"',(READ_KEY_FUNC)post_search,(void*)1UL},
     {'h',(READ_KEY_FUNC)mainreadhelp,NULL},
+    {KEY_TAB, (READ_KEY_FUNC)show_b_note,NULL},
     {Ctrl('X'),(READ_KEY_FUNC)thread_read,(void*)SR_READX},
     {Ctrl('U'),(READ_KEY_FUNC)author_read,(void*)SR_READ},
     {Ctrl('H'),(READ_KEY_FUNC)author_read,(void*)SR_READX},
