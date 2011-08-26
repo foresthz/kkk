@@ -765,6 +765,10 @@ attach define
 #define USERD_PORT  60001
 #endif
 
+#ifndef UTMPD_PORT
+#define UTMPD_PORT  60002
+#endif
+
 #define ISV4ADDR(addr) ((addr.s6_addr[0]==0)&&(addr.s6_addr[1]==0)&& \
                         (addr.s6_addr[2]==0)&&(addr.s6_addr[3]==0)&&(addr.s6_addr[4]==0)&& \
                         (addr.s6_addr[5]==0)&&(addr.s6_addr[6]==0)&&(addr.s6_addr[7]==0)&& \

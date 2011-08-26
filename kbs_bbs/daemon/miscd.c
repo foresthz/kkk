@@ -519,11 +519,7 @@ void utmpd()
     setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &opt, 4);
     memset(&sin, 0, sinlen);
     sin.sin_family = AF_INET;
-#ifdef CELESTIS
-    sin.sin_port = htons(61002);
-#else
-    sin.sin_port = htons(60002);
-#endif
+    sin.sin_port = htons(UTMPD_PORT);
 #ifdef HAVE_INET_ATON
     inet_aton("127.0.0.1", &sin.sin_addr);
 #elif defined HAVE_INET_PTON
