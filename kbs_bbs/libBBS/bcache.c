@@ -209,6 +209,11 @@ void resolve_boards()
                         brdshm->bstatus[i].nowid=bcache[i].idseq;
                     /* update top title */
                     board_update_toptitle(i+1,false);
+#ifdef RECORDMAXONLINE
+                    /* load board max online record */
+                    brdshm->bstatus[i].maxonline = bcache[i].maxonline;
+                    brdshm->bstatus[i].maxtime = bcache[i].maxtime;
+#endif
 
                     maxi = i;
                 }
@@ -560,6 +565,13 @@ void board_setcurrentuser(int idx,int num)
         brdshm->bstatus[idx - 1].currentusers++;
         currentusers_unlock(fd);
 #endif
+#ifdef RECORDMAXONLINE
+        /* save board max online record */
+        if (brdshm->bstatus[idx - 1].currentusers > brdshm->bstatus[idx - 1].maxonline) {
+            brdshm->bstatus[idx - 1].maxonline = brdshm->bstatus[idx - 1].currentusers;
+            brdshm->bstatus[idx - 1].maxtime = time(0);
+        }
+#endif
     } else if (num < 0) {
 #ifdef ASM_ATOMIC
         atomic_dec(&(brdshm->bstatus[idx - 1].currentusers));
@@ -602,8 +614,13 @@ void flush_bcache()
 {
     int i;
     bcache_setreadonly(0);
-    for (i = 0; i < MAXBOARD; i++)
+    for (i = 0; i < MAXBOARD; i++) {
         bcache[i].idseq=brdshm->bstatus[i].nowid;
+#ifdef RECORDMAXONLINE
+        bcache[i].maxonline = brdshm->bstatus[i].maxonline;
+        bcache[i].maxtime = brdshm->bstatus[i].maxtime;
+#endif
+    }
     msync((void *)bcache,MAXBOARD * sizeof(struct boardheader),MS_SYNC);
     bcache_setreadonly(1);
 }

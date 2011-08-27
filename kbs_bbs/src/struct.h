@@ -168,6 +168,10 @@ struct boardheader {            /* This structure is used to hold data in */
     int bannercount;
     char banners[MAXBANNER][BANNERSIZE];
 #endif
+#ifdef RECORDMAXONLINE
+    unsigned int maxonline;
+    time_t maxtime;
+#endif
 };
 
 /* XXX: struct fileheader moved to site.h */
@@ -195,6 +199,10 @@ struct BoardStatus {            /* use this to speed up board list */
     struct fileheader topfh[MAX_DING];
 #ifdef HAVE_WFORUM
     int todaynum;
+#endif
+#ifdef RECORDMAXONLINE
+    unsigned int maxonline;
+    time_t maxtime;
 #endif
 };
 struct favbrd_struct {

@@ -290,6 +290,11 @@ int show_boardinfo(const char *bname)
            (bp->flag & BOARD_OUTFLAG) ? "" : "不",
            (bp->flag & BOARD_ATTACH) ? "" : "不",
            (bp->flag & BOARD_NOREPLY) ? "不" : "");
+#ifdef RECORDMAXONLINE
+    struct BoardStatus *bs;
+    bs = getbstatus(bid);
+    prints("最大在线人数: \033[32m%d\033[m   发生时间: \033[32m%s\033[m\n", bs->maxonline, ctime(&(bs->maxtime)));
+#endif
 
     /* etnlegend, 查询版面限制属性显示 ... */
     if (HAS_PERM(getCurrentUser(),PERM_SYSOP)) {

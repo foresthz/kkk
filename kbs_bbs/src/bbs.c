@@ -999,7 +999,11 @@ void readtitle(struct _select_def* conf)
     else
         sprintf(strbuf, "  ");
     prints("  编号   %s%-12s %6s %s", strbuf, "刊 登 者", "日  期", " 文章标题");
+#ifdef RECORDMAXONLINE
+    sprintf(title, "在线:%4d/%4d [%4s模式]", bs->currentusers, bs->maxonline, readmode);
+#else
     sprintf(title, "在线:%4d [%4s模式]", bs->currentusers, readmode);
+#endif
     move(2, -strlen(title)-1);
     prints("%s", title);
     resetcolor();
