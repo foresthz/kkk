@@ -987,7 +987,7 @@ void readtitle(struct _select_def* conf)
     setfcolor(WHITE, DEFINE(getCurrentUser(), DEF_HIGHCOLOR));
     setbcolor(BLUE);
     clrtoeol();
-    /* 文章数超过10000时版面列表自动调整对其, jiangjun 20110717 */
+    /* 文章数超过10000时版面列表自动调整对齐, jiangjun 20110717 */
     char strbuf[4];
     int no;
     /* 确定当前列表页面的第一篇编号 */
@@ -1179,13 +1179,25 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     }
 //    TITLE = ent->title;         /*文章标题TITLE */
 // sprintf(TITLE,"%s(%d)",ent->title,ent->eff_size);
+    /* 文章数超过10000时版面列表自动调整对齐提示或备份文件, jiangjun 20110828 */
+    char strbuf[4];
+    int no;
+    /* 确定当前列表页面的第一篇编号 */
+    no = conf->pos - (conf->pos - 1) % conf->item_per_page;
+    if (no<=9999)
+        strbuf[0] = '\0';
+    else if (no>9999 && no<=99999)
+        sprintf(strbuf, " ");
+    else
+        sprintf(strbuf, "  ");
+
     if ((type=='d')||(type=='D')) { //置顶文章
-        sprintf(buf, " \x1b[1;33m[提示]\x1b[m %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ", ent->owner, date, attachch, TITLE);
+        sprintf(buf, " \x1b[1;33m[提示]\x1b[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ", strbuf, ent->owner, date, attachch, TITLE);
         return buf;
     }
 
     if (toupper(type)=='Y') {
-        sprintf(buf," \033[1;33m[备份]\033[m %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",ent->owner,date,attachch,TITLE);
+        sprintf(buf," \033[1;33m[备份]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,ent->owner,date,attachch,TITLE);
         return buf;
     }
 
