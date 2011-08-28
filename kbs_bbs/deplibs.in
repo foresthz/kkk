@@ -218,6 +218,31 @@ OPENSSL_INC=""
 fi
 AC_SUBST(OPENSSL_INC)
 
+AC_ARG_WITH(libatomic,
+[  --with-libatomic[=DIR]
+                          Specify libatomic library directory.],
+LIBATOMIC_DIR="$withval", LIBESMTP_DIR="no")
+if test "$LIBATOMIC_DIR" != "no"; then
+  if test "$LIBATOMIC_DIR" != "yes"; then
+    if test -f $LIBATOMIC_DIR/include/atomic_ops.h; then
+        LIBATOMIC_INC=$LIBATOMIC_DIR/include
+    fi
+  else
+    for i in /usr/local /usr ; do
+      if test -f $i/include/atomic_ops.h; then
+        LIBATOMIC_DIR=$i
+        LIBATOMIC_INC=$i/include
+      fi
+    done
+  fi
+
+  if test "x$LIBATOMIC_INC" != "x"; then
+    LIBS="$LIBS -L$LIBATOMIC_DIR/lib -latomic_ops"
+    AC_DEFINE(HAVE_LIBATOMIC,1,[ ])
+    ADDINC($LIBATOMIC_INC)
+  fi
+fi
+
 CFLAGS="$CFLAGS $BBSINCLUDE"
 AC_CHECK_LIB([bsd], [vfork], [LIBS="$LIBS -lbsd"])
 AC_CHECK_LIB([dl], [dlopen], [LIBS="$LIBS -ldl"])

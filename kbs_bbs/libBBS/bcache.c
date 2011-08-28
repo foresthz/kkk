@@ -558,8 +558,8 @@ void board_setcurrentuser(int idx,int num)
 {
     if (idx<=0) return;
     if (num > 0) {
-#ifdef ASM_ATOMIC
-        atomic_inc(&(brdshm->bstatus[idx - 1].currentusers));
+#ifdef HAVE_LIBATOMIC
+        AO_int_fetch_and_add1(&(brdshm->bstatus[idx - 1].currentusers));
 #else
         int fd = currentusers_lock();
         brdshm->bstatus[idx - 1].currentusers++;
@@ -573,8 +573,8 @@ void board_setcurrentuser(int idx,int num)
         }
 #endif
     } else if (num < 0) {
-#ifdef ASM_ATOMIC
-        atomic_dec(&(brdshm->bstatus[idx - 1].currentusers));
+#ifdef HAVE_LIBATOMIC
+        AO_int_fetch_and_sub1(&(brdshm->bstatus[idx - 1].currentusers));
 #else
         int fd = currentusers_lock();
         brdshm->bstatus[idx - 1].currentusers--;

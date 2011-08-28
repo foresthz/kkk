@@ -176,6 +176,10 @@ typedef int32 POINTDIFF;
 #include <curl/curl.h>
 #endif
 
+#ifdef HAVE_LIBATOMIC
+#include <atomic_ops.h>
+#endif
+
 #ifndef IPLEN
 #ifdef HAVE_IPV6_SMTH
 #define IPLEN   46
