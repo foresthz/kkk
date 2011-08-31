@@ -290,10 +290,10 @@ extern long ti;
 #define FILE_CENSOR     0x20        /* for accessed[1], flyriver, 2002.9.29 */
 #define FILE_READ       0x1         /* Ownership flags used in fileheader structure in accessed[1] */
 #define FILE_DEL        0x2         /* In article mode, Sign , Bigman 2000.8.12 ,in accessed[1] */
-#define FILE_MAILBACK 0x4      /* reply articles mail to owner's mailbox, accessed[1] */
-#define FILE_COMMEND    0x8      /* 推荐文章,stiger , in accessed[1], */
+#define FILE_MAILBACK   0x4         /* reply articles mail to owner's mailbox, accessed[1] */
+#define FILE_COMMEND    0x8         /* 推荐文章,stiger , in accessed[1], */
 #define FILE_TEX        0x80        /* tex article, in accessed[1], added by atppp 20040729 */
-#define FILE_FEN        0x10      /* had added fen by bm */
+#define FILE_FEN        0x10        /* had added fen by bm */
 
 #define BADWORD_IMG_FILE    "etc/badwordv3.img"
 #define MAXMAILSIZE         (30000)
@@ -451,6 +451,7 @@ extern int KEY_ESC_arg;
 #define FILE_COMMEND_FLAG   0x800
 #define FILE_PERCENT_FLAG   0x1000
 #define FILE_FEN_FLAG       0x2000
+#define FILE_MODTITLE_FLAG  0x4000
 
 /* 0-1 locks used sem count, @author kxn */
 #define SEMLOCK_COUNT       20

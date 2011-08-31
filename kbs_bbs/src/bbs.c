@@ -3728,7 +3728,7 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     long attachpos;
     bool dobmlog=false;
     struct read_arg* arg=(struct read_arg*) conf->arg;
-    int ret;
+    int ret, edit_top=0;
 
     ret = deny_modify_article(currboard, fileinfo, arg->mode, getSession());
     if (ret) {
@@ -3791,15 +3791,31 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         }
         if (changemark) {
             struct write_dir_arg dirarg;
+            struct fileheader xfh;
+            memcpy(&xfh, fileinfo, sizeof(struct fileheader));
             init_write_dir_arg(&dirarg);
-            dirarg.fd=arg->fd;
-            dirarg.ent = conf->pos;
-            change_post_flag(&dirarg, arg->mode, currboard,
-                             fileinfo,changemark, fileinfo,dobmlog,getSession());
+            /* 修改文章被置底或直接修改置底文章时，通过 change_post_flag 更新置底的fh，并通过其更新原文fh
+               修改置底文章时只能在普通模式下进行 */
+            if (conf->pos>arg->filecount || (arg->mode==DIR_MODE_NORMAL && is_top(fileinfo, currboard->filename))) {
+                char file[STRLEN];
+                setbdir(DIR_MODE_ZHIDING, file, currboard->filename);
+                dirarg.filename=file;
+                POSTFILE_BASENAME(xfh.filename)[0]='Z';
+                edit_top=1;
+            } else {
+                dirarg.fd = arg->fd;
+                dirarg.ent = conf->pos;
+            }
+            change_post_flag(&dirarg, edit_top?DIR_MODE_ZHIDING:arg->mode, currboard,
+                             &xfh,changemark, fileinfo,dobmlog,getSession());
             free_write_dir_arg(&dirarg);
+            if (edit_top)
+                board_update_toptitle(arg->bid, true);
         }
     }
     newbbslog(BBSLOG_USER, "edited post '%s' on %s", fileinfo->title, currboard->filename);
+    if (edit_top)
+        return DIRCHANGED;
     return FULLUPDATE;
 }
 
@@ -3817,7 +3833,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
      */
     long i=0;
     struct fileheader xfh;
-    int fd, ret;
+    int fd, ret, edit_top=0;
     long attachpos;
 
     ret = deny_modify_article(currboard, fileinfo, arg->mode, getSession());
@@ -3847,6 +3863,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     if (buf[0] != '\0'&&strcmp(buf,fileinfo->title)) {
         char tmp[STRLEN * 2], *t;
         char tmp2[STRLEN];      /* Leeward 98.03.29 */
+        int changemark=0;
 
 #ifdef FILTER
         if (public_board(currboard) && check_badword_str(buf, strlen(buf), getSession())) {
@@ -3871,7 +3888,9 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
             get_effsize_attach(genbuf, (unsigned int*)&attachpos);
             if (attachpos != fileinfo->attachment) {
                 fileinfo->attachment=attachpos;
+                changemark |= FILE_ATTACHPOS_FLAG;
             }
+            changemark |= FILE_MODTITLE_FLAG;
             newbbslog(BBSLOG_USER,"edit_title %s %s %s",currboard->filename, tmp2 , buf);
         }
         /*
@@ -3892,6 +3911,33 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
                     }
                 }
             }
+            if (i!=0) {
+                struct write_dir_arg dirarg;
+                struct fileheader xfh;
+                memcpy(&xfh, fileinfo, sizeof(struct fileheader));
+                init_write_dir_arg(&dirarg);
+                /* 使用 change_post_flag 更新标题 
+                   修改文章被置底或直接修改置底文章时，通过 change_post_flag 更新置底的fh，并通过其更新原文fh
+                   修改置底文章时只能在普通模式下进行 */
+                if (conf->pos>arg->filecount || (arg->mode==DIR_MODE_NORMAL && is_top(fileinfo, currboard->filename))) {
+                    char file[STRLEN];
+                    setbdir(DIR_MODE_ZHIDING, file, currboard->filename);
+                    dirarg.filename=file;
+                    POSTFILE_BASENAME(xfh.filename)[0]='Z';
+                    edit_top=1;
+                } else {
+                    dirarg.fd = fd;
+                    dirarg.ent = ent;
+                }
+                change_post_flag(&dirarg, edit_top?DIR_MODE_ZHIDING:arg->mode, currboard,
+                                 &xfh,changemark, fileinfo,0,getSession());
+                free_write_dir_arg(&dirarg);
+                if (conf->pos>arg->filecount)
+                    close(fd);
+                if (edit_top)
+                    board_update_toptitle(arg->bid, true);
+            }
+/*
             if (conf->pos>arg->filecount) {
                 close(fd);
                 if (i!=0)
@@ -3899,6 +3945,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
                 board_update_toptitle(arg->bid, true);
             } else if (i!=0)
                 substitute_record(arg->direct, fileinfo, sizeof(*fileinfo), ent, (RECORD_FUNC_ARG) cmpname, fileinfo->filename);
+*/
         }
         if (0 == i)
             return PARTUPDATE;
@@ -3936,6 +3983,8 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         }
         setboardtitle(currboard->filename, 1);
     }
+    if (edit_top)
+        return DIRCHANGED;
     return PARTUPDATE;
 }
 

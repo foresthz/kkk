@@ -732,7 +732,7 @@ PHP_FUNCTION(bbs_updatearticle2)
     long attachpos;
     char infile[STRLEN], outfile[STRLEN];
     char buf2[256];
-    int effsize, asize;
+    int effsize, asize, changemark=0;
     FILE *fin, *fout;
 
     int ac = ZEND_NUM_ARGS();
@@ -834,6 +834,7 @@ PHP_FUNCTION(bbs_updatearticle2)
         f.accessed[1] &= ~FILE_TEX;
     else if (is_tex == 1)
         f.accessed[1] |= FILE_TEX;
+    changemark |= FILE_MODTITLE_FLAG;
     /* 修改标题结束 */
 
     /* 修改正文开始 */
@@ -882,9 +883,11 @@ PHP_FUNCTION(bbs_updatearticle2)
     effsize = get_effsize_attach(path, (unsigned int *)&attachpos);
     if (attachpos != f.attachment) {
         f.attachment = attachpos;
+        changemark |= FILE_ATTACHPOS_FLAG;
     }
     if (effsize != f.eff_size) {
         f.eff_size = effsize;
+        changemark |= FILE_EFFSIZE_FLAG;
     }
 
     /* 更新索引开始 */
@@ -899,12 +902,38 @@ PHP_FUNCTION(bbs_updatearticle2)
                 }
             }
         }
+        close(fd);
         if (i!=0) {
+            int edit_top=0;
+            struct write_dir_arg dirarg;
+            struct fileheader xfh;
+            memcpy(&xfh, &f, sizeof(struct fileheader));
+            init_write_dir_arg(&dirarg);
+            dirarg.filename = dirpath;
+            dirarg.ent = ent;
+            /* 使用 change_post_flag 更新fh
+               修改文章被置底或直接修改置底文章时，通过 change_post_flag 更新置底的fh，并通过其更新原文fh */
+            if (is_top(&f, brd->filename)) {
+                if (mode==DIR_MODE_NORMAL) { //普通模式下的置顶文，需要变更 dirarg.filename
+                    char file[STRLEN];
+                    setbdir(DIR_MODE_ZHIDING, file, brd->filename);
+                    dirarg.filename=file;
+                    dirarg.ent = -1;
+                    POSTFILE_BASENAME(xfh.filename)[0]='Z';
+                }
+                edit_top=1;
+            }
+            change_post_flag(&dirarg, edit_top?DIR_MODE_ZHIDING:mode, brd,
+                             &xfh,changemark, &f,0,getSession());
+            free_write_dir_arg(&dirarg);
+            if (edit_top)
+                board_update_toptitle(bid, true);
+            /*
             substitute_record(dirpath, &f, sizeof(f), ent, (RECORD_FUNC_ARG) cmpname, f.filename);
             if (mode == DIR_MODE_ZHIDING)
                 board_update_toptitle(bid, true);
+            */
         }
-        close(fd);
     }
     if (0 == i)
         RETURN_LONG(-10);

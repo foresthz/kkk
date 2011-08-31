@@ -444,6 +444,8 @@ while(0)
 
     /*加入置顶*/
     int add_top(struct fileheader* fileinfo,const char* boardname,int flag);
+    /*置顶相关*/
+    int is_top(struct fileheader *fh, const char *boardname);
     /*推荐文章*/
     int post_commend(struct userec *user, const char *fromboard, struct fileheader *fileinfo);
 

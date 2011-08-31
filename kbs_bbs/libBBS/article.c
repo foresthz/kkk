@@ -183,7 +183,7 @@ int prepare_write_dir(struct write_dir_arg *filearg, struct fileheader *fileinfo
             if (is_sorted_mode(mode)) {
                 filearg->ent = Search_Bin(filearg->fileptr, fileinfo->id, 0, count - 1) + 1;
             } else {            //匹配文件名
-                int oldent = filearg->ent;
+                int oldent = (filearg->ent > 0) ? filearg->ent : count;
 
                 nowFh = filearg->fileptr;
                 filearg->ent = -1;
@@ -2397,6 +2397,23 @@ int get_effsize(char *ffn)
     return get_effsize_attach(ffn, NULL);
 }
 
+/* 文章是否置顶 */
+int is_top(struct fileheader *fh, const char *boardname)
+{
+    char filename[STRLEN];
+    int i, bid;
+    struct BoardStatus *bs;
+    sprintf(filename, "%s", fh->filename);
+    POSTFILE_BASENAME(filename)[0] = 'Z';
+    bid = getbid(boardname, NULL);
+    bs = getbstatus(bid);
+    for (i=bs->toptitle;i>0;i--) {
+        if (cmpname(&(bs->topfh[i-1]), filename))
+            break;
+    }
+    return i;
+}
+
 /* 增加置顶文章*/
 int add_top(struct fileheader *fileinfo, const char *boardname, int flag)
 {
@@ -2414,7 +2431,7 @@ int add_top(struct fileheader *fileinfo, const char *boardname, int flag)
     if (get_num_records(dirpath, sizeof(top)) >= MAX_DING) {
         return 4;
     }
-    if (search_record(dirpath, NULL, sizeof(struct fileheader), (RECORD_FUNC_ARG) cmpname, top.filename) > 0)
+    if (is_top(fileinfo, boardname) > 0)
         return 5;
     link(newpath, path);
     append_record(dirpath, &top, sizeof(top));
@@ -2551,9 +2568,10 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
     struct fileheader *originFh;
     int ret = 0;
 
-    if (fileinfo && POSTFILE_BASENAME(fileinfo->filename)[0] == 'Z')
+    if (fileinfo && POSTFILE_BASENAME(fileinfo->filename)[0] == 'Z' && !(flag&FILE_ATTACHPOS_FLAG) && !(flag&FILE_EFFSIZE_FLAG) && !(flag&FILE_MODTITLE_FLAG))
         /*
          * 置顶的文章不能做操作
+         * 可进行置底文章的标题修改、attachpos及eff_size的更新，此时 mode 为 DIR_MODE_ZHIDING
          */
         return 1;
 
@@ -2710,6 +2728,14 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
                 ret = dele_digest(originFh->filename, board->filename);
             }
         }
+    }
+    /*
+     * 修改标题
+     */
+    if (flag & FILE_MODTITLE_FLAG) {
+        strcpy(buf, data->title);
+        if (*buf != 0)
+            strcpy(originFh->title, buf);
     }
     if (ret == 0) {
         if (flag & FILE_TITLE_FLAG) {
