@@ -214,6 +214,43 @@ static int get_seccode_index(char prefix)
     return -1;
 }
 
+int total_post_top10(unsigned int gid,char *board,char *title)
+{
+    struct userec deliveruser;
+    unsigned int start,noref,noattach,ret;
+    char ut_file[STRLEN];
+    char post_title[ARTICLE_TITLE_LEN];
+    unsigned char accessed[2] = "\0\0";
+
+    if (init_all()) {
+        printf("init data fail\n");
+        return -1;
+    }
+
+    bzero(&deliveruser, sizeof(struct userec));
+    strcpy(deliveruser.userid, "deliver");
+    deliveruser.userlevel = -1;
+    strcpy(deliveruser.username, "自动发信系统");
+    setCurrentUser(&deliveruser);
+    strcpy(getSession()->fromhost, "天堂");
+
+    start = gid;
+    noref = 1;
+    noattach = 0; 
+    //accessed[0] |= 0x08;  // m 
+    
+    ret=get_thread_forward_mail(board, gid, start, noref, noattach, title);
+    if (ret > 0) {
+        gettmpfilename(ut_file, "ut");
+        sprintf(post_title, "[%s] %s", board,title);
+        post_file_alt(ut_file, NULL, post_title, "ShiDa", NULL, 0x01|0x04, accessed);
+        unlink(ut_file);
+    }
+
+    return 0;
+}
+
+
 /*********记录十大信息到toplog和toplog_all表*********/
 /*
 create table `toplog` (
@@ -256,6 +293,8 @@ int log_top()
     char newtitle[161];
     int i;
     char newts[20];
+    time_t now;
+    struct tm ptime;
 
     mysql_init(&s);
 
@@ -267,6 +306,7 @@ int log_top()
 
         mysql_escape_string(newtitle, top[i].title, strlen(top[i].title));
 
+#define NEWSMTH
 #ifdef NEWSMTH
         MYSQL_RES *res;
         MYSQL_ROW row;
@@ -294,6 +334,11 @@ int log_top()
                     printf("%s\n", mysql_error(&s));
                 }
             }
+        }
+        time(&now);
+        ptime = *localtime(&now);
+        if (ptime.tm_hour == 23) {
+            total_post_top10(top[i].groupid,top[i].board,top[i].title);
         }
 #endif
 
