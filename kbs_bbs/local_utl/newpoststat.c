@@ -306,7 +306,6 @@ int log_top()
 
         mysql_escape_string(newtitle, top[i].title, strlen(top[i].title));
 
-#define NEWSMTH
 #ifdef NEWSMTH
         MYSQL_RES *res;
         MYSQL_ROW row;
