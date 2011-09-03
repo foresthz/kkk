@@ -416,8 +416,6 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
     if (conf->pos > arg->filecount) {
         if (flag == FILE_MARK_FLAG)
             return top_move(conf, fileinfo);
-        else if (flag == FILE_NOREPLY_FLAG)
-            return top_noreply(conf, fileinfo);
     }
     data=*fileinfo;
     init_write_dir_arg(&dirarg);
@@ -4114,6 +4112,30 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     else {
         if (!(can & 0x1))
             return FULLUPDATE;
+        /* 如果是置顶文章，则使用 change_post_flag 更新 不可RE 标记 
+           首先 change_post_flag 更新置底的fh，并通过其更新原文fh */ 
+        if (is_top(fileinfo, currboard->filename)) {
+            char file[STRLEN];
+            struct write_dir_arg dirarg;
+            struct fileheader xfh;
+
+            memcpy(&xfh, fileinfo, sizeof(struct fileheader));
+            init_write_dir_arg(&dirarg);
+            setbdir(DIR_MODE_ZHIDING, file, currboard->filename);
+            dirarg.filename = file;
+            dirarg.fd = -1;
+            dirarg.ent = -1;
+            if (fileinfo->accessed[1] & FILE_READ)
+                xfh.accessed[1] &= ~FILE_READ;
+            else
+                xfh.accessed[1] |= FILE_READ;
+            if (conf->pos <= arg->filecount)
+                POSTFILE_BASENAME(xfh.filename)[0]='Z';
+            change_post_flag(&dirarg, DIR_MODE_ZHIDING, currboard, &xfh, FILE_NOREPLY_FLAG, &xfh, 0, getSession());
+            free_write_dir_arg(&dirarg);
+            board_update_toptitle(arg->bid, true);
+            return DIRCHANGED;
+        }
         ret=set_article_flag(conf,fileinfo, FILE_NOREPLY_FLAG);
     }
     return ret;

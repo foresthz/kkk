@@ -2568,7 +2568,7 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
     struct fileheader *originFh;
     int ret = 0;
 
-    if (fileinfo && POSTFILE_BASENAME(fileinfo->filename)[0] == 'Z' && !(flag&FILE_ATTACHPOS_FLAG) && !(flag&FILE_EFFSIZE_FLAG) && !(flag&FILE_MODTITLE_FLAG))
+    if (fileinfo && POSTFILE_BASENAME(fileinfo->filename)[0] == 'Z' && !(flag&FILE_NOREPLY_FLAG) && !(flag&FILE_ATTACHPOS_FLAG) && !(flag&FILE_EFFSIZE_FLAG) && !(flag&FILE_MODTITLE_FLAG))
         /*
          * 置顶的文章不能做操作
          * 可进行置底文章的标题修改、attachpos及eff_size的更新，此时 mode 为 DIR_MODE_ZHIDING
