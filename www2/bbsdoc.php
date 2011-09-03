@@ -57,9 +57,10 @@ function do_manage_function($board) {
             }
                           
             if ($zhiding && ($mode != $bbsman_modes['UNDEL'])) {
-                 if ($mode !=  $bbsman_modes['DEL'] && $mode != $bbsman_modes['ZHIDING'])
+                 if ($mode !=  $bbsman_modes['DEL'] && $mode != $bbsman_modes['ZHIDING'] && $mode != $bbsman_modes['NOREPLY'])
                     continue;   
-                 $mode = $bbsman_modes['DEL'];
+                 if ($mode != $bbsman_modes['NOREPLY'])
+                    $mode = $bbsman_modes['DEL'];
             }
             
             $ret = bbs_bmmanage($board,$id,$mode,$zhiding);

@@ -77,6 +77,7 @@ PHP_FUNCTION(bbs_bmmanage)
     char dir[STRLEN];
     int ent;
     int fd, bid;
+    int edit_top, dir_mode;
     struct fileheader f;
     FILE *fp;
 
@@ -203,9 +204,19 @@ PHP_FUNCTION(bbs_bmmanage)
         } else
             RETURN_LONG(-3);
 
+        if (mode==4 && is_top(&f, board)) { /* 修改置底文章的不可re */
+            edit_top = 1;
+            setbdir(DIR_MODE_ZHIDING, dir, board);
+            dir_mode = DIR_MODE_ZHIDING;
+            ent = -1;
+            POSTFILE_BASENAME(f.filename)[0]='Z';
+        } else {
+            dir_mode = DIR_MODE_NORMAL;
+            edit_top = 0;
+        }
         dirarg.filename = dir;
         dirarg.ent = ent;
-        if (change_post_flag(&dirarg,DIR_MODE_NORMAL,bh, &f, flag, &data,true,getSession())!=0)
+        if (change_post_flag(&dirarg, dir_mode, bh, &f, flag, &data,true,getSession())!=0)
             ret = 1;
         else
             ret = 0;
@@ -214,6 +225,9 @@ PHP_FUNCTION(bbs_bmmanage)
 
     if (ret != 0)
         RETURN_LONG(-9);
+
+    if (edit_top)
+        board_update_toptitle(bid, true);
 
     RETURN_LONG(0);
 }
