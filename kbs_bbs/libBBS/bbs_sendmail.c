@@ -875,7 +875,7 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
         int fsrc,fdst;
         char *src = (char *) malloc(BLK_SIZ);
         if ((fsrc = open(qfile, O_RDONLY)) >= 0) {
-            lseek(fsrc,fileinfo->attachment-1,SEEK_SET);
+            lseek(fsrc,fileinfo->attachment,SEEK_SET);
             gettmpfilename(genbuf, "ut.attach");
             if ((fdst=open(genbuf,O_WRONLY | O_CREAT | O_APPEND, 0600)) >= 0) {
                 long ret;
