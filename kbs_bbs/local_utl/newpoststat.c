@@ -235,14 +235,14 @@ int total_post_top10(unsigned int gid,char *board,char *title)
     strcpy(getSession()->fromhost, "ÌìÌÃ");
 
     start = gid;
-    noref = 1;
+    noref = 0;
     noattach = 0; 
     //accessed[0] |= 0x08;  // m 
     
     ret=get_thread_forward_mail(board, gid, start, noref, noattach, title);
     if (ret > 0) {
         gettmpfilename(ut_file, "ut");
-        sprintf(post_title, "[%s] %s", board,title);
+        snprintf(post_title, ARTICLE_TITLE_LEN, "[ºÏ¼¯] [%s] %s", board,title);
         post_file_alt(ut_file, NULL, post_title, "ShiDa", NULL, 0x01|0x04, accessed);
         unlink(ut_file);
     }
