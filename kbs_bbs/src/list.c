@@ -427,6 +427,8 @@ int allnum, pagenum;
             getdata(t_lines-1,0,"永久变换昵称: ",buf,NAMELEN,DOECHO,NULL,false);
             if (!buf[0]||!strcmp(buf,getCurrentUser()->username))
                 break;
+            if (askyn("确定修改", 0)!=1)
+                break;
             update_username(getCurrentUser()->userid,getCurrentUser()->username,buf);
             strncpy(getCurrentUser()->username,buf,NAMELEN);
             strncpy(uinfo.username,buf,NAMELEN);
@@ -437,10 +439,12 @@ int allnum, pagenum;
             enableESC = true;
             getdata(BBS_PAGESIZE+3, 0, "临时变换昵称: ",buf,NAMELEN,DOECHO,NULL,false);
             enableESC = false;
-            if (buf[0]!='\0') {
-                strncpy(uinfo.username,buf,NAMELEN);
-                UPDATE_UTMP_STR(username,uinfo);
-            }
+            if (!buf[0]||!strcmp(buf,uinfo.username))
+                break;
+            if (askyn("确定修改", 0)!=1)
+                break;
+            strncpy(uinfo.username,buf,NAMELEN);
+            UPDATE_UTMP_STR(username,uinfo);
             break;
         case Ctrl('T'):
             showcolor = !showcolor;
