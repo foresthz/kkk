@@ -815,7 +815,6 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
     FILE *inf, *outf;
     char qfile[STRLEN], filepath[STRLEN], genbuf[PATHLEN];
     char buf[256];
-    struct fileheader savefileheader;
     char userinfo[STRLEN],posttime[STRLEN];
     char* t;
 
@@ -865,10 +864,23 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
             fprintf(outf, "%s", buf);
         }
         fprintf(outf, "\n\n");
-        fclose(inf);
     }
 
     fclose(outf);
+    if (no_attach==0 && fileinfo->attachment) {
+        int size;
+        gettmpfilename(genbuf, "ut.attach");
+        outf = fopen(genbuf, "a");
+        while ((size=-attach_fgets(buf, 256, inf))) {
+            if (size<0)
+                continue;
+            else
+                put_attach(inf, outf, size);
+        }
+        fclose(outf);
+    }
+    fclose(inf);
+    /*
     memcpy(&savefileheader,fileinfo,sizeof(savefileheader));
     savefileheader.attachment=0;
     if (no_attach==0 && fileinfo->attachment) {
@@ -890,6 +902,7 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
         }
         free(src);
     }
+    */
 
     return 1;
 }
