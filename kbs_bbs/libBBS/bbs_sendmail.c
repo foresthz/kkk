@@ -820,64 +820,68 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
 
     sprintf(qfile, "boards/%s/%s", board, fileinfo->filename);
     gettmpfilename(filepath, "ut");
-    outf = fopen(filepath, "a");
-    if (*qfile != '\0' && (inf = fopen(qfile, "r")) != NULL) {
-        fgets(buf, 256, inf);
-
-        t = strrchr(buf,')');
-        if (t) {
-            *(t+1)='\0';
-            memcpy(userinfo,buf+8,STRLEN);
-        } else strcpy(userinfo,"未知发信人");
-        fgets(buf, 256, inf);
-        fgets(buf, 256, inf);
-        t = strrchr(buf,')');
-        if (t) {
-            *(t+1)='\0';
-            if (NULL!=(t = strchr(buf,'(')))
-                memcpy(posttime,t,STRLEN);
-            else
-                strcpy(posttime,"未知时间");
-        } else
-            strcpy(posttime,"未知时间");
-
-        fprintf(outf, "\033[0;1;32m☆─────────────────────────────────────☆\033[0;37m\n");
-        fprintf(outf, " \033[0;1;32m %s \033[0;1;37m于 \033[0;1;36m %s \033[0;1;37m 在\n", userinfo, posttime);
-        fprintf(outf, " \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", fileinfo->title);
-
-        fprintf(outf,"\n");
-        while (fgets(buf, 256, inf) != NULL)
-            if (buf[0] == '\n')
-                break;
-
-        while (fgets(buf, 256, inf) != NULL) {
-            /*结束*/
-            if (!strcmp(buf,"--\n"))
-                break;
-            /*引文*/
-            if (no_ref&&(strstr(buf,": ")==buf||(strstr(buf,"【 在")==buf&&strstr(buf,") 的大作中提到: 】"))))
-                continue;
-            /*来源和修改信息*/
-            if ((strstr(buf,"\033[m\033")==buf&&strstr(buf,"※ 来源:·")==buf+10)
-                    ||(strstr(buf,"\033[36m※ 修改:·")==buf))
-                continue;
-            fprintf(outf, "%s", buf);
-        }
-        fprintf(outf, "\n\n");
+    if (*qfile == '\0' || (inf = fopen(qfile, "r")) == NULL)
+        return -1;
+    if ((outf = fopen(filepath, "a")) == NULL) {
+        fclose(inf);
+        return -1;
     }
+
+    fgets(buf, 256, inf);
+    t = strrchr(buf,')');
+    if (t) {
+        *(t+1)='\0';
+        memcpy(userinfo,buf+8,STRLEN);
+    } else strcpy(userinfo,"未知发信人");
+    fgets(buf, 256, inf);
+    fgets(buf, 256, inf);
+    t = strrchr(buf,')');
+    if (t) {
+        *(t+1)='\0';
+        if (NULL!=(t = strchr(buf,'(')))
+            memcpy(posttime,t,STRLEN);
+        else
+            strcpy(posttime,"未知时间");
+    } else
+        strcpy(posttime,"未知时间");
+    
+    fprintf(outf, "\033[0;1;32m☆─────────────────────────────────────☆\033[0;37m\n");
+    fprintf(outf, " \033[0;1;32m %s \033[0;1;37m于 \033[0;1;36m %s \033[0;1;37m 在\n", userinfo, posttime);
+    fprintf(outf, " \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", fileinfo->title);
+    
+    fprintf(outf,"\n");
+    while (fgets(buf, 256, inf) != NULL)
+        if (buf[0] == '\n')
+            break;
+
+    while (fgets(buf, 256, inf) != NULL) {
+        /*结束*/
+        if (!strcmp(buf,"--\n"))
+            break;
+        /*引文*/
+        if (no_ref&&(strstr(buf,": ")==buf||(strstr(buf,"【 在")==buf&&strstr(buf,") 的大作中提到: 】"))))
+            continue;
+        /*来源和修改信息*/
+        if ((strstr(buf,"\033[m\033")==buf&&strstr(buf,"※ 来源:·")==buf+10)
+                ||(strstr(buf,"\033[36m※ 修改:·")==buf))
+            continue;
+        fprintf(outf, "%s", buf);
+    }
+    fprintf(outf, "\n\n");
 
     fclose(outf);
     if (no_attach==0 && fileinfo->attachment) {
         int size;
         gettmpfilename(genbuf, "ut.attach");
-        outf = fopen(genbuf, "a");
-        while ((size=-attach_fgets(buf, 256, inf))) {
-            if (size<0)
-                continue;
-            else
-                put_attach(inf, outf, size);
+        if ((outf = fopen(genbuf, "a")) != NULL) {
+            while ((size=-attach_fgets(buf, 256, inf))) {
+                if (size<0)
+                    continue;
+                else
+                    put_attach(inf, outf, size);
+            }
+            fclose(outf);
         }
-        fclose(outf);
     }
     fclose(inf);
     /*
