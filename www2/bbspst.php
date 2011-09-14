@@ -5,7 +5,9 @@
 	login_init();
 	bbs_session_modify_user_mode(BBS_MODE_POSTING);
 	assert_login();
+	global $currentuser;
 
+	$userid = $currentuser["userid"];
 	if (isset($_GET["board"]))
 		$board = $_GET["board"];
 	else
@@ -23,6 +25,8 @@
 	if(bbs_checkpostperm($usernum, $brdnum) == 0) {
 		html_error_quit("错误的讨论区或者您无权在此讨论区发表文章");
 	}
+	if (bbs_deny_me($userid, $board))
+		html_error_quit("您被管理员取消了本版的发文权限");
 	if (bbs_is_readonly_board($brdarr))
 		html_error_quit("不能在只读讨论区发表文章");
 	if (isset($_GET["reid"]))
