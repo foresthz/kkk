@@ -355,7 +355,8 @@ int main(void)
             q = strtok(q, " ");
             strcpy(bname, q);
             r = strtok(p + 6, " ");
-            sec = atoi(p + 6);
+            sec = atoi(r);
+            r = strtok(NULL, " ");
             noswitch = 0;
             if (r != NULL && *r == 'n')
                 noswitch = 1;
