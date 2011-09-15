@@ -893,7 +893,9 @@ PHP_FUNCTION(bbs_set_onboard)
         board_setcurrentuser(oldboard, -1);
         const struct boardheader *bh = getboard(oldboard);
         if (bh) {
-            newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", bh->filename, time(NULL) - (!strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime));
+            time_t stay = time(NULL) - (!strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime);
+            if (stay > 0)
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", bh->filename, time(NULL) - (!strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime));
         }
     }
 
