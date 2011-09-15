@@ -23,7 +23,11 @@
 	$board_desc = $brdarr["DESC"];
 	$brd_encode = urlencode( $board );
 	
-	$isnormalboard = bbs_normalboard($board);
+	//$isnormalboard = bbs_normalboard($board);
+	$lookupuser = array();
+	$guestUID = bbs_getuser("guest", $lookupuser);
+	$isnormalboard = bbs_checkreadperm($guestUID, $brdnum);
+
 	//bbs_set_onboard($bid,1);
 
 	$usernum = $currentuser["index"];
