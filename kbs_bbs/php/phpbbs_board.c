@@ -895,7 +895,7 @@ PHP_FUNCTION(bbs_set_onboard)
         if (bh) {
             time_t stay = time(NULL) - (!strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime);
             if (stay > 0)
-                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", bh->filename, time(NULL) - (!strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime));
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", bh->filename, stay, (boardnum == oldboard) ? " n" : "");
         }
     }
 

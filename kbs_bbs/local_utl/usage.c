@@ -55,13 +55,14 @@ int average_cmp(const void* b1, const void* a1)
     return a->sum - b->sum;
 }
 
-int record_data(const char *board,int sec)
+int record_data(const char *board,int sec,int noswitch)
 {
     int i;
 
     for (i = 0; i < numboards; i++) {
         if (!strcmp(st[i].boardname, board)) {
-            st[i].times++;
+            if (!noswitch)
+                st[i].times++;
             st[i].sum += sec;
             return 1;
         }
@@ -300,7 +301,8 @@ int main(void)
     int sec;
     int fd;
     int i;
-    char *p, bname[20], *q;
+    int noswitch;
+    char *p, bname[20], *q, *r;
     char weeklogfile[256];
 
     now = time(0);
@@ -352,8 +354,12 @@ int main(void)
             q = p - 21;
             q = strtok(q, " ");
             strcpy(bname, q);
+            r = strtok(p + 6, " ");
             sec = atoi(p + 6);
-            record_data(bname, sec);
+            noswitch = 0;
+            if (r != NULL && *r == 'n'))
+                noswitch = 1;
+            record_data(bname, sec, noswitch);
         }
     }
     fclose(fp);
