@@ -121,6 +121,7 @@ struct user_info {              /* Structure used in UTMP file */
     unsigned int friends_p[MAXFRIENDS];
 #endif
     int currentboard;
+    time_t currboard_freshtime;
     unsigned int mailcheck;             /* if have new mail or new msg, stiger */
 };
 
@@ -171,6 +172,9 @@ struct boardheader {            /* This structure is used to hold data in */
 #ifdef RECORDMAXONLINE
     unsigned int maxonline;
     time_t maxtime;
+#endif
+#ifdef NEWSMTH
+    unsigned int score;
 #endif
 };
 
@@ -501,6 +505,7 @@ struct WWW_GUEST_S {
     time_t freshtime;
     time_t logintime;
     int currentboard;
+    time_t currboard_freshtime;
     struct in_addr fromip;
 };
 
