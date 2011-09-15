@@ -357,7 +357,7 @@ int main(void)
             r = strtok(p + 6, " ");
             sec = atoi(p + 6);
             noswitch = 0;
-            if (r != NULL && *r == 'n'))
+            if (r != NULL && *r == 'n')
                 noswitch = 1;
             record_data(bname, sec, noswitch);
         }
