@@ -24,7 +24,7 @@
 	$brd_encode = urlencode( $board );
 	
 	$isnormalboard = bbs_normalboard($board);
-	bbs_set_onboard($bid,1);
+	//bbs_set_onboard($bid,1);
 
 	$usernum = $currentuser["index"];
 	if (!$isnormalboard && bbs_checkreadperm($usernum, $bid) == 0) 
