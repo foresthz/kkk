@@ -362,13 +362,13 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     zval *element;
     char flags[5];
     int ac = ZEND_NUM_ARGS();
-    if (start < 0)
-        start = 0;
 
 
     if (ac != 5 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "lllzz", &bid , &gid, &start , &z_threads , &retprev) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
+    if (start < 0)
+        start = 0;
 
     /*
      * check for parameter being passed by reference

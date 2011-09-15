@@ -77,7 +77,7 @@ PHP_FUNCTION(bbs_bmmanage)
     char dir[STRLEN];
     int ent;
     int fd, bid;
-    int edit_top, dir_mode;
+    int edit_top = 0, dir_mode;
     struct fileheader f;
     FILE *fp;
 
