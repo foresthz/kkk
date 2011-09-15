@@ -23,13 +23,13 @@
 	$lookupuser = array();
 	$guestUID = bbs_getuser("guest", $lookupuser);
 	$isnormalboard = bbs_checkreadperm($guestUID, $brdnum);
-	bbs_set_onboard($brdnum,1);
 
 	$usernum = $currentuser["index"];
 
 	if (!$isnormalboard && bbs_checkreadperm($usernum, $brdnum) == 0) {
 		html_error_quit("´íÎóµÄÌÖÂÛÇø");
 	}
+	bbs_set_onboard($brdnum,1);
 	if (isset($_GET["id"]))
 		$id = $_GET["id"];
 	else {
