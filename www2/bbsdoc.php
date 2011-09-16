@@ -299,6 +299,7 @@ else
 	$page = 1;
 }
 
+bbs_safe_getboard($brdnum, $board, $brdarr);
 bbs_board_header($brdarr,$ftype,$managemode,$isnormalboard);
 display_articles($brdarr, $articles, $start, $ftype, $managemode, $page, $total,
 	(defined('BBS_NEWPOSTSTAT') && !$managemode && $isnormalboard && !$ftype), $isnormalboard );

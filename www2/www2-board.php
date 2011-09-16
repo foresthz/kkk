@@ -92,7 +92,7 @@ function bbs_board_header($brdarr,$ftype,$managemode,$isnormalboard=FALSE) {
 <a href="bbsdoc.php?board=<?php echo $brdarr["NAME"]; ?>"><?php echo htmlspecialchars($brdarr["DESC"]); ?></a>
 (<a href="bbsfav.php?bname=<?php echo $brdarr["NAME"]; ?>&select=0">收藏</a>)</div>
 <div class="fright">
-版主: <script>writeBMs('<?php echo $brdarr["BM"]; /* No addslashes! */ ?>');</script>, 在线 <?php echo $brdarr["CURRENTUSERS"]+1; ?> 人
+版主: <script>writeBMs('<?php echo $brdarr["BM"]; /* No addslashes! */ ?>');</script>, 在线 <?php echo $brdarr["CURRENTUSERS"]; ?> 人, 最高 <?php echo $brdarr["MAXONLINE"]; ?> 人
 </div>
 </div>
 <h1 class="bt"><?php echo $brdarr["NAME"]."(".htmlspecialchars($brdarr["DESC"]).")"; ?> 版</h1>
