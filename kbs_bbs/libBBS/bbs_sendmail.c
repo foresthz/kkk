@@ -850,11 +850,11 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
     fprintf(outf, " \033[0;1;32m【\033[33;4m%s\033[0;32m】\033[0;1;37m 的大作中提到:\033[m\n", fileinfo->title);
     
     fprintf(outf,"\n");
-    while (fgets(buf, 256, inf) != NULL)
+    while (attach_fgets(buf, 256, inf) > 0)
         if (buf[0] == '\n')
             break;
 
-    while (fgets(buf, 256, inf) != NULL) {
+    while (attach_fgets(buf, 256, inf) > 0) {
         /*结束*/
         if (!strcmp(buf,"--\n"))
             break;
