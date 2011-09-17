@@ -904,7 +904,6 @@ PHP_FUNCTION(bbs_set_onboard)
                 time_t stay = time(NULL) - freshtime;
                 if (stay > 0)
                     newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", bh->filename, stay, (boardnum == oldboard) ? " n" : "");
-                }
             }
         }
     }
