@@ -899,9 +899,13 @@ PHP_FUNCTION(bbs_set_onboard)
         board_setcurrentuser(oldboard, -1);
         const struct boardheader *bh = getboard(oldboard);
         if (bh) {
-            time_t stay = time(NULL) - (!strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime);
-            if (stay > 0)
-                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", bh->filename, stay, (boardnum == oldboard) ? " n" : "");
+            time_t freshtime = !strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime;
+            if (freshtime && freshtime >= getCurrentUser()->lastlogin) {
+                time_t stay = time(NULL) - freshtime;
+                if (stay > 0)
+                    newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", bh->filename, stay, (boardnum == oldboard) ? " n" : "");
+                }
+            }
         }
     }
 
