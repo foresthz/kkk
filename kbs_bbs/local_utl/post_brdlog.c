@@ -64,7 +64,7 @@ int fillbcache(void *fptr1,int idx,void* arg)
     MYSQL_RES *res;
     MYSQL_ROW row;
     struct boardheader *fptr = (struct boardheader *)fptr1;
-    if (fptr->filename[0]==0 || !normal_board(fptr->filename))
+    if ((!check_see_perm(NULL, fptr) && !public_board(fptr)) || !*(fptr->filename))
         return 0;
 
     if (fptr->flag & BOARD_GROUP)
