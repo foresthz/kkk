@@ -998,7 +998,7 @@ void readtitle(struct _select_def* conf)
         sprintf(strbuf, "  ");
     prints("  编号   %s%-12s %6s %s", strbuf, "刊 登 者", "日  期", " 文章标题");
 #ifdef RECORDMAXONLINE
-    sprintf(title, "在线:%4d/%4d [%4s模式]", bs->currentusers, bs->maxonline, readmode);
+    sprintf(title, "在线/最高:%4d/%4d [%4s模式]", bs->currentusers, bs->maxonline, readmode);
 #else
     sprintf(title, "在线:%4d [%4s模式]", bs->currentusers, readmode);
 #endif
@@ -6263,7 +6263,11 @@ static void read_top_title(struct _select_def *conf)
     clrtoeol();
     sprintf(genbuf,"%-80.80s","  编号   刊 登 者     日  期  文章标题");
     prints("%s",genbuf);
+#ifdef RECORDMAXONLINE
+    sprintf(title,"在线/最高:%4d/%4d [十大模式]", bs->currentusers, bs->maxonline);
+#else
     sprintf(title,"在线: %4d [十大模式]",bs->currentusers);
+#endif
     move(2,-(strlen(title)+1));
     prints("%s",title);
     resetcolor();
