@@ -201,6 +201,9 @@ function readParaCookie() {
 function showUnread() {
 	return (isLogin() && gIE && !gIE5 && (readParaCookie() & 0x1000));
 }
+function getLayout() {
+	return (readParaCookie() & (1 << 21));
+}
 function getUserid() {
 	return getCookie("UTMPUSERID", "guest");
 }

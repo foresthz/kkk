@@ -103,6 +103,20 @@ function gen_sec_hot_subjects_html($secid)
 	}
 }
 
+function get_user_layout($head)
+{
+	if ($head)
+		echo "<SCRIPT LANGUAGE='JavaScript' TYPE='text/javascript'>\n".
+			"if(getLayout()) document.write(\"\");\n".
+			"else document.write(\"<tr>\");\n".
+			"</SCRIPT>\n";
+	else
+		echo "<SCRIPT LANGUAGE='JavaScript' TYPE='text/javascript'>\n".
+			"if(getLayout()) document.write(\"\");\n".
+			"else document.write(\"</tr>\");\n".
+			"</SCRIPT>\n";
+}
+
 function gen_sections_html()
 {
 
@@ -157,7 +171,11 @@ while($board = array_shift($boards))
 	for ($i = 0; $i < BBS_SECNUM; $i++)
 	{
 		if (defined("SITE_NEWSMTH") && ($t[$i]==0 || $t[$i]==1)) continue;
+		if ($i%2==0) echo "<tr>";
+		else get_user_layout(1);
 ?>
+<td width=50% class="sec_col">
+<table border="1" cellpadding="0" cellspacing="0" class="SecTable">
 <tr> 
   <td valign="top" class="SectionTitle"><script type="text/javascript">putImage("section.gif","");</script>&nbsp;<span class="SectionName"><a href="bbsboa.php?group=<?php echo $t[$i]; ?>"><?php echo htmlspecialchars(constant("BBS_SECNAME".$t[$i]."_0")); ?></a></span>&nbsp;&nbsp;<span class="SectionList">
 <?php
@@ -185,6 +203,12 @@ while($board = array_shift($boards))
         </tr>
 <?php
 		}
+?>
+</table>
+</td>
+<?php
+		if ($i%2==1) echo "</tr>";
+		else get_user_layout(0);
 	}
 ?>
       </table>
