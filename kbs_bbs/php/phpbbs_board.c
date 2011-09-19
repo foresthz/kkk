@@ -17,6 +17,7 @@ static void assign_board(zval * array, const struct boardheader *board, const st
     add_assoc_long(array, "CURRENTUSERS", bstatus->currentusers);
 #ifdef RECORDMAXONLINE
     add_assoc_long(array, "MAXONLINE", bstatus->maxonline);
+    add_assoc_long(array, "MAXTIME", bstatus->maxtime);
 #endif
     add_assoc_long(array, "LASTPOST", bstatus->lastpost);
     add_assoc_long(array, "TOTAL", bstatus->total);
@@ -36,6 +37,7 @@ static void assign_board_nforum(zval * array, const struct boardheader *board, c
     add_assoc_long(array, "CURRENTUSERS", bstatus->currentusers);
 #ifdef RECORDMAXONLINE
     add_assoc_long(array, "MAXONLINE", bstatus->maxonline);
+    add_assoc_long(array, "MAXTIME", bstatus->maxtime);
 #endif
     add_assoc_long(array, "GROUP", board->group);
     add_assoc_long(array, "LASTPOST", bstatus->lastpost);
