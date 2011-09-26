@@ -328,54 +328,62 @@ static int www_generateOriginIndex(const char* board)
 
     total = buf.st_size /sizeof(fileheader);
 
-    if ((i = safe_mmapfile_handle(fd2,  PROT_READ, MAP_SHARED, &ptr, &buf.st_size)) != 1) {
-        if (i == 2)
-            end_mmapfile((void *) ptr, buf.st_size, -1);
+    BBS_TRY {
+        if (safe_mmapfile_handle(fd2, PROT_READ, MAP_SHARED, &ptr, &buf.st_size) != 1) {
+            ldata2.l_type = F_UNLCK;
+            fcntl(fd2, F_SETLKW, &ldata2);
+            close(fd2);
+            ldata.l_type = F_UNLCK;
+            fcntl(fd, F_SETLKW, &ldata);
+            close(fd);
+            BBS_RETURN(-5);
+        }
+
+        size=sizeof(struct wwwthreadheader);
+
+        bid = getbid(board,NULL);
+        bs = getbstatus(bid);
+        for (i=bs->toptitle-1;i>=0;i--) {
+            if (bs->topfh[i].groupid!=bs->topfh[i].id) continue;
+            AVL_Insert(&root, &(bs->topfh[i]), FILE_ON_TOP, &temp);
+            if (temp == NULL) { //malloc failure, impossible?
+                clearWWWThreadList(tail);
+                BBS_RETURN(-5);
+            }
+            tail = temp;
+        }
+
+
+        ptr1 = (struct fileheader *) ptr;
+        for (i=total-1;i>=0;i--) {
+            AVL_Insert(&root, &(ptr1[i]), 0, &temp);
+            if (temp == NULL) { //malloc failure, impossible?
+                clearWWWThreadList(tail);
+                BBS_RETURN(-5);
+            }
+            tail = temp;
+        }
+        while (tail!=NULL) {
+            temp=tail->previous;
+            if (tail->content.origin.groupid != tail->content.lastreply.groupid) {
+                //original post does not exist, do something
+                tail->content.origin = tail->content.lastreply;
+                tail->content.origin.id = tail->content.origin.groupid;
+                tail->content.origin.groupid++; //indication that this thread has no original post.
+            }
+            write(fd,&(tail->content),size);
+            free(tail);
+            tail=temp;
+        }
+    } BBS_CATCH {
         ldata2.l_type = F_UNLCK;
         fcntl(fd2, F_SETLKW, &ldata2);
         close(fd2);
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
-        return -5;
-    }
-
-    size=sizeof(struct wwwthreadheader);
-
-    bid = getbid(board,NULL);
-    bs = getbstatus(bid);
-    for (i=bs->toptitle-1;i>=0;i--) {
-        if (bs->topfh[i].groupid!=bs->topfh[i].id) continue;
-        AVL_Insert(&root, &(bs->topfh[i]), FILE_ON_TOP, &temp);
-        if (temp == NULL) { //malloc failure, impossible?
-            clearWWWThreadList(tail);
-            return -5;
-        }
-        tail = temp;
-    }
-
-
-    ptr1 = (struct fileheader *) ptr;
-    for (i=total-1;i>=0;i--) {
-        AVL_Insert(&root, &(ptr1[i]), 0, &temp);
-        if (temp == NULL) { //malloc failure, impossible?
-            clearWWWThreadList(tail);
-            return -5;
-        }
-        tail = temp;
-    }
-    while (tail!=NULL) {
-        temp=tail->previous;
-        if (tail->content.origin.groupid != tail->content.lastreply.groupid) {
-            //original post does not exist, do something
-            tail->content.origin = tail->content.lastreply;
-            tail->content.origin.id = tail->content.origin.groupid;
-            tail->content.origin.groupid++; //indication that this thread has no original post.
-        }
-        write(fd,&(tail->content),size);
-        free(tail);
-        tail=temp;
-    }
+        BBS_RETURN(-5);
+    } BBS_END;
     end_mmapfile((void *) ptr, buf.st_size, -1);
     ldata2.l_type = F_UNLCK;
     fcntl(fd2, F_SETLKW, &ldata2);
@@ -470,75 +478,80 @@ PHP_FUNCTION(bbs_searchtitle)
 
     total = buf.st_size / sizeof(struct wwwthreadheader);
 
-    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, &ptr, &buf.st_size)) != 1) {
-        if (i == 2)
-            end_mmapfile((void *) ptr, buf.st_size, -1);
+    BBS_TRY {
+        if (safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, &ptr, &buf.st_size) != 1) {
+            ldata.l_type = F_UNLCK;
+            fcntl(fd, F_SETLKW, &ldata);
+            close(fd);
+            BBS_PHPLIB_RETURN_LONG(-4);
+        }
+        /*
+         * fetching articles
+         */
+        if (array_init(return_value) == FAILURE) {
+            BBS_PHPLIB_RETURN_LONG(-210);
+        }
+#ifdef HAVE_BRC_CONTROL
+        brc_initial(getCurrentUser()->userid, board, getSession());
+#endif
+        ptr1 = (struct wwwthreadheader *) ptr;
+
+        threads = 0;
+        for (i=total-1;i>=0;i--) {
+            if (title[0] && !strcasestr(ptr1[i].origin.title, title))
+                continue;
+            if (title2[0] && !strcasestr(ptr1[i].origin.title, title2))
+                continue;
+            if (author[0] && strcasecmp(ptr1[i].origin.owner, author))
+                continue;
+            if (title3[0] && strcasestr(ptr1[i].origin.title, title3))
+                continue;
+            if (abs(time(0) - get_posttime(&(ptr1[i].lastreply))) > date * 86400) {
+                /* why abs? and should cache time(0) locally to speed up - atppp */
+                if (ptr1[i].flags & FILE_ON_TOP) continue;
+                else break; //normal article, lastreply out of range, so we can break
+            }
+            if (mmode && !(ptr1[i].origin.accessed[0] & FILE_MARKED) && !(ptr1[i].origin.accessed[0] & FILE_DIGEST))
+                continue;
+            if (attach && ptr1[i].origin.attachment==0)
+                continue;
+
+            resultList[threads] = &(ptr1[i]);
+            threads++;
+            if (threads>=maxreturn)
+                break;
+        }
+
+        if (is_original_date) {
+            qsort(resultList, threads, sizeof(struct wwwthreadheader *), cmp_original_date);
+        }
+
+        for (i = 0; i < threads; i++) {
+
+            MAKE_STD_ZVAL(element);
+            array_init(element);
+            for (j = 0; j < 3; j++) {
+                MAKE_STD_ZVAL(columns[j]);
+                zend_hash_update(Z_ARRVAL_P(element), thread_col_names[j], strlen(thread_col_names[j]) + 1, (void *) &columns[j] , sizeof(zval *), NULL);
+            }
+            make_article_flag_array(flags, &(resultList[i]->origin), getCurrentUser(), bh->filename, is_bm);
+            array_init(columns[0]);
+            bbs_make_article_array(columns[0], &(resultList[i]->origin), flags, sizeof(flags));
+
+            make_article_flag_array(flags, &(resultList[i]->lastreply), getCurrentUser(), bh->filename, is_bm);
+            array_init(columns[1]);
+            bbs_make_article_array(columns[1], &(resultList[i]->lastreply), flags, sizeof(flags));
+            ZVAL_LONG(columns[2],resultList[i]->articlecount);
+
+            zend_hash_index_update(Z_ARRVAL_P(return_value), i + 1, (void *) &element, sizeof(zval *), NULL);
+
+        }
+    } BBS_CATCH {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
-        RETURN_LONG(-4);
-    }
-    /*
-     * fetching articles
-     */
-    if (array_init(return_value) == FAILURE) {
-        RETURN_LONG(-210);
-    }
-#ifdef HAVE_BRC_CONTROL
-    brc_initial(getCurrentUser()->userid, board, getSession());
-#endif
-    ptr1 = (struct wwwthreadheader *) ptr;
-
-    threads = 0;
-    for (i=total-1;i>=0;i--) {
-        if (title[0] && !strcasestr(ptr1[i].origin.title, title))
-            continue;
-        if (title2[0] && !strcasestr(ptr1[i].origin.title, title2))
-            continue;
-        if (author[0] && strcasecmp(ptr1[i].origin.owner, author))
-            continue;
-        if (title3[0] && strcasestr(ptr1[i].origin.title, title3))
-            continue;
-        if (abs(time(0) - get_posttime(&(ptr1[i].lastreply))) > date * 86400) {
-            /* why abs? and should cache time(0) locally to speed up - atppp */
-            if (ptr1[i].flags & FILE_ON_TOP) continue;
-            else break; //normal article, lastreply out of range, so we can break
-        }
-        if (mmode && !(ptr1[i].origin.accessed[0] & FILE_MARKED) && !(ptr1[i].origin.accessed[0] & FILE_DIGEST))
-            continue;
-        if (attach && ptr1[i].origin.attachment==0)
-            continue;
-
-        resultList[threads] = &(ptr1[i]);
-        threads++;
-        if (threads>=maxreturn)
-            break;
-    }
-
-    if (is_original_date) {
-        qsort(resultList, threads, sizeof(struct wwwthreadheader *), cmp_original_date);
-    }
-
-    for (i = 0; i < threads; i++) {
-
-        MAKE_STD_ZVAL(element);
-        array_init(element);
-        for (j = 0; j < 3; j++) {
-            MAKE_STD_ZVAL(columns[j]);
-            zend_hash_update(Z_ARRVAL_P(element), thread_col_names[j], strlen(thread_col_names[j]) + 1, (void *) &columns[j] , sizeof(zval *), NULL);
-        }
-        make_article_flag_array(flags, &(resultList[i]->origin), getCurrentUser(), bh->filename, is_bm);
-        array_init(columns[0]);
-        bbs_make_article_array(columns[0], &(resultList[i]->origin), flags, sizeof(flags));
-
-        make_article_flag_array(flags, &(resultList[i]->lastreply), getCurrentUser(), bh->filename, is_bm);
-        array_init(columns[1]);
-        bbs_make_article_array(columns[1], &(resultList[i]->lastreply), flags, sizeof(flags));
-        ZVAL_LONG(columns[2],resultList[i]->articlecount);
-
-        zend_hash_index_update(Z_ARRVAL_P(return_value), i + 1, (void *) &element, sizeof(zval *), NULL);
-
-    }
+        BBS_PHPLIB_RETURN_LONG(-4);
+    } BBS_END;
     end_mmapfile((void *) ptr, buf.st_size, -1);
     ldata.l_type = F_UNLCK;
     fcntl(fd, F_SETLKW, &ldata);        /* ÍË³ö»¥³âÇøÓò*/
@@ -638,51 +651,56 @@ PHP_FUNCTION(bbs_getthreads)
     }
     total = buf.st_size / sizeof(struct wwwthreadheader);
 
-    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, &ptr, &buf.st_size)) != 1) {
-        if (i == 2)
-            end_mmapfile((void *) ptr, buf.st_size, -1);
+    BBS_TRY {
+        if (safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, &ptr, &buf.st_size) != 1) {
+            ldata.l_type = F_UNLCK;
+            fcntl(fd, F_SETLKW, &ldata);
+            close(fd);
+            BBS_PHPLIB_RETURN_LONG(-2);
+        }
+
+
+        ptr1 = (struct wwwthreadheader *) ptr;
+        /*
+         * fetching articles
+         */
+        total--;
+        if (!includeTop) {
+            for (i=total;i>=0;i--) {
+                if (!(ptr1[i].flags & FILE_ON_TOP))
+                    break;
+            }
+            total=i;
+        }
+        begin=total-start;
+        end=total-start-num+1;
+        if (end<0)
+            end=0;
+
+        for (i=begin;i>=end;i--) {
+            MAKE_STD_ZVAL(element);
+            array_init(element);
+            for (j = 0; j < 3; j++) {
+                MAKE_STD_ZVAL(columns[j]);
+                zend_hash_update(Z_ARRVAL_P(element), thread_col_names[j], strlen(thread_col_names[j]) + 1, (void *) &columns[j] , sizeof(zval *), NULL);
+            }
+            make_article_flag_array(flags, &(ptr1[i].origin), getCurrentUser(), bp->filename, is_bm);
+            array_init(columns[0]);
+            bbs_make_article_array(columns[0], &(ptr1[i].origin), flags, sizeof(flags));
+
+            make_article_flag_array(flags, &(ptr1[i].lastreply), getCurrentUser(), bp->filename, is_bm);
+            array_init(columns[1]);
+            bbs_make_article_array(columns[1], &(ptr1[i].lastreply), flags, sizeof(flags));
+            ZVAL_LONG(columns[2],ptr1[i].articlecount);
+
+            zend_hash_index_update(Z_ARRVAL_P(return_value), begin-i, (void *) &element, sizeof(zval *), NULL);
+        }
+    } BBS_CATCH {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
-        RETURN_LONG(-2);
-    }
-
-
-    ptr1 = (struct wwwthreadheader *) ptr;
-    /*
-     * fetching articles
-     */
-    total--;
-    if (!includeTop) {
-        for (i=total;i>=0;i--) {
-            if (!(ptr1[i].flags & FILE_ON_TOP))
-                break;
-        }
-        total=i;
-    }
-    begin=total-start;
-    end=total-start-num+1;
-    if (end<0)
-        end=0;
-
-    for (i=begin;i>=end;i--) {
-        MAKE_STD_ZVAL(element);
-        array_init(element);
-        for (j = 0; j < 3; j++) {
-            MAKE_STD_ZVAL(columns[j]);
-            zend_hash_update(Z_ARRVAL_P(element), thread_col_names[j], strlen(thread_col_names[j]) + 1, (void *) &columns[j] , sizeof(zval *), NULL);
-        }
-        make_article_flag_array(flags, &(ptr1[i].origin), getCurrentUser(), bp->filename, is_bm);
-        array_init(columns[0]);
-        bbs_make_article_array(columns[0], &(ptr1[i].origin), flags, sizeof(flags));
-
-        make_article_flag_array(flags, &(ptr1[i].lastreply), getCurrentUser(), bp->filename, is_bm);
-        array_init(columns[1]);
-        bbs_make_article_array(columns[1], &(ptr1[i].lastreply), flags, sizeof(flags));
-        ZVAL_LONG(columns[2],ptr1[i].articlecount);
-
-        zend_hash_index_update(Z_ARRVAL_P(return_value), begin-i, (void *) &element, sizeof(zval *), NULL);
-    }
+        BBS_PHPLIB_RETURN_LONG(-2);
+    } BBS_END;
     end_mmapfile((void *) ptr, buf.st_size, -1);
     ldata.l_type = F_UNLCK;
     fcntl(fd, F_SETLKW, &ldata);        /* ÍË³ö»¥³âÇøÓò*/
@@ -744,30 +762,35 @@ PHP_FUNCTION(bbs_get_today_article_num)
     }
     total = buf.st_size / sizeof(struct fileheader);
 
-    if ((i = safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, &ptr, &buf.st_size)) != 1) {
-        if (i == 2)
-            end_mmapfile((void *) ptr, buf.st_size, -1);
+    BBS_TRY {
+        if (safe_mmapfile_handle(fd, PROT_READ, MAP_SHARED, &ptr, &buf.st_size) != 1) {
+            ldata.l_type = F_UNLCK;
+            fcntl(fd, F_SETLKW, &ldata);
+            close(fd);
+            BBS_PHPLIB_RETURN_LONG(-5);
+        }
+        ptr1 = (struct fileheader *) ptr;
+
+        articleNums=0;
+
+        now=time(NULL);
+        localtime_r(&now,&nowtm);
+        nowtm.tm_sec=0;
+        nowtm.tm_min=0;
+        nowtm.tm_hour=0;
+        now=mktime(&nowtm);
+
+        for (i=total-1;i>=0;i--) {
+            if (get_posttime(ptr1+i)<now)
+                break;
+            articleNums++;
+        }
+    } BBS_CATCH {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
-        RETURN_LONG(-5);
-    }
-    ptr1 = (struct fileheader *) ptr;
-
-    articleNums=0;
-
-    now=time(NULL);
-    localtime_r(&now,&nowtm);
-    nowtm.tm_sec=0;
-    nowtm.tm_min=0;
-    nowtm.tm_hour=0;
-    now=mktime(&nowtm);
-
-    for (i=total-1;i>=0;i--) {
-        if (get_posttime(ptr1+i)<now)
-            break;
-        articleNums++;
-    }
+        BBS_PHPLIB_RETURN_LONG(-5);
+    } BBS_END;
     end_mmapfile((void *) ptr, buf.st_size, -1);
     ldata.l_type = F_UNLCK;
     fcntl(fd, F_SETLKW, &ldata);        /* ÍË³ö»¥³âÇøÓò*/
