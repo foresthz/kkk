@@ -299,6 +299,14 @@ while(0)
     }                                       \
     while(0)
 
+#define BBS_PHPLIB_RETURN_LONG(x)           \
+    do{                                     \
+        popup_sigbus();                     \
+        RETURN_LONG(x);                     \
+    }                                       \
+    while(0)
+
+
     int safe_mmapfile(char *filename, int openflag, int prot, int flag, char **ret_ptr, off_t * size, int *ret_fd);
     int safe_mmapfile_handle(int fd, int prot, int flag, char **ret_ptr, off_t * size);
     void end_mmapfile(void *ptr, off_t size, int fd);
