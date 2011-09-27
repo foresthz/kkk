@@ -400,6 +400,7 @@ int do_del_post(struct userec *user,struct write_dir_arg *dirarg,struct filehead
         setbdir(DIR_MODE_NORMAL, buf, board);
         dirarg.filename = buf;
         change_post_flag(&dirarg, DIR_MODE_NORMAL, bh, &xfh, FILE_DIGEST_FLAG, &xfh, 0, session);
+        free_write_dir_arg(&dirarg);
     }
 
     if (user != NULL && !(flag & ARG_BMFUNC_FLAG)) /* b1/b3 操作不再重复计算 bmlog, fancyrabbit Oct 12 2007 */
@@ -3380,13 +3381,15 @@ int delete_range_base(
 #define DRBP_UNDEL(f)   ((DRBP_CHK_T&&!DRBP_TOKEN(f))||(DRBP_CHK_M&&DRBP_MARKS(f)))
 #define DRBP_TSET(n)    do{tab[((n)>>3)]|=(1<<((n)&0x07));}while(0)
 #define DRBP_TGET(n)    (tab[((n)>>3)]&(1<<((n)&0x07)))
+#define DRBP_GSET(n)    do{gab[((n)>>3)]|=(1<<((n)&0x07));}while(0)
+#define DRBP_GGET(n)    (gab[((n)>>3)]&(1<<((n)&0x07)))
     static const struct flock lck_set={.l_type=F_WRLCK,.l_whence=SEEK_SET,.l_start=0,.l_len=0,.l_pid=0};
     static const struct flock lck_clr={.l_type=F_UNLCK,.l_whence=SEEK_SET,.l_start=0,.l_len=0,.l_pid=0};
     struct userec *user;
     struct fileheader *src,*dst;
     struct stat st_src,st_dst;
     char path_src[DRBP_LEN],path_dst[DRBP_LEN];
-    unsigned char *tab;
+    unsigned char *tab, *gab;
     int fd_src,fd_dst,count,total,reserved,id_from,id_to,i,j,n_src,n_dst,ret,len;
     void *pm,*p;
     /* 合法性检测 */
@@ -3456,18 +3459,20 @@ int delete_range_base(
         case DELETE_RANGE_BASE_MODE_TOKEN:                  /* 删除拟删文章 */
         case DELETE_RANGE_BASE_MODE_RANGE:                  /* 常规区段删除 */
             /* 创建辅助表 */
-            if (!(tab=(unsigned char*)malloc(((count>>3)+1)*sizeof(unsigned char)))) {
+            if (!(tab=(unsigned char*)malloc(((count>>3)+1)*sizeof(unsigned char))) || !(gab=(unsigned char*)malloc(((count>>3)+1)*sizeof(unsigned char)))) {
                 DRBP_RDST;
                 DRBP_RSRC;
                 return 0x80;
             }
             memset(tab,0,((count>>3)+1)*sizeof(unsigned char));
+            memset(gab,0,((count>>3)+1)*sizeof(unsigned char));
             /* 创建目的 DIR 缓存 */
             if (DRBP_DST) {
                 if (!(dst=(struct fileheader*)malloc(count*sizeof(struct fileheader)))) {
                     DRBP_RDST;
                     DRBP_RSRC;
                     free(tab);
+                    free(gab);
                     return 0x81;
                 }
             } else
@@ -3481,6 +3486,7 @@ int delete_range_base(
                                 continue;
                             delete_range_cancel_post_mv(videntity,&src[i]);
                             DRBP_TSET(i);
+                            DRBP_GSET(i);
                         }
                     else
                         for (i=0;i<count;i++) {
@@ -3488,6 +3494,7 @@ int delete_range_base(
                                 continue;
                             delete_range_cancel_post_del(videntity,&src[i]);
                             DRBP_TSET(i);
+                            DRBP_GSET(i);
                         }
                 } else {
                     if (DRBP_DST)
@@ -3496,6 +3503,7 @@ int delete_range_base(
                                 continue;
                             delete_range_cancel_mail_mv(videntity,&src[i]);
                             DRBP_TSET(i);
+                            DRBP_GSET(i);
                         }
                     else {
                         for (ret=0,i=0;i<count;i++) {
@@ -3503,6 +3511,7 @@ int delete_range_base(
                                 continue;
                             ret+=delete_range_cancel_mail_del(videntity,&src[i]);
                             DRBP_TSET(i);
+                            DRBP_GSET(i);
                         }
                         if (getuser(videntity,&user)) {
                             if (!(ret>user->usedspace))
@@ -3544,11 +3553,32 @@ int delete_range_base(
                     DRBP_RDST;
                     DRBP_RSRC;
                     free(tab);
+                    free(gab);
                     free(dst);
                     return 0x60;
                 }
             }
             DRBP_RDST;
+            /* 处理文摘区区段对应的原文 */
+            if (strcmp(vdir_src,".DIGEST")==0) {
+                struct write_dir_arg dirarg;
+                struct fileheader xfh;
+                const struct boardheader *bh;
+                char buf[STRLEN];
+
+                bh = getbcache(videntity);
+                init_write_dir_arg(&dirarg);
+                setbdir(DIR_MODE_NORMAL, buf, videntity);
+                dirarg.filename = buf;
+                for (n_src=0,i=0;i<count;i++) {
+                    if (DRBP_GGET(i)) {
+                        memcpy(&xfh, &src[i], sizeof(struct fileheader));
+                        POSTFILE_BASENAME(xfh.filename)[0]='M';
+                        change_post_flag(&dirarg, DIR_MODE_NORMAL, bh, &xfh, FILE_DIGEST_FLAG, &xfh, 0, getSession());
+                    }
+                }
+                free_write_dir_arg(&dirarg);
+            }
             /* 处理源 DIR 文件写入 */
             for (n_src=0,i=0,j=0;i<count;i++) {
                 if (!DRBP_TGET(i)) {
@@ -3571,17 +3601,20 @@ int delete_range_base(
             if (ftruncate(fd_src,(st_src.st_size-(count-n_src)*sizeof(struct fileheader)))==-1) {
                 DRBP_RSRC;
                 free(tab);
+                free(gab);
                 free(dst);
                 return 0x61;
             }
             if (msync(pm,(st_src.st_size-(count-n_src)*sizeof(struct fileheader)),MS_SYNC)==-1) {
                 DRBP_RSRC;
                 free(tab);
+                free(gab);
                 free(dst);
                 return 0x62;
             }
             DRBP_RSRC;
             free(tab);
+            free(gab);
             free(dst);
             return 0x00;
         case DELETE_RANGE_BASE_MODE_FORCE:                  /* 强制区段删除 */
@@ -3622,6 +3655,24 @@ int delete_range_base(
                 }
             }
             DRBP_RDST;
+            /* 处理文摘区区段对应的原文 */
+            if (strcmp(vdir_src,".DIGEST")==0) {
+                struct write_dir_arg dirarg;
+                struct fileheader xfh;
+                const struct boardheader *bh;
+                char buf[STRLEN];
+
+                bh = getbcache(videntity);
+                init_write_dir_arg(&dirarg);
+                setbdir(DIR_MODE_NORMAL, buf, videntity);
+                dirarg.filename = buf;
+                for (n_src=0,i=0;i<count;i++) {
+                    memcpy(&xfh, &src[i], sizeof(struct fileheader));
+                    POSTFILE_BASENAME(xfh.filename)[0]='M';
+                    change_post_flag(&dirarg, DIR_MODE_NORMAL, bh, &xfh, FILE_DIGEST_FLAG, &xfh, 0, getSession());
+                }
+                free_write_dir_arg(&dirarg);
+            }
             memmove(src,&src[count],reserved*sizeof(struct fileheader));
             if (ftruncate(fd_src,(st_src.st_size-count*sizeof(struct fileheader)))==-1) {
                 DRBP_RSRC;
