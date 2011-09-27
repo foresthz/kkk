@@ -385,6 +385,24 @@ int do_del_post(struct userec *user,struct write_dir_arg *dirarg,struct filehead
             }
         }
     }
+
+    /* 删除文摘区文章时，去掉原文的文摘标记 */
+    if (POSTFILE_BASENAME(fileinfo->filename)[0]=='G') {
+        struct write_dir_arg dirarg;
+        struct fileheader xfh;
+        const struct boardheader *bh;
+        char buf[STRLEN];
+
+        bh = getbcache(board);
+        init_write_dir_arg(&dirarg);
+        memcpy(&xfh, fileinfo, sizeof(struct fileheader));
+        POSTFILE_BASENAME(xfh.filename)[0]='M';
+        setbdir(DIR_MODE_NORMAL, buf, board);
+        dirarg.filename = buf;
+        change_post_flag(&dirarg, DIR_MODE_NORMAL, bh, &xfh, FILE_DIGEST_FLAG, &xfh, 0, session);
+    }
+
+    setboardtitle(board, 1);
     if (user != NULL && !(flag & ARG_BMFUNC_FLAG)) /* b1/b3 操作不再重复计算 bmlog, fancyrabbit Oct 12 2007 */
         bmlog(user->userid, board, 8, 1);
     newbbslog(BBSLOG_USER, "Del '%s' on '%s'", fh.title, board);        /* bbslog */
