@@ -2505,7 +2505,7 @@ int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
                 no_ref=!askyn("是否保留引文", 1);
                 get_thread_forward(conf, fh, title, &no_ref);
                 gettmpfilename(tmp_buf, "ut", getpid());
-                get_effsize_attach(tmp_buf, &fh->attachment);
+                //get_effsize_attach(tmp_buf, &fh->attachment);
                 f_mv(tmp_buf, fname);
                 strcat(title, "(合集转寄)");
                 if (!strncmp(title, "Re: ", 4))
@@ -2541,6 +2541,7 @@ int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
          * clear();
          */
     }
+    get_effsize_attach(fname, &fh->attachment);
 
     /* 如果带有附件，选择是否连同附件一起转寄, jiangjun, 20110708 */
     if (fh->attachment) {
