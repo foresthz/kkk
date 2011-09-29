@@ -1592,7 +1592,7 @@ int get_thread_forward(struct _select_def* conf, struct fileheader* fh, char *ti
 
     if ((fn=fopen(ut_file, "w"))==NULL)
         return -1;
-    fprintf(fn, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄，原文发表于 \033[32m%s\033[33m 版】\n\n", getCurrentUser()->userid, currboard->filename);
+    //fprintf(fn, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄，原文发表于 \033[32m%s\033[33m 版】\n\n", getCurrentUser()->userid, currboard->filename);
     fclose(fn);
 
     apply_thread(conf,fh,user_thread_mail,true,true,extraarg);
@@ -2541,6 +2541,30 @@ int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
          * clear();
          */
     }
+
+    int mode; /* 0: 普通转寄, 1: 精华区转寄, 2: 信箱转寄 */
+    char board[STRLEN];
+    strcpy(board, currboard->filename);
+    if (conf) {
+        if (((struct read_arg*)conf->arg)->mode==DIR_MODE_MAIL)
+            mode = 2;
+        else
+            mode = 0;
+    } else {
+        mode = 1;
+        /* 获得精华区文件所在版面 */
+        char *t, buf[STRLEN];
+        int i;
+        strncpy(buf, direct, strlen(direct));
+        t = buf;
+        for (i=0;i<3;i++) {
+            t=strchr(t, '/')+1;
+        }
+        strcpy(board, t);
+        if ((t=strchr(board, '/'))!=NULL)
+            *t = '\0';
+    }
+    write_forward_header(fname, fh, board, mode);
     get_effsize_attach(fname, &fh->attachment);
 
     /* 如果带有附件，选择是否连同附件一起转寄, jiangjun, 20110708 */
