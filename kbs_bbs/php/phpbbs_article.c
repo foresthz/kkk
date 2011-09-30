@@ -408,7 +408,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
         }
         if (top_match == -1 && !retnum) {
             RETURN_LONG(0);
-        } else {
+        } else if (top_match != -1) {
             retnum++;
         }
     }
