@@ -346,7 +346,6 @@ threads_error:
  */
 PHP_FUNCTION(bbs_get_threads_from_gid)
 {
-#define MAX_THREADS_NUM 5120
     long bid;
     long gid;
     long start;
@@ -384,12 +383,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     is_bm = is_BM(bp, getCurrentUser());
     setbdir(DIR_MODE_NORMAL, dirpath, bp->filename);
 
-    articles = (struct fileheader *)emalloc(MAX_THREADS_NUM * sizeof(struct fileheader));
-    if (articles == NULL) {
-        RETURN_LONG(0);
-    }
-    if ((retnum=get_threads_from_gid(dirpath, gid, articles, MAX_THREADS_NUM , start , &haveprev, 0, getCurrentUser())) == 0) {
-        efree(articles);
+    if ((retnum=get_threads_from_gid(dirpath, gid, &articles, -1, start , &haveprev, 0, getCurrentUser())) == 0) {
         RETURN_LONG(0);
     }
 
@@ -408,7 +402,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
         zend_hash_index_update(Z_ARRVAL_P(z_threads), i,
                                (void*) &element, sizeof(zval*), NULL);
     }
-    efree(articles);
+    free(articles);
     RETURN_LONG(retnum);
 }
 

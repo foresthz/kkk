@@ -982,7 +982,6 @@ return:
 */
 PHP_FUNCTION(bbs_threads_bmfunc)
 {
-#define MAX_THREADS_NUM 5120
     long bid, gid, start, operate;
     const struct boardheader *bp;
     char dirpath[STRLEN];
@@ -1007,18 +1006,17 @@ PHP_FUNCTION(bbs_threads_bmfunc)
     articles = NULL;
     setbdir(DIR_MODE_NORMAL, dirpath, bp->filename);
     if ((operate == 1) || (operate == 4) || ((operate >= 10) && (operate <= 13))) { /* delete or make total or import */
-        articles = (struct fileheader *)emalloc(MAX_THREADS_NUM * sizeof(struct fileheader));
-        ret = get_threads_from_gid(dirpath, gid, articles, MAX_THREADS_NUM, start, &haveprev, operate, getCurrentUser());
+        ret = get_threads_from_gid(dirpath, gid, &articles, -1, start, &haveprev, operate, getCurrentUser());
     } else {
         if (operate == 5)   /* initialize announce clipboard first */
             ann_article_import(bp->filename, NULL, NULL, getCurrentUser()->userid);
-        ret = get_threads_from_gid(dirpath, gid, NULL, MAX_THREADS_NUM, start, &haveprev, operate, getCurrentUser());
+        ret = get_threads_from_gid(dirpath, gid, NULL, -2, start, &haveprev, operate, getCurrentUser());
     }
 
     if (operate == 1) { /* del threads */
         fd = open(dirpath, O_RDWR, 0644);
         if (fd < 0) {
-            efree(articles);
+            free(articles);
             RETURN_LONG(-3);
         }
         count = 0;
@@ -1034,7 +1032,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
     } else if (operate == 4) { /* del X articles in threads */
         fd = open(dirpath, O_RDWR, 0644);
         if (fd < 0) {
-            efree(articles);
+            free(articles);
             RETURN_LONG(-3);
         }
         count = 0;
@@ -1068,7 +1066,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
                 unlink(tmpf);
                 sprintf(tmpf, "tmp/se.%s", getCurrentUser()->userid);
                 unlink(tmpf);
-                efree(articles);
+                free(articles);
                 RETURN_LONG(-3);
             }
         }
@@ -1079,7 +1077,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
     }
 
     if (articles)
-        efree(articles);
+        free(articles);
     if (ret >= 0) {
         RETURN_LONG(ret);
     } else {

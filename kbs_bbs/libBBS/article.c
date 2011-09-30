@@ -1839,6 +1839,8 @@ struct dir_gthread_set {
     char *userid;
 };
 
+#define GDG_INI_SIZE 512
+#define GDG_INC_SIZE 512
 static int get_dir_gthreads(int fd, fileheader_t * base, int ent, int total, bool match, void *arg)
 {
     struct dir_gthread_set *ts = (struct dir_gthread_set *) arg;
@@ -1849,6 +1851,14 @@ static int get_dir_gthreads(int fd, fileheader_t * base, int ent, int total, boo
     int passprev = 0;
     struct fileheader *fh;
 
+    int dyn_size = 0;
+
+    /* fancy Sep 30 2011, 动态分配内存 */
+    if (ts->num == -1) {
+        dyn_size = GDG_INI_SIZE;
+        if (!(ts->records = (fileheader_t *)malloc(dyn_size * sizeof(fileheader_t))))
+            return 0;
+    }
     for (i = start; i <= end; i++) {
         if (count == ts->num)
             break;
@@ -1857,8 +1867,16 @@ static int get_dir_gthreads(int fd, fileheader_t * base, int ent, int total, boo
                 passprev = i;
                 continue;
             }
-            if (ts->records)
+            if (ts->records) {
+                if (ts->num == -1 && count == dyn_size) {
+                    dyn_size += GDG_INC_SIZE;
+                    if (!(ts->records = (fileheader_t *)realloc(ts->records, dyn_size * sizeof(fileheader_t)))) {
+                        free(ts->records);
+                        return 0;
+                    }
+                }
                 memcpy(ts->records + count, base + i - 1, sizeof(fileheader_t));
+            }
             count++;
 
             fh = base + i - 1;
@@ -1902,7 +1920,7 @@ static int get_dir_gthreads(int fd, fileheader_t * base, int ent, int total, boo
         int i = 1;
 
         for (; passprev >= start; passprev--) {
-            if (i >= ts->num)
+            if (ts->num > 0 && i >= ts->num)
                 break;
             if (base[passprev - 1].groupid == ts->groupid) {
                 ts->haveprev = base[passprev - 1].id;
@@ -1913,7 +1931,8 @@ static int get_dir_gthreads(int fd, fileheader_t * base, int ent, int total, boo
     return count;
 }
 
-int get_threads_from_gid(const char *filename, int gid, fileheader_t * buf, int num, int startid, int *haveprev, int operate, struct userec *user)
+// num = -1 表示没有上限，这个时候调用者需要在外面 free() 掉 *buf，切记！！
+int get_threads_from_gid(const char *filename, int gid, fileheader_t **buf, int num, int startid, int *haveprev, int operate, struct userec *user)
 {
     struct dir_gthread_set ts;
     fileheader_t key;
@@ -1922,7 +1941,7 @@ int get_threads_from_gid(const char *filename, int gid, fileheader_t * buf, int 
 
     if (num == 0)
         return 0;
-    ts.records = buf;
+    ts.records = buf ? *buf : NULL;
     ts.num = num;
     ts.groupid = gid;
     ts.start = startid;
@@ -1935,6 +1954,8 @@ int get_threads_from_gid(const char *filename, int gid, fileheader_t * buf, int 
         return -1;
     ret = mmap_dir_search(fd, &key, get_dir_gthreads, &ts);
     close(fd);
+    if (num == -1)
+        *buf = ts.records;
 
     *haveprev = ts.haveprev;
     return ret;

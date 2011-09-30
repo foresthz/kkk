@@ -508,7 +508,7 @@ while(0)
     int get_ent_from_id_ext(int mode, int id, const char *bname, fileheader_t *fh);
 
     int get_threads_from_id(const char *filename, int id, fileheader_t *buf, int num);
-    int get_threads_from_gid(const char *filename, int gid, fileheader_t *buf, int num, int start, int * haveprev, int operate, struct userec *user);
+    int get_threads_from_gid(const char *filename, int gid, fileheader_t **buf, int num, int start, int * haveprev, int operate, struct userec *user);
 
     int ann_article_import(const char *bname, const char *title, const char *fname, const char *userid);
 
