@@ -30,6 +30,9 @@ void bbs_make_article_array(zval * array, struct fileheader *fh, char *flags, si
     add_assoc_string(array, "LAST_OWNER", fh->last_owner, 1);
     add_assoc_long(array, "LAST_POSTTIME", fh->last_posttime);
 #endif /* HAVE_REPLY_COUNT */
+#ifdef NEWSMTH
+    add_assoc_long(array, "FENED", (fh->accessed[1] & FILE_FEN));
+#endif
 }
 
 
@@ -356,11 +359,13 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     const struct boardheader *bp;
     int is_bm;
     char dirpath[STRLEN];
-    struct fileheader *articles;
+    struct fileheader *articles = NULL;
     int retnum;
     int haveprev;
     zval *element;
     char flags[5];
+    int top_match = -1;
+    struct BoardStatus *bs;
     int ac = ZEND_NUM_ARGS();
 
 
@@ -386,38 +391,41 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     is_bm = is_BM(bp, getCurrentUser());
     setbdir(DIR_MODE_NORMAL, dirpath, bp->filename);
 
-    if ((retnum=get_threads_from_gid(dirpath, gid, &articles, -1, start , &haveprev, 0, getCurrentUser())) == 0) {
+    if ((retnum=get_threads_from_gid(dirpath, gid, &articles, -1, start , &haveprev, 0, getCurrentUser())) == 0 && !ins_top) {
         RETURN_LONG(0);
     }
 
     ZVAL_LONG(retprev , haveprev);
     zval_dtor(z_threads);
     array_init(z_threads);
+
+    if (ins_top) {
+        bs = getbstatus(bid);
+        for (i = bs->toptitle - 1; i >= 0; i--) {
+            if (bs->topfh[i].id != gid)
+                continue;
+            top_match = i;
+        }
+		if (top_match == -1 && !retnum) {
+            RETURN_LONG(0);
+        } else {
+            retnum++;
+        }
+    }
     for (i = 0; i < retnum; i++) {
         MAKE_STD_ZVAL(element);
         array_init(element);
         // fancy Sep 30 2011, 如果ins_top为true则强势插入满足topfh.id==gid的置顶帖
-        if (i == 0 && ins_top) {
-            int match = 0;
-            struct BoardStatus *bs;
-            bs = getbstatus(bid);
-            for (i = bs->toptitle - 1; i; i--) {
-                if (bs->topfh[i].id != gid)
-                    continue;
-                match = 1;
-                if (getCurrentUser())
-                    make_article_flag_array(flags, articles, getCurrentUser(), (char *)bp->filename, is_bm);
-                else
-                    memset(flags, 0, sizeof(flags));
-                bbs_make_article_array(element, articles, flags, sizeof(flags));
-                zend_hash_index_update(Z_ARRVAL_P(z_threads), i, (void *) &element, sizeof(zval *), NULL);
-                articles--; retnum++;
-                break;
-            }
-            if (match)
-                continue;
-        } else if (i == 1 && articles[i].id == gid) {
-            articles++; retnum--; continue;
+        if (i == 0 && top_match != -1) {
+            if (getCurrentUser())
+                make_article_flag_array(flags, bs->topfh + top_match, getCurrentUser(), (char *)bp->filename, is_bm);
+            else
+                memset(flags, 0, sizeof(flags));
+            bbs_make_article_array(element, bs->topfh + top_match, flags, sizeof(flags));
+            zend_hash_index_update(Z_ARRVAL_P(z_threads), i, (void *) &element, sizeof(zval *), NULL);
+            articles--; continue;
+        } else if (i == 1 && top_match != -1 && articles[i].id == gid) {
+            top_match = -1; articles++; retnum--; i--; continue;
         }
         if (articles[i].id && getCurrentUser()) {
             make_article_flag_array(flags, articles + i, getCurrentUser(), (char*)bp->filename, is_bm);
@@ -428,7 +436,10 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
         zend_hash_index_update(Z_ARRVAL_P(z_threads), i,
                                (void*) &element, sizeof(zval*), NULL);
     }
-    free(articles);
+    if (top_match == -1)
+        free(articles);
+    else
+        free(articles + 1);
     RETURN_LONG(retnum);
 }
 
