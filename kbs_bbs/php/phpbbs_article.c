@@ -366,8 +366,8 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
 
     if (ac != 5 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "lllzz", &bid , &gid, &start , &z_threads , &retprev) == FAILURE) {
 
-        if (ac != 6 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "lllzzl", &bid , &gid, &start , &z_threads , &retprev, &ins_top) == FAILURE) {
-        WRONG_PARAM_COUNT;
+        if (ac != 6 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "lllzzl", &bid , &gid, &start , &z_threads , &retprev, &ins_top) == FAILURE)
+            WRONG_PARAM_COUNT;
     }
     if (start < 0)
         start = 0;
