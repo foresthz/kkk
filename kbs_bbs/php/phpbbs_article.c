@@ -351,6 +351,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     long start;
     zval *z_threads;
     zval *retprev;
+    int ins_top = 0;
     int i;
     const struct boardheader *bp;
     int is_bm;
@@ -364,6 +365,8 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
 
 
     if (ac != 5 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "lllzz", &bid , &gid, &start , &z_threads , &retprev) == FAILURE) {
+
+        if (ac != 6 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "lllzzl", &bid , &gid, &start , &z_threads , &retprev, &ins_top) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
     if (start < 0)
@@ -393,6 +396,29 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     for (i = 0; i < retnum; i++) {
         MAKE_STD_ZVAL(element);
         array_init(element);
+        // fancy Sep 30 2011, 如果ins_top为true则强势插入满足topfh.id==gid的置顶帖
+        if (i == 0 && ins_top) {
+            int match = 0;
+            struct BoardStatus *bs;
+            bs = getbstatus(bid);
+            for (i = bs->toptitle - 1; i; i--) {
+                if (bs->topfh[i].id != gid)
+                    continue;
+                match = 1;
+                if (getCurrentUser())
+                    make_article_flag_array(flags, articles, getCurrentUser(), (char *)bp->filename, is_bm);
+                else
+                    memset(flags, 0, sizeof(flags));
+                bbs_make_article_array(element, articles, flags, sizeof(flags));
+                zend_hash_index_update(Z_ARRVAL_P(z_threads), i, (void *) &element, sizeof(zval *), NULL);
+                articles--; retnum++;
+                break;
+            }
+            if (match)
+                continue;
+        } else if (i == 1 && articles[i].id == gid) {
+            articles++; retnum--; continue;
+        }
         if (articles[i].id && getCurrentUser()) {
             make_article_flag_array(flags, articles + i, getCurrentUser(), (char*)bp->filename, is_bm);
         } else {
