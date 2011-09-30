@@ -365,7 +365,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     zval *element;
     char flags[5];
     int top_match = -1;
-    struct BoardStatus *bs;
+    struct BoardStatus *bs = NULL;
     int ac = ZEND_NUM_ARGS();
 
 
@@ -406,7 +406,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
                 continue;
             top_match = i;
         }
-		if (top_match == -1 && !retnum) {
+        if (top_match == -1 && !retnum) {
             RETURN_LONG(0);
         } else {
             retnum++;
