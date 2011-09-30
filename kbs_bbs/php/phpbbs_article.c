@@ -402,7 +402,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     if (ins_top) {
         bs = getbstatus(bid);
         for (i = bs->toptitle - 1; i >= 0; i--) {
-            if (bs->topfh[i].id != gid)
+            if (bs->topfh[i].id != bs->topfh[i].groupid || bs->topfh[i].id != gid)
                 continue;
             top_match = i;
         }
