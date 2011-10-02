@@ -393,6 +393,8 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
 
     if ((retnum=get_threads_from_gid(dirpath, gid, &articles, -1, start , &haveprev, 0, getCurrentUser())) == 0 && !ins_top) {
         RETURN_LONG(0);
+    } else if (!retnum && ins_top) {
+        retnum++;
     }
 
     ZVAL_LONG(retprev , haveprev);
@@ -403,7 +405,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
         MAKE_STD_ZVAL(element);
         array_init(element);
         // fancy Sep 30 2011, 如果ins_top为true则强势插入满足topfh.id==gid的置顶帖
-        if (i == 0 && ins_top && articles[i].id != articles[i].gid) {
+        if (i == 0 && ins_top && (retnum == 1 || articles[i].id != articles[i].groupid)) {
             bs = getbstatus(bid);
             for (j = bs->toptitle - 1; j >= 0; j--) {
                 if (bs->topfh[j].id == bs->topfh[j].groupid && bs->topfh[j].id == gid) {
@@ -420,6 +422,10 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
             if (top_match) {
                 articles--;
                 continue;
+            } else if (retnum == 1) {
+                RETURN_LONG(0);
+            } else {
+                retnum--;
             }
         }
 
