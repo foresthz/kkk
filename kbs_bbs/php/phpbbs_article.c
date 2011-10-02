@@ -422,12 +422,12 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
                 }
             }
             if (top_match) {
+                if (!ret_flag)
+                    retnum++;
                 articles--;
                 continue;
             } else if (ret_flag) {
                 RETURN_LONG(0);
-            } else {
-                retnum--;
             }
         }
 
