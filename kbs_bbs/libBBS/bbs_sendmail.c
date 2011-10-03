@@ -1054,7 +1054,7 @@ int clear_junk_mail(struct userec *user)
     return ret;
 }
 
-int write_forward_header(const char *file, struct fileheader *fh, const char *board, int mode)
+int write_forward_header(const char *file, const char *title, const char *board, int mode)
 {
     FILE *fout;
     char tmpfile[STRLEN], buf[STRLEN];
@@ -1066,15 +1066,32 @@ int write_forward_header(const char *file, struct fileheader *fh, const char *bo
         return -1;
     }
     fprintf(fout, "转寄人: %s (%s)\n", getCurrentUser()->userid, getCurrentUser()->username);
-    fprintf(fout, "标  题: %s\n", fh->title);
+    fprintf(fout, "标  题: %s\n", title);
     fprintf(fout, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime_r(&t, buf));
     fprintf(fout, "来  源: %s\n\n", getSession()->fromhost);
-    if (mode==0)
-        fprintf(fout, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄于 \033[32m%s\033[33m 版】\033[m\n", getCurrentUser()->userid, board);
-    else if (mode==1)
-        fprintf(fout, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄于 \033[32m%s\033[33m 版精华区】\033[m\n", getCurrentUser()->userid, board);
-    else
+    if (mode==DIR_MODE_MAIL) {
         fprintf(fout, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄于本站个人信箱】\033[m\n", getCurrentUser()->userid);
+    } else {
+        fprintf(fout, "\033[0;1;33m【以下内容由 \033[32m%s\033[33m 转寄于 \033[32m%s\033[33m 版", getCurrentUser()->userid, board);
+        switch (mode) {
+            case -1:
+                fprintf(fout, "精华区");
+                break;
+            case DIR_MODE_DIGEST:
+                fprintf(fout, "文摘区");
+                break;
+            case DIR_MODE_DELETED:
+                fprintf(fout, "删除区");
+                break;
+            case DIR_MODE_JUNK:
+            case DIR_MODE_SELF:
+                fprintf(fout, "自删区");
+                break;
+            default:
+                break;
+        }
+        fprintf(fout, "】\033[m\n");
+    }
     fclose(fout);
     f_catfile(file, tmpfile);
     f_mv(tmpfile, file);

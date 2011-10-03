@@ -767,6 +767,7 @@ PHP_FUNCTION(bbs_domailforward)
     char title[512];
     struct userec *u;
     char mail_domain[STRLEN];
+    char tmpfile[STRLEN];
 
     if (ZEND_NUM_ARGS() != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &fname, &filename_len, &tit, &tit_len, &target1, &target_len, &big5, &noansi) != SUCCESS) {
         WRONG_PARAM_COUNT;
@@ -797,18 +798,27 @@ PHP_FUNCTION(bbs_domailforward)
 
     if (!file_exist(fname))
         RETURN_LONG(-7);
+    gettmpfilename(tmpfile, "mail.forward");
+    f_cp(fname, tmpfile, 0);
+    strcpy(fname, tmpfile);
+    /* 添加转寄信头 */
+    write_forward_header(fname, tit, NULL, DIR_MODE_MAIL);
 
     snprintf(title, 511, "%.50s(转寄)", tit);
 
     if (!strchr(target, '@')) {
         mail_file(getCurrentUser()->userid, fname, u->userid, title,0, NULL);
+        unlink(fname);
         RETURN_LONG(1);
     } else {
         if (big5 == 1)
             conv_init(getSession());
         if (bbs_sendmail(fname, title, target, big5, noansi, getSession()) == 0) {
+            unlink(fname);
             RETURN_LONG(1);
-        } else
+        } else {
+            unlink(fname);
             RETURN_LONG(-10);
+        }
     }
 }

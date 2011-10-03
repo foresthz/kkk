@@ -1203,28 +1203,32 @@ PHP_FUNCTION(bbs_doforward)
     if (!file_exist(fname))
         RETURN_LONG(-7);
 
-    /* 不转寄附件 */
-    if (noattach) {
-        FILE *fin, *fout;
-        char tmpfile[STRLEN], buf[256];
-        int size;
-        gettmpfilename(tmpfile, "forward.no.attach");
-        if (!(fin=fopen(fname,"r")))
-            RETURN_LONG(-1);
-        if (!(fout=fopen(tmpfile,"w"))) {
-            fclose(fin);
-            RETURN_LONG(-1);
-        }
-        while ((size=-attach_fgets(buf,256,fin))) {
-            if (size<0)
-                fprintf(fout,"%s",buf);
-            else
-                break;
-        }
+    /* 是否转寄附件 */
+    FILE *fin, *fout;
+    char tmpfile[STRLEN], buf[256];
+    int size;
+    gettmpfilename(tmpfile, "forward.no.attach");
+    if (!(fin=fopen(fname,"r")))
+        RETURN_LONG(-1);
+    if (!(fout=fopen(tmpfile,"w"))) {
         fclose(fin);
-        fclose(fout);
-        strcpy(fname, tmpfile);
+        RETURN_LONG(-1);
     }
+    while ((size=-attach_fgets(buf,256,fin))) {
+        if (size<0)
+            fprintf(fout,"%s",buf);
+        else {
+            if (noattach)
+                break;
+            else
+                put_attach(fin, fout, size);
+        }
+    }
+    fclose(fin);
+    fclose(fout);
+    strcpy(fname, tmpfile);
+    /* 添加转寄信头 */
+    write_forward_header(fname, tit, board, DIR_MODE_NORMAL);
     snprintf(title, 511, "%.50s(转寄)", tit);
 
     if (!strchr(target, '@')) {
@@ -1238,8 +1242,7 @@ PHP_FUNCTION(bbs_doforward)
         } else
             ret = -10;
     }
-    if (noattach)
-        unlink(fname);
+    unlink(fname);
     RETURN_LONG(ret);
 }
 
@@ -1282,6 +1285,8 @@ PHP_FUNCTION(bbs_dotforward)
     gettmpfilename(fname, "ut");
     if (!file_exist(fname))
         RETURN_LONG(-7);
+    /* 添加转寄信头 */
+    write_forward_header(fname, title, board, DIR_MODE_NORMAL);
 
 #if 0 //似乎前面已经考虑到了，这里就用不着了
     /* 不转寄附件 */

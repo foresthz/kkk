@@ -2542,16 +2542,13 @@ int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
          */
     }
 
-    int mode; /* 0: 普通转寄, 1: 精华区转寄, 2: 信箱转寄 */
+    int mode; /*-1:精华区转寄, 其他: BBS_DIR_MODE */
     char board[STRLEN];
     strcpy(board, currboard->filename);
     if (conf) {
-        if (((struct read_arg*)conf->arg)->mode==DIR_MODE_MAIL)
-            mode = 2;
-        else
-            mode = 0;
+        mode = ((struct read_arg*)conf->arg)->mode;
     } else {
-        mode = 1;
+        mode = -1;
         /* 获得精华区文件所在版面 */
         char *t, buf[STRLEN];
         int i;
@@ -2564,7 +2561,7 @@ int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
         if ((t=strchr(board, '/'))!=NULL)
             *t = '\0';
     }
-    write_forward_header(fname, fh, board, mode);
+    write_forward_header(fname, fh->title, board, mode);
     get_effsize_attach(fname, &fh->attachment);
 
     /* 如果带有附件，选择是否连同附件一起转寄, jiangjun, 20110708 */
