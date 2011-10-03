@@ -536,6 +536,7 @@ while(0)
     void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony, session_t* session);
 
     void write_header(FILE * fp, struct userec *user, int in_mail, const char *board, const char *title, int Anony, int mode, session_t* session);
+    int write_forward_header(const char *file, const char *title, const char *board, int mode);
 
     /*写入.post文件供分析*/
     int write_posts(char *id, const char *board, unsigned int groupid);
