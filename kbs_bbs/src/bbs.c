@@ -3392,7 +3392,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         Anony = ANONYMOUS_DEFAULT;
     else
         Anony = 0;
-#ifdef NFORUM
+#ifdef FORCE_TEMPLATE
 	if ((currboard->flag&BOARD_TMP_POST) && !replymode && !chk_currBM(currBM,getCurrentUser())) use_tmpl = 1;
 #endif
 #ifdef FREE
@@ -3466,7 +3466,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
             buf4[0] = '\0';
         } else if (ooo == 'P') {
             if (use_tmpl >= 0
-#ifdef NFORUM
+#ifdef FORCE_TEMPLATE
                     && !((currboard->flag&BOARD_TMP_POST)&&!replymode&&!chk_currBM(currBM,getCurrentUser()))
 #endif
                     )

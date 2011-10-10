@@ -801,5 +801,9 @@ attach define
 #undef DELETE_RANGE_RESERVE_DIGEST
 #endif /* DELETE_RANGE_RESERVE_DIGEST && DELETE_RANGE_RESERVE_DIGEST == 0 */
 
+#ifdef NFORUM
+#define FORCE_TEMPLATE 1
+#endif
+
 #endif /* __SYS_DEFAULT_H_ */
 

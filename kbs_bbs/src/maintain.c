@@ -959,7 +959,7 @@ int modify_board(int bid)
 #else /* HAVE_USERSCORE */
     sprintf(menustr[22],"%-15s%s <%d>",menuldr[22],"无效选项",bh.score_level);
 #endif /* HAVE_USERSCORE */
-#ifdef NFORUM
+#ifdef FORCE_TEMPLATE
     /*强制模板发文*/
     sel[23].hotkey='P';
     sprintf(menustr[23],"%-15s%s",menuldr[23],(bh.flag&BOARD_TMP_POST)?"是":"否");
@@ -1617,7 +1617,7 @@ int modify_board(int bid)
 #endif /* HAVE_USERSCORE */
                 break;
             /* 强制模板发文 */
-#ifdef NFORUM
+#ifdef FORCE_TEMPLATE
             case 23:
                 newbh.flag^=BOARD_TMP_POST;
                 /*标记修改状态*/
