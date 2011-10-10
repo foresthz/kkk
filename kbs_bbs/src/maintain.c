@@ -794,7 +794,7 @@ int m_editbrd(void)
 }
 int modify_board(int bid)
 {
-#ifdef NFORUM
+#ifdef FORCE_TEMPLATE
 #define MB_ITEMS 25
 #else
 #define MB_ITEMS 24
