@@ -3,7 +3,7 @@
 #include "bbs.h"
 #include <sys/ipc.h>
 #include <sys/shm.h>
-static void bcache_setreadonly(int readonly);
+void bcache_setreadonly(int readonly);
 void fixFavBoard(session_t *);
 #ifndef USE_SEM_LOCK
 static int bcache_lock()
