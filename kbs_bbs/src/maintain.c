@@ -1631,7 +1631,7 @@ int modify_board(int bid)
             /* 版面积分 */
             case 23:
 #ifdef NEWSMTH
-                move(18,2); clrtoeol(); getdata(18,2,"请输入新的用户积分数量{<=N>|<+N>|<-N>}:",buf,9,DOECHO,NULL,true);
+                move(18,2); clrtoeol(); getdata(18,2,"请输入新的用户积分数量{<=N>|<+N>|<-N>}:",buf,11,DOECHO,NULL,true);
                 if (!*buf)
                     break;
                 trimstr(buf);
