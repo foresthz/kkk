@@ -39,7 +39,7 @@ static void bcache_unlock(int fd)
     bcache_setreadonly(1);
 }
 #endif
-static void bcache_setreadonly(int readonly)
+void bcache_setreadonly(int readonly)
 {
     int boardfd;
     void *oldptr = bcache;
