@@ -350,8 +350,6 @@ PHP_FUNCTION(bbs_prepost_check)
     long reid;
     struct fileheader oldxx;
     const boardheader_t *brd;
-    char filepath[MAXPATH];
-    FILE *fp;
     int NBUser = 0;
 
 
