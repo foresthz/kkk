@@ -290,6 +290,9 @@ int show_boardinfo(const char *bname)
            (bp->flag & BOARD_OUTFLAG) ? "" : "不",
            (bp->flag & BOARD_ATTACH) ? "" : "不",
            (bp->flag & BOARD_NOREPLY) ? "不" : "");
+#ifdef NEWSMTH
+    prints("\033[1;31m版面积分\033[m: %d \n\n", bp->score);
+#endif
 #ifdef RECORDMAXONLINE
     struct BoardStatus *bs;
     bs = getbstatus(bid);
