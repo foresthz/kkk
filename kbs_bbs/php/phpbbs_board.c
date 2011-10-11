@@ -47,6 +47,9 @@ static void assign_board_nforum(zval * array, const struct boardheader *board, c
 #ifdef HAVE_USERSCORE
     add_assoc_long(array, "SCORELEVEL", board->score_level);
 #endif
+#ifdef NEWSMTH
+    add_assoc_long(array,"SCORE",board->score);
+#endif
 }
 #endif 
 
