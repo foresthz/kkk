@@ -794,11 +794,7 @@ int m_editbrd(void)
 }
 int modify_board(int bid)
 {
-#ifdef FORCE_TEMPLATE
 #define MB_ITEMS 25
-#else
-#define MB_ITEMS 24
-#endif
     FILE *fp;
     struct _select_item sel[MB_ITEMS+1];
     struct _select_def conf;
@@ -815,9 +811,7 @@ int modify_board(int bid)
         "[B]目录讨论区:","[C]所属目录  :","[D]向外转信  :","[E]上传附件  :","[F]E-mail发文:",
         "[G]不可回复  :","[H]读限制Club:","[I]写限制Club:","[J]隐藏Club  :","[K]精华区位置:",
         "[L]权限限制  :","[M]身份限制  :","[N]积分限制  :",
-#ifdef NFORUM
         "[P]强制模板  :",
-#endif
         "[Q][退出]    :"
     };
     change=0; loop=1;
@@ -852,11 +846,9 @@ int modify_board(int bid)
         } else if (i==22) {
             sel[i].x=42;
             sel[i].y=17;
-#ifdef NFORUM
         } else if (i==23) {
             sel[i].x=2;
             sel[i].y=18;
-#endif
         } else if (i==MB_ITEMS-1) {
             sel[i].x=2;
             sel[i].y=19;
@@ -959,10 +951,12 @@ int modify_board(int bid)
 #else /* HAVE_USERSCORE */
     sprintf(menustr[22],"%-15s%s <%d>",menuldr[22],"无效选项",bh.score_level);
 #endif /* HAVE_USERSCORE */
-#ifdef FORCE_TEMPLATE
     /*强制模板发文*/
     sel[23].hotkey='P';
+#ifdef FORCE_TEMPLATE
     sprintf(menustr[23],"%-15s%s",menuldr[23],(bh.flag&BOARD_TMP_POST)?"是":"否");
+#else
+    sprintf(menustr[23],"%-15s%s",menuldr[23],"无效选项");
 #endif
     /*退出*/
     sel[MB_ITEMS-1].hotkey='Q';
@@ -1617,8 +1611,8 @@ int modify_board(int bid)
 #endif /* HAVE_USERSCORE */
                 break;
             /* 强制模板发文 */
-#ifdef FORCE_TEMPLATE
             case 23:
+#ifdef FORCE_TEMPLATE
                 newbh.flag^=BOARD_TMP_POST;
                 /*标记修改状态*/
                 if ((bh.flag&BOARD_TMP_POST)^(newbh.flag&BOARD_TMP_POST)) {
@@ -1628,8 +1622,8 @@ int modify_board(int bid)
                     sprintf(menustr[23],"%s",orig[23]);
                     change&=~(1<<23);
                 }
-                break;
 #endif
+                break;
                 /*退出*/
             case MB_ITEMS-1:
                 if (change) {
