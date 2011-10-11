@@ -13,7 +13,6 @@ PHP_FUNCTION(bbs_attachment_del);
 PHP_FUNCTION(bbs_attachment_list);
 #ifdef NFORUM
 PHP_FUNCTION(bbs_file_attachment_list);
-PHP_FUNCTION(bbs_prepost_check);
 #endif
 PHP_FUNCTION(bbs_postarticle);
 
@@ -66,8 +65,7 @@ PHP_FUNCTION(bbs2_brcsync);
 #ifdef NFORUM
 #define PHP_BBS_POST_EXPORT_FUNCTIONS \
         PHP_BBS_POST_EXPORT_FUNCTIONS_STD \
-        PHP_FE(bbs_file_attachment_list,NULL)\
-        PHP_FE(bbs_prepost_check,NULL)
+        PHP_FE(bbs_file_attachment_list,NULL)
 #else
 #define PHP_BBS_POST_EXPORT_FUNCTIONS PHP_BBS_POST_EXPORT_FUNCTIONS_STD
 #endif //NFORUM

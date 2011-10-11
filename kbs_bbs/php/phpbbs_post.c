@@ -342,69 +342,6 @@ PHP_FUNCTION(bbs_attachment_list)
     }
 }
 
-PHP_FUNCTION(bbs_prepost_check)
-{
-    char *boardName;
-    char path[PATHLEN];
-    int blen;
-    long reid;
-    struct fileheader oldxx;
-    const boardheader_t *brd;
-    int NBUser = 0;
-
-
-    int ac = ZEND_NUM_ARGS();
-
-    /*
-     * getting arguments
-     */
-
-    if (ac == 2) {
-        if (zend_parse_parameters(2 TSRMLS_CC, "sl", &boardName, &blen, &reid) == FAILURE) {
-            WRONG_PARAM_COUNT;
-        }
-    } else {
-        WRONG_PARAM_COUNT;
-    }
-
-    if (getCurrentUser() == NULL) {
-        RETURN_FALSE;
-    }
-    NBUser = HAS_PERM(getCurrentUser(), PERM_SYSOP);
-    brd = getbcache(boardName);
-    if (brd == 0)
-        RETURN_LONG(-1); //错误的讨论区名称
-    if (brd->flag&BOARD_GROUP)
-        RETURN_LONG(-2); //二级目录版
-
-    if (true == checkreadonly(brd->filename) || !haspostperm(getCurrentUser(), brd->filename))
-        RETURN_LONG(-4); //此讨论区是唯读的, 或是您尚无权限在此发表文章.
-
-#ifdef HAVE_USERSCORE
-    if (!check_score_level(getCurrentUser(),brd)) {
-        RETURN_LONG(-21);
-    }
-#endif /* HAVE_USERSCORE */
-
-    if (deny_me(getCurrentUser()->userid, brd->filename) && !NBUser)
-        RETURN_LONG(-5); //很抱歉, 你被版务人员停止了本版的post权利.
-
-    if (reid > 0) {
-        int pos;int fd;
-        setbfile(path,brd->filename,DOT_DIR);
-        fd = open(path,O_RDWR);
-        if (fd < 0) RETURN_LONG(-7); //索引文件不存在
-        get_records_from_id(fd,reid,&oldxx,1,&pos);
-
-        close(fd);
-        if (pos >= 0) {
-            if (oldxx.accessed[1] & FILE_READ) {
-                RETURN_LONG(-8); //本文不能回复
-            }
-        }
-    }
-    RETURN_LONG(0);
-}
 
 PHP_FUNCTION(bbs_postarticle)
 {
