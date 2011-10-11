@@ -1045,10 +1045,10 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
             board_setcurrentuser(userinfo->currentboard,-1);
         return 0;
     } else { //do something without utmp lock
-        int lockfd;
-        lockfd=lock_user(userinfo->userid);
+        //int lockfd;
+        //lockfd=lock_user(userinfo->userid);
         if (userinfo->pid > 1 && strcmp(userinfo->userid,"guest")) {
-            snprintf(buf,MAXPATH,"tmp/%d/%s/", userinfo->pid, userinfo->userid);
+            snprintf(buf,MAXPATH,"tmp/%d/%d/%s/", (userinfo->pid&0xf), userinfo->pid, userinfo->userid);
             f_rm(buf);
         }
         if (userinfo&&(mode==0)) {
@@ -1059,7 +1059,7 @@ int do_after_logout(struct userec* user,struct user_info* userinfo,int unum,int 
             else //www guest,使用负数来和telnet guest区分
                 clean_cachedata(user->userid,-unum);
         }
-        unlock_user(lockfd);
+        //unlock_user(lockfd);
     }
     return 0;
 }
@@ -1217,28 +1217,23 @@ int resolve_guest_table()
 
 int lock_user(char* userid)
 {
-    /*
-       int fd = 0;
-       char buf[MAXPATH];
+    int fd = 0;
+    char buf[MAXPATH];
 
-       sethomefile(buf,userid,"lock");
-       fd = open(buf, O_RDWR | O_CREAT, 0600);
-       if (fd < 0) {
-           return -1;
-       }
-       if (flock(fd, LOCK_EX) == -1) {
-           return -1;
-       }
-       return fd;
-    */
-    return 0;
+    sethomefile(buf,userid,"lock");
+    fd = open(buf, O_RDWR | O_CREAT, 0600);
+    if (fd < 0) {
+        return -1;
+    }
+    if (writew_lock(fd, 0, SEEK_SET, 0) == -1) {
+        return -1;
+    }
+    return fd;
 }
 
 void unlock_user(int fd)
 {
-    /*
-       flock(fd, LOCK_UN);
-       close(fd);
-    */
+    un_lock(fd, 0, SEEK_SET, 0);
+    close(fd);
     return ;
 }
