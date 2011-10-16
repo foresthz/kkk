@@ -106,6 +106,10 @@ PHP_FUNCTION(bbs_delete_friend)
     if (deleted > 0) {
         if (delete_record(buf, sizeof(fh), deleted, NULL, NULL) != -1) {
             getfriendstr(getCurrentUser(),getSession()->currentuinfo,getSession());
+#ifdef NEWSMTH
+            sethomefile(buf, fh.id, "fans");
+            delete_record(buf, sizeof(struct fans), 1, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
+#endif
             RETURN_LONG(0);
         } else {
             RETURN_LONG(3);
@@ -156,6 +160,13 @@ PHP_FUNCTION(bbs_add_friend)
 
     n = append_record(buf, &fh, sizeof(friends_t));
     getfriendstr(getCurrentUser(),getSession()->currentuinfo,getSession());
+#ifdef NEWSMTH
+    struct fans fans;
+    memcpy(fans.id, getCurrentUser()->userid, IDLEN + 1);
+    sethomefile(buf, fh.id, "fans");
+    if (!search_record(buf, NULL, sizeof(struct fans), (RECORD_FUNC_ARG) cmpfanames, fans.id))
+        append_record(buf, &fans, sizeof(struct fans));
+#endif
     if (n != -1)
         RETURN_LONG(0);
 
