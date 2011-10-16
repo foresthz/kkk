@@ -575,7 +575,35 @@ int Xdeljunk(void)
     clear();
     return 0;
 }
-
+#ifdef NEWSMTH
+static int sync_friend_rebuild_fans(const char *old, const char *new)
+{
+    struct friends friends_o[MAXFRIENDS], friends_n[MAXFRIENDS];
+    struct fans tmp;
+    int num_o, num_n;
+    int i;
+    char buf[PATHLEN];
+    bzero(friends_o, MAXFRIENDS * sizeof(struct friends));
+    bzero(friends_n, MAXFRIENDS * sizeof(struct friends));
+    num_o = get_records(old, friends_o, sizeof(struct friends), 1, MAXFRIENDS);
+    num_n = get_records(new, friends_n, sizeof(struct friends), 1, MAXFRIENDS);
+    memcpy(tmp.id, getCurrentUser()->userid, IDLEN + 1);
+    if (num_o == -1 || num_n == -1)
+        return -1;
+    for (i = 0; i < num_o; i++) {
+        sethomefile(buf, friends_o[i].id, "fans");
+        if (!dashf(buf))
+            continue;
+        delete_record(buf, sizeof(struct fans), id, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
+    }
+    for (i = 0; i < num_n; i++) {
+        sethomefile(buf, friends_n[i].id, "fans");
+        if (!search_record(buf, NULL, sizeof(struct fans), (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid))
+            append_record(buf, &tmp, sizeof(struct fans));
+    }
+    return 0;
+}
+#endif
 /*得到别人的收藏夹和未度标记*/
 int get_favread(void)
 {
@@ -661,6 +689,9 @@ int get_favread(void)
     if (toupper(passwd[0])!='N') {
         sethomefile(dpath,destuser->userid,"friends");
         sethomefile(mypath,getCurrentUser()->userid,"friends");
+#ifdef NEWSMTH
+        sync_friend_rebuild_fans(mypath, dpath);
+#endif
         f_cp(dpath,mypath,0);
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
         count++;
@@ -716,6 +747,9 @@ int get_mainsite(void)
             goto outfriend;
         }
         sethomefile(mypath,getCurrentUser()->userid,"friends");
+#ifdef NEWSMTH
+        sync_friend_rebuild_fans(mypath, dpath);
+#endif
         f_cp(dpath,mypath,0);
         unlink(dpath);
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());

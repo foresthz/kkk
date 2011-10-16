@@ -1682,6 +1682,13 @@ char *uident;
     }
     sethomefile(genbuf, getCurrentUser()->userid, "friends");
     n = append_record(genbuf, &tmp, sizeof(struct friends));
+#ifdef NEWSMTH
+    struct fans fans;
+    memcpy(fans.id, getCurrentUser()->userid, IDLEN + 1);
+    sethomefile(genbuf, tmp.id, "fans");
+    if (!search_record(genbuf, NULL, sizeof(struct fans), (RECORD_FUNC_ARG) cmpfanames, fans.id))
+        append_record(genbuf, &fans, sizeof(struct fans));
+#endif 
     if (n != -1)
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
     else
@@ -1696,9 +1703,13 @@ int deleteoverride(char *uident)
     sethomefile(genbuf, getCurrentUser()->userid, "friends");
     deleted = search_record(genbuf, &fh, sizeof(fh), (RECORD_FUNC_ARG) cmpfnames, uident);
     if (deleted > 0) {
-        if (delete_record(genbuf, sizeof(fh), deleted, NULL, NULL) == 0)
+        if (delete_record(genbuf, sizeof(fh), deleted, NULL, NULL) == 0) {
             getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
-        else {
+#ifdef NEWSMTH
+            sethomefile(genbuf, fh.id, "fans");
+            delete_record(genbuf, sizeof(struct fans), 1, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
+#endif
+        } else {
             deleted = -1;
             bbslog("user","%s","delete friend error");
         }

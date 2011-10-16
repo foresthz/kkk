@@ -130,7 +130,7 @@ struct usermemo {
 };
 
 struct friends {
-    char id[13];
+    char id[IDLEN + 1];
     char exp[LEN_FRIEND_EXP];
 #ifdef FRIEND_MULTI_GROUP
     int groupid;
@@ -145,6 +145,12 @@ struct friends_group {
     char f;
     char b;
 };
+
+#ifdef NEWSMTH
+struct fans {
+    char id[IDLEN + 1];
+};
+#endif
 
 struct boardheader {            /* This structure is used to hold data in */
     char filename[STRLEN];      /* the BOARDS files */

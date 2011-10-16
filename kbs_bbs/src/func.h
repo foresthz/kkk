@@ -205,6 +205,9 @@ extern "C"
     struct user_info *t_search(const char *sid, int pid);
     int cmpinames(const char *userid, const char *uv);
     int cmpfnames(const char *userid, const struct friends *uv);
+#ifdef NEWSMTH
+    int cmpfanames(const char *userid, const struct fans *uv);
+#endif
     int cmpfileinfoname(const char *filename, const struct fileheader *fi);
     int cmpfileid(const int *id, const struct fileheader *fi);
     int dodaemon(char *daemonname, bool single, bool closefd);
