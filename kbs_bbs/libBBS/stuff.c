@@ -797,7 +797,7 @@ int cmpfnames(const char *userid, const struct friends *uv)
 #ifdef NEWSMTH
 int cmpfanames(const char *userid, const struct fans *uv)
 {
-    return !strcasesmp(userid, uv->id);
+    return !strcasecmp(userid, uv->id);
 }
 #endif
 int cmpfileinfoname(const char *filename, const struct fileheader *fi)
