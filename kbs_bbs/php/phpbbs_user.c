@@ -569,3 +569,20 @@ PHP_FUNCTION(bbs_user_level_char)
 
 }
 
+PHP_FUNCTION(bbs_user_touch_lastlogin)
+{
+    char *userid;
+    int userid_len;
+    struct userec *user;
+
+    if (zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    if (userid_len > IDLEN)
+        userid[IDLEN] = 0;
+    if (!getuser(userid, &user))
+        RETURN_LONG(1);
+    user->lastlogin = time(NULL);
+    RETURN_LONG(0);
+}

@@ -25,7 +25,7 @@ PHP_FUNCTION(bbs_getuserlevel);
 PHP_FUNCTION(bbs_compute_user_value);
 PHP_FUNCTION(bbs_user_level_char);
 
-
+PHP_FUNCTION(bbs_user_touch_lastlogin);
 
 #define PHP_BBS_USER_EXPORT_FUNCTIONS \
     PHP_FE(bbs_getuser, NULL) \
@@ -45,6 +45,7 @@ PHP_FUNCTION(bbs_user_level_char);
     PHP_FE(bbs_getuserlevel, NULL) \
     PHP_FE(bbs_compute_user_value, NULL) \
     PHP_FE(bbs_user_level_char, NULL) \
+    PHP_FE(bbs_user_touch_lastlogin, NULL)
      
 
 #endif //PHP_BBS_USER_H
