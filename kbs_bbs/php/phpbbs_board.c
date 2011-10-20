@@ -646,6 +646,19 @@ PHP_FUNCTION(bbs_checkreadperm)
     RETURN_LONG(check_read_perm(user, getboard(boardnum)));
 }
 
+PHP_FUNCTION(bbs_checkseeperm)
+{
+    long user_num, boardnum;
+    struct userec *user;
+
+    if (zend_parse_parameters(2 TSRMLS_CC, "ll", &user_num, &boardnum) != SUCCESS)
+        WRONG_PARAM_COUNT;
+    user = getuserbynum(user_num);
+    if (user == NULL)
+        RETURN_LONG(0);
+    RETURN_LONG(check_see_perm(user, getboard(boardnum)));
+}
+
 PHP_FUNCTION(bbs_checkpostperm)
 {
     long user_num, boardnum;
