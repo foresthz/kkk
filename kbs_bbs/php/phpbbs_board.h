@@ -17,6 +17,7 @@ PHP_FUNCTION(bbs_checkmark);
 PHP_FUNCTION(bbs_getbname);
 PHP_FUNCTION(bbs_getbdes);
 PHP_FUNCTION(bbs_checkreadperm);
+PHP_FUNCTION(bbs_checkseeperm);
 PHP_FUNCTION(bbs_checkpostperm);
 PHP_FUNCTION(bbs_normalboard);
 PHP_FUNCTION(bbs_searchboard);
@@ -51,6 +52,7 @@ PHP_FUNCTION(bbs_deny_me);
     PHP_FE(bbs_getbname, NULL) \
     PHP_FE(bbs_getbdes, NULL) \
     PHP_FE(bbs_checkreadperm, NULL) \
+    PHP_FE(bbs_checkseeperm, NULL) \
     PHP_FE(bbs_checkpostperm, NULL) \
     PHP_FE(bbs_normalboard,NULL) \
     PHP_FE(bbs_searchboard,third_arg_force_ref_001) \
