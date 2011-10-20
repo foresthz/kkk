@@ -19,6 +19,10 @@
 	
 	if (!isset($_POST["title"])) html_error_quit("没有指定文章标题!");
 	if (!isset($_POST["tmpl"])) {
+		if (bbs_is_tmplpost_board($brdArr)){
+			header('Location:bbsshowtmpl.php?board=' . $boardName);
+			exit();
+		}
 		if (!isset($_POST["text"])) html_error_quit("没有指定文章内容!");
 		$tmpl = 0;
 	} else {

@@ -38,6 +38,10 @@
 	else {
 		$reid = 0;
 	}
+	if (bbs_is_tmplpost_board($brdarr)){
+		header('Location:bbsshowtmpl.php?board=' . $board);
+		exit();
+	}
 	settype($reid, "integer");
 	$articles = array();
 	if ($reid > 0)

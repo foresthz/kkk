@@ -226,7 +226,8 @@ $BOARD_FLAGS = array(
 	"CLUBWRITE" => 0x80,
 	"CLUBHIDE" => 0x100,
 	"ATTACH" => 0x200,
-	"NOREPLY" => 0x2000
+	"NOREPLY" => 0x2000,
+	"TMPLPOST" => 0x8000
 	);
 
 
@@ -323,6 +324,13 @@ function bbs_is_noreply_board($board)
 	global $BOARD_FLAGS;
 	return bbs_check_board_flag($board, $BOARD_FLAGS["NOREPLY"]);
 }
+
+function bbs_is_tmplpost_board($board)
+{
+	global $BOARD_FLAGS;
+	return bbs_check_board_flag($board, $BOARD_FLAGS["TMPLPOST"]);
+}
+
 
 
 } // !define ('_BBS_WWW2_BOARD_PHP_')
