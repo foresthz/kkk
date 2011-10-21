@@ -288,3 +288,75 @@ PHP_FUNCTION(bbs_getonlinefriends)
         zend_hash_index_update(Z_ARRVAL_P(return_value), i, (void *) &element, sizeof(zval *), NULL);
     }
 }
+
+#ifdef NEWSMTH
+PHP_FUNCTION(bbs_getfans)
+{
+    char *userid;
+    int userid_len;
+    struct fans fr;
+    int ac = ZEND_NUM_ARGS();
+    long start;
+    long num = 0;
+    int fd;
+    int i=0;
+    char fpath[STRLEN];
+    zval *element;
+
+    if (ac != 2 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "sl", &userid, &userid_len, &start) == FAILURE) {
+        if (ac != 3 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "sll", &userid, &userid_len, &start, &num) == FAILURE) 
+            WRONG_PARAM_COUNT;
+    }
+    if (userid_len > IDLEN)
+        WRONG_PARAM_COUNT;
+
+    if (array_init(return_value) == FAILURE) {
+        RETURN_FALSE;
+    }
+    if(num < 1)
+        num = 20;
+
+    i=0;
+    sethomefile(fpath, userid, "fans");
+
+    if ((fd=open(fpath, O_RDONLY)) < 0)
+        RETURN_FALSE;
+    lseek(fd, sizeof(struct friends)*start, SEEK_CUR);
+    while (read(fd, &fr, sizeof(fr)) > 0) {
+
+        MAKE_STD_ZVAL(element);
+        array_init(element);
+
+        add_assoc_string(element, "ID", fr.id, 1);
+
+        zend_hash_index_update(Z_ARRVAL_P(return_value), i, (void *) &element, sizeof(zval *), NULL);
+
+        i++;
+        if (i>=num)
+            break;
+    }
+    close(fd);
+}
+
+PHP_FUNCTION(bbs_countfans)
+{
+    char *userid;
+    int userid_len;
+    int ac = ZEND_NUM_ARGS();
+    char fpath[STRLEN];
+    struct stat st;
+
+    if (ac != 1 || zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "s", &userid, &userid_len) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+    if (userid_len > IDLEN)
+        WRONG_PARAM_COUNT;
+
+    sethomefile(fpath, userid, "fans");
+
+    if (stat(fpath, &st) < 0)
+        RETURN_FALSE;
+
+    RETURN_LONG(st.st_size / sizeof(struct fans));
+}
+#endif
