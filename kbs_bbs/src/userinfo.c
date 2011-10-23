@@ -1230,8 +1230,7 @@ int modify_userinfo(int uid,int mode)
         return -5;
     }
     move(0,40);
-    sprintf(buf, "用户序号: %d", uid);
-    prints("%s",MU_MSG(Y, buf));
+    prints("\033[1;33m用户序号: %d\033[m", uid);
     memcpy(&nuser,&ouser,sizeof(struct userec));
     memcpy(&ndata,&odata,sizeof(struct userdata));
     for (i=0; i<MU_ITEM; i++) {
