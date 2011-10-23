@@ -1229,6 +1229,9 @@ int modify_userinfo(int uid,int mode)
         MU_PUT(2,MU_MSG(R,"读取用户数据时发生错误..."));
         return -5;
     }
+    move(0,40);
+    sprintf(buf, "用户序号: %d", uid);
+    prints("%s",MU_MSG(Y, buf));
     memcpy(&nuser,&ouser,sizeof(struct userec));
     memcpy(&ndata,&odata,sizeof(struct userdata));
     for (i=0; i<MU_ITEM; i++) {
