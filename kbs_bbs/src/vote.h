@@ -21,6 +21,7 @@ struct votebal {
     int maxdays;
     int maxtkt;
     int totalitems;
+    int flag;
     time_t opendate;
 };
 
@@ -51,4 +52,12 @@ struct votelimit {              /*Haohmaru.99.11.17.根据版主设的限制条件判断是否
 
 char *vote_type[] = { "是非", "单选", "复选", "数字", "问答" };
 
+struct voterecord {
+    char userid[IDLEN+2];
+    char selectvalue[33];
+    char ip[IPLEN];
+};      
+        
+#define VOTE_TRUE_FLAG 00001
+#define VOTE_IP_FLAG   00002
 #endif

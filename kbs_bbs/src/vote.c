@@ -31,6 +31,11 @@ FILE *sug;
 static int mk_result(int num);
 static int dele_vote(int num);
 static int Show_Votes();
+static int dump_vote_record(void);
+static int write_vote_record(char *file, int mode);
+static int sort_vote_record(void);
+struct voterecord *vc;
+int pos;
 int cmpvuid(userid, uv)
 char *userid;
 struct ballot *uv;
@@ -426,6 +431,10 @@ int get_result_title()
     fprintf(sug, "⊙ 主题：%s\n", currvote.title);
     if (currvote.type == VOTE_VALUE)
         fprintf(sug, "⊙ 此次投票的值不可超过：%d\n\n", currvote.maxtkt);
+    if (currvote.type != VOTE_VALUE && currvote.type != VOTE_ASKING) {
+        if (currvote.flag & VOTE_TRUE_FLAG)
+            fprintf(sug, "⊙ 此次投票记录\033[1;31m用户投票内容%s\033[m\n\n", (currvote.flag & VOTE_IP_FLAG)? "及完整IP":"");
+    }
     fprintf(sug, "⊙ 票选题目描述：\n\n");
     sprintf(buf, "vote/%s/desc.%lu", currboard->filename, currvote.opendate);
     b_suckinfile(sug, buf);
@@ -438,6 +447,8 @@ static int mk_result(int num)
     char title[255];
     int i;
     unsigned int total = 0;
+    char record_file[256];  /* 记录投票统计信息, 用于继续统计详细投票结果 */
+    char vote_file[256]; /* 记录详细结果并打印 */
 
     setcontrolfile();
     sprintf(fname, "vote/%s/flag.%lu", currboard->filename, currvote.opendate);
@@ -503,6 +514,13 @@ static int mk_result(int num)
     }
     fprintf(sug, "\n投票总人数 = \033[1m%d\033[m 人\n", result[32]);
     fprintf(sug, "投票总票数 =\033[1m %d\033[m 票\n\n", total);
+    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+        sprintf(record_file, "vote/%s/record.%d", currboard->filename, (int)getpid());
+        fclose(sug);
+        f_cp(nname, record_file, 0); /* 备份记录文件 */
+        sug = fopen(nname, "r+");
+        fseek(sug, 0, SEEK_END);
+    }
     fprintf(sug,
             "\033[44m\033[36m——————————————┤使用者%s├——————————————\033[m\n\n\n",
             (currvote.type != VOTE_ASKING) ? "建议或意见" : "此次的作答");
@@ -510,12 +528,41 @@ static int mk_result(int num)
     unlink(sugname);
     fclose(sug);
     sug = NULL;
+    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+        dump_vote_record();
+        sprintf(vote_file, "vote/%s/vote_file", currboard->filename);
+        f_cp(record_file, vote_file, 0);
+        write_vote_record(vote_file, 0);
+    }   
     sprintf(title, "[公告] %s 版的投票结果", currboard->filename);
     mail_file("deliver", nname, currvote.userid, title, 0, NULL);
     if (normal_board(currboard->filename)) {
         post_file(getCurrentUser(), "", nname, "vote", title, 0, 1, getSession());
     }
     post_file(getCurrentUser(), "", nname, currboard->filename, title, 0, 1, getSession());
+    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+        sprintf(title, "[公告] %s 版的投票结果(明细)", currboard->filename);
+        mail_file("deliver", vote_file, currvote.userid, title, 0, NULL);
+        if (normal_board(currboard->filename)) {
+            post_file(getCurrentUser(), "", vote_file, "vote", title, 0, 1, getSession());
+        }           
+        post_file(getCurrentUser(), "", vote_file, currboard->filename, title, 0, 1, getSession());
+        /* 如果记录IP，则按IP排序 */
+        if (currvote.flag & VOTE_IP_FLAG) {
+            f_cp(record_file, vote_file, 0);
+            sort_vote_record();
+            write_vote_record(vote_file, 1);
+            sprintf(title, "[公告] %s 版的投票结果(IP序)", currboard->filename);
+            mail_file("deliver", vote_file, currvote.userid, title, 0, NULL);
+            if (normal_board(currboard->filename)) {
+                post_file(getCurrentUser(), "", vote_file, "vote", title, 0, 1, getSession());
+            }
+            post_file(getCurrentUser(), "", vote_file, currboard->filename, title, 0, 1, getSession());
+        }
+        unlink(record_file);
+        unlink(vote_file);
+        free(vc);
+    }
     dele_vote(num);
     return 0;
 }
@@ -735,6 +782,21 @@ char *bname;
     }
     //setvoteflag(bname, 1);
     clear();
+    /* 不是数值和问答时，可在结果中记录用户投票信息 */
+    ball->flag = 0;
+    if (ball->type != VOTE_ASKING && ball->type != VOTE_VALUE) {
+        getdata(1, 0, "是否记录用户详细投票信息？[N]", buf, 3, DOECHO, NULL, true);
+        if (buf[0] == 'y' || buf[0] == 'Y') {
+            ball->flag |= VOTE_TRUE_FLAG;
+            clear();
+            if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_ADMIN)) {
+                getdata(1, 0, "是否记录用户完整IP？[N]", buf, 3, DOECHO, NULL, true);
+                if (buf[0] == 'y' || buf[0] == 'Y')
+                    ball->flag |= VOTE_IP_FLAG;
+                clear();
+            }
+        }
+    }
     /*Haohmaru.99.11.17.根据投票管理员设的限制条件判断是否让该使用者投票 */
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP)
             || HAS_PERM(getCurrentUser(), PERM_JURY)) {
@@ -933,6 +995,10 @@ void show_voteing_title()
            ctime(&closedate), buf, (voted_flag) ? "(修改前次投票)" : "");
     prints("投票主题是: \033[1m%-50s\033[m类型: \033[1m%s\033[m \n", currvote.title,
            vote_type[currvote.type - 1]);
+    if (currvote.type != VOTE_VALUE && currvote.type != VOTE_ASKING) {
+        if (currvote.flag & VOTE_TRUE_FLAG)
+            prints("此次投票记录\033[1;31m用户投票内容%s\033[m\n", (currvote.flag & VOTE_IP_FLAG)? "及完整IP":"");
+    }
 }
 
 int getsug(uv)
@@ -1392,3 +1458,94 @@ int x_results(void)
     return vote_results(DEFAULTBOARD);
 }
 
+int get_vote_record(struct ballot *ptr, int idx, char *arg)
+{
+    int i; 
+    char sv[2];
+    struct userec *user;
+
+    strcpy(vc[pos].userid, ptr->uid);
+    if (getuser(ptr->uid, &user)) {
+        strcpy(vc[pos].ip, user->lasthost);
+        if (!(currvote.flag & VOTE_IP_FLAG)) {
+            char * c;
+            if ((c = strrchr(vc[pos].ip, '.'))!=NULL) {
+                *(++c)='*';
+                *(++c)='\0';
+            }   
+        }   
+    } else
+        strcpy(vc[pos].ip, "unknown");
+    for (i=0;i<32;i++) {
+        if ((ptr->voted>>i)&1) {
+            sprintf(sv, "%c", 'A'+i);
+            strcat(vc[pos].selectvalue, sv);
+        }
+    }
+    pos ++;
+    return 0;
+}
+
+static int dump_vote_record(void)
+{
+    char fname[255];
+    int num;
+
+    sprintf(fname, "vote/%s/flag.%lu", currboard->filename, currvote.opendate);
+
+    num = get_num_records(fname, sizeof(struct ballot));
+    vc = (struct voterecord *)malloc(num * sizeof(struct voterecord));
+    memset(vc, 0, num * sizeof(struct voterecord));
+
+    pos = 0;
+    if (apply_record
+            (fname, (APPLY_FUNC_ARG) get_vote_record, sizeof(struct ballot), 0, 0, false) == -1) {
+        bbslog("user","%s","Vote apply flag error");
+    }
+
+    return 0;
+}
+
+static int sort_vote_record(void)
+{
+    int i, j, s;
+    struct voterecord tc;
+
+    for (i=0;i<pos;i++) {
+        s = i;
+        for (j=i+1;j<pos;j++) {
+            if (ntohl(inet_addr(vc[s].ip)) > ntohl(inet_addr(vc[j].ip))) {
+                s = j;
+            }
+        }
+        memcpy(&tc, &vc[i], sizeof(struct voterecord));
+        memcpy(&vc[i], &vc[s], sizeof(struct voterecord));
+        memcpy(&vc[s], &tc, sizeof(struct voterecord));
+    }
+    return 0;
+}
+
+/* 该函数使用前需要确保已经dump_vote_record */
+/*
+ * mode: 0: 未排序
+ *       1: 已排序
+ */
+static int write_vote_record(char *file, int mode)
+{
+    FILE *fd;
+    int i;
+
+    fd = fopen(file, "r+");
+    fseek(fd, 0, SEEK_END);
+
+    fprintf(fd, "\033[44m\033[36m——————————————┤%s├——————————————\033[m\n\n\n",
+            mode?"使用者IP地址排序":"使用者投票的内容");
+    for (i=0;i<pos;i++) {
+        fprintf(fd, "%15s %20s      %-33s\n", vc[i].userid, vc[i].ip, vc[i].selectvalue);
+    }
+    fprintf(fd, "\n\n\033[44m\033[36m——————————————┤%s├——————————————\033[m\n\n\n",
+            mode?"使用者IP地址排序":"使用者投票的内容");
+    fclose(fd);
+
+    return 0;
+}
