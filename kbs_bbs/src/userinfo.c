@@ -1229,8 +1229,10 @@ int modify_userinfo(int uid,int mode)
         MU_PUT(2,MU_MSG(R,"读取用户数据时发生错误..."));
         return -5;
     }
-    move(0,40);
-    prints("\033[1;33m用户序号: %d\033[m", uid);
+    if (mode) {
+        move(0,40);
+        prints("\033[1;33m用户序号: %d\033[m", uid);
+    }
     memcpy(&nuser,&ouser,sizeof(struct userec));
     memcpy(&ndata,&odata,sizeof(struct userdata));
     for (i=0; i<MU_ITEM; i++) {
