@@ -119,6 +119,19 @@
 <tr><td>序号</td><td><?php echo $num;?></tr>
 <tr><td>标题</td><td><?php echo $votearr[0]["TITLE"];?></tr>
 <tr><td>类型</td><td><?php echo $votearr[0]["TYPE"];?></tr>
+<?php
+if ($votearr[0]["TRUEFLAG"]) {
+?>
+<tr><td>投票记录</td><td><font color=red>
+<?php
+	echo "用户投票内容";
+if ($votearr[0]["IPFLAG"])
+	echo "及完整IP";
+?>
+</font></tr>
+<?php
+}
+?>
 <tr><td>开启者</td><td><?php echo $votearr[0]["USERID"];?></tr>
 <tr><td>开启日期</td><td><?php echo date("r",$votearr[0]["DATE"]);?></tr>
 <tr><td>投票天数</td><td><?php echo $votearr[0]["MAXDAY"];?></tr>

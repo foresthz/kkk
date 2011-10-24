@@ -130,8 +130,16 @@
 					$ball_maxtkt = 100;
 
 			}
+			$trueflag = 0;
+			$ipflag = 0;
+			if ($type == 1 || $type == 2 || $type == 3) {
+				if (isset($_POST["trueflag"]))
+					$trueflag = 1;
+				if (isset($_POST["ipflag"]))
+					$ipflag = 1;
+			}
 
-			$ret = bbs_start_vote($board, $type, $numlogin, $numpost, $numstay, $numday, $title, $ball_desp, $ball_maxdays, $ball_maxtkt, $ball_totalitems, $items[0], $items[1], $items[2], $items[3], $items[4], $items[5], $items[6], $items[7], $items[8], $items[9]);
+			$ret = bbs_start_vote($board, $type, $numlogin, $numpost, $numstay, $numday, $trueflag, $ipflag, $title, $ball_desp, $ball_maxdays, $ball_maxtkt, $ball_totalitems, $items[0], $items[1], $items[2], $items[3], $items[4], $items[5], $items[6], $items[7], $items[8], $items[9]);
 
 			if($ret <= 0)
 				html_error_quit("开投票错误.".$ret);
@@ -159,6 +167,16 @@ function doGenerate(){
 	var targetDiv=document.getElementById("oDiv");
 	var content="";
 	var i;
+	if  ( (type=="1")  || (type=="2")  || (type=="3") ){
+		content+="记录投票内容:<input id=\"trueFlag\" type=\"checkbox\" name=\"trueflag\" onclick=\"chkTrueFlag();\"><br>";
+<?php
+if (($currentuser["userlevel"]&BBS_PERM_ADMIN) || ($currentuser["userlevel"]&BBS_PERM_OBOARDS))
+	echo "content+='记录完整IP:<input id=\"ipFlag\" type=\"checkbox\" name=\"ipflag\" onclick=\"chkIpFlag();\"><br>';\n";
+?>
+		if (type=="1") {
+			targetDiv.innerHTML=content;
+		}
+	}
 	if  ( (type=="2")  || (type=="3") ){
 		content+="选项个数:<select name=\"maxitems\" class=\"input\"  style=\"WIDTH: 60px\" id=\"oItemNum\" onChange=\"doGenerateItem();\">";
 		for (i=1;i<=maxitemnum;i++){
@@ -178,6 +196,7 @@ function doGenerate(){
 		if (type=="4") {
 			content="最大数字限额:<input type=\"text\" name=\"maxnumin\" value=\"1\"><br>";
 			
+		} else if (type=="1") {
 		} else {
 			content="<BR>";
 		}
@@ -207,6 +226,23 @@ function clearItem(){
 	oTargetDiv.innerHTML="<BR>";
 }
 
+function chkTrueFlag(){
+	var ipSet=document.getElementById("ipFlag");
+	var trueSet=document.getElementById("trueFlag");
+
+	if (trueSet.checked == false) {
+		ipSet.checked = false;
+	}
+}
+
+function chkIpFlag(){
+	var ipSet=document.getElementById("ipFlag");
+	var trueSet=document.getElementById("trueFlag");
+
+	if (ipSet.checked == true) {
+		trueSet.checked = true;
+	}
+}
 //-->
 </script>
 <form action="bbsmvote.php" method="post" class="large">
@@ -225,6 +261,11 @@ function clearItem(){
 投票所须天数:<input type="text" name="maxdays" value="1"><br>
 <hr class="default">
 <div id="oDiv">
+记录投票内容:<input id="trueFlag" type="checkbox" name="trueflag" onclick="chkTrueFlag();"><br>
+<?php
+if (($currentuser["userlevel"]&BBS_PERM_ADMIN) || ($currentuser["userlevel"]&BBS_PERM_OBOARDS))
+	echo "记录完整IP:<input id=\"ipFlag\" type=\"checkbox\" name=\"ipflag\" onclick=\"chkIpFlag();\"><br>\n";
+?>
 </div>
 <br>
 <div id="oDivItems">
