@@ -87,7 +87,7 @@ PHP_FUNCTION(bbs_get_votes)
 
 static void bbs_make_detail_vote_array(zval * array, struct votebal *vbal)
 {
-    int i;
+    int i, trueflag, ipflag;
     char tmp[10];
 
     add_assoc_string(array, "USERID", vbal->userid, 1);
@@ -97,6 +97,14 @@ static void bbs_make_detail_vote_array(zval * array, struct votebal *vbal)
     add_assoc_long(array, "MAXDAY", vbal->maxdays);
     add_assoc_long(array, "MAXTKT", vbal->maxtkt);
     add_assoc_long(array, "TOTALITEMS", vbal->totalitems);
+    trueflag=0;
+    ipflag=0;
+    if (vbal->flag & VOTE_TRUE_FLAG)
+        trueflag = 1;
+    add_assoc_long(array, "TRUEFLAG", trueflag);
+    if (vbal->flag & VOTE_IP_FLAG)
+        ipflag = 1;
+    add_assoc_long(array, "IPFLAG", ipflag);
 
     for (i=0; i < vbal->totalitems; i++) {
         sprintf(tmp,"ITEM%d",i+1);
@@ -323,6 +331,7 @@ PHP_FUNCTION(bbs_start_vote)
     long ball_totalitems;
     int i,pos;
     long numlogin,numpost,numstay,numday;
+    long trueflag, ipflag;
     const struct boardheader *bp;
     struct boardheader fh;
     struct votebal ball;
@@ -331,8 +340,8 @@ PHP_FUNCTION(bbs_start_vote)
     char buff[PATHLEN];
     FILE *fp;
 
-    if (ac != 21 || zend_parse_parameters(21 TSRMLS_CC, "slllllsslllssssssssss", &board, &board_len, &type, &numlogin, &numpost,
-                                          &numstay, &numday, &title, &title_len, &desp, &desp_len, &ball_maxdays, &ball_maxtkt, &ball_totalitems, &items[0],
+    if (ac != 23 || zend_parse_parameters(23 TSRMLS_CC, "slllllllsslllssssssssss", &board, &board_len, &type, &numlogin, &numpost,
+                                          &numstay, &numday, &trueflag, &ipflag, &title, &title_len, &desp, &desp_len, &ball_maxdays, &ball_maxtkt, &ball_totalitems, &items[0],
                                           &items_len[0], &items[1], &items_len[1], &items[2], &items_len[2], &items[3], &items_len[3], &items[4], &items_len[4],
                                           &items[5], &items_len[5], &items[6], &items_len[6], &items[7], &items_len[7], &items[8], &items_len[8], &items[9],
                                           &items_len[9]) == FAILURE) {
@@ -364,6 +373,10 @@ PHP_FUNCTION(bbs_start_vote)
     ball.opendate = time(0);
     ball.type = type;
     ball.maxdays = ball_maxdays;
+    if (trueflag)
+        ball.flag |= VOTE_TRUE_FLAG;
+    if (ipflag)
+        ball.flag |= VOTE_IP_FLAG;
 
     if (type == 1) {
         ball.maxtkt = 1;
