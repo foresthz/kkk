@@ -635,8 +635,10 @@ int check_result(int num)
     fclose(sug);
     sug = NULL;
     /* 检查结果时也可查看详细记录 */
-    dump_vote_record();
-    write_vote_record(nname, 0);
+    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+        dump_vote_record();
+        write_vote_record(nname, 0);
+    }
     sprintf(title, "[检查] %s 版的投票结果", currboard->filename);
     mail_file(getCurrentUser()->userid, nname, getCurrentUser()->userid, title, BBSPOST_MOVE, NULL);
     return 0;
