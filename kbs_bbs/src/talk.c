@@ -1683,12 +1683,14 @@ char *uident;
     sethomefile(genbuf, getCurrentUser()->userid, "friends");
     n = append_record(genbuf, &tmp, sizeof(struct friends));
 #ifdef NEWSMTH
+#ifndef SECONDSITE
     struct fans fans;
     memcpy(fans.id, getCurrentUser()->userid, IDLEN + 1);
     sethomefile(genbuf, tmp.id, "fans");
     if (!search_record(genbuf, NULL, sizeof(struct fans), (RECORD_FUNC_ARG) cmpfanames, fans.id))
         append_record(genbuf, &fans, sizeof(struct fans));
-#endif 
+#endif
+#endif
     if (n != -1)
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
     else
@@ -1706,8 +1708,10 @@ int deleteoverride(char *uident)
         if (delete_record(genbuf, sizeof(fh), deleted, NULL, NULL) == 0) {
             getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
 #ifdef NEWSMTH
+#ifndef SECONDSITE
             sethomefile(genbuf, fh.id, "fans");
             delete_record(genbuf, sizeof(struct fans), 1, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
+#endif
 #endif
         } else {
             deleted = -1;

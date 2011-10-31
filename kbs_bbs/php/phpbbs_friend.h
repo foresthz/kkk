@@ -9,8 +9,10 @@ PHP_FUNCTION(bbs_delete_friend);
 PHP_FUNCTION(bbs_add_friend);
 PHP_FUNCTION(bbs_getonlinefriends);
 #ifdef NEWSMTH
+#ifndef SECONDSITE
 PHP_FUNCTION(bbs_getfans);
 PHP_FUNCTION(bbs_countfans);
+#endif
 #endif
 
 #define PHP_BBS_FRIEND_EXPORT_FUNCTIONS_STD \
@@ -20,7 +22,7 @@ PHP_FUNCTION(bbs_countfans);
     PHP_FE(bbs_add_friend, NULL) \
     PHP_FE(bbs_getonlinefriends,NULL)
 
-#ifdef NEWSMTH
+#if defined(NEWSMTH) && !defined(SECONDSITE)
 #define PHP_BBS_FRIEND_EXPORT_FUNCTIONS \
     PHP_BBS_FRIEND_EXPORT_FUNCTIONS_STD \
     PHP_FE(bbs_getfans, NULL) \

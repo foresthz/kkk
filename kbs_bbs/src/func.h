@@ -206,7 +206,9 @@ extern "C"
     int cmpinames(const char *userid, const char *uv);
     int cmpfnames(const char *userid, const struct friends *uv);
 #ifdef NEWSMTH
+#ifndef SECONDSITE
     int cmpfanames(const char *userid, const struct fans *uv);
+#endif
 #endif
     int cmpfileinfoname(const char *filename, const struct fileheader *fi);
     int cmpfileid(const int *id, const struct fileheader *fi);

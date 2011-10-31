@@ -576,6 +576,7 @@ int Xdeljunk(void)
     return 0;
 }
 #ifdef NEWSMTH
+#ifndef SECONDSITE
 static int sync_friend_rebuild_fans(const char *old, const char *new)
 {
     struct friends friends_o[MAXFRIENDS], friends_n[MAXFRIENDS];
@@ -594,7 +595,7 @@ static int sync_friend_rebuild_fans(const char *old, const char *new)
         sethomefile(buf, friends_o[i].id, "fans");
         if (!dashf(buf))
             continue;
-        delete_record(buf, sizeof(struct fans), id, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
+        delete_record(buf, sizeof(struct fans), 1, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
     }
     for (i = 0; i < num_n; i++) {
         sethomefile(buf, friends_n[i].id, "fans");
@@ -603,6 +604,7 @@ static int sync_friend_rebuild_fans(const char *old, const char *new)
     }
     return 0;
 }
+#endif
 #endif
 /*得到别人的收藏夹和未度标记*/
 int get_favread(void)
@@ -690,7 +692,9 @@ int get_favread(void)
         sethomefile(dpath,destuser->userid,"friends");
         sethomefile(mypath,getCurrentUser()->userid,"friends");
 #ifdef NEWSMTH
+#ifndef SECONDSITE
         sync_friend_rebuild_fans(mypath, dpath);
+#endif
 #endif
         f_cp(dpath,mypath,0);
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
@@ -747,9 +751,6 @@ int get_mainsite(void)
             goto outfriend;
         }
         sethomefile(mypath,getCurrentUser()->userid,"friends");
-#ifdef NEWSMTH
-        sync_friend_rebuild_fans(mypath, dpath);
-#endif
         f_cp(dpath,mypath,0);
         unlink(dpath);
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());

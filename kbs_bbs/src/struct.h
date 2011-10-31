@@ -147,9 +147,11 @@ struct friends_group {
 };
 
 #ifdef NEWSMTH
+#ifndef SECONDSITE
 struct fans {
     char id[IDLEN + 1];
 };
+#endif
 #endif
 
 struct boardheader {            /* This structure is used to hold data in */

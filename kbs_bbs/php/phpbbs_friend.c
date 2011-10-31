@@ -107,8 +107,10 @@ PHP_FUNCTION(bbs_delete_friend)
         if (delete_record(buf, sizeof(fh), deleted, NULL, NULL) != -1) {
             getfriendstr(getCurrentUser(),getSession()->currentuinfo,getSession());
 #ifdef NEWSMTH
+#ifndef SECONDSITE
             sethomefile(buf, fh.id, "fans");
             delete_record(buf, sizeof(struct fans), 1, (RECORD_FUNC_ARG) cmpfanames, getCurrentUser()->userid);
+#endif
 #endif
             RETURN_LONG(0);
         } else {
@@ -161,11 +163,13 @@ PHP_FUNCTION(bbs_add_friend)
     n = append_record(buf, &fh, sizeof(friends_t));
     getfriendstr(getCurrentUser(),getSession()->currentuinfo,getSession());
 #ifdef NEWSMTH
+#ifndef SECONDSITE
     struct fans fans;
     memcpy(fans.id, getCurrentUser()->userid, IDLEN + 1);
     sethomefile(buf, fh.id, "fans");
     if (!search_record(buf, NULL, sizeof(struct fans), (RECORD_FUNC_ARG) cmpfanames, fans.id))
         append_record(buf, &fans, sizeof(struct fans));
+#endif
 #endif
     if (n != -1)
         RETURN_LONG(0);
@@ -290,6 +294,7 @@ PHP_FUNCTION(bbs_getonlinefriends)
 }
 
 #ifdef NEWSMTH
+#ifndef SECONDSITE
 PHP_FUNCTION(bbs_getfans)
 {
     char *userid;
@@ -359,4 +364,5 @@ PHP_FUNCTION(bbs_countfans)
 
     RETURN_LONG(st.st_size / sizeof(struct fans));
 }
+#endif
 #endif
