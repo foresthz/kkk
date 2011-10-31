@@ -2983,8 +2983,12 @@ static long ea_append_helper(int fd,struct ea_attach_info *ai,const char *fn,con
     len = strlen(original_filename);
     if (!len)
         return -1;
-    if (len > 60)
+    if (len > 60){
         original_filename += (len-60);
+        if (original_filename[-1] & 0x80){
+            original_filename++;
+        }
+    }
     strcpy(ai[count].name,original_filename);
     filter_upload_filename(ai[count].name);
 
@@ -3248,8 +3252,12 @@ static int upload_add_file_helper(const char *filename, char *original_filename,
     len = strlen(original_filename);
     if (!len)
         return -3;
-    if (len > 60)
+    if (len > 60) {
         original_filename += (len-60);
+        if (original_filename[-1] & 0x80) {
+            original_filename++;
+        }
+    }
     filter_upload_filename(original_filename);
 
     for (i=0;i<n;i++) {
