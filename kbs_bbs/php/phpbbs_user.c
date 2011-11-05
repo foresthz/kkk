@@ -592,7 +592,7 @@ PHP_FUNCTION(bbs_user_protectID)
 #ifdef NEWSMTH
     char *userid;
     int userid_len;
-    char *quesion = NULL;
+    char *question = NULL;
     int question_len;
     char *answer = NULL;
     int answer_len;
