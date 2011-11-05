@@ -535,10 +535,12 @@ struct dns_msgbuf {
 #endif
 
 /* protect id . added by binxun */
+#ifdef NEWSMTh
 struct protect_id_passwd {
     char question[STRLEN];   //密码提示问题
     char answer[STRLEN];    //问题答案
 };
+#endif
 
 #define ACTIVATIONLEN   15
 struct activation_info {
