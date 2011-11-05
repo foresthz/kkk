@@ -590,29 +590,23 @@ PHP_FUNCTION(bbs_user_touch_lastlogin)
 PHP_FUNCTION(bbs_user_protectID)
 {
 #ifdef NEWSMTH
-    char *userid;
-    int userid_len;
-    char *question = NULL;
+    char *question;
     int question_len;
-    char *answer = NULL;
+    char *answer;
     int answer_len;
-    struct userec *user;
     struct protect_id_passwd protect;
     char buf[PATHLEN];
     FILE *fp;
+    int ac = ZEND_NUM_ARGS();
     
-    if (zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
-        if (zend_parse_parameters(3 TSRMLS_CC, "sss", &userid, &userid_len, &question, &question_len, &answer, &answer_len) != SUCCESS) {
-            WRONG_PARAM_COUNT;
-        }
+    if (ac && ac != 2) {
+        WRONG_PARAM_COUNT;
+    }
+    if (ac == 2 && zend_parse_parameters(2 TSRMLS_CC, "ss", &question, &question_len, &answer, &answer_len) != SUCCESS) {
+        WRONG_PARAM_COUNT;
     }
 
-    if (userid_len > IDLEN)
-        userid[IDLEN] = 0;
-    if (!getuser(userid, &user))
-        RETURN_LONG(1);
-
-    if (question && answer) {
+    if (ac == 2) {
         if (question_len > STRLEN || answer_len > STRLEN) {
             RETURN_LONG(2);
         }
@@ -621,7 +615,7 @@ PHP_FUNCTION(bbs_user_protectID)
         // ±£ÏÕ
         protect.question[STRLEN - 1] = 0;
         protect.answer[STRLEN - 1] = 0;
-        sethomefile(buf, user->userid, "protectID");
+        sethomefile(buf, getCurrentUser()->userid, "protectID");
         fp = fopen(buf, "w");
         if (!fp) {
             RETURN_LONG(3);
@@ -630,6 +624,7 @@ PHP_FUNCTION(bbs_user_protectID)
         fclose(fp);
         RETURN_LONG(0);
     } else {
+        sethomefile(buf, getCurrentUser()->userid, "protectID");
         fp = fopen(buf, "r");
         if (!fp) {
             RETURN_LONG(3);
