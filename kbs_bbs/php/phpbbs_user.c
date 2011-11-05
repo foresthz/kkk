@@ -586,3 +586,61 @@ PHP_FUNCTION(bbs_user_touch_lastlogin)
     user->lastlogin = time(NULL);
     RETURN_LONG(0);
 }
+
+PHP_FUNCTION(bbs_user_protectID)
+{
+#ifdef NEWSMTH
+    char *userid;
+    int userid_len;
+    char *quesion = NULL;
+    int question_len;
+    char *answer = NULL;
+    int answer_len;
+    struct userec *user;
+    struct protect_id_passwd protect;
+    char buf[PATHLEN];
+    FILE *fp;
+    
+    if (zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
+        if (zend_parse_parameters(3 TSRMLS_CC, "sss", &userid, &userid_len, &question, &question_len, &answer, &answer_len) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+        }
+    }
+
+    if (userid_len > IDLEN)
+        userid[IDLEN] = 0;
+    if (!getuser(userid, &user))
+        RETURN_LONG(1);
+
+    if (question && answer) {
+        if (question_len > STRLEN || answer_len > STRLEN) {
+            RETURN_LONG(2);
+        }
+        memcpy(protect.question, question, STRLEN);
+        memcpy(protect.answer, answer, STRLEN);
+        // ±£ÏÕ
+        protect.question[STRLEN - 1] = 0;
+        protect.answer[STRLEN - 1] = 0;
+        sethomefile(buf, user->userid, "protectID");
+        fp = fopen(buf, "w");
+        if (!fp) {
+            RETURN_LONG(3);
+        }
+        fwrite(&protect, sizeof(struct protect_id_passwd), 1, fp);
+        fclose(fp);
+        RETURN_LONG(0);
+    } else {
+        fp = fopen(buf, "r");
+        if (!fp) {
+            RETURN_LONG(3);
+        }
+        fread(&protect, sizeof(struct protect_id_passwd), 1, fp);
+        fclose(fp);
+        array_init(return_value);
+        add_assoc_stringl(return_value, "question", protect.question, strlen(protect.question), 1);
+        add_assoc_stringl(return_value, "answer", protect.answer, strlen(protect.answer), 1);
+    }
+#else
+    RETURN_LONG(-7777);
+#endif
+}

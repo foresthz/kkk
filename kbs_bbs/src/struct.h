@@ -536,11 +536,6 @@ struct dns_msgbuf {
 
 /* protect id . added by binxun */
 struct protect_id_passwd {
-    char name[NAMELEN];    //真实姓名
-    unsigned short   birthyear;
-    unsigned char    birthmonth;
-    unsigned char    birthday;
-    char email[STRLEN];
     char question[STRLEN];   //密码提示问题
     char answer[STRLEN];    //问题答案
 };

@@ -656,6 +656,7 @@ int ConveyID(void)
 }
 
 /*设定ID密码保护 by binxun 2003.10 */
+#ifdef NEWSMTH
 int ProtectID(void)
 {
     char buf[STRLEN],print_buf[STRLEN];
@@ -681,15 +682,8 @@ int ProtectID(void)
     move(1, 0);
     prints("选择密码保护功能后,可以在遗忘密码或者密码被盗用的情况下,根据事先设定的信息");
     move(2, 0);
-    prints("重新找回自己的密码.");
+    prints("重新找回自己的密码.请注意,设定后将不能再更改.");
     move(4, 0);
-    prints("这些设定的信息包括:\033[1;31m 姓名/生日/Email/密码提示问题/问题答案\033[m");
-    move(6,0);
-    //prints("上面的信息设置完成, 密码保护功能一旦成功打开后, 将不能再更改这些信息,切记,切记!");
-    //move(7,0);
-    prints("找回密码时,需要 姓名/生日/问题答案 和设定完全一致,才会将新密码发往 Email .");
-
-    move(8,0);
     if (askyn("你确定要打开密码保护功能吗？", 0) == 0) {
         return -1;
     }
@@ -698,65 +692,21 @@ int ProtectID(void)
     memset(&protect, 0 , sizeof(struct protect_id_passwd));
     //输入相关设置信息
 
-    move(1,0);
-    prints("请逐项修改,直接按 <ENTER> 代表使用 [] 内的资料。\n");
-
-    sprintf(print_buf,"请输入您的真实姓名: [%s]",getSession()->currentmemo->ud.realname);
-    getdata(3, 0, print_buf, buf, NAMELEN, DOECHO, NULL, true);
-    if (buf[0])
-        strncpy(protect.name,buf,NAMELEN);
-    else
-        strncpy(protect.name,getSession()->currentmemo->ud.realname,NAMELEN);
-
-#ifdef HAVE_BIRTHDAY
-    move(4,0);
-    prints("请输入您的出生日期: ");
-
-    sprintf(print_buf,"四位数公元年: [%d]",getSession()->currentmemo->ud.birthyear);
-    while (protect.birthyear > 2010 || protect.birthyear < 1900) {
-        getdata(5, 0, print_buf, buf, 5, DOECHO, NULL, true);
-        if (buf[0]) protect.birthyear = atoi(buf);
-        else
-            protect.birthyear = getSession()->currentmemo->ud.birthyear;
-    }
-
-    sprintf(print_buf,"出生月: [%d]",getSession()->currentmemo->ud.birthmonth);
-    while (protect.birthmonth < 1 || protect.birthmonth > 12) {
-        getdata(6, 0, print_buf, buf, 3, DOECHO, NULL, true);
-        if (buf[0]) protect.birthmonth = atoi(buf);
-        else
-            protect.birthmonth = getSession()->currentmemo->ud.birthmonth;
-    }
-
-    sprintf(print_buf,"出生日: [%d]",getSession()->currentmemo->ud.birthday);
-    while (protect.birthday < 1 || protect.birthday > 31) {
-        getdata(7, 0, print_buf, buf, 3, DOECHO, NULL, true);
-        if (buf[0]) protect.birthday = atoi(buf);
-        else
-            protect.birthday = getSession()->currentmemo->ud.birthday;
-    }
-#endif
-
-    sprintf(print_buf,"您的Email: ");
+    move(6,0);
+    sprintf(print_buf,"密保问题: ", (STRLEN - 1));
     do {
-        getdata(8, 0, print_buf, buf, STRLEN, DOECHO, NULL, true);
-    } while (!strchr(buf,'@'));
-    strncpy(protect.email, buf, STRLEN);
-
-    sprintf(print_buf,"密码提示问题: ");
-    do {
-        getdata(9, 0, print_buf, buf, STRLEN, DOECHO, NULL, true);
+        getdata(6, 0, print_buf, buf, STRLEN, DOECHO, NULL, true);
     } while (!buf[0]);
     strncpy(protect.question, buf, STRLEN);
 
-    sprintf(print_buf,"问题答案(至少四个字符): ");
+    sprintf(print_buf,"问题答案(至少四个字节): ");
     do {
-        getdata(10, 0, print_buf, buf, STRLEN, DOECHO, NULL, true);
+        getdata(7, 0, print_buf, buf, STRLEN, DOECHO, NULL, true);
     } while (strlen(buf) < 4);
     strncpy(protect.answer, buf, STRLEN);
 
-    if (askyn("你确定要设定吗？", 0) == 1) {
-        move(12,0);
+    if (askyn("你确定要设定吗?(设定后将不能再更改)", 0) == 1) {
+        move(9,0);
         sethomefile(buf,getCurrentUser()->userid,"protectID");
 
         fp = fopen(buf,"w");
@@ -772,3 +722,4 @@ int ProtectID(void)
     }
     return 0;
 }
+#endif
