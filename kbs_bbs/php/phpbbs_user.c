@@ -607,7 +607,7 @@ PHP_FUNCTION(bbs_user_protectID)
     }
 
     if (ac == 2) {
-        if (question_len > STRLEN || answer_len > STRLEN) {
+        if (answer_len < 4 || question_len > STRLEN || answer_len > STRLEN) {
             RETURN_LONG(2);
         }
         memcpy(protect.question, question, STRLEN);
