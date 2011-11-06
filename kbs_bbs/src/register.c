@@ -688,12 +688,20 @@ int ProtectID(void)
         return -1;
     }
 
-    clear();
     memset(&protect, 0 , sizeof(struct protect_id_passwd));
     //输入相关设置信息
 
-    move(6,0);
-    sprintf(print_buf,"密保问题: ", (STRLEN - 1));
+    move(5, 0);
+    sprintf(print_buf,"请输入您的密码: ");
+    getdata(5, 0, print_buf, buf, PASSLEN, NOECHO, NULL, true);
+    if (!buf[0] || !checkpasswd2(buf, getCurrentUser())) {
+        move(6,0);
+        prints("您输入的密码不正确...");
+        pressanykey();
+        return -1;
+    }
+
+    sprintf(print_buf,"密保问题: ");
     do {
         getdata(6, 0, print_buf, buf, STRLEN, DOECHO, NULL, true);
     } while (!buf[0]);
@@ -712,6 +720,7 @@ int ProtectID(void)
         fp = fopen(buf,"w");
         if (!fp) {
             prints("不能打开文件,请与SYSOP联系.");
+            pressanykey();
             return 0;
         }
         fwrite(&protect,sizeof(struct protect_id_passwd),1,fp);
