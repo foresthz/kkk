@@ -825,6 +825,8 @@ PHP_FUNCTION(bbs_domailforward)
 
 PHP_FUNCTION(bbs_sendmail)
 {
+    char *fromid;
+    int fromid_len;
     char *fname;
     int fname_len;
     char *title;
@@ -833,9 +835,19 @@ PHP_FUNCTION(bbs_sendmail)
     int receiver_len;
     long isbig5;
     long noansi;
+
+    int ret;
     
-    if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &fname, &fname_len, &title, &title_len, &receiver, &receiver_len, &isbig5, &noansi) != SUCCESS) {
+    if (ac != 6 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &fromid, &fromid_len, &fname, &fname_len, &title, &title_len, &receiver, &receiver_len, &isbig5, &noansi) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
-    return bbs_sendmail(fname, title, receiver, isbig5, noansi, getSession());
+    struct userec *user, *saveuser;
+    if (!getuser(fromid, &user)) {
+        getuser("SYSOP", &user);
+    }
+    saveuser = getCurrentUser();
+    setCurrentUser(user);
+    ret = bbs_sendmail(fname, title, receiver, isbig5, noansi, getSession());
+    setCurrentUser(saveuser);
+    return ret;
 }
