@@ -602,8 +602,8 @@ PHP_FUNCTION(bbs_user_protectID)
     int ac = ZEND_NUM_ARGS();
     struct userec *user;
 
-    if (ac == 1 && zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
-        if (ac == 3 && zend_parse_parameters(3 TSRMLS_CC, "sss", &userid, &userid_len, &question, &question_len, &answer, &answer_len) != SUCCESS) {
+    if (ac != 1 || zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
+        if (ac != 3 || zend_parse_parameters(3 TSRMLS_CC, "sss", &userid, &userid_len, &question, &question_len, &answer, &answer_len) != SUCCESS) {
             WRONG_PARAM_COUNT;
         }
     }
