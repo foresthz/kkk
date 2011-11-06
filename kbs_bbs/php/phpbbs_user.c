@@ -600,14 +600,19 @@ PHP_FUNCTION(bbs_user_protectID)
     char buf[PATHLEN];
     FILE *fp;
     int ac = ZEND_NUM_ARGS();
-    
+    struct userec *user;
+
     if (ac == 1 && zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
-        if (ac == 2 && zend_parse_parameters(2 TSRMLS_CC, "ss", &question, &question_len, &answer, &answer_len) != SUCCESS) {
+        if (ac == 3 && zend_parse_parameters(3 TSRMLS_CC, "sss", &userid, &userid_len, &question, &question_len, &answer, &answer_len) != SUCCESS) {
             WRONG_PARAM_COUNT;
         }
     }
+    if (userid_len > IDLEN)
+        userid[IDLEN] = 0;
+    if (!getuser(userid, &user))
+        RETURN_LONG(1);
 
-    if (ac == 2) {
+    if (ac == 3) {
         if (answer_len < 4 || question_len > STRLEN || answer_len > STRLEN) {
             RETURN_LONG(2);
         }
@@ -616,7 +621,7 @@ PHP_FUNCTION(bbs_user_protectID)
         // ±£ÏÕ
         protect.question[STRLEN - 1] = 0;
         protect.answer[STRLEN - 1] = 0;
-        sethomefile(buf, getCurrentUser()->userid, "protectID");
+        sethomefile(buf, user->userid, "protectID");
         fp = fopen(buf, "w");
         if (!fp) {
             RETURN_LONG(3);
@@ -625,11 +630,6 @@ PHP_FUNCTION(bbs_user_protectID)
         fclose(fp);
         RETURN_LONG(0);
     } else {
-        struct userec *user;
-        if (userid_len > IDLEN)
-            userid[IDLEN] = 0;
-        if (!getuser(userid, &user))
-            RETURN_LONG(1);
         sethomefile(buf, user->userid, "protectID");
         fp = fopen(buf, "r");
         if (!fp) {
