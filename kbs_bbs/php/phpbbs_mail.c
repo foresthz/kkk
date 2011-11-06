@@ -849,5 +849,5 @@ PHP_FUNCTION(bbs_sendmail)
     setCurrentUser(user);
     ret = bbs_sendmail(fname, title, receiver, isbig5, noansi, getSession());
     setCurrentUser(saveuser);
-    return ret;
+    RETURN_LONG(ret);
 }
