@@ -838,7 +838,7 @@ PHP_FUNCTION(bbs_sendmail)
 
     int ret;
     
-    if (ac != 6 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &fromid, &fromid_len, &fname, &fname_len, &title, &title_len, &receiver, &receiver_len, &isbig5, &noansi) != SUCCESS) {
+    if (ZEND_NUM_ARGS() != 6 || zend_parse_parameters(6 TSRMLS_CC, "sssll", &fromid, &fromid_len, &fname, &fname_len, &title, &title_len, &receiver, &receiver_len, &isbig5, &noansi) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
     struct userec *user, *saveuser;
