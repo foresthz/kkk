@@ -822,3 +822,20 @@ PHP_FUNCTION(bbs_domailforward)
         }
     }
 }
+
+PHP_FUNCTION(bbs_sendmail)
+{
+    char *fname;
+    int fname_len;
+    char *title;
+    int title_len;
+    char *receiver;
+    int receiver_len;
+    long isbig5;
+    long noansi;
+    
+    if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &fname, &fname_len, &title, &title_len, &receiver, &receiver_len, &isbig5, &noansi) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    return bbs_sendmail(fname, title, receiver, isbig5, noansi, getSession());
+}
