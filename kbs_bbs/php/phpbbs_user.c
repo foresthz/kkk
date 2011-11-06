@@ -590,6 +590,8 @@ PHP_FUNCTION(bbs_user_touch_lastlogin)
 PHP_FUNCTION(bbs_user_protectID)
 {
 #ifdef NEWSMTH
+    char *userid;
+    int userid_len;
     char *question;
     int question_len;
     char *answer;
@@ -599,11 +601,10 @@ PHP_FUNCTION(bbs_user_protectID)
     FILE *fp;
     int ac = ZEND_NUM_ARGS();
     
-    if (ac && ac != 2) {
-        WRONG_PARAM_COUNT;
-    }
-    if (ac == 2 && zend_parse_parameters(2 TSRMLS_CC, "ss", &question, &question_len, &answer, &answer_len) != SUCCESS) {
-        WRONG_PARAM_COUNT;
+    if (ac == 1 && zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
+        if (ac == 2 && zend_parse_parameters(2 TSRMLS_CC, "ss", &question, &question_len, &answer, &answer_len) != SUCCESS) {
+            WRONG_PARAM_COUNT;
+        }
     }
 
     if (ac == 2) {
@@ -624,7 +625,12 @@ PHP_FUNCTION(bbs_user_protectID)
         fclose(fp);
         RETURN_LONG(0);
     } else {
-        sethomefile(buf, getCurrentUser()->userid, "protectID");
+        struct userec *user;
+        if (userid_len > IDLEN)
+            userid[IDLEN] = 0;
+        if (!getuser(userid, &user))
+            RETURN_LONG(1);
+        sethomefile(buf, user->userid, "protectID");
         fp = fopen(buf, "r");
         if (!fp) {
             RETURN_LONG(3);
