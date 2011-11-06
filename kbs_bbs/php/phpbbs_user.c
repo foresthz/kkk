@@ -635,7 +635,7 @@ PHP_FUNCTION(bbs_user_protectID)
         if (!fp) {
             RETURN_LONG(3);
         }
-        bzero(&protect, sizeof(struct protect_id_passwd);
+        bzero(&protect, sizeof(struct protect_id_passwd));
         fread(&protect, sizeof(struct protect_id_passwd), 1, fp);
         fclose(fp);
         array_init(return_value);
