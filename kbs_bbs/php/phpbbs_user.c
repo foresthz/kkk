@@ -633,7 +633,7 @@ PHP_FUNCTION(bbs_user_protectID)
         sethomefile(buf, user->userid, "protectID");
         fp = fopen(buf, "r");
         if (!fp) {
-            RETURN_LONG(3);
+            RETURN_LONG(4);
         }
         bzero(&protect, sizeof(struct protect_id_passwd));
         fread(&protect, sizeof(struct protect_id_passwd), 1, fp);
