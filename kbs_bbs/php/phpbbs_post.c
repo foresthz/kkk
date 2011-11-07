@@ -816,7 +816,7 @@ PHP_FUNCTION(bbs_updatearticle2)
     process_control_chars(title,NULL);
     if (((f.accessed[1] & FILE_TEX) && (is_tex == 1)) || (!(f.accessed[1] & FILE_TEX) && (is_tex == 0)))
         is_tex = -1;
-    if (((f.accessed[1] & FILE_MAILBACK) && (mailback == 1) || (!(f.accessed[1] & FILE_MAILBACK)) && (mailback == 0)))
+    if (((f.accessed[1] & FILE_MAILBACK) && (mailback == 1)) || (!(f.accessed[1] & FILE_MAILBACK) && (mailback == 0)))
         mailback = -1;
     if ((!memcmp(f.innflag, "SS", 2) && (outgo == 1)) || (!memcmp(f.innflag, "LL", 2) && (outgo == 0)))
         outgo = -1;
