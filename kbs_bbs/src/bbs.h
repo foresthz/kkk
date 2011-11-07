@@ -452,6 +452,7 @@ extern int KEY_ESC_arg;
 #define FILE_PERCENT_FLAG   0x1000
 #define FILE_FEN_FLAG       0x2000
 #define FILE_MODTITLE_FLAG  0x4000
+#define FILE_MODMISC_FLAG   0x8000 /* 回文转寄，转信以及TeX */
 
 /* 0-1 locks used sem count, @author kxn */
 #define SEMLOCK_COUNT       20

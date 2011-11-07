@@ -2776,6 +2776,20 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
         if (*buf != 0)
             strcpy(originFh->title, buf);
     }
+    if (flag & FILE_MODMISC_FLAG) {
+        if (data->accessed[1] & FILE_MAILBACK)
+            originFh->accessed[1] |= FILE_MAILBACK;
+        else
+            originFh->accessed[1] &= ~FILE_MAILBACK;
+        if (data->accessed[1] & FILE_TEX)
+            originFh->accessed[1] |= FILE_TEX;
+        else
+            originFh->accessed[1] &= ~FILE_TEX;
+        if (!memcmp(data->innflag, "SS", 2))
+            originFh->innflag[0] = originFh->innflag[1] = 'S';
+        else
+            originFh->innflag[0] = originFh->innflag[1] = 'L';
+    }
     if (ret == 0) {
         if (flag & FILE_TITLE_FLAG) {
             originFh->groupid = originFh->id;

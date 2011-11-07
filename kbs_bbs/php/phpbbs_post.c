@@ -846,10 +846,11 @@ PHP_FUNCTION(bbs_updatearticle2)
     else if (mailback == 1)
         f.accessed[1] |= FILE_MAILBACK;
     if (outgo == 0)
-        memcpy(f.innflag, "LL", 2);
+        f.innflag[0] = f.innflag[1] = 'L';
     else if (outgo == 1)
-        memcpy(f.innflag, "SS", 2);
-        
+        f.innflag[0] = f.innflag[1] = 'S';
+    if (mailback != -1 || outgo != -1 || is_tex != -1)
+        changemark |= FILE_MODMISC_FLAG;
     changemark |= FILE_MODTITLE_FLAG;
     /* 修改标题结束 */
 
