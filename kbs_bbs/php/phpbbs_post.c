@@ -982,7 +982,7 @@ PHP_FUNCTION(bbs_updatearticle2)
         }
     }
     setboardtitle(brd->filename, 1);
-    if (is_tex != -1) {
+    if (mailback != -1 || outgo != -1 || is_tex != -1) {
         setbfile(dirpath, brd->filename, f.filename);
         if (dashf(dirpath))
             f_touch(dirpath);
