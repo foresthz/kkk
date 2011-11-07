@@ -656,9 +656,9 @@ int ConveyID(void)
 }
 
 /*设定ID密码保护 by binxun 2003.10 */
-#ifdef NEWSMTH
 int ProtectID(void)
 {
+#ifdef NEWSMTH
     char buf[STRLEN],print_buf[STRLEN];
     struct protect_id_passwd protect;
     FILE* fp;
@@ -729,6 +729,6 @@ int ProtectID(void)
         prints("密码保护已经设定");
         pressanykey();
     }
+#endif
     return 0;
 }
-#endif
