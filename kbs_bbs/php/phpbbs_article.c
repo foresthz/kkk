@@ -24,6 +24,7 @@ void bbs_make_article_array(zval * array, struct fileheader *fh, char *flags, si
     add_assoc_stringl(array, "FLAGS", flags, flags_len, 1);
     add_assoc_long(array, "ATTACHPOS", fh->attachment);
     add_assoc_long(array, "EFFSIZE", fh->eff_size);
+    add_assoc_long(array, "MAILBACK", fh->accessed[1] & FILE_MAILBACK);
     add_assoc_long(array, "IS_TEX", fh->accessed[1] & FILE_TEX);
 #ifdef HAVE_REPLY_COUNT
     add_assoc_long(array, "REPLYCOUNT", fh->replycount);
