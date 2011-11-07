@@ -700,7 +700,7 @@ PHP_FUNCTION(bbs_updatearticle)
 
 
 /*
- * function bbs_updatearticle2(string boardName , int id , string newTitle , int dirMode[, int is_tex])
+ * function bbs_updatearticle2(string boardName , int id , string newTitle , int dirMode[, int mailback, int outgo, int is_tex])
  * 修改文章标题和正文，并更新对应的fileheader
  * @author: jiangjun 20110730, change from edittitle
  * return 0 : 成功
@@ -720,7 +720,7 @@ PHP_FUNCTION(bbs_updatearticle2)
 {
     char *board,*title,*content;
     int  board_len,title_len,clen;
-    long  id , mode, is_tex=-1;
+    long  id , mode, mailback=-1, outgo=-1, is_tex=-1;
     char path[STRLEN];
     char dirpath[STRLEN];
     struct fileheader f;
@@ -741,6 +741,9 @@ PHP_FUNCTION(bbs_updatearticle2)
             WRONG_PARAM_COUNT;
     } else if (ac == 6) {
         if (zend_parse_parameters(6 TSRMLS_CC, "slss/ll", &board, &board_len, &id , &title, &title_len , &content, &clen, &mode, &is_tex) == FAILURE)
+            WRONG_PARAM_COUNT; // for compatibility reasons
+    } else if (ac == 8) {
+        if (zend_parse_parameters(8 TSRMLS_CC, "slss/llll", &board, &board_len, &id, &title, &title_len, &content, &clen, &mode, &mailback, &outgo, &is_tex) == FAILURE)
             WRONG_PARAM_COUNT;
     } else
         WRONG_PARAM_COUNT;
@@ -813,6 +816,10 @@ PHP_FUNCTION(bbs_updatearticle2)
     process_control_chars(title,NULL);
     if (((f.accessed[1] & FILE_TEX) && (is_tex == 1)) || (!(f.accessed[1] & FILE_TEX) && (is_tex == 0)))
         is_tex = -1;
+    if (((f.accessed[1] & FILE_MAILBACK) && (mailback == 1) || (!(f.accessed[1] & FILE_MAILBACK)) && (mailback == 0)))
+        mailback = -1;
+    if ((!memcmp(f.innflag, "SS", 2) && (outgo == 1)) || (!memcmp(f.innflag, "LL", 2) && (outgo == 0)))
+        outgo = -1;
     /* 此处不需要返回
     if (!strcmp(title,f.title) && (is_tex == -1))
         RETURN_LONG(0);
@@ -834,6 +841,15 @@ PHP_FUNCTION(bbs_updatearticle2)
         f.accessed[1] &= ~FILE_TEX;
     else if (is_tex == 1)
         f.accessed[1] |= FILE_TEX;
+    if (mailback == 0)
+        f.accessed[1] &= ~FILE_MAILBACK;
+    else if (mailback == 1)
+        f.accessed[1] |= FILE_MAILBACK;
+    if (outgo == 0)
+        memcpy(f.innflag, "LL", 2);
+    else if (outgo == 1)
+        memcpy(f.innflag, "SS", 2);
+        
     changemark |= FILE_MODTITLE_FLAG;
     /* 修改标题结束 */
 
