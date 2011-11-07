@@ -57,7 +57,7 @@
 		/*
 		$ret = bbs_edittitle($board, $id, rtrim($_POST["title"]), $ftype, $is_tex);
 		*/
-		$ret = bbs_updatearticle2($board, $id, rtrim($_POST["title"]), $_POST['text'], $ftype, $is_tex);
+		$ret = bbs_updatearticle2($board, $id, rtrim($_POST["title"]), $_POST['text'], $ftype, -1, -1, $is_tex);
 		if($ret != 0)
 		{
 			switch($ret)
