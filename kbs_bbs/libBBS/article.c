@@ -1048,7 +1048,7 @@ static int post_commend_core(struct userec *user, const char *fromboard, const c
     strcpy(postfile.title, fileinfo->title);
     strncpy(postfile.owner, user->userid, OWNER_LEN);
     postfile.owner[OWNER_LEN - 1] = 1;
-    postfile.eff_size = get_effsize(oldfilepath);
+    postfile.eff_size = get_effsize_attach(oldfilepath, &postfile.attachment);
     postfile.o_id = fileinfo->id;
     postfile.o_groupid = fileinfo->groupid;
     postfile.o_reid = fileinfo->reid;
