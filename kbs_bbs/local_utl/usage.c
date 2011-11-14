@@ -12,6 +12,7 @@ struct binfo {
 
 #ifdef NEWSMTH
 struct binfo st_all[MAXBOARD+1];
+int numboards_all = 0;
 #endif
 
 int numboards = 0;
@@ -79,7 +80,7 @@ int record_data_all(const char *board,int sec,int noswitch)
 {
     int i;
 
-    for (i = 0; i < numboards; i++) {
+    for (i = 0; i < numboards_all; i++) {
         if (!strcmp(st_all[i].boardname, board)) {
             if (!noswitch)
                 st_all[i].times++;
@@ -107,11 +108,15 @@ int add_data(const struct binfo *btmp)
 
 int fillbcache(const struct boardheader *fptr,int idx,void* arg)
 {
-    if (numboards >= MAXBOARD)
-        return 0;
 #ifdef NEWSMTH
     int all = (arg?*((int *)arg):0);
-    if (!*(fptr->filename) || (all && (fptr->level & ~PERM_POSTMASK)) || (!all && !check_see_perm(NULL,fptr)&&!public_board(fptr)))
+    if ((all && numboards_all >= MAXBOARD) || (!all && numboards >= MAXBOARD))
+#else
+    if (numboards >= MAXBOARD)
+#endif
+        return 0;
+#ifdef NEWSMTH
+    if (!*(fptr->filename) || (all && (fptr->level & ~(PERM_DEFAULT | PERM_POSTMASK))) || (!all && !check_see_perm(NULL,fptr)&&!public_board(fptr)))
 #else
     if (!check_see_perm(NULL,fptr)||!*(fptr->filename))
 #endif
@@ -335,16 +340,16 @@ int gen_usage_all(char *buf, char *buf1)
         return 1;
     }
 
-    qsort(st_all, numboards, sizeof(st_all[0]), brd_cmp);
+    qsort(st_all, numboards_all, sizeof(st_all[0]), brd_cmp);
 
-    printf("%d", numboards);
+    printf("%d", numboards_all);
     ave[0] = 0;
     ave[1] = 0;
     ave[2] = 0;
     max[1] = 0;
     max[0] = 0;
     max[2] = 0;
-    for (i = 0; i < numboards; i++) {
+    for (i = 0; i < numboards_all; i++) {
         ave[0] += st_all[i].times;
         ave[1] += st_all[i].sum;
         ave[2] += st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times;
@@ -361,27 +366,27 @@ int gen_usage_all(char *buf, char *buf1)
     c[0] = max[0] / 30 + 1;
     c[1] = max[1] / 30 + 1;
     c[2] = max[2] / 30 + 1;
-    st_all[numboards].times = ave[0] / numboards;
-    st_all[numboards].sum = ave[1] / numboards;
-    strcpy(st_all[numboards].boardname, "Average");
-    strcpy(st_all[numboards].expname, "总平均");
-    numboards++;
+    st_all[numboards_all].times = ave[0] / numboards_all;
+    st_all[numboards_all].sum = ave[1] / numboards_all;
+    strcpy(st_all[numboards_all].boardname, "Average");
+    strcpy(st_all[numboards_all].expname, "总平均");
+    numboards_all++;
 
     fprintf(op, "名次 %-15.15s%-25.25s %5s %8s %10s\n", "讨论区名称", "中文叙述", "人次", "累积时间", "平均时间");
 
-    for (i = 0; i < numboards; i++) {
+    for (i = 0; i < numboards_all; i++) {
         fprintf(op, "%4d\033[m %-15.15s%-25.25s %5d %-.8s %10d\n", i + 1, st_all[i].boardname, st_all[i].expname, st_all[i].times, timetostr(st_all[i].sum), st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times);
     }
     fclose(op);
 
     /*生成 总时间排序的 */
-    qsort(st_all, numboards - 1, sizeof(st_all[0]), total_cmp);
+    qsort(st_all, numboards_all - 1, sizeof(st_all[0]), total_cmp);
     fprintf(op1, "名次 %-15.15s%-25.25s %8s %5s %10s\n", "讨论区名称", "中文叙述", "累积时间", "人次", "平均时间");
-    for (i = 0; i < numboards; i++)
+    for (i = 0; i < numboards_all; i++)
         fprintf(op1, "%4d %-15.15s%-25.25s %-.8s %5d %10d\n", i + 1, st_all[i].boardname, st_all[i].expname, timetostr(st_all[i].sum), st_all[i].times, st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times);
     fclose(op1);
 
-    numboards --;
+    numboards_all --;
     return 0;
 }
 #endif
@@ -442,7 +447,9 @@ int main(void)
     resolve_boards();
 #ifdef NEWSMTH
     fillboardall();
-    memcpy(st_all, st, sizeof((MAXBOARD+1)*sizeof(struct binfo)));
+    memcpy(st_all, st, (MAXBOARD+1)*sizeof(sizeof(struct binfo)));
+    numboards_all = numboards;
+    numboards = 0;
 #endif
     fillboard();
 
