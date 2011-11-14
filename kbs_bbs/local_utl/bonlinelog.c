@@ -37,7 +37,8 @@ int fillbcache(struct boardheader *fptr,int idx,void* arg)
     char sql[500];
 
 #ifdef NEWSMTH
-    if ((!check_see_perm(NULL, fptr) && !public_board(fptr)) || !*(fptr->filename))
+    //if ((!check_see_perm(NULL, fptr) && !public_board(fptr)) || !*(fptr->filename))
+    if (strlen(fptr->filename) == 0 || (fptr->level & ~PERM_POSTMASK))
 #else
     if (check_see_perm(NULL, fptr)==0 || strlen(fptr->filename) == 0)
 #endif
