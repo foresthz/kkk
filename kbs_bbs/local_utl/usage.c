@@ -447,7 +447,7 @@ int main(void)
     resolve_boards();
 #ifdef NEWSMTH
     fillboardall();
-    memcpy(st_all, st, (MAXBOARD+1)*sizeof(sizeof(struct binfo)));
+    memcpy(st_all, st, (MAXBOARD+1)*sizeof(struct binfo));
     numboards_all = numboards;
     numboards = 0;
 #endif
