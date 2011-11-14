@@ -33,14 +33,22 @@ int main(int argc, char **argv)
         return -1;
     }
 
+#ifdef NEWSMTH
     sprintf(path, "%s/%d/%d/%d_boarduse.visit.all", BONLINE_LOGDIR, t.tm_year+1900, t.tm_mon+1, t.tm_mday);
+#else
+    sprintf(path, "%s/%d/%d/%d_boarduse.visit", BONLINE_LOGDIR, t.tm_year+1900, t.tm_mon+1, t.tm_mday);
+#endif
 
     if (stat(path, &st) >= 0) {
         sprintf(title, "%d年%2d月%2d日版面使用数据(次数排序)", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
         post_file(NULL, "", path, "SysTrace", title, 0, 1, getSession());
     }
 
+#ifdef NEWSMTH
     sprintf(path, "%s/%d/%d/%d_boarduse.total.all", BONLINE_LOGDIR, t.tm_year+1900, t.tm_mon+1, t.tm_mday);
+#else
+    sprintf(path, "%s/%d/%d/%d_boarduse.total", BONLINE_LOGDIR, t.tm_year+1900, t.tm_mon+1, t.tm_mday);
+#endif
 
     if (stat(path, &st) >= 0) {
         sprintf(title, "%d年%2d月%2d日版面使用数据(总时间排序)", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
