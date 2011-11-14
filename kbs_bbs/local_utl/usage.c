@@ -327,7 +327,7 @@ int gen_usage_all(char *buf, char *buf1)
     int c[3];
     int max[3];
     unsigned int ave[3];
-    int i, j, k;
+    int i;
 
     /*×¢:µÈ´ý¸Ä*/
     if ((op = fopen(buf, "w")) == NULL || (op1 = fopen(buf1, "w")) == NULL) {
