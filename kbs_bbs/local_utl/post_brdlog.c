@@ -66,7 +66,7 @@ int fillbcache(void *fptr1,int idx,void* arg)
     struct boardheader *fptr = (struct boardheader *)fptr1;
 /*    if ((!check_see_perm(NULL, fptr) && !public_board(fptr)) || !*(fptr->filename))
         return 0;*/
-    if (!*(fptr->filename) || fptr->level & ~(PERM_DEFAULT | PERM_POSTMASK))
+    if (!*(fptr->filename) || (!(fptr->level & PERM_POSTMASK) && (fptr->level & ~PERM_DEFAULT)))
         return 0;
 
     if (fptr->flag & BOARD_GROUP)
