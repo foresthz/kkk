@@ -64,7 +64,9 @@ int fillbcache(void *fptr1,int idx,void* arg)
     MYSQL_RES *res;
     MYSQL_ROW row;
     struct boardheader *fptr = (struct boardheader *)fptr1;
-    if ((!check_see_perm(NULL, fptr) && !public_board(fptr)) || !*(fptr->filename))
+/*    if ((!check_see_perm(NULL, fptr) && !public_board(fptr)) || !*(fptr->filename))
+        return 0;*/
+    if (fptr->level & ~PERM_POSTMASK)
         return 0;
 
     if (fptr->flag & BOARD_GROUP)
@@ -138,6 +140,8 @@ void gen_board_rank_xml()
     for (i = 0; i < n; i++) {
         bp = getbcache(x[i].filename);
         if (bp == NULL || (bp->flag & BOARD_GROUP))
+            continue;
+        if ((!check_see_perm(NULL, bp) && !public_board(bp)) || !*(bp->filename))
             continue;
         if ((sec_id = get_seccode_index(bp->title[0])) < 0)
             continue;

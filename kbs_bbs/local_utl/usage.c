@@ -10,6 +10,10 @@ struct binfo {
     int sum;
 } st[MAXBOARD+1];
 
+#ifdef NEWSMTH
+struct binfo st_all[MAXBOARD+1];
+#endif
+
 int numboards = 0;
 
 int brd_cmp(const void* b1, const void* a1)
@@ -70,6 +74,23 @@ int record_data(const char *board,int sec,int noswitch)
     return 0;
 }
 
+#ifdef NEWSMTH
+int record_data_all(const char *board,int sec,int noswitch)
+{
+    int i;
+
+    for (i = 0; i < numboards; i++) {
+        if (!strcmp(st_all[i].boardname, board)) {
+            if (!noswitch)
+                st_all[i].times++;
+            st_all[i].sum += sec;
+            return 1;
+        }
+    }
+    return 0;
+}
+#endif
+
 int add_data(const struct binfo *btmp)
 {
     int i;
@@ -89,7 +110,8 @@ int fillbcache(const struct boardheader *fptr,int idx,void* arg)
     if (numboards >= MAXBOARD)
         return 0;
 #ifdef NEWSMTH
-    if ((!check_see_perm(NULL,fptr)&&!public_board(fptr))||!*(fptr->filename))
+    int all = (arg?*((int *)arg):0);
+    if (!*(fptr->filename) || (all && (fptr->level & ~PERM_POSTMASK)) || (!all && !check_see_perm(NULL,fptr)&&!public_board(fptr)))
 #else
     if (!check_see_perm(NULL,fptr)||!*(fptr->filename))
 #endif
@@ -110,6 +132,14 @@ int fillboard(void)
 {
     return apply_record(BOARDS, (APPLY_FUNC_ARG)fillbcache, sizeof(struct boardheader), NULL, 0,false);
 }
+
+#ifdef NEWSMTH
+int fillboardall(void)
+{
+    int arg = 1;
+    return apply_record(BOARDS, (APPLY_FUNC_ARG)fillbcache, sizeof(struct boardheader), &arg, 0,false);
+}
+#endif
 
 char *timetostr(i)
 int i;
@@ -290,6 +320,72 @@ static int rotatelog(const char *basename, int rotatecount)
     return 0;
 }
 
+#ifdef NEWSMTH
+int gen_usage_all(char *buf, char *buf1)
+{
+    FILE *op, *op1;
+    int c[3];
+    int max[3];
+    unsigned int ave[3];
+    int i, j, k;
+
+    /*注:等待改*/
+    if ((op = fopen(buf, "w")) == NULL || (op1 = fopen(buf1, "w")) == NULL) {
+        printf("Can't Write file\n");
+        return 1;
+    }
+
+    qsort(st_all, numboards, sizeof(st_all[0]), brd_cmp);
+
+    printf("%d", numboards);
+    ave[0] = 0;
+    ave[1] = 0;
+    ave[2] = 0;
+    max[1] = 0;
+    max[0] = 0;
+    max[2] = 0;
+    for (i = 0; i < numboards; i++) {
+        ave[0] += st_all[i].times;
+        ave[1] += st_all[i].sum;
+        ave[2] += st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times;
+        if (max[0] < st_all[i].times) {
+            max[0] = st_all[i].times;
+        }
+        if (max[1] < st_all[i].sum) {
+            max[1] = st_all[i].sum;
+        }
+        if (max[2] < (st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times)) {
+            max[2] = (st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times);
+        }
+    }
+    c[0] = max[0] / 30 + 1;
+    c[1] = max[1] / 30 + 1;
+    c[2] = max[2] / 30 + 1;
+    st_all[numboards].times = ave[0] / numboards;
+    st_all[numboards].sum = ave[1] / numboards;
+    strcpy(st_all[numboards].boardname, "Average");
+    strcpy(st_all[numboards].expname, "总平均");
+    numboards++;
+
+    fprintf(op, "名次 %-15.15s%-25.25s %5s %8s %10s\n", "讨论区名称", "中文叙述", "人次", "累积时间", "平均时间");
+
+    for (i = 0; i < numboards; i++) {
+        fprintf(op, "%4d\033[m %-15.15s%-25.25s %5d %-.8s %10d\n", i + 1, st_all[i].boardname, st_all[i].expname, st_all[i].times, timetostr(st_all[i].sum), st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times);
+    }
+    fclose(op);
+
+    /*生成 总时间排序的 */
+    qsort(st_all, numboards - 1, sizeof(st_all[0]), total_cmp);
+    fprintf(op1, "名次 %-15.15s%-25.25s %8s %5s %10s\n", "讨论区名称", "中文叙述", "累积时间", "人次", "平均时间");
+    for (i = 0; i < numboards; i++)
+        fprintf(op1, "%4d %-15.15s%-25.25s %-.8s %5d %10d\n", i + 1, st_all[i].boardname, st_all[i].expname, timetostr(st_all[i].sum), st_all[i].times, st_all[i].times == 0 ? 0 : st_all[i].sum / st_all[i].times);
+    fclose(op1);
+
+    numboards --;
+    return 0;
+}
+#endif
+
 int main(void)
 {
     char path[256];
@@ -344,6 +440,10 @@ int main(void)
     }
 
     resolve_boards();
+#ifdef NEWSMTH
+    fillboardall();
+    memcpy(st_all, st, sizeof((MAXBOARD+1)*sizeof(struct binfo)));
+#endif
     fillboard();
 
     /*加上今日数据*/
@@ -361,12 +461,22 @@ int main(void)
             if (r != NULL && *r == 'n')
                 noswitch = 1;
             record_data(bname, sec, noswitch);
+#ifdef NEWSMTH
+            record_data_all(bname, sec, noswitch);
+#endif
         }
     }
     fclose(fp);
 
     /*统计今日数据*/
     gen_usage(buf4,buf1,buf2,buf3);
+
+#ifdef NEWSMTH
+    char buf5[256],buf6[256];
+    sprintf(buf5, "%s/%d/%d/%d_boarduse.visit.all", BONLINE_LOGDIR, t.tm_year+1900, t.tm_mon+1, t.tm_mday);
+    sprintf(buf6, "%s/%d/%d/%d_boarduse.total.all", BONLINE_LOGDIR, t.tm_year+1900, t.tm_mon+1, t.tm_mday);
+    gen_usage_all(buf5, buf6);
+#endif
 
     strcpy(buf4, BBSHOME "/0Announce/bbslists/board2");
     strcpy(buf1, BBSHOME "/0Announce/bbslists/totaltime");
