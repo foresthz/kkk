@@ -691,8 +691,8 @@ PHP_FUNCTION(bbs_is_invalid_id)
 
     if (id_invalid(userid) == 1) RETURN_LONG(1);
     if (strlen(userid) < 2) RETURN_LONG(2);
-    if (bad_user_id(userid)) RETURN_LONG(3);
     if (searchuser(userid)) RETURN_LONG(4);
+    if (bad_user_id(userid)) RETURN_LONG(3);
     RETURN_LONG(0);
 }
 
