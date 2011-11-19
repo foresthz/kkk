@@ -1076,6 +1076,8 @@ PHP_FUNCTION(bbs_add_favboard)
     if (i >0 && ! IsFavBoard(i - 1, getSession(), -1, -1)) {
         addFavBoard(i - 1, getSession(), -1, -1);
         save_favboard(1, getSession());
+    }else{
+        RETURN_LONG(-1);
     }
 }
 
