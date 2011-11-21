@@ -1604,7 +1604,7 @@ PHP_FUNCTION(bbs_post_file_alt)
     if (ac != 8 || zend_parse_parameters(8 TSRMLS_CC, "ssssslll", &fname, &fname_len, &userid, &userid_len, &title, &title_len, &to_board, &to_board_len, &from_board, &from_board_len, &mode, &accessed0, &accessed1) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
-    if (userid == NULL)
+    if (!userid_len)
         user = NULL;
     else {
         if (getuser(userid, &user) == 0) {
