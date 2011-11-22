@@ -13,6 +13,15 @@ int check_last_post_time(struct user_info *uinfo)
     }
 }
 
+PHP_FUNCTION(bbs_reset_last_post_time)
+{
+    if (getCurrentUser() && strcmp(getCurrentUser()->userid, "guest")) {
+        getSession()->currentuinfo->lastpost = time(0) - 6;
+        return 1;
+    }
+    return 0;
+}
+
 PHP_FUNCTION(bbs_getattachtmppath)
 {
     char buf[MAXPATH];

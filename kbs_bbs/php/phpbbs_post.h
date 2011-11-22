@@ -33,7 +33,7 @@ PHP_FUNCTION(bbs_brcaddread);
 PHP_FUNCTION(bbs_brcclear);
 PHP_FUNCTION(bbs2_brcdump);
 PHP_FUNCTION(bbs2_brcsync);
-
+PHP_FUNCTION(bbs_reset_last_post_time);
 
 #define PHP_BBS_POST_EXPORT_FUNCTIONS_STD \
     PHP_FE(bbs_getattachtmppath, NULL) \
@@ -61,6 +61,7 @@ PHP_FUNCTION(bbs2_brcsync);
     PHP_FE(bbs_brcclear, NULL) \
     PHP_FE(bbs2_brcdump, NULL) \
     PHP_FE(bbs2_brcsync, NULL) \
+    PHP_FE(bbs_reset_last_post_time) \
      
 #ifdef NFORUM
 #define PHP_BBS_POST_EXPORT_FUNCTIONS \
