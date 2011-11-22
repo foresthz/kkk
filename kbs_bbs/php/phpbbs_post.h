@@ -61,7 +61,7 @@ PHP_FUNCTION(bbs_reset_last_post_time);
     PHP_FE(bbs_brcclear, NULL) \
     PHP_FE(bbs2_brcdump, NULL) \
     PHP_FE(bbs2_brcsync, NULL) \
-    PHP_FE(bbs_reset_last_post_time) \
+    PHP_FE(bbs_reset_last_post_time, NULL) \
      
 #ifdef NFORUM
 #define PHP_BBS_POST_EXPORT_FUNCTIONS \
