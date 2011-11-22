@@ -7,9 +7,9 @@ int check_last_post_time(struct user_info *uinfo)
     now = time(0);
     uinfo->lastpost = now;
     if (abs(now - lastpost) < 6) {
-        RETURN_LONG(1);
+        return 1;
     } else {
-        RETURN_LONG(0);
+        return 0;
     }
 }
 
@@ -17,9 +17,9 @@ PHP_FUNCTION(bbs_reset_last_post_time)
 {
     if (getCurrentUser() && strcmp(getCurrentUser()->userid, "guest")) {
         getSession()->currentuinfo->lastpost = time(0) - 6;
-        return 1;
+        RETURN_LONG(1);
     }
-    return 0;
+    RETURN_LONG(0);
 }
 
 PHP_FUNCTION(bbs_getattachtmppath)
