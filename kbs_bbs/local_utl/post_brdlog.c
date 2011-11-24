@@ -72,7 +72,7 @@ int fillbcache(void *fptr1,int idx,void* arg)
     if (fptr->flag & BOARD_GROUP)
         return 0;
 
-    sprintf(sql, "SELECT MIN(nowid),MAX(nowid),AVG(users) FROM bonline WHERE bdate=\"%d-%d-%d\" AND bname LIKE '%s' ;", t.tm_year+1900, t.tm_mon+1, t.tm_mday, fptr->filename);
+    sprintf(sql, "SELECT MIN(nowid),MAX(nowid),AVG(users) FROM bonline WHERE bdate=\"%d-%d-%d\" AND bname = '%s' ;", t.tm_year+1900, t.tm_mon+1, t.tm_mday, fptr->filename);
     if (mysql_real_query(&s, sql, strlen(sql)))
         printf("%s\n",mysql_error(&s));
     else {
