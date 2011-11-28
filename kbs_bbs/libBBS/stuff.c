@@ -429,9 +429,9 @@ char *setcachebdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
 {
     char buf2[PATHLEN];
     setbpath(buf2, boardname);
-    sprintf(buf2, "%s/%s", TMPFSROOT, buf2);
-    if (!dashd(buf2)) {
-        mkdir(buf2, 0755);
+    sprintf(buf, "%s/%s", TMPFSROOT, buf2);
+    if (!dashd(buf)) {
+        mkdir(buf, 0755);
     }
     setbdir(mode, buf2, boardname);
     sprintf(buf, "%s/%s", TMPFSROOT, buf2);
