@@ -424,6 +424,20 @@ char* setbdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
     return buf;
 }
 
+/* 用 tmpfs 优化某些索引 */
+char *setcachebdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
+{
+    char buf2[PATHLEN];
+    setbpath(buf2, boardname);
+    sprintf(buf2, "%s/%s", TMPFSROOT, buf2);
+    if (!dashd(buf2)) {
+        mkdir(buf2, 0755);
+    }
+    setbdir(mode, buf2, boardname);
+    sprintf(buf, "%s/%s", TMPFSROOT, buf2);
+    return buf;
+}
+
 char *sethomefile(char *buf, const char *userid, const char *filename)
 {                               /*取某用户文件 路径 */
     if (isalpha(userid[0]))     /* 加入错误判断,提高容错性, alex 1997.1.6 */

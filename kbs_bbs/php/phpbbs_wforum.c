@@ -281,7 +281,7 @@ static int www_generateOriginIndex(const char* board)
     struct BoardStatus* bs;
 
     setbdir(DIR_MODE_NORMAL, olddirect, board);
-    setbdir(DIR_MODE_WEB_THREAD, currdirect, board);
+    setcachebdir(DIR_MODE_WEB_THREAD, currdirect, board);
     if ((fd = open(currdirect, O_WRONLY | O_CREAT | O_TRUNC, 0664)) == -1) {
         bbslog("user", "%s", "recopen err");
         return -1;      /* 创建文件发生错误*/
@@ -453,7 +453,7 @@ PHP_FUNCTION(bbs_searchtitle)
     if (!check_read_perm(getCurrentUser(), bh))
         RETURN_LONG(-2); //您无权阅读本版;
     is_bm = is_BM(bh, getCurrentUser());
-    setbdir(DIR_MODE_WEB_THREAD, dirpath, bh->filename);
+    setcachebdir(DIR_MODE_WEB_THREAD, dirpath, bh->filename);
     if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
         RETURN_LONG(-3);
     ldata.l_type = F_RDLCK;
@@ -630,7 +630,7 @@ PHP_FUNCTION(bbs_getthreads)
 #endif
 
 
-    setbdir(DIR_MODE_WEB_THREAD, dirpath, bp->filename);
+    setcachebdir(DIR_MODE_WEB_THREAD, dirpath, bp->filename);
 
     if ((fd = open(dirpath, O_RDONLY, 0)) == -1) {
         RETURN_LONG(-1);
@@ -825,7 +825,7 @@ PHP_FUNCTION(bbs_getthreadnum)
     if ((bp = getboard(brdnum)) == NULL) {
         RETURN_LONG(-1);
     }
-    setbdir(DIR_MODE_WEB_THREAD, dirpath, bp->filename);
+    setcachebdir(DIR_MODE_WEB_THREAD, dirpath, bp->filename);
     if (!stat(dirpath,&originStat)) {
         setbdir(DIR_MODE_NORMAL,dirpath1,bp->filename);
         if (!stat(dirpath1,&normalStat)) {

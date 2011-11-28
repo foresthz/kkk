@@ -171,6 +171,7 @@ extern "C"
     int dashd(const char *fname);
     int seek_in_file(const char* filename, const char* seekstr);
     char *setbdir(enum BBS_DIR_MODE digestmode, char *buf,const  char *boardname);
+    char *setcachebdir(enum BBS_DIR_MODE digestmode, char *buf,const  char *boardname);
     void makevdir(const char *bname);
     void setvfile(char *buf, const char *bname, const char *filename);
     int my_system(const char *cmdstring);
