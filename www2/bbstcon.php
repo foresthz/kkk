@@ -26,7 +26,7 @@
 	//$isnormalboard = bbs_normalboard($board);
 	$lookupuser = array();
 	$guestUID = bbs_getuser("guest", $lookupuser);
-	$isnormalboard = bbs_checkreadperm($guestUID, $brdnum);
+	$isnormalboard = bbs_checkreadperm($guestUID, $bid);
 
 	//bbs_set_onboard($bid,1);
 
