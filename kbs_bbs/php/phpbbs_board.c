@@ -908,7 +908,9 @@ PHP_FUNCTION(bbs_set_onboard)
     }
 #endif
 
-    if (!strcmp(getCurrentUser()->userid,"guest")) {
+    int guest = !strcmp(getCurrentUser()->userid, "guest");
+
+    if (guest) {
         guestinfo=www_get_guest_entry(getSession()->utmpent);
         oldboard=guestinfo->currentboard;
     } else
@@ -917,17 +919,23 @@ PHP_FUNCTION(bbs_set_onboard)
         board_setcurrentuser(oldboard, -1);
         const struct boardheader *bh = getboard(oldboard);
         if (bh) {
-            time_t freshtime = !strcmp(getCurrentUser()->userid, "guest") ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime;
+            time_t freshtime = guest ? guestinfo->currboard_freshtime : getSession()->currentuinfo->currboard_freshtime;
             if (freshtime && freshtime >= getCurrentUser()->lastlogin) {
                 time_t stay = time(NULL) - freshtime;
-                if (stay > 0)
+                if (stay > 0) {
                     newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", bh->filename, stay, (boardnum == oldboard) ? " n" : "");
+                    if (!guest) {
+                        bmlog(getCurrentUser()->userid, bh->filename, 0, stay);
+                        if (boardnum != oldboard)
+                            bmlog(getCurrentUser()->userid, bh->filename, 1, 1);
+                    }
+                }
             }
         }
     }
 
     board_setcurrentuser(boardnum, count);
-    if (!strcmp(getCurrentUser()->userid,"guest")) {
+    if (guest) {
         if (count>0) {
             guestinfo->currentboard = boardnum;
             guestinfo->currboard_freshtime = time(NULL);
