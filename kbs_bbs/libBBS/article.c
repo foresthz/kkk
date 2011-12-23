@@ -305,7 +305,7 @@ int deny_del_article(const struct boardheader *bh,const struct fileheader *filei
         if (!isowner(session->currentuser,fileinfo))
             return -6;
     /* 文摘区不允许自删, jiangjun 2011-12-05 */
-        if (fileinfo->filename[0]=='G')
+        if (POSTFILE_BASENAME(fileinfo->filename)[0]=='G')
             return -6;
 #ifdef HAPPY_BBS
         if (!strcmp(bh->filename,"newcomers"))
