@@ -1468,11 +1468,73 @@ int chk_friend_book()
 }
 
 #ifdef FB2KENDLINE
+#include "service/calendar.c"
+void lunar_date(struct tm nt, int * lmonth, int * lday, int *leapmonth)
+{
+    int year, month, day, lyear;
+    int i, j, leap=0, temp=0;
+    int offset   = 0;
+    bool isLeap;
+
+    day = nt.tm_mday;
+    month = nt.tm_mon + 1;
+    year = nt.tm_year + 1900;
+    for (j=2;j<=12;j++) offset+=get_day(1900, j);
+    for (i=1901;i<year;i++) offset+=get_day2(i);
+    for (j=1;j<month;j++) offset+=get_day(year, j);
+    offset+=day;
+    for (i=1900; i<2100 && offset>0; i++) { temp=lYearDays(i); offset-=temp; }
+    if (offset<0) { offset+=temp; i--; }
+
+    lyear = i;
+    leap = leapMonth(i);
+    isLeap = false;
+
+    for (i=1; i<13 && offset>0; i++) {
+        if (leap>0 && i==(leap+1) && isLeap==false)
+            { --i; isLeap = true; temp = leapDays(lyear); }
+        else
+            { temp = monthDays(lyear, i); }
+        if (isLeap==true && i==(leap+1)) isLeap = false;
+        offset -= temp;
+    }
+
+    if (offset==0 && leap>0 && i==leap+1) {
+        if (isLeap)
+            { isLeap = false; }
+        else
+            { isLeap = true; --i; }
+    }
+
+    if (offset<0) { offset += temp; --i; }
+
+    *lmonth = i;
+    *lday = offset + 1;
+    if (leapmonth!=NULL)
+        *leapmonth = isLeap;
+}
+
+void get_special_date(struct tm nt, char *l_buf, char *m_buf)
+{       
+    if (l_buf != NULL) {
+        int lmonth, lday, leap;
+        lunar_date(nt, &lmonth, &lday, &leap);
+        sprintf(l_buf, "%c%02d%02d", leap?'R':'L', lmonth, lday);
+    }   
+    if (m_buf != NULL) {
+        int week;
+        week = nt.tm_mday / 7;
+        if (nt.tm_mday % 7)
+            week ++; 
+        sprintf(m_buf, "M%02d%d%d", nt.tm_mon + 1, week, nt.tm_wday);
+    }
+}
+
 void fill_date()
 {
     time_t now,next;
     struct public_data *publicshm = get_publicshm();
-    char   buf[82], buf2[30], index[5], index_buf[5], *t;
+    char   buf[82], buf2[30], index[6], index_buf[5], l_buf[6], m_buf[6], *t;
     struct tm tm;
     FILE   *fp;
 
@@ -1494,6 +1556,7 @@ void fill_date()
         return;
 
     strftime(index_buf, 5, "%m%d", &tm);
+    get_special_date(tm, l_buf, m_buf);
 
     while (fgets(buf, 80, fp)) {
         buf[80]='\0';
@@ -1504,11 +1567,16 @@ void fill_date()
             continue;
 
         buf[35] = '\0';
-        strncpy(index,buf,4);
-        index[4] = '\0';
+        if (buf[0] == 'M' || buf[0] == 'L') {
+            strncpy(index, buf, 5);
+            index[5] = '\0';
+        } else {
+            strncpy(index, buf, 4);
+            index[4] = '\0';
+        }
         strcpy(buf2,buf+5);
 
-        if (!strcmp(index, "0000") || !strcmp(index_buf, index)) {
+        if (!strcmp(index, "0000") || !strcmp(index_buf, index) || !strcmp(l_buf, index) || !strcmp(m_buf, index)) {
             buf2[29]='\0';
             if (strlen(buf2)<29) {
                 int i;
