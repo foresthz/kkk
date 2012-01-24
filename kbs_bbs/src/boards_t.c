@@ -257,6 +257,27 @@ static int fav_add_board(int i, int favmode, int favnow)
     }
 }
 
+/* 显示版面关键字 jiangjun 20120124 */
+#define KEYWORDLEN scr_cols-12
+void show_board_keyword(const char *des)
+{
+    char buf[195];
+    const char *p;
+
+    prints("\033[1;31m版面关键字\033[m: ");
+    p = des;
+    while (1) {
+        strnzhcpy(buf, p, KEYWORDLEN);
+        buf[strlen(buf)]='\0';
+        prints("%s\n", buf);
+        if (strlen(p)<KEYWORDLEN)
+            break;
+        p+=strlen(buf);
+        prints("            "); //对齐...
+    }
+    prints("\n");
+}
+
 int show_boardinfo(const char *bname)
 {
     const struct boardheader *bp;
@@ -283,7 +304,8 @@ int show_boardinfo(const char *bname)
 #if defined(NEWSMTH) && !defined(SECONDSITE)
     prints("\033[1;31m版面web地址\033[m: http://%s.board.newsmth.net/ \n", bp->filename);
 #endif
-    prints("\033[1;33m版面关键字\033[m: %s \n\n", bp->des);
+    show_board_keyword(bp->des);
+    //prints("\033[1;33m版面关键字\033[m: %s \n\n", bp->des);
     prints("\033[1;31m%s\033[m记文章数 \033[1;31m%s\033[m统计十大\n",
            (bp->flag & BOARD_JUNK) ? "不" : "", (bp->flag & BOARD_POSTSTAT) ? "不" : "");
     prints("\033[1;31m%s\033[m可向外转信 \033[1;31m%s\033[m可粘贴附件 \033[1;31m%s\033[m可re文\n\n",
