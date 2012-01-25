@@ -323,7 +323,7 @@ int show_boardinfo(const char *bname)
 
     /* etnlegend, 查询版面限制属性显示 ... */
     if (HAS_PERM(getCurrentUser(),PERM_SYSOP)) {
-        move(15,0);
+        move(17,0);
         prints("\033[1;33m邀请限制\033[m: %s%s\n",
                ((bp->flag&BOARD_CLUB_HIDE)&&(bp->flag&(BOARD_CLUB_READ|BOARD_CLUB_WRITE)))?"隐藏":"",
                ((bp->flag&BOARD_CLUB_READ)&&(bp->flag&BOARD_CLUB_WRITE))?"读写限制俱乐部":
