@@ -3249,6 +3249,81 @@ int process_upload(int nUpload, int maxShow, char *ans, struct ea_attach_info* a
     return nUpload;
 }
 
+#ifdef TITLEKEYWORD
+#define TKSHOW 9
+const char *titkey[] = {"问题", "建议", "讨论", "心得", "闲聊", "请益", "公告", "情报", "修订", "测试", "其他", NULL};
+int select_keyword(char *title)
+{
+    char tmp[STRLEN];
+    int i, ch, count;
+    static int sel=0, start=0;
+
+    for(count=0;titkey[count]!=NULL;count++);
+    move(t_lines-1, 0);
+    clrtoeol();
+    prints("\033[33m选择标签(Q退出):\033[m");
+    while (1) {
+        move(t_lines-1, 16);clrtoeol();
+        for(i=start;i<=start+TKSHOW;i++) {
+            if (titkey[i]==NULL)
+                break;
+            prints(" %s%c.%s\033[m", sel==i?"\033[32m":"", i<TKSHOW?i+'1':i-TKSHOW+'A', titkey[i]);
+        }
+        while (1) {
+            ch=toupper(igetkey());
+            if (ch>='1' && ch<='9') {
+                sel = ch-'1';
+                break;
+            } else if (ch>='A' && ch<'A'+count-TKSHOW) {
+                sel = ch+TKSHOW-'A';
+                break;
+            } else if (ch==KEY_LEFT) {
+                sel--;
+                if (sel<0)
+                    sel = count-1;
+                break;
+            } else if (ch==KEY_RIGHT || ch==KEY_TAB) {
+                sel++;
+                if (sel>=count)
+                    sel = 0;
+                break;
+            } else if (ch==KEY_HOME) {
+                sel = 0;
+                break;
+            } else if (ch==KEY_END) {
+                sel = count-1;
+                break;
+            } else if (ch==KEY_PGDN || ch==' ') {
+                start += TKSHOW;
+                if (start>count-1)
+                    start -= TKSHOW;
+                else
+                    sel = start;
+                break;
+            } else if (ch==KEY_PGUP) {
+                start -= TKSHOW;
+                if (start<0)
+                    start = 0;
+                sel = start;
+                break;
+            } else if (ch=='Q') {
+                return 0;
+            } else if (ch=='\n' || ch=='\r') {
+                strcpy(tmp, title);
+                snprintf(title, ARTICLE_TITLE_LEN, "[%s]%s", titkey[sel], tmp);
+                return 0;
+            }
+        }
+        if (sel < start)
+            start = sel;
+        else if (sel >= start + TKSHOW)
+            start = sel - TKSHOW + 1;
+    }
+    return 0;
+}
+#undef TKSHOW
+#endif
+
 int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_file)
 {                               /*用户 POST 文章 */
     struct fileheader post_file;
@@ -3451,7 +3526,11 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
          * Leeward 98.09.24 add: viewing signature(s) while setting post head
          */
         sprintf(buf2, "%s，\033[1;32mb\033[m回复到信箱，\033[1;32mT\033[m改标题，%s%s%s\033[1;32mEnter\033[m继续: ",
+#ifdef TITLEKEYWORD
+                (replymode) ? "\033[1;32mS/Y/N/R/A\033[m 改引言模式" : "\033[1;32mP\033[m使用模板，\033[1;32mZ\033[m选择标签", (anonyboard) ? "\033[1;32m" ANONY_KEYS "\033[m匿名，" : "",
+#else
                 (replymode) ? "\033[1;32mS/Y/N/R/A\033[m 改引言模式" : "\033[1;32mP\033[m使用模板", (anonyboard) ? "\033[1;32m" ANONY_KEYS "\033[m匿名，" : "",
+#endif
                 (currboard->flag&BOARD_ATTACH)?"\033[1;32mu\033[m传附件, ":"", "\033[1;32mQ\033[m放弃, ");
         gdataret = getdata(t_lines - 1, 0, buf2, ans, 4, DOECHO, NULL, true);
         if (gdataret == -1) return FULLUPDATE;
@@ -3502,6 +3581,10 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
                 clear();
                 ansimore2(buf2, false, 0, 18);
             }
+#ifdef TITLEKEYWORD
+        } else if (!replymode && ooo=='Z') { /* 标题关键字 */
+            select_keyword(buf);
+#endif
         } else if (ooo == 'U') {
             if (currboard->flag&BOARD_ATTACH || HAS_PERM(getCurrentUser(),PERM_SYSOP)) {
                 nUpload = process_upload(nUpload, 10, ans, ai);
