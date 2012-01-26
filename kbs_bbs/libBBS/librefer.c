@@ -42,7 +42,7 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
             } else {
               in_at=false;
               id[id_pos]='\0';
-              if (times<MAX_REFER&&id_pos>1&&(uid=getuser(id, &user))!=0&&check_read_perm(user,board)&&DEFINE(user, DEF_REFER)&&0!=strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN)) {
+              if (times<MAX_REFER&&id_pos>1&&(uid=getuser(id, &user))!=0&&check_read_perm(user,board)&&DEFINE(user, DEF_REFER)&&0!=strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN)&&0==check_mail_perm(getSession()->currentuser, user)) {
                  sent=false;
                  for (i=0;i<MAX_REFER;i++) if (users[i]==uid) {
                      sent=true;
