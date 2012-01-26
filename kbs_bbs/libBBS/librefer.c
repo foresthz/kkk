@@ -47,6 +47,8 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
                  for (i=0;i<MAX_REFER;i++) if (users[i]==uid) {
                      sent=true;
                      break;
+                 } else if (users[i]==0) {
+                     break;
                  }
                  if (!sent) {
                      mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
