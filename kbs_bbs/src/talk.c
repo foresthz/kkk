@@ -1628,6 +1628,25 @@ char *fname;
     return cnt;
 }
 
+void r_friend_sig(int signo)
+{
+    getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent), getSession());
+    signal(SIGVTALRM, r_friend_sig);
+}
+
+int refresh_friend_list(struct user_info *uentp, int *arg, int pos)
+{
+    if (uentp->pid!=(*arg) && uentp->pid!=1)
+        kill(uentp->pid, SIGVTALRM);
+    return COUNT;
+}
+
+int refresh_friend()
+{
+    apply_utmp((APPLY_UTMP_FUNC) refresh_friend_list, 0, uinfo.userid, &uinfo.pid);
+    return 0;
+}
+
 int addtooverride(uident)
 char *uident;
 {
@@ -1691,9 +1710,10 @@ char *uident;
         append_record(genbuf, &fans, sizeof(struct fans));
 #endif
 #endif
-    if (n != -1)
+    if (n != -1) {
+        refresh_friend();
         getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
-    else
+    } else
         bbslog("user","%s","append friendfile error");
     return n;
 }
@@ -1706,6 +1726,7 @@ int deleteoverride(char *uident)
     deleted = search_record(genbuf, &fh, sizeof(fh), (RECORD_FUNC_ARG) cmpfnames, uident);
     if (deleted > 0) {
         if (delete_record(genbuf, sizeof(fh), deleted, NULL, NULL) == 0) {
+            refresh_friend();
             getfriendstr(getCurrentUser(),get_utmpent(getSession()->utmpent),getSession());
 #ifdef NEWSMTH
 #ifndef SECONDSITE

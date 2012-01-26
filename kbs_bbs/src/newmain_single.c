@@ -57,6 +57,7 @@ int count_friends, count_users; /*Add by SmallPig for count users and Friends */
 char *getenv();
 char *Ctime();
 void r_msg_sig(int signo);
+void r_friend_sig(int signo);
 int friend_login_wall();
 int listmode;
 jmp_buf byebye;
@@ -230,6 +231,7 @@ void u_exit()
     signal(SIGTERM, SIG_DFL);
     signal(SIGUSR1, SIG_IGN);
     signal(SIGUSR2, SIG_IGN);
+    signal(SIGVTALRM, SIG_IGN);
     /*--- Added by period  2000-11-19 sure of this ---*/
     if (!started || !uinfo.active)
         return;
@@ -417,6 +419,7 @@ void system_init()
     signal(SIGUSR1, talk_request);
     msg_count=0;
     signal(SIGUSR2, r_msg_sig);
+    signal(SIGVTALRM, r_friend_sig);
 }
 
 #ifdef FREE
@@ -674,6 +677,7 @@ void login_query()
                             signal(SIGQUIT, SIG_IGN);
                             signal(SIGUSR1, SIG_IGN);
                             signal(SIGUSR2, SIG_IGN);
+                            signal(SIGVTALRM, SIG_IGN);
                             execl("bin/MIC", "MIC", user->userid, uid, passbuf, "ScoreClub", (char *)0);
                             _exit(127);
                             break;
