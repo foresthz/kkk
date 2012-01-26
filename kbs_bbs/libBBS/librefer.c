@@ -2,6 +2,10 @@
 
 #ifndef LIB_REFER
 #ifdef ENABLE_REFER
+#ifndef MAX_REFER
+#define MAX_REFER 10
+#endif
+
 int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
     char *ptr,*cur_ptr;
     off_t ptrlen, mmap_ptrlen;    
@@ -11,6 +15,10 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
     int id_pos=0;
     struct userec *user;
     const struct boardheader *board;
+    int users[MAX_REFER];
+    int times=0;
+    int sent=false;
+    int i,uid;
 
     board=getbcache(boardname);
     if (0==board)
@@ -34,9 +42,18 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
             } else {
               in_at=false;
               id[id_pos]='\0';
-              if (id_pos>1&&getuser(id, &user)!=0&&check_read_perm(user,board)) {
-                 mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
-                 newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
+              if (times<MAX_REFER&&id_pos>1&&(uid=getuser(id, &user))!=0&&check_read_perm(user,board)&&DEFINE(user, DEF_REFER)&&0!=strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN)) {
+                 sent=false;
+                 for (i=0;i<MAX_REFER;i++) if (users[i]==uid) {
+                     sent=true;
+                     break;
+                 }
+                 if (!sent) {
+                     mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
+                     newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
+
+                     users[times++]=uid;
+                 }
               }
             }
         } else if (!isalnum(last_c)&&c=='@') {
