@@ -799,6 +799,9 @@ while(0)
     char *encode_xml(char *buf, const char *str, size_t buflen);
     char *string_copy(char *buf, const char *str, size_t * buflen);
 
+#ifdef ENABLED_REFER
+    int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile);
+#endif /* ENABLE_REFER */
 
 #ifdef SMS_SUPPORT
     int smsid2uid(char* smsid);
