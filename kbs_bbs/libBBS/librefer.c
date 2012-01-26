@@ -10,6 +10,13 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
     char id[IDLEN+1];
     int id_pos=0;
     struct userec *user;
+    const struct boardheader *board;
+
+    board=getbcache(boardname);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;
 
     if (0==safe_mmapfile(tmpfile, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &mmap_ptrlen, NULL))
         return -1;
@@ -27,7 +34,7 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
             } else {
               in_at=false;
               id[id_pos]='\0';
-              if (id_pos>1&&getuser(id, &user)!=0) {
+              if (id_pos>1&&getuser(id, &user)!=0&&check_read_perm(user,board)) {
                  mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
                  newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
               }
