@@ -801,6 +801,7 @@ while(0)
 
 #ifdef ENABLE_REFER
     int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile);
+    int send_refer_msg_to(struct userec *user, struct boardheader *board, struct fileheader *fh, char *tmpfile);
 #endif /* ENABLE_REFER */
 
 #ifdef SMS_SUPPORT

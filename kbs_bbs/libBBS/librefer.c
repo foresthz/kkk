@@ -2,8 +2,25 @@
 
 #ifndef LIB_REFER
 #ifdef ENABLE_REFER
+
 #ifndef MAX_REFER
-#define MAX_REFER 10
+#define MAX_REFER 32
+#endif
+
+#ifndef DEF_REFER
+#define DEF_REFER 040000000004LL
+#endif
+
+#ifndef DEF_REPLY
+#define DEF_REPLY 040000000010LL
+#endif
+
+#ifndef REFER_DIR
+#define REFER_DIR ".REFER"
+#endif
+
+#ifndef REPLY_DIR
+#define REPLY_DIR ".REPLY"
 #endif
 
 int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
@@ -35,14 +52,14 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
         c=*cur_ptr;
 
         if (in_at) {
-            if (id_pos>=IDLEN) {
+            if (id_pos>IDLEN) {
               in_at=false;
             } else if (isalpha(c)||(isdigit(c)&&id_pos>0)) {
                 id[id_pos++]=c;
             } else {
               in_at=false;
               id[id_pos]='\0';
-              if (times<MAX_REFER&&id_pos>1&&(uid=getuser(id, &user))!=0&&check_read_perm(user,board)&&DEFINE(user, DEF_REFER)&&0!=strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN)&&0==check_mail_perm(getSession()->currentuser, user)) {
+              if (times<MAX_REFER&&id_pos>1&&(uid=getuser(id, &user))!=0) {
                  sent=false;
                  for (i=0;i<MAX_REFER;i++) if (users[i]==uid) {
                      sent=true;
@@ -51,10 +68,8 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
                      break;
                  }
                  if (!sent) {
-                     mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
-                     newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
-
-                     users[times++]=uid;
+                    if (send_refer_msg_to(user, board, fh, tmpfile)>=0)
+                        users[times++]=uid;
                  }
               }
             }
@@ -69,6 +84,22 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
         cur_ptr++;
     }
     end_mmapfile(ptr, mmap_ptrlen, -1);
+
+    return 0;
+}
+
+int send_refer_msg_to(struct userec *user, struct boardheader *board, struct fileheader *fh, char *tmpfile) {
+    if (!check_read_perm(user,board))
+        return -1;
+    if (!DEFINE(user, DEF_REFER))
+        return -2;
+    if (0!=strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
+        return -3;
+    if (0!=check_mail_perm(getSession()->currentuser, user))
+        return -4;
+        
+    mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
+    newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
 
     return 0;
 }
