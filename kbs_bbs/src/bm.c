@@ -2288,3 +2288,238 @@ int b_reason_edit() {
         save_deny_reason(currboard->filename, reason, count);
     return SHOW_REFRESH;
 }
+
+#ifdef TITLEKEYWORD
+int get_title_key(const char *board, char titlekey[][STRLEN], int max);
+int save_title_key(const char *board, char titlekey[][STRLEN], int count);
+
+/*
+ * 修改标题关键字
+ */
+int modify_title_key(char key[][STRLEN], int *count, int pos, int type, POINT pts)
+{
+    char buf[STRLEN];
+    int i;
+    
+    if (type==0) { /* 添加 */
+        getdata(pts.y, pts.x, "请输入关键字: ", buf, 7, DOECHO, NULL, true);
+        remove_blank_ctrlchar(buf, buf, true, true, true);
+        if (buf[0]=='\0')
+            return 0;
+        for (i=0;i<*count;i++) {
+            if (strcasecmp(key[i], buf)==0) {
+                char ans[2];
+                getdata(pts.y, pts.x, "输入关键字已经存在", ans, 1, DOECHO, NULL, true);
+                return 0;
+            }   
+        }   
+        strcpy(key[pos-1], buf);
+        (*count)++;
+        return pos+1;
+    } else if (type==1) { /* 修改 */
+        strcpy(buf, key[pos-1]);
+        getdata(pts.y+1, pts.x, "请输入关键字: ", buf, 7, DOECHO, NULL, false);
+        remove_blank_ctrlchar(buf, buf, true, true, true);
+        if (buf[0]=='\0')
+            return 0;
+        for (i=0;i<*count;i++) {
+            if (strcasecmp(key[i], buf)==0 && i!=pos-1) {
+                char ans[2];
+                getdata(pts.y+1, pts.x, "输入关键字已经存在", ans, 1, DOECHO, NULL, true);
+                return 0;
+            }
+        }
+        strcpy(key[pos-1], buf);
+        return pos;
+    } else if (type==2) { /* 移动 */
+        int newpos;
+        getdata(pts.y+1, pts.x, "请输入新的位置: ", buf, 3, DOECHO, NULL, true);
+        newpos = atoi(buf);
+        if (newpos<=0 || newpos>(*count)) {
+            getdata(pts.y+1, pts.x, "输入错误! ", buf, 1, DOECHO, NULL, true);
+            return 0;
+        } else if (newpos==pos)
+            return 0;
+        strcpy(buf, key[pos-1]);
+        if (newpos>pos) {
+            for (i=pos;i<newpos;i++)
+                strcpy(key[i-1], key[i]);
+        } else {
+            for (i=pos-1;i>=newpos;i--)
+                strcpy(key[i], key[i-1]);
+        }
+        strcpy(key[newpos-1], buf);
+        return newpos;
+    } else if (type==3) { /* 删除 */
+        move(pts.y+1, pts.x);
+        if (!askyn("确认删除", false))
+            return 0;
+        for (i=pos;i<(*count);i++) {
+            strcpy(key[i-1], key[i]);
+        }
+        (*count)--;
+        return pos;
+    }
+    return 0;
+}
+
+static int edit_titkey_key(struct _select_def *conf,int key)
+{
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    int i;
+    if (key==KEY_ESC) {
+        return SHOW_QUIT;
+    }
+    for (i=0; i<conf->item_count; i++)
+        if (toupper(key)==toupper(arg->items[i].hotkey)) {
+            conf->new_pos=i+1;
+            return SHOW_SELCHANGE;
+        }
+    return SHOW_CONTINUE;
+}
+static int titkey_show(struct _select_def *conf,int i)
+{   
+    struct _simple_select_arg *arg=(struct _simple_select_arg*)conf->arg;
+    outs((char*)((arg->items[i-1]).data));
+    return SHOW_CONTINUE;
+}
+static int edit_titkey_select(struct _select_def *conf)
+{
+    return SHOW_SELECT;
+}
+int edit_title_key(char key[][STRLEN], int count, int max)
+{
+    struct _select_item sel[max+2];
+    struct _select_def conf;
+    struct _simple_select_arg arg;
+    POINT pts[max+2];
+    char menustr[max+2][STRLEN];
+    int i, ret, ch, pos, item_count;
+
+    pos = 1;
+    while(1) {
+        /* 当count==max时，不出现“添加”选项 */
+        item_count = (count<max)? count+2:count+1;
+        for (i=0;i<item_count;i++) {
+            sel[i].x = (i<10) ? 2 : 40;
+            sel[i].y = (i<10) ? 3 + i : i - 7;
+            sel[i].hotkey = (i<9) ? '1' + i : 'A' + i - 9;
+            sel[i].type = SIT_SELECT;
+            sel[i].data = menustr[i];
+            if (i==item_count-1) {
+                sprintf(menustr[i], "\033[31m[%c] %s\033[m", sel[i].hotkey, "保存并退出");
+            } else if (i==item_count-2 && count<max)
+                sprintf(menustr[i], "\033[33m[%c] %s\033[m", sel[i].hotkey, "添加标题关键字");
+            else
+                sprintf(menustr[i], "[%c] %s", sel[i].hotkey, key[i]);
+            pts[i].x = sel[i].x;
+            pts[i].y = sel[i].y;
+        }
+        sel[i].x = -1;
+        sel[i].y = -1;
+        sel[i].hotkey = -1;
+        sel[i].type = 0;
+        sel[i].data = NULL;
+
+        arg.items = sel;
+        arg.flag = SIF_SINGLE;
+        bzero(&conf, sizeof(struct _select_def));
+        conf.item_count = item_count;
+        conf.item_per_page = MAXBOARDTITLEKEY + 2;
+        conf.flag = LF_LOOP | LF_MULTIPAGE;
+        conf.prompt = "◆";
+        conf.item_pos = pts;
+        conf.arg = &arg;
+        conf.pos = pos;
+        conf.show_data = titkey_show;
+        conf.key_command = edit_titkey_key;
+        conf.on_select = edit_titkey_select;
+
+        move(0, 0);
+        clrtoeol();
+        prints("\033[32m修改标题关键字\033[m");
+        while (1) {
+            move(3, 0);
+            clrtobot();
+            conf.pos = pos;
+            conf.flag=LF_LOOP;
+            ret = list_select_loop(&conf);
+            pos = conf.pos;
+            if (ret==SHOW_SELECT) { /* 添加、修改或退出 */
+                if (pos==conf.item_count) { /* 保存并退出 */
+                    move(arg.items[conf.item_count-1].y, arg.items[conf.item_count-1].x);
+                    prints("\033[31m确定保存并退出?[Y] \033[m");
+                    ch=igetkey();
+                    if(toupper(ch)=='N')
+                        continue;
+                    return count;
+                } else if (pos==conf.item_count-1 && count<max) { /* 添加 */
+                    ret=modify_title_key(key, &count, pos, 0, pts[pos-1]);
+                    if (ret==0)
+                        continue;
+                    pos=ret;
+                    break;
+                } else { /* 修改移动及删除 */
+                    i=1;
+                    ret=0;
+                    while (1) {
+                        move(arg.items[pos-1].y, arg.items[pos-1].x);
+                        prints("%s[E.修改]%s[M.移动]%s[D.删除] \033[33m%s\033[m",
+                                i==1?"\033[32m":"\033[m", i==2?"\033[32m":"\033[m", i==3?"\033[32m":"\033[m", key[pos-1]);
+                        ch=igetkey();
+                        if (ch==KEY_RIGHT || ch==KEY_TAB) {
+                            i++;
+                            if (i>3)
+                                i=1;
+                        } else if (ch==KEY_LEFT) {
+                            i--;
+                            if (i<1)
+                                i=3;
+                        } else if (toupper(ch)=='E') {
+                            i=1;
+                        } else if (toupper(ch)=='M') {
+                            i=2;
+                        } else if (toupper(ch)=='D') {
+                            i=3;
+                        } else if (ch=='\n'||ch=='\r') {
+                            ret=modify_title_key(key, &count, pos, i, pts[pos-1]);
+                            break;
+                        } else if (ch==KEY_ESC) {
+                            break;
+                        }
+                    }
+                    if (ret==0)
+                        continue;
+                    pos=ret;
+                    break;
+                }
+            } else {/* ESC退出 */
+                move(arg.items[conf.item_count-1].y, arg.items[conf.item_count-1].x);
+                prints("\033[31m放弃保存并退出?[N] \033[m");
+                ch=igetkey();
+                if(toupper(ch)!='Y')
+                    continue;
+                return -1;
+            }
+        }
+    }
+}
+
+int b_titkey_edit() {
+    char key[MAXBOARDTITLEKEY][STRLEN];
+    int i, count;
+
+    if (!chk_currBM(currBM, getCurrentUser())) {
+        return 0;
+    }
+    clear();
+    
+    for (i=0;i<MAXBOARDTITLEKEY;i++)
+        key[i][0]='\0';
+    count = get_title_key(currboard->filename, key, MAXBOARDTITLEKEY);
+    count = edit_title_key(key, count, MAXBOARDTITLEKEY);
+    if (count!=-1)
+        save_title_key(currboard->filename, key, count);
+    return SHOW_REFRESH;
+}
+#endif

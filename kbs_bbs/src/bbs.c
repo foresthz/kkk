@@ -3250,32 +3250,42 @@ int process_upload(int nUpload, int maxShow, char *ans, struct ea_attach_info* a
 }
 
 #ifdef TITLEKEYWORD
-#define TKSHOW 9
-const char *titkey[] = {"问题", "建议", "讨论", "心得", "闲聊", "请益", "公告", "情报", "修订", "测试", "其他", NULL};
+#define TKSHOW 7
+const char *systitkey[] = {"问题", "建议", "讨论", "心得", "闲聊", "请益", "公告", "情报", "修订", NULL};
+int get_title_key(const char *board, char titkey[][STRLEN], int max);
+int b_titkey_edit();
 int select_keyword(char *title)
 {
     char tmp[STRLEN];
+    char titkey[MAXTITLEKEY][STRLEN];
     int i, ch, count;
     static int sel=0, start=0;
 
-    for(count=0;titkey[count]!=NULL;count++);
+    memset(titkey, 0 ,MAXTITLEKEY * STRLEN * sizeof(char));
+    count = get_title_key(currboard->filename, titkey, MAXTITLEKEY);
+    for (i=0;i<MAXTITLEKEY && systitkey[i]!=NULL;i++) {
+        strcpy(titkey[count], systitkey[i]);
+        count++;
+    }
     move(t_lines-1, 0);
     clrtoeol();
     prints("\033[33m选择标签(Q退出):\033[m");
     while (1) {
+        move(5, 0);
+        prints("count: %2d, start: %2d, end: %2d, select: %2d", count, start, start+TKSHOW, sel);
         move(t_lines-1, 16);clrtoeol();
-        for(i=start;i<=start+TKSHOW;i++) {
+        for(i=start;i<start+TKSHOW;i++) {
             if (titkey[i]==NULL)
                 break;
-            prints(" %s%c.%s\033[m", sel==i?"\033[32m":"", i<TKSHOW?i+'1':i-TKSHOW+'A', titkey[i]);
+            prints(" %s%c.%-6s\033[m", sel==i?"\033[32m":"", i<9?i+'1':i-9+'A', titkey[i]);
         }
         while (1) {
             ch=toupper(igetkey());
             if (ch>='1' && ch<='9') {
                 sel = ch-'1';
                 break;
-            } else if (ch>='A' && ch<'A'+count-TKSHOW) {
-                sel = ch+TKSHOW-'A';
+            } else if (ch>='A' && ch<'A'+count-9) {
+                sel = ch+9-'A';
                 break;
             } else if (ch==KEY_LEFT) {
                 sel--;
@@ -4793,6 +4803,11 @@ int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* e
     else if (ans[0]=='5') {
         return b_reason_edit();
     }
+#ifdef TITLEKEYWORD
+    else if (ans[0]=='6') {
+        return b_titkey_edit();
+    }
+#endif
 
     return FULLUPDATE;
 }

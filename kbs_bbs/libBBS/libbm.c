@@ -296,3 +296,49 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
 
     return 0;
 }
+
+#ifdef TITLEKEYWORD
+/*
+ * 获得标题关键字列表，titlekey在调用时定义
+ * board为空时，获得系统标题关键字
+ */
+int get_title_key(const char *board, char titlekey[][STRLEN], int max)
+{
+    char filename[STRLEN];
+    char *ptr, *key[MAXDENYREASON];
+    int count, i;
+    
+    max = (max>MAXBOARDTITLEKEY) ? MAXBOARDTITLEKEY : max;
+    if (board)
+        setvfile(filename, board, "title_keyword");
+    else
+        sprintf(filename, "etc/title_keyword");
+    count = get_textfile_string(filename, &ptr, key, max);
+    if (count > 0) {
+        for (i=0;i<count;i++) {
+            remove_blank_ctrlchar(key[i], titlekey[i], true, true, true);
+            titlekey[i][6] = '\0';
+        }   
+        free(ptr);
+    }   
+    return count;
+}   
+
+int save_title_key(const char *board, char titlekey[][STRLEN], int count)
+{
+    char filename[STRLEN];
+    int i;
+    FILE *fn;
+    
+    if (board)
+        setvfile(filename, board, "title_keyword");
+    else
+        sprintf(filename, "etc/title_keyword");
+    if ((fn=fopen(filename, "w"))!=NULL) {
+        for (i=0;i<count;i++)
+            fprintf(fn, "%s\n", titlekey[i]);
+        fclose(fn);
+    }
+    return 0;
+}
+#endif
