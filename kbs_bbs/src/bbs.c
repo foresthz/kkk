@@ -3267,13 +3267,16 @@ int select_keyword(char *title)
         strcpy(titkey[count], systitkey[i]);
         count++;
     }
+    if (sel>=count) { /* 上次选择大于本次总和 */
+        sel = start = 0;
+    }
     move(t_lines-1, 0);
     clrtoeol();
     prints("\033[33m选择标签(Q退出):\033[m");
     while (1) {
         move(t_lines-1, 16);clrtoeol();
         for(i=start;i<start+TKSHOW;i++) {
-            if (titkey[i]==NULL)
+            if (titkey[i][0]=='\0')
                 break;
             prints(" %s%c.%-6s\033[m", sel==i?"\033[32m":"", i<9?i+'1':i-9+'A', titkey[i]);
         }
