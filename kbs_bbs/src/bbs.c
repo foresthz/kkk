@@ -3251,7 +3251,6 @@ int process_upload(int nUpload, int maxShow, char *ans, struct ea_attach_info* a
 
 #ifdef TITLEKEYWORD
 #define TKSHOW 7
-const char *systitkey[] = {"问题", "建议", "讨论", "心得", "闲聊", "请益", "公告", "情报", "修订", NULL};
 int get_title_key(const char *board, char titkey[][STRLEN], int max);
 int b_titkey_edit();
 int select_keyword(char *title)
@@ -3263,10 +3262,13 @@ int select_keyword(char *title)
 
     memset(titkey, 0 ,MAXTITLEKEY * STRLEN * sizeof(char));
     count = get_title_key(currboard->filename, titkey, MAXTITLEKEY);
+    count+= get_title_key(NULL, &(titkey[count]), MAXTITLEKEY-count);
+    /*
     for (i=0;i<MAXTITLEKEY && systitkey[i]!=NULL;i++) {
         strcpy(titkey[count], systitkey[i]);
         count++;
     }
+    */
     if (sel>=count) { /* 上次选择大于本次总和 */
         sel = start = 0;
     }
