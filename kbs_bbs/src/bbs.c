@@ -3271,8 +3271,6 @@ int select_keyword(char *title)
     clrtoeol();
     prints("\033[33mÑ¡Ôñ±êÇ©(QÍË³ö):\033[m");
     while (1) {
-        move(5, 0);
-        prints("count: %2d, start: %2d, end: %2d, select: %2d", count, start, start+TKSHOW, sel);
         move(t_lines-1, 16);clrtoeol();
         for(i=start;i<start+TKSHOW;i++) {
             if (titkey[i]==NULL)
