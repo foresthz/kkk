@@ -479,6 +479,7 @@ enum BBS_DIR_MODE {
     DIR_MODE_FRIEND,                /* 好友名单 */
     DIR_MODE_TOP10,                 /* 十大模式 */
     DIR_MODE_SELF,                  /* 自删模式, .SELF.userid */
+    DIR_MODE_REFER,                 /* @/回文提醒模式, added by windinsn, Jan 28,2012 */
     DIR_MODE_UNKNOWN                /* 未知模式 */
 };
 
@@ -651,6 +652,11 @@ extern struct sms_shm_head *head;
 #include "vars.h"
 #include "defines_t.h"
 #endif /* BBSMAIN */
+
+#ifdef ENABLE_REFER
+#define REFER_DIR ".REFER"
+#define REPLY_DIR ".REPLY"
+#endif /* ENABLE_REFER */
 
 #include "func.h"
 

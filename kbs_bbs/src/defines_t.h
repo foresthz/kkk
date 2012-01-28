@@ -123,7 +123,7 @@ int board_query();
 int set_board_rule(struct boardheader *bh, int flag);
 int b_rules_edit();
 #endif
-
+int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 int i_read_mail();
 int add_attach(char* file1, char* file2, char* filename);
 int zsend_attach(int ent, struct fileheader *fileinfo, char *direct);
@@ -171,6 +171,14 @@ int invalidaddr(char *addr);
 int doforward(struct _select_def* conf, char *direct, struct fileheader *fh);
 int set_mailbox_prop();
 int set_mailgroup_list();
+#ifdef ENABLE_REFER
+int chkrefer();
+int chkrefer_dir(char *filename);
+int refer_at(void);
+int refer_reply(void);
+int refer_list(char filename[STRLEN]);
+int refer_search(struct _select_def* conf, char *query, bool up, int mode);
+#endif
 
 /* maintain.c */
 int check_systempasswd();

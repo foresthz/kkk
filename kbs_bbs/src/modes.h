@@ -104,4 +104,5 @@
 #define QUERYBOARD 76
 #define BLOG 77
 #define POSTCROSS 78
+#define REFER 79
 

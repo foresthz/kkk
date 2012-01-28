@@ -339,7 +339,6 @@ struct refer {
     char board[IDLEN+6];
     char user[IDLEN+1];
     char title[ARTICLE_TITLE_LEN];
-    int bid;
     unsigned int id, groupid, reid, flag;
     time_t time;
 };

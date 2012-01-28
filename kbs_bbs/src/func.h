@@ -800,8 +800,11 @@ while(0)
     char *string_copy(char *buf, const char *str, size_t * buflen);
 
 #ifdef ENABLE_REFER
-    int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile);
-    int send_refer_msg_to(struct userec *user, struct boardheader *board, struct fileheader *fh, char *tmpfile);
+    int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile);
+    int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
+    int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh);
+    int refer_remove(char *dir, int ent, struct refer *refer);
+    int refer_cmp(struct refer *r1, struct refer *r2);
 #endif /* ENABLE_REFER */
 
 #ifdef SMS_SUPPORT
