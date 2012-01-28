@@ -3918,7 +3918,6 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
         int ent=conf->pos;
         refer->flag |= FILE_READ;
         substitute_record(arg->direct, refer, sizeof(*refer), ent, (RECORD_FUNC_ARG) refer_cmp, refer);
-        setmailcheck(getCurrentUser()->userid); 
 
         if (ent>=arg->filecount)
             setmailcheck(getCurrentUser()->userid); 
