@@ -1477,8 +1477,18 @@ char *modestr;
              * Haohmaru.99.4.4.对收信也加限制
              */
             showtitle(modestr, "[您的信箱超过容量,不能再收信!]");
-        else if (chkmailflag)
-            showtitle(modestr, "[您有信件]");
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==1)
+         showtitle(modestr, "[您有信件]");
+     else if (chkmailflag==3)
+         showtitle(modestr, "[您有@提醒]");
+     else if (chkmailflag==4)
+         showtitle(modestr, "[您有回复提醒]");
+#else
+    else if (chkmailflag)       /* 信件检查 */
+        showtitle(modestr, "[您有信件]");
+#endif /* ENABLE_REFER */
         else
             showtitle(modestr, BBS_FULL_NAME);
         update_endline();

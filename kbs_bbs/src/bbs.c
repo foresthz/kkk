@@ -67,7 +67,6 @@ extern time_t login_start_time;
 
 extern struct screenline *big_picture;
 extern struct userec *user_data;
-int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 extern int b_vote(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 extern int b_vote_maintain(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 extern int b_jury_edit(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
@@ -925,8 +924,18 @@ void readtitle(struct _select_def* conf)
     chkmailflag = chkmail();
     if (chkmailflag == 2)       /*Haohmaru.99.4.4.对收信也加限制 */
         strcpy(title, "[您的信箱超过容量,不能再收信!]");
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==1)
+         strcpy(title, "[您有信件]");
+     else if (chkmailflag==3)
+         strcpy(title, "[您有@提醒]");
+     else if (chkmailflag==4)
+         strcpy(title, "[您有回复提醒]");
+#else
     else if (chkmailflag)       /* 信件检查 */
         strcpy(title, "[您有信件]");
+#endif /* ENABLE_REFER */
     else if ((bp->flag & BOARD_VOTEFLAG))       /* 投票检查 */
         sprintf(title, "投票中，按 V 进入投票");
     else
@@ -3385,7 +3394,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 #endif
         modify_user_mode(POSTING);
     setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
-    if (!((cmdmode==DIR_MODE_NORMAL)||(cmdmode==DIR_MODE_THREAD)||(cmdmode==DIR_MODE_MARK)||(cmdmode==DIR_MODE_TOP10))) {
+    if (!((cmdmode==DIR_MODE_NORMAL)||(cmdmode==DIR_MODE_THREAD)||(cmdmode==DIR_MODE_MARK)||(cmdmode==DIR_MODE_TOP10)||(cmdmode==DIR_MODE_REFER))) {
         move(3,0);
         clrtobot();
         if ((cmdmode==DIR_MODE_DIGEST)
@@ -6336,8 +6345,18 @@ static void read_top_title(struct _select_def *conf)
     chkmailflag=chkmail();
     if (chkmailflag==2)
         sprintf(title,"%s","[您的信箱超过容量,不能再收信!]");
-    else if (chkmailflag)
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==1)
+         sprintf(title, "%s", "[您有信件]");
+     else if (chkmailflag==3)
+         sprintf(title, "%s", "[您有@提醒]");
+     else if (chkmailflag==4)
+         sprintf(title, "%s", "[您有回复提醒]");
+#else
+    else if (chkmailflag)       /* 信件检查 */
         sprintf(title,"%s","[您有信件]");
+#endif /* ENABLE_REFER */
     else
         sprintf(title,"%s",&(currboard->title[13]));
     showtitle(header,title);

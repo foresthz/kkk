@@ -351,10 +351,25 @@ MENU *pm;
     if (chkmailflag == 2) {     /*Haohmaru.99.4.4.对收信也加限制 */
         prints("\033[5m");
         sprintf(genbuf, "[您的信箱超过容量,不能再收信!]");
+#ifdef ENABLE_REFER
+    } else if (chkmailflag==1) {
+#else
     } else if (chkmailflag) {
+#endif
         prints("\033[5m");
         sprintf(genbuf, "[您有信件]");
-    } else
+    }
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==3) {
+         prints("\033[5m");
+         sprintf(genbuf, "[您有@提醒]");
+     } else if (chkmailflag==4) {
+         prints("\033[5m");
+         sprintf(genbuf, "[您有回复提醒]");
+     }
+#endif /* ENABLE_REFER */ 
+    else
         strncpy(genbuf, pm->mtitle, MAXPATH);
     if (strlen(genbuf) <= 80)
         sprintf(buf, "%*s", (int)((80 - strlen(genbuf)) / 2), "");

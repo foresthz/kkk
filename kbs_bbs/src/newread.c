@@ -744,7 +744,13 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle)(struct _
             if (genbuf[0] == 'a' || genbuf[0] == 'A')
                 friend_add();
         }
-
+#ifdef ENABLE_REFER
+        else if (cmdmode == DIR_MODE_REFER) {
+            prints("没有任何通知...");
+            pressreturn();
+            clear();
+        }
+#endif
         else {
             getdata(t_lines - 1, 0, "新版刚成立 (P)发表文章 (Q)离开？[Q] ", genbuf, 4, DOECHO, NULL, true);
             if (genbuf[0] == 'p' || genbuf[0] == 'P')

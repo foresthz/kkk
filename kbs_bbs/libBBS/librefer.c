@@ -15,15 +15,7 @@
 #define DEF_REPLY 040000000010LL
 #endif
 
-#ifndef REFER_DIR
-#define REFER_DIR ".REFER"
-#endif
-
-#ifndef REPLY_DIR
-#define REPLY_DIR ".REPLY"
-#endif
-
-int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
+int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile) {
     char *ptr,*cur_ptr;
     off_t ptrlen, mmap_ptrlen;    
     char c='\0', last_c;
@@ -85,22 +77,105 @@ int send_refer_msg(char *boardname, struct fileheader *fh, char *tmpfile) {
     }
     end_mmapfile(ptr, mmap_ptrlen, -1);
 
+    if (fh->reid!=fh->id&&re&&getuser(re->owner,&user)!=0) {
+        send_refer_reply_to(user, board, fh);
+    }
+
     return 0;
 }
-
-int send_refer_msg_to(struct userec *user, struct boardheader *board, struct fileheader *fh, char *tmpfile) {
+int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh) {
+    if (0==strncasecmp(user->userid, "guest", 5)||0==strncasecmp(user->userid, "sysop", 5))
+        return -1;
+    if (!DEFINE(user, DEF_REPLY))
+        return -2;
+    if (0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
+        return -3;
     if (!check_read_perm(user,board))
+        return -4;
+    if (0!=check_mail_perm(getSession()->currentuser, user))
+        return -5;
+
+    char buf[255];
+    struct refer refer;
+
+    memset(&refer, 0, sizeof(refer));
+
+    strncpy(refer.board, board->filename, IDLEN+6);
+    strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+    strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);
+    refer.id=fh->id;
+    refer.groupid=fh->groupid;
+    refer.reid=fh->reid;
+    refer.flag=0;
+    refer.time=time(NULL);
+
+    sethomefile(buf, user->userid, REPLY_DIR);
+    if (-1==append_record(buf, &refer, sizeof(refer)))
+        return -6;
+
+    setmailcheck(user->userid);
+    newbbslog(BBSLOG_USER, "sent reply refer '%s' to '%s'", fh->title, user->userid);
+
+    return 0;
+}
+int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
+    if (0==strncasecmp(user->userid, "guest", 5))
         return -1;
     if (!DEFINE(user, DEF_REFER))
         return -2;
-    if (0!=strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
+    if (0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
         return -3;
-    if (0!=check_mail_perm(getSession()->currentuser, user))
+    if (!check_read_perm(user,board))
         return -4;
-        
-    mail_file(fh->owner, tmpfile, user->userid, fh->title, 0, fh); 
+    if (0!=check_mail_perm(getSession()->currentuser, user))
+        return -5;
+
+    if(0==strncasecmp(user->userid, "sysop", 5)) {
+        mail_file(getSession()->currentuser->userid, tmpfile, user->userid, fh->title, 0, fh);
+        newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
+        return 0;
+    }
+
+    char buf[255];  
+    struct refer refer;
+
+    memset(&refer, 0, sizeof(refer));
+
+    strncpy(refer.board, board->filename, IDLEN+6);
+    strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+    strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);  
+    refer.id=fh->id;
+    refer.groupid=fh->groupid;
+    refer.reid=fh->reid;
+    refer.flag=0;
+    refer.time=time(NULL);
+
+    sethomefile(buf, user->userid, REFER_DIR);
+    if (-1==append_record(buf, &refer, sizeof(refer)))
+        return -6;
+
+    setmailcheck(user->userid);    
     newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
 
+    return 0;
+}
+int refer_remove(char *dir, int ent, struct refer *refer) {
+    char buf[PATHLEN];
+    char *t;
+
+    strcpy(buf, dir);
+    if ((t=strrchr(buf, '/'))!=NULL)
+        *t='\0';
+    if (!delete_record(dir, sizeof(*refer), ent, (RECORD_FUNC_ARG)refer_cmp, refer)) {
+        setmailcheck(getCurrentUser()->userid);
+        return 0;
+    }
+
+    return 1; 
+}
+int refer_cmp(struct refer *r1, struct refer *r2) {
+    if (strncasecmp(r1->board, r2->board, IDLEN+6)==0&&r1->id==r2->id)
+        return 1;
     return 0;
 }
 #endif

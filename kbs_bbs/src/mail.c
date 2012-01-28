@@ -74,7 +74,7 @@ int chkmail()
      * 要做大量无用的系统调用. 在这个改动中也把fstat改为stat了，节省一个open&close
      */
     if (stat(curmaildir, &st) < 0)
-        return (ismail = 0);
+        return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
     /*
     if (lasttime >= st.st_mtime)
         return ismail;
@@ -84,13 +84,13 @@ int chkmail()
         return (ismail = 2);
     offset = (int)((char *) &(fh.accessed[0]) - (char *) &(fh));
     if ((fd = open(curmaildir, O_RDONLY)) < 0)
-        return (ismail = 0);
+        return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
     lasttime = st.st_mtime;
     numfiles = st.st_size;
     numfiles = numfiles / sizeof(fh);
     if (numfiles <= 0) {
         close(fd);
-        return (ismail = 0);
+        return (ismail = chkrefer()); // modified by widninsn, Jan 28, 2012, 增加@和回复提醒
     }
     /* 只判断最后一篇 */
     lseek(fd, (st.st_size - (sizeof(fh) - offset)), SEEK_SET);
@@ -100,8 +100,54 @@ int chkmail()
         return (ismail = 1);
     }
     close(fd);
-    return (ismail = 0);
+    return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
 }
+
+#ifdef ENABLE_REFER
+/*
+ * added by windinsn, Jan 28, 2012
+ * 检查用户是否有新的 @提醒 或 回复提醒
+ *
+ * 0: 无
+ * 3: 有新的 @
+ * 4: 有新的回复
+ */
+int chkrefer() {
+    if (chkrefer_dir(REFER_DIR)>0)
+        return 3;
+    if (chkrefer_dir(REPLY_DIR)>0)
+        return 4;
+
+    return 0; 
+}
+int chkrefer_dir(char *filename) {
+    char dir[STRLEN];
+    struct stat st;
+    int offset, fd, num;
+    struct refer refer;
+    unsigned char ch;
+
+    sethomefile(dir, getCurrentUser()->userid, filename);
+    if (stat(dir, &st)<0)
+        return 0;
+
+    offset=(int)((char *) &(refer.flag)-(char *) &(refer));
+    if ((fd=open(dir, O_RDONLY))<0)
+        return 0;
+    num=st.st_size/sizeof(refer);
+    if (num<=0) {
+        close(fd);
+        return 0;
+    }
+    
+    lseek(fd, (st.st_size-(sizeof(refer)-offset)), SEEK_SET);
+    read(fd, &ch, 1);
+    close(fd);
+    if (!(ch&FILE_READ))
+        return num;
+    return 0;
+}
+#endif
 
 int get_mailnum(char* direct)
 {
@@ -2761,6 +2807,10 @@ const static struct command_def mail_cmds[] = {
     {"C) 清空备份的邮箱", 0, m_clean, NULL},
     {"X) 设置邮箱选项", 0, set_mailbox_prop, NULL},
     {"M) 寄信给所有人", PERM_SYSOP, mailall, NULL},
+#ifdef ENABLE_REFER
+    {"K) @我的文章", 0, refer_at, NULL},
+    {"L) 回复我的文章", 0, refer_reply, NULL},
+#endif
 };
 
 struct mail_proc_arg {
@@ -3819,3 +3869,528 @@ int set_mailgroup_list()
 
     return 0;
 }
+
+#ifdef ENABLE_REFER
+#define REFER_ACTION_AUTH_SEARCH_PREV    1
+#define REFER_ACTION_AUTH_SEARCH_NEXT    2
+#define REFER_ACTION_TITLE_SEARCH_PREV   3
+#define REFER_ACTION_TITLE_SEARCH_NEXT   4
+#define REFER_ACTION_BOARD_SEARCH_PREV   5
+#define REFER_ACTION_BOARD_SEARCH_NEXT   6
+#define REFER_ACTION_SEND_MSG_TO_AUTH    7
+#define REFER_ACTION_SHOW_AUTH           8
+#define REFER_ACTION_AUTH_INFO           9
+#define REFER_ACTION_AUTH_BM             10
+#define REFER_ACTION_ADD_FRIEND          11
+#define REFER_ACTION_ADD_IGNORE          12
+
+char refer_title_bar[STRLEN];
+
+int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
+    int save_currboardent, save_uinfo_currentboard, fd, num, retnum, key, repeat, ret;
+    char buf[STRLEN];
+    const struct boardheader *board;
+    fileheader_t article[1];
+    struct read_arg *arg;
+
+    if (refer==NULL)
+        return DONOTHING;
+
+    board=getbcache(refer->board);
+    if (0==board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+        clear();
+        prints("指定版面不存在...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+
+    setbdir(DIR_MODE_NORMAL, buf, board->filename);
+    if ((fd=open(buf, O_RDWR, 0644))<0) {
+        clear();
+        prints("无法打开版面文章列表...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+    retnum=get_records_from_id(fd, refer->id, article, 1, &num);
+    close(fd);
+    if (0==retnum) {
+        clear();
+        prints("文章不存在，可能已被删除...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+    
+    setbfile(buf, board->filename, article->filename);
+#ifdef NOREPLY
+    key=ansimore_withzmodem(buf, true, article->title); 
+#else
+    key=ansimore_withzmodem(buf, false, article->title); 
+#endif    
+    
+#ifdef HAVE_BRC_CONTROL
+    //brc_add_read
+#endif
+    
+    arg=(struct read_arg*)conf->arg;
+
+    if (arg->readdata==NULL)
+        arg->readdata=malloc(sizeof(struct refer));
+    memcpy(arg->readdata, refer, sizeof(struct refer));
+
+    ret=FULLUPDATE;
+
+#ifndef NOREPLY
+    save_currboardent=currboardent;
+    save_uinfo_currentboard=uinfo.currentboard;
+
+    currboardent=getbnum_safe(board->filename, getSession(), 1);
+    currboard=board;
+    uinfo.currentboard=currboardent;
+
+    move(t_lines-1, 0);
+
+    prints("\033[44m\033[36m[通知模式] \033[32m[阅读文章]\033[33m 结束Q,| 上一篇 | 下一篇<空格>, | 同主题^x,p ");
+
+    clrtoeol();
+    resetcolor();
+
+    if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("ReEexp", key)))
+        key=igetkey();
+
+    repeat=0;
+    do {
+        if (repeat)
+            key=igetkey();
+    
+        repeat=0;
+        switch(key) {
+            case KEY_LEFT:
+            case 'Q':
+            case 'q':
+            case KEY_REFRESH:
+                break;
+            case 'R':
+            case 'r':
+            case 'Y':
+            case 'y':
+                clear();
+                move(5,0);
+                if(board->flag&BOARD_NOREPLY) {
+                    prints("\t\t\033[1;33m%s\033[0;33m<Enter>\033[m","该版面已设置为不可回复文章...");
+                    WAIT_RETURN;
+                } else if (article->accessed[1]&FILE_READ && !HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
+                    prints("\t\t\033[1;33m%s\033[0;33m<Enter>\033[m","本文已设置为不可回复, 请勿试图讨论...");
+                    WAIT_RETURN;
+                } else
+                    do_reply(conf, article);
+                
+                ret=DIRCHANGED;
+                break;
+            case Ctrl('R'):
+                post_reply(conf, article, NULL);
+                break; 
+            case Ctrl('A'):
+                clear();
+                read_showauthor(conf,article,NULL);
+                ret=READ_NEXT;
+                break;
+            case Ctrl('Z'):
+            case 'H':
+                r_lastmsg();
+                break;
+            case 'Z':
+            case 'z':
+                if (HAS_PERM(getCurrentUser(), PERM_PAGE)) {
+                    read_sendmsgtoauthor(conf, article, NULL);
+                    ret=READ_NEXT;
+                }
+                break;
+            case 'u':
+                clear();
+                modify_user_mode(QUERY);
+                t_query(NULL);
+                break;
+            case 'L':
+                if (uinfo.mode==LOOKMSGS)
+                    ret=DONOTHING;
+                else
+                    show_allmsgs();
+                break;
+            case 'o':
+            case 'O':
+                if (HAS_PERM(getCurrentUser(), PERM_BASIC)) {
+                    t_friends();
+                }
+                break;
+            case 'U':
+                ret=board_query();
+                break;
+            case Ctrl('O'):
+                clear();
+                read_addauthorfriend(conf, article, NULL);
+                ret=READ_NEXT;
+                break;
+            case '~':
+                ret=read_authorinfo(conf, article, NULL);
+                break;
+            case Ctrl('W'):
+                ret=read_showauthorBM(conf, article, NULL);
+                break;  
+            case '!':
+                Goodbye();
+                break;
+        }
+    } while(repeat);
+
+    uinfo.currentboard=save_uinfo_currentboard;
+    currboardent=save_currboardent;
+    currboard=((struct boardheader*)getboard(save_currboardent));
+
+    if (ret==FULLUPDATE&&arg->oldpos!=0) {
+        conf->new_pos=arg->oldpos;
+        arg->oldpos=0;
+        list_select_add_key(conf, KEY_REFRESH);
+        arg->readmode=READ_NORMAL;
+        return SELCHANGE;
+    }
+#endif /* NOREPLY */    
+    return ret;
+}
+int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
+    int bid, save_currboardent, save_uinfo_currentboard;
+    const struct boardheader *board;
+
+    if (refer==NULL)
+        return DONOTHING;
+
+    board=getbcache(refer->board);
+    if (0==board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+        clear();
+        prints("指定版面不存在...");
+        pressreturn();
+        return FULLUPDATE;
+    }    
+    
+    bid=getbnum_safe(board->filename, getSession(), 1);
+    
+    save_currboardent=currboardent;
+    save_uinfo_currentboard=uinfo.currentboard;
+
+    board_setcurrentuser(uinfo.currentboard, -1);
+    uinfo.currentboard=bid;
+    UPDATE_UTMP(currentboard, uinfo);
+    board_setcurrentuser(uinfo.currentboard, 1);
+    currboardent=bid;
+    currboard=board;
+    uinfo.currentboard=currboardent;
+
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(getCurrentUser()->userid, board->filename,getSession());
+#endif
+
+    move(0,0);
+    clrtoeol();
+    move(1,0);
+    clrtoeol();
+
+    ReadBoard();
+
+    
+    uinfo.currentboard=save_uinfo_currentboard;
+    currboardent=save_currboardent;
+    currboard=((struct boardheader*)getboard(save_currboardent));
+    
+    return FULLUPDATE;
+}
+int refer_del(struct _select_def* conf, struct refer *refer, void* extraarg) {
+    int ent=conf->pos;
+    struct read_arg* arg=conf->arg;
+
+    if (refer==NULL)
+        return DONOTHING;
+    if (arg->mode!=DIR_MODE_REFER)
+        return DONOTHING;
+    if (refer_remove(arg->direct, ent, refer)==0)
+        return DIRCHANGED;
+
+    clear();
+    move(2,0);
+    prints("删除失败\n");
+    pressreturn();
+    clear();
+    return FULLUPDATE;
+}
+int refer_action(struct _select_def* conf, struct refer *refer, int act) {
+    if (refer==NULL)
+        return DONOTHING;
+
+    int ret=FULLUPDATE;
+    struct user_info *user;  
+    char buf[STRLEN];
+    char pmt[STRLEN];
+    bool up=false;
+    int search_mode=0;
+    int search_length=STRLEN;
+    static char title[STRLEN];
+
+    switch(act) {
+        case REFER_ACTION_SEND_MSG_TO_AUTH:
+            if (HAS_PERM(getCurrentUser(), PERM_PAGE)) {
+                clear();
+                user=(struct user_info *)t_search(refer->user, false);
+                if (!user||!canmsg(getCurrentUser(), user))
+                    do_sendmsg(NULL, NULL, 0);
+                else {
+                    strncpy(getSession()->MsgDesUid, user->userid, 20);
+                    do_sendmsg(user, NULL, 0);
+                }
+            } else 
+                return DONOTHING;
+            break;
+        case REFER_ACTION_SHOW_AUTH:
+            t_query(refer->user);
+            break;
+        case REFER_ACTION_AUTH_INFO:
+#ifdef HAVE_STRICT_USERINFO
+#define RAI_PERM    (PERM_ADMIN)
+#else /* HAVE_STRICT_USERINFO */
+#define RAI_PERM    (PERM_SYSOP|PERM_ADMIN)
+#endif /* HAVE_STRICT_USERINFO */
+             if (HAS_PERM(getCurrentUser(),RAI_PERM)) {
+                 modify_userinfo(searchuser(refer->user),(HAS_PERM(getCurrentUser(),PERM_ADMIN)?1:2));
+             }
+#undef RAI_PERM            
+            break;
+        case REFER_ACTION_ADD_FRIEND:
+            clear();
+            if (strcmp("guest", getCurrentUser()->userid))
+                addtooverride(refer->user);
+            break;
+        case REFER_ACTION_AUTH_SEARCH_PREV:
+        case REFER_ACTION_AUTH_SEARCH_NEXT:
+        case REFER_ACTION_TITLE_SEARCH_PREV:
+        case REFER_ACTION_TITLE_SEARCH_NEXT:
+        case REFER_ACTION_BOARD_SEARCH_PREV:
+        case REFER_ACTION_BOARD_SEARCH_NEXT:
+            if (REFER_ACTION_AUTH_SEARCH_PREV==act||REFER_ACTION_TITLE_SEARCH_PREV==act||REFER_ACTION_BOARD_SEARCH_PREV==act) 
+                up=true;
+            switch (act) {
+                case REFER_ACTION_AUTH_SEARCH_PREV:
+                case REFER_ACTION_AUTH_SEARCH_NEXT:
+                    strcpy(buf, refer->user);
+                    snprintf(pmt, STRLEN, "%s搜寻作者: ", up?"↑" : "↓");
+                    search_length=IDLEN+1;
+                    search_mode=1;
+                    break;
+                case REFER_ACTION_TITLE_SEARCH_PREV:
+                case REFER_ACTION_TITLE_SEARCH_NEXT:
+                    strncpy(buf, title, STRLEN);
+                    snprintf(pmt, STRLEN, "%s搜寻标题: ", up ? "↑" : "↓");
+                    search_length=STRLEN-1;
+                    search_mode=2;
+                    break;
+                case REFER_ACTION_BOARD_SEARCH_PREV:
+                case REFER_ACTION_BOARD_SEARCH_NEXT:
+                    strcpy(buf, refer->board);
+                    snprintf(pmt, STRLEN, "%s搜寻版面: ", up ? "↑" : "↓");
+                    search_length=STRLEN-1;
+                    search_mode=3;
+                    break;
+            }
+
+            move(t_lines-1, 0);
+            clrtoeol();
+            getdata(t_lines-1, 0, pmt, buf, search_length, DOECHO, NULL, false);
+            if (buf[0]!='\0') {
+                if (REFER_ACTION_TITLE_SEARCH_PREV==act||REFER_ACTION_TITLE_SEARCH_NEXT==act)
+                    strcpy(title, buf);
+                if (1==refer_search(conf, buf, up, search_mode))
+                    ret=SELCHANGE;
+            } 
+            conf->show_endline(conf);
+            break;
+    } 
+
+    return ret;
+}
+int refer_search(struct _select_def* conf, char *query, bool up, int mode) {
+    char ptr[STRLEN];
+    char *ptr2;
+    int now, match=0;
+    char upper_query[STRLEN];
+    int init;
+    size_t bm_search[256];
+    
+    char *data;
+    struct refer *pFh, *pFh1;
+    off_t size;
+    struct read_arg *arg=(struct read_arg *)conf->arg;
+    int ln, i;
+
+    for (ln=0;(ln<STRLEN)&&(query[ln]!=0);ln++);
+    for (i=0;i<ln;i++) {
+        upper_query[i]=toupper(query[i]);
+        if (upper_query[i]=='\0') upper_query[i]='\1';
+    }
+    upper_query[ln]='\0';
+
+    if (*query=='\0')
+        return 0;
+    init=false;
+    now=conf->pos;
+
+    match=0;
+    BBS_TRY {
+        if (safe_mmapfile_handle(arg->fd, PROT_READ, MAP_SHARED, &data, &size)==0)
+            BBS_RETURN(0);
+        pFh=(struct refer*)data;
+        arg->filecount=size/sizeof(struct refer);
+        if (now>arg->filecount)
+            now=arg->filecount;
+
+        if (now<=arg->filecount) {
+            pFh1=pFh+now-1;
+            while (1) {
+                if (!up) {
+                    if (++now>arg->filecount)
+                        break;
+                    pFh1++;
+                } else {
+                    if (--now<1)
+                        break;
+                    pFh1--;
+                }
+                if (now>arg->filecount)
+                    break;
+                if (mode==1) { // search auth
+                    strncpy(ptr, pFh1->user, STRLEN-1);
+                    if (!strcasecmp(ptr, upper_query)) {
+                        match=1;
+                        break;
+                    }
+                } else if (mode==2) { // search title
+                    strncpy(ptr, pFh1->title, ARTICLE_TITLE_LEN-1);
+                    ptr[ARTICLE_TITLE_LEN-1]=0;
+                    ptr2=ptr;
+                     
+                    if ((*ptr=='R'||*ptr=='r')&&(*(ptr+1)=='E'||*(ptr+1)=='e')&&(*(ptr+2)==':')&&(*(ptr+3)==' '))
+                        ptr2=ptr+4;
+                    if (bm_strcasestr_rp(ptr2, query, bm_search, &init)) {
+                        match=1;
+                        break;
+                    }     
+                } else if (mode==3) { // search board
+                   strncpy(ptr, pFh1->board, STRLEN-1);
+                   if (!strcasecmp(ptr, upper_query)) {
+                       match=1;
+                       break;
+                   }
+                }
+            }
+        }
+    }
+    BBS_CATCH {
+        match=0;
+    }
+
+    BBS_END;
+    end_mmapfile(data, size, -1);
+    move(t_lines-1, 0);
+    clrtoeol();
+    if (match) {
+        conf->new_pos=now;
+        return 1;
+    }
+
+    return 0;
+}
+struct key_command refer_comms[]={
+    {'r', (READ_KEY_FUNC)refer_read, NULL},
+    {'s', (READ_KEY_FUNC)refer_board, NULL},
+    {'d', (READ_KEY_FUNC)refer_del, NULL},
+    {'a', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_NEXT},    
+    {'A', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_PREV},    
+    {'/', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_TITLE_SEARCH_NEXT},    
+    {'?', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_TITLE_SEARCH_PREV},    
+    {'\'', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_BOARD_SEARCH_NEXT},    
+    {'\"', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_BOARD_SEARCH_PREV},    
+    {'z', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_SEND_MSG_TO_AUTH},    
+    {Ctrl('A'), (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_SHOW_AUTH},    
+    {'~', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_INFO},    
+//    {Ctrl('W'), (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_BM},    
+    {Ctrl('O'), (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_ADD_FRIEND},    
+//    {Ctrl('D'), (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_ADD_IGNORE},    
+    {'\n', NULL},
+};
+void refer_title(struct _select_def* conf) {
+    
+    showtitle(refer_title_bar, BBS_FULL_NAME);
+    update_endline();
+    move(1, 0);
+    prints("离开[←,e]  选择[↑,↓]  阅读[→,r]  删除[d]  标题[?,/]  作者[a,A]  版面[\',\"]\033[m\n");
+    prints("\033[44m  编号 发布者       日期    讨论区名称   主题");
+    clrtoeol();
+    prints("\n");
+    resetcolor();
+}
+char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, struct _select_def* conf) {
+    char *date;
+    char c1[8],c2[8];
+    int same=false;
+
+    date=ctime(&ent->time)+4;
+    if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
+        strcpy(c1, "\033[1;33m");
+        strcpy(c2, "\033[1;36m");
+    } else {
+        strcpy(c1, "\033[33m");
+        strcpy(c2, "\033[36m");
+    }
+    if (readfh&&0==strncasecmp(ent->board, readfh->board, IDLEN+6)&&ent->groupid==readfh->groupid)
+        same=true;
+
+    sprintf(buf, " %s%4d %-12s %6.6s  %-12s %s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, ent->user, date, ent->board, ent->title);
+
+    return buf;
+}
+int refer_at(void) {
+    sprintf(refer_title_bar, "[@我的文章]");
+    return refer_list(REFER_DIR);
+}
+int refer_reply(void) {
+    sprintf(refer_title_bar, "[回复我的文章]");
+    return refer_list(REPLY_DIR);
+}
+int refer_list(char filename[STRLEN]) {
+    char dir[255];
+    int oldmode;
+    int returnmode=CHANGEMODE;
+    int num;
+
+    sethomefile(dir, getCurrentUser()->userid, filename);
+
+    num=chkrefer_dir(filename);
+    if (num>0) {
+        struct refer last_refer;
+        if (get_record(dir, &last_refer, sizeof(struct refer), num)==0) {
+            last_refer.flag |= FILE_READ;
+            substitute_record(dir, &last_refer, sizeof(struct refer), num, (RECORD_FUNC_ARG) refer_cmp, &last_refer);
+            setmailcheck(getCurrentUser()->userid);    
+        }
+    }
+
+    oldmode=uinfo.mode;
+    modify_user_mode(REFER);
+
+    in_mail=true;
+    while(returnmode==CHANGEMODE) {
+        returnmode=new_i_read(DIR_MODE_REFER, dir, refer_title, (READ_ENT_FUNC)referdoent, &refer_comms[0], sizeof(struct refer));
+        sethomefile(dir, getCurrentUser()->userid, filename);
+    }
+    in_mail=false;
+    modify_user_mode(oldmode);     
+
+    return FULLUPDATE;
+}
+#endif
+

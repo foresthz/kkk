@@ -1187,9 +1187,23 @@ static int pc_dir_title(struct _select_def *conf)
 
     if (chkmailflag == 2) {
         prints("\033[0;1;5;44m                         [您的信箱超过容量,不能再收信!]                       \033[m");
-    } else if (chkmailflag) {
+    } 
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==1) {
+         prints("\033[0;1;5;44m                                   [您有信件]                                 \033[m");
+     } else if (chkmailflag==3) {
+         prints("\033[0;1;5;44m                                  [您有@提醒]                                 \033[m");
+     } else if (chkmailflag==4) {
+         prints("\033[0;1;5;44m                                 [您有回复提醒]                               \033[m");
+     }
+#else
+    else if (chkmailflag) {      /* 信件检查 */
         prints("\033[0;1;5;44m                                   [您有信件]                                 \033[m");
-    } else {
+    }
+#endif /* ENABLE_REFER */
+
+    else {
         prints("\033[0;1;44m  %s的个人文集 -- %-44s ", pc_u->username, pc_u->corpusname);
         switch (pc_dirmode) {
             case 2:

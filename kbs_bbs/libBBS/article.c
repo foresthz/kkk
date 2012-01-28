@@ -1472,7 +1472,7 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
 
 #ifdef ENABLE_REFER
     setbfile(buf, boardname, fh->filename);
-    send_refer_msg(boardname, fh, buf);
+    send_refer_msg(boardname, fh, re, buf);
 #endif
 
         sprintf(buf, "posted '%s' on '%s'", fh->title, boardname);

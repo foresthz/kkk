@@ -1969,8 +1969,18 @@ void docmdtitle(const char *title,const char *prompt)
 
     if (chkmailflag == 2)       /*Haohmaru.99.4.4.对收信也加限制 */
         strcpy(middoc, "[信箱超容]");
-    else if (chkmailflag)
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==1)
+         strcpy(middoc, "[您有信件]");
+     else if (chkmailflag==3)
+         strcpy(middoc, "[您有@提醒]");
+     else if (chkmailflag==4)
+         strcpy(middoc, "[您有回复提醒]");
+#else
+    else if (chkmailflag)       /* 信件检查 */
         strcpy(middoc, "[您有信件]");
+#endif /* ENABLE_REFER */
     /*    else if ( vote_flag( DEFAULTBOARD, '\0' ,0) == 0&&(bp->flag&BOARD_VOTEFLAG))
             strcpy(middoc,"[系统投票中]");*/
     else
