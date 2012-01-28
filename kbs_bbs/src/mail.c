@@ -2812,6 +2812,10 @@ int m_sendnull(void)
 const static struct command_def mail_cmds[] = {
     {"N) 览阅新信件", 0, m_new, NULL},
     {"R) 览阅全部信件", 0, m_read, NULL},
+#ifdef ENABLE_REFER
+    {"K) @我的文章", 0, refer_at, NULL},
+    {"L) 回复我的文章", 0, refer_reply, NULL},
+#endif
     {"S) 寄信", PERM_LOGINOK, m_sendnull, NULL},
 #ifdef MAILOUT
     {"I) 发送站外信件", PERM_LOGINOK, m_internet, NULL},
@@ -2824,10 +2828,6 @@ const static struct command_def mail_cmds[] = {
     {"C) 清空备份的邮箱", 0, m_clean, NULL},
     {"X) 设置邮箱选项", 0, set_mailbox_prop, NULL},
     {"M) 寄信给所有人", PERM_SYSOP, mailall, NULL},
-#ifdef ENABLE_REFER
-    {"K) @我的文章", 0, refer_at, NULL},
-    {"L) 回复我的文章", 0, refer_reply, NULL},
-#endif
 };
 
 struct mail_proc_arg {
