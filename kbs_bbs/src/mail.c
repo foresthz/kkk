@@ -4353,7 +4353,7 @@ void refer_title(struct _select_def* conf) {
     showtitle(refer_title_bar, BBS_FULL_NAME);
     update_endline();
     move(1, 0);
-    prints("离开[←,e]  选择[↑,↓]  阅读[→,r]  删除[d]  标题[?,/]  作者[a,A]  版面[\',\"]\033[m\n");
+    prints("离开[←,e] 选择[↑,↓] 阅读[→,r] 版面[s] 删除[d] 标题[?,/] 作者[a,A] 寻版[\',\"]\033[m\n");
     prints("\033[44m  编号   发布者       日期    讨论区名称   主题");
     clrtoeol();
     prints("\n");
