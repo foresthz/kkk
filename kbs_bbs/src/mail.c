@@ -74,7 +74,11 @@ int chkmail()
      * 要做大量无用的系统调用. 在这个改动中也把fstat改为stat了，节省一个open&close
      */
     if (stat(curmaildir, &st) < 0)
+#ifdef ENABLE_REFER
         return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
+#else
+        return (ismail = 0);
+#endif
     /*
     if (lasttime >= st.st_mtime)
         return ismail;
@@ -84,13 +88,22 @@ int chkmail()
         return (ismail = 2);
     offset = (int)((char *) &(fh.accessed[0]) - (char *) &(fh));
     if ((fd = open(curmaildir, O_RDONLY)) < 0)
+#ifdef ENABLE_REFER
         return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
+#else
+        return (ismail = 0);
+#endif
+
     lasttime = st.st_mtime;
     numfiles = st.st_size;
     numfiles = numfiles / sizeof(fh);
     if (numfiles <= 0) {
         close(fd);
-        return (ismail = chkrefer()); // modified by widninsn, Jan 28, 2012, 增加@和回复提醒
+#ifdef ENABLE_REFER
+        return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
+#else
+        return (ismail = 0);
+#endif
     }
     /* 只判断最后一篇 */
     lseek(fd, (st.st_size - (sizeof(fh) - offset)), SEEK_SET);
@@ -100,7 +113,11 @@ int chkmail()
         return (ismail = 1);
     }
     close(fd);
-    return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
+#ifdef ENABLE_REFER
+        return (ismail = chkrefer()); // modified by windinsn, Jan 28, 2012, 增加@和回复提醒
+#else
+        return (ismail = 0);
+#endif
 }
 
 #ifdef ENABLE_REFER
