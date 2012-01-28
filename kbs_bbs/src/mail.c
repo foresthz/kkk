@@ -3913,6 +3913,17 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     if (refer==NULL)
         return DONOTHING;
 
+    arg=(struct read_arg*)conf->arg;
+    if (!(refer->flag&FILE_READ)) {
+        int ent=conf->pos;
+        refer->flag |= FILE_READ;
+        substitute_record(arg->direct, refer, sizeof(*refer), ent, (RECORD_FUNC_ARG) refer_cmp, refer);
+        setmailcheck(getCurrentUser()->userid); 
+
+        if (ent>=arg->filecount)
+            setmailcheck(getCurrentUser()->userid); 
+    }
+
     board=getbcache(refer->board);
     if (0==board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
@@ -3948,7 +3959,6 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     //brc_add_read
 #endif
     
-    arg=(struct read_arg*)conf->arg;
 
     if (arg->readdata==NULL)
         arg->readdata=malloc(sizeof(struct refer));
@@ -4345,7 +4355,7 @@ void refer_title(struct _select_def* conf) {
     update_endline();
     move(1, 0);
     prints("离开[←,e]  选择[↑,↓]  阅读[→,r]  删除[d]  标题[?,/]  作者[a,A]  版面[\',\"]\033[m\n");
-    prints("\033[44m  编号 发布者       日期    讨论区名称   主题");
+    prints("\033[44m  编号   发布者       日期    讨论区名称   主题");
     clrtoeol();
     prints("\n");
     resetcolor();
@@ -4366,7 +4376,7 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
     if (readfh&&0==strncasecmp(ent->board, readfh->board, IDLEN+6)&&ent->groupid==readfh->groupid)
         same=true;
 
-    sprintf(buf, " %s%4d %-12s %6.6s  %-12s %s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, ent->user, date, ent->board, ent->title);
+    sprintf(buf, " %s%4d %s %-12s %6.6s  %-12s %s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", ent->user, date, ent->board, ent->title);
 
     return buf;
 }
@@ -4382,19 +4392,8 @@ int refer_list(char filename[STRLEN]) {
     char dir[255];
     int oldmode;
     int returnmode=CHANGEMODE;
-    int num;
 
     sethomefile(dir, getCurrentUser()->userid, filename);
-
-    num=chkrefer_dir(filename);
-    if (num>0) {
-        struct refer last_refer;
-        if (get_record(dir, &last_refer, sizeof(struct refer), num)==0) {
-            last_refer.flag |= FILE_READ;
-            substitute_record(dir, &last_refer, sizeof(struct refer), num, (RECORD_FUNC_ARG) refer_cmp, &last_refer);
-            setmailcheck(getCurrentUser()->userid);    
-        }
-    }
 
     oldmode=uinfo.mode;
     modify_user_mode(REFER);
