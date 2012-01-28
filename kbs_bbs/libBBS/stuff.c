@@ -664,7 +664,7 @@ void bbssettime(time_t now)
             load_site_banner(1);
 #endif
 #ifdef TITLEKEYWORD
-            load_title_key(1, NULL);
+            load_title_key(1, 0, NULL);
 #endif
             /*
              * 开始的sysconf.img版本号为0
@@ -3472,18 +3472,20 @@ int www_sync_stay(struct userec *user, struct user_info *uinfo)
 }
 
 #ifdef TITLEKEYWORD
-void load_title_key(int init, const char *board)
+void load_title_key(int init, int bid, const char *board)
 {
     int count;
 
-    if (board!=NULL) {
-    } else {
+    if (bid==0) { /* 读取系统的titkey */
         if (!init)
             setpublicshmreadonly(0);
         count = get_title_key(NULL, publicshm->systitkey, MAXTITLEKEY);
         publicshm->tkcount = count;
         if (!init)
             setpublicshmreadonly(1);
+    } else { /* 读取版面的titkey */
+        count = get_title_key(board, brdshm->bstatus[bid-1].titkey, MAXBOARDTITLEKEY);
+        brdshm->bstatus[bid-1].tkcount = count;
     }
 }
 #endif

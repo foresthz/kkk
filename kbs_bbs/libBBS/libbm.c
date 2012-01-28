@@ -338,6 +338,7 @@ int save_title_key(const char *board, char titlekey[][8], int count)
         for (i=0;i<count;i++)
             fprintf(fn, "%s\n", titlekey[i]);
         fclose(fn);
+        load_title_key(0, board?getbid(board, NULL):0, board);
     }
     return 0;
 }

@@ -3266,10 +3266,15 @@ int select_keyword(char *title)
     char titkey[MAXTITLEKEY][8];
     int i, ch, count;
     static int sel=0, start=0;
+    struct BoardStatus *bs;
 
+    bs = getbstatus(getbid(currboard->filename, NULL));
     memset(titkey, 0 ,MAXTITLEKEY * 8 * sizeof(char));
-    count = get_title_key(currboard->filename, titkey, MAXTITLEKEY);
-    //count+= get_title_key(NULL, &(titkey[count]), MAXTITLEKEY-count);
+    count = 0;
+    for (i=0;i<bs->tkcount;i++) {
+        strcpy(titkey[count], bs->titkey[i]);
+        count++;
+    }
     for (i=0;i<publicshm->tkcount;i++) {
         strcpy(titkey[count], publicshm->systitkey[i]);
         count++;
@@ -4786,7 +4791,11 @@ int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* e
 #ifdef NEWSMTH
             " 4)治版方针"
 #endif
-            " 5)自定义封禁理由 [0]: ", ans, 3, DOECHO, NULL, true);
+            " 5)自定义封禁理由"
+#ifdef TITLEKEYWORD
+            " 6)标题关键字"
+#endif
+            " [0]: ", ans, 3, DOECHO, NULL, true);
     if (ans[0]=='1') return b_notes_edit();
 #ifdef NEWSMTH
     else if (ans[0]=='4') return b_rules_edit();

@@ -216,6 +216,10 @@ struct BoardStatus {            /* use this to speed up board list */
     unsigned int maxonline;
     time_t maxtime;
 #endif
+#ifdef TITLEKEYWORD
+    char titkey[MAXBOARDTITLEKEY][8];
+    int tkcount;
+#endif
 };
 struct favbrd_struct {
     int bnum;

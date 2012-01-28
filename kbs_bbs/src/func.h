@@ -811,7 +811,7 @@ while(0)
     int get_title_key(const char *board, char titlekey[][8], int max);
     int save_title_key(const char *board, char titlekey[][8], int count);
     int b_titkey_edit();
-    void load_title_key(int init, const char *board);
+    void load_title_key(int init, int bid, const char *board);
 #endif
 
 #ifdef SMS_SUPPORT

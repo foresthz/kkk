@@ -214,6 +214,9 @@ void resolve_boards()
                     brdshm->bstatus[i].maxonline = bcache[i].maxonline;
                     brdshm->bstatus[i].maxtime = bcache[i].maxtime;
 #endif
+#ifdef TITLEKEYWORD
+                    load_title_key(1, i+1, bcache[i].filename);
+#endif
 
                     maxi = i;
                 }
