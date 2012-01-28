@@ -663,6 +663,9 @@ void bbssettime(time_t now)
 #ifdef FLOWBANNER
             load_site_banner(1);
 #endif
+#ifdef TITLEKEYWORD
+            load_title_key(1, NULL);
+#endif
             /*
              * 开始的sysconf.img版本号为0
              */
@@ -3467,3 +3470,20 @@ int www_sync_stay(struct userec *user, struct user_info *uinfo)
     }
     return (int)stay;
 }
+
+#ifdef TITLEKEYWORD
+void load_title_key(int init, const char *board)
+{
+    int count;
+
+    if (board!=NULL) {
+    } else {
+        if (!init)
+            setpublicshmreadonly(0);
+        count = get_title_key(NULL, publicshm->systitkey, MAXTITLEKEY);
+        publicshm->tkcount = count;
+        if (!init)
+            setpublicshmreadonly(1);
+    }
+}
+#endif

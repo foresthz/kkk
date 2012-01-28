@@ -3260,24 +3260,20 @@ int process_upload(int nUpload, int maxShow, char *ans, struct ea_attach_info* a
 
 #ifdef TITLEKEYWORD
 #define TKSHOW 7
-int get_title_key(const char *board, char titkey[][STRLEN], int max);
-int b_titkey_edit();
 int select_keyword(char *title)
 {
     char tmp[STRLEN];
-    char titkey[MAXTITLEKEY][STRLEN];
+    char titkey[MAXTITLEKEY][8];
     int i, ch, count;
     static int sel=0, start=0;
 
-    memset(titkey, 0 ,MAXTITLEKEY * STRLEN * sizeof(char));
+    memset(titkey, 0 ,MAXTITLEKEY * 8 * sizeof(char));
     count = get_title_key(currboard->filename, titkey, MAXTITLEKEY);
-    count+= get_title_key(NULL, &(titkey[count]), MAXTITLEKEY-count);
-    /*
-    for (i=0;i<MAXTITLEKEY && systitkey[i]!=NULL;i++) {
-        strcpy(titkey[count], systitkey[i]);
+    //count+= get_title_key(NULL, &(titkey[count]), MAXTITLEKEY-count);
+    for (i=0;i<publicshm->tkcount;i++) {
+        strcpy(titkey[count], publicshm->systitkey[i]);
         count++;
     }
-    */
     if (sel>=count) { /* 上次选择大于本次总和 */
         sel = start = 0;
     }

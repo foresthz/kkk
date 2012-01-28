@@ -2290,13 +2290,10 @@ int b_reason_edit() {
 }
 
 #ifdef TITLEKEYWORD
-int get_title_key(const char *board, char titlekey[][STRLEN], int max);
-int save_title_key(const char *board, char titlekey[][STRLEN], int count);
-
 /*
  * 修改标题关键字
  */
-int modify_title_key(char key[][STRLEN], int *count, int pos, int type, POINT pts)
+int modify_title_key(char key[][8], int *count, int pos, int type, POINT pts)
 {
     char buf[STRLEN];
     int i;
@@ -2387,7 +2384,7 @@ static int edit_titkey_select(struct _select_def *conf)
 {
     return SHOW_SELECT;
 }
-int edit_title_key(char key[][STRLEN], int count, int max)
+int edit_title_key(char key[][8], int count, int max)
 {
     struct _select_item sel[max+2];
     struct _select_def conf;
@@ -2506,7 +2503,7 @@ int edit_title_key(char key[][STRLEN], int count, int max)
 }
 
 int b_titkey_edit() {
-    char key[MAXBOARDTITLEKEY][STRLEN];
+    char key[MAXBOARDTITLEKEY][8];
     int i, count;
 
     if (!chk_currBM(currBM, getCurrentUser())) {

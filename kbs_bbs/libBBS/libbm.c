@@ -302,7 +302,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
  * 获得标题关键字列表，titlekey在调用时定义
  * board为空时，获得系统标题关键字
  */
-int get_title_key(const char *board, char titlekey[][STRLEN], int max)
+int get_title_key(const char *board, char titlekey[][8], int max)
 {
     char filename[STRLEN];
     char *ptr, *key[MAXDENYREASON];
@@ -324,7 +324,7 @@ int get_title_key(const char *board, char titlekey[][STRLEN], int max)
     return count;
 }   
 
-int save_title_key(const char *board, char titlekey[][STRLEN], int count)
+int save_title_key(const char *board, char titlekey[][8], int count)
 {
     char filename[STRLEN];
     int i;

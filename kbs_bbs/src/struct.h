@@ -296,6 +296,11 @@ struct public_data {
     char date[60];
 #endif
 
+#ifdef TITLEKEYWORD
+    char systitkey[MAXTITLEKEY][8];
+    int tkcount;
+#endif
+
 };
 
 

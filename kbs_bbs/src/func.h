@@ -807,6 +807,13 @@ while(0)
     int refer_cmp(struct refer *r1, struct refer *r2);
 #endif /* ENABLE_REFER */
 
+#ifdef TITLEKEYWORD
+    int get_title_key(const char *board, char titlekey[][8], int max);
+    int save_title_key(const char *board, char titlekey[][8], int count);
+    int b_titkey_edit();
+    void load_title_key(int init, const char *board);
+#endif
+
 #ifdef SMS_SUPPORT
     int smsid2uid(char* smsid);
     void uid2smsid(struct user_info* uin,char* smsid);
