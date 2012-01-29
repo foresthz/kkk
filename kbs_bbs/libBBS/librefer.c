@@ -15,6 +15,60 @@
 #define DEF_REPLY 040000000010LL
 #endif
 
+int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
+{
+    char *p, *q, *r;
+    int i, len, count, uid;
+    bool add;
+    char userid[IDLEN+2];
+    p = ptr;
+    count = 0;
+    while (*p!='\0' && ptrlen>0 && count<MAX_REFER) {
+        if (*p == '@' && ((p>ptr && !isalnum(p[-1])) && isalpha(p[1]))) { /* 找到@, 并对前后字符进行判断 */
+            for (q=p+2,r=p+1,len=1;isalnum(*q);q++)
+                len++;
+            p += len;
+            ptrlen -= len;
+            if (len>IDLEN)
+                continue;
+            strncpy(userid, r, len);
+            userid[len] = '\0';
+            if ((uid=getuser(userid, NULL))==0)
+                continue;
+            add = true;
+            for (i=0;i<count;i++)
+                if (id[i]==uid) {
+                    add = false;
+                    break;
+                }
+            if (add) {
+                id[count] = uid;
+                count++;
+            }
+        } else if (p>ptr && strncmp(p-1, "\n【 在 ", 7)==0) { /* “大作”行不匹配，避免昵称 */
+            p += 6;
+            ptrlen -= 6;
+            if ((q = strstr(p, "的大作中提到: 】"))!=NULL) {
+                p = q + 17;
+                ptrlen -= (q - p + 17);
+            }
+            continue;
+        } else if (p>ptr && strncmp(p-1, "\n: ", 3)==0) { /* 引文整行都不匹配 */
+            if ((q = strstr(p, "\n"))!=NULL) {
+                p = q + 1;
+                ptrlen -= (q - p + 1);
+                continue;
+            } else
+                break;
+        } else if (p>ptr && strncmp(p-1, "\n--\n", 4)==0) { /* 跳过签名档及以后 */
+            break;
+        }
+        p++;
+        ptrlen--;
+    }
+    return count;
+}
+
 int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile) {
     char *ptr,*cur_ptr;
     off_t ptrlen, mmap_ptrlen;    
@@ -39,6 +93,12 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
         return -1;
     ptrlen=mmap_ptrlen;
     cur_ptr=ptr;
+    times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users);
+    for (i=0;i<times;i++) {
+        user = getuserbynum(users[i]);
+        send_refer_msg_to(user, board, fh, tmpfile);
+    }
+    /*
     while(ptrlen>0) {
         last_c=c;
         c=*cur_ptr;
@@ -75,6 +135,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
         ptrlen--;
         cur_ptr++;
     }
+    */
     end_mmapfile(ptr, mmap_ptrlen, -1);
 
     if (fh->reid!=fh->id&&re&&getuser(re->owner,&user)!=0) {
