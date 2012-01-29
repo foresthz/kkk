@@ -19,7 +19,6 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 {
     char *p, *q, *r;
     int i, len, count, uid;
-    bool add;
     char userid[IDLEN+2];
     p = ptr;
     count = 0;
@@ -35,13 +34,10 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
             userid[len] = '\0';
             if ((uid=getuser(userid, NULL))==0)
                 continue;
-            add = true;
             for (i=0;i<count;i++)
-                if (id[i]==uid) {
-                    add = false;
+                if (id[i]==uid)
                     break;
-                }
-            if (add) {
+            if (i==count) {
                 id[count] = uid;
                 count++;
             }
