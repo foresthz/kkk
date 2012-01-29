@@ -1178,7 +1178,20 @@ PHP_FUNCTION(bbs_delete_refer)
     RETURN_FALSE;
 #endif
 }
-
+/**
+ * Read all refers 
+ * bool bbs_read_all_refer(string userid, long mode)
+ *
+ * @param string userid
+ * @param long mode
+ *              1: refer
+ *              2: reply
+ *              others: invalid mode
+ *
+ * @return TRUE on success, FALSE on failure
+ *
+ * @author: windinsn, Jan 29, 2012
+ */
 PHP_FUNCTION(bbs_read_all_refer)
 {
 #ifdef ENABLE_REFER
@@ -1219,6 +1232,20 @@ PHP_FUNCTION(bbs_read_all_refer)
 #endif
 }
 
+/**
+ * Delete all refers
+ * bool bbs_truncate_refer(string userid, long mode)
+ *
+ * @param string userid
+ * @param long mode
+ *              1: refer
+ *              2: reply
+ *              others: invalid mode
+ *
+ * @return TRUE on success, FALSE on failure
+ *
+ * @author: windinsn, Jan 29, 2012
+ */
 PHP_FUNCTION(bbs_truncate_refer)
 {
 #ifdef ENABLE_REFER

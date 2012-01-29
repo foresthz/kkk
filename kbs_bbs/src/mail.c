@@ -3231,7 +3231,31 @@ int MailProc(void)
     maillist_conf.arg = &arg;
     maillist_conf.title_pos.x = 1;
     maillist_conf.title_pos.y = 6;
+
+#ifdef ENABLE_REFER
+/**
+ *  通过用户的提示状态定位光标位置
+ *  added by windinsn, Jan 29, 2012
+ */
+    switch(chkmail()) {
+        case 2: 
+            maillist_conf.pos=8;
+            break;
+        case 1:
+            maillist_conf.pos=1;
+            break;
+        case 3:
+            maillist_conf.pos=3;
+            break;
+        case 4:
+            maillist_conf.pos=4;
+            break;
+        default:
+            maillist_conf.pos=2;
+    }    
+#else
     maillist_conf.pos = 2;
+#endif
 
     maillist_conf.on_select = maillist_onselect;
     maillist_conf.show_data = maillist_show;
