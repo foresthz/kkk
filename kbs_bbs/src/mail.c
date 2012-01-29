@@ -4146,6 +4146,18 @@ int refer_del(struct _select_def* conf, struct refer *refer, void* extraarg) {
     clear();
     return FULLUPDATE;
 }
+int refer_set_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
+    struct read_arg *arg=conf->arg;
+
+    if (refer==NULL)
+        return DONOTHING;
+    if (arg->mode!=DIR_MODE_REFER)
+        return DONOTHING;
+
+    refer_read_all(arg->direct);
+    setmailcheck(getCurrentUser()->userid);
+    return FULLUPDATE;
+}
 int refer_action(struct _select_def* conf, struct refer *refer, int act) {
     if (refer==NULL)
         return DONOTHING;
@@ -4334,6 +4346,7 @@ struct key_command refer_comms[]={
     {'r', (READ_KEY_FUNC)refer_read, NULL},
     {'s', (READ_KEY_FUNC)refer_board, NULL},
     {'d', (READ_KEY_FUNC)refer_del, NULL},
+    {'f', (READ_KEY_FUNC)refer_set_read, NULL},
     {'a', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_NEXT},    
     {'A', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_PREV},    
     {'/', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_TITLE_SEARCH_NEXT},    
@@ -4391,8 +4404,16 @@ int refer_list(char filename[STRLEN]) {
     char dir[255];
     int oldmode;
     int returnmode=CHANGEMODE;
+    struct stat st;
 
     sethomefile(dir, getCurrentUser()->userid, filename);
+    if (stat(dir, &st)<0) {
+        clear();
+        move(9, 0);
+        prints("\t\t\033[1;33m目前没有任何提醒!\033[m");
+        pressreturn();
+        return FULLUPDATE;
+    }
 
     oldmode=uinfo.mode;
     modify_user_mode(REFER);

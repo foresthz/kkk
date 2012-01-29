@@ -23,6 +23,10 @@ PHP_FUNCTION(bbs_sendmail);
 
 PHP_FUNCTION(bbs_get_refer);
 PHP_FUNCTION(bbs_load_refer);
+PHP_FUNCTION(bbs_read_refer);
+PHP_FUNCTION(bbs_delete_refer);
+PHP_FUNCTION(bbs_read_all_refer);
+PHP_FUNCTION(bbs_truncate_refer);
 
 #define PHP_BBS_MAIL_EXPORT_FUNCTIONS \
     PHP_FE(bbs_checknewmail, NULL) \
@@ -42,7 +46,10 @@ PHP_FUNCTION(bbs_load_refer);
     PHP_FE(bbs_domailforward, NULL) \
     PHP_FE(bbs_sendmail, NULL) \
     PHP_FE(bbs_get_refer, NULL) \
-    PHP_FE(bbs_load_refer, NULL) 
-
+    PHP_FE(bbs_load_refer, NULL) \
+    PHP_FE(bbs_read_refer, NULL) \
+    PHP_FE(bbs_delete_refer, NULL) \
+    PHP_FE(bbs_read_all_refer, NULL) \
+    PHP_FE(bbs_truncate_refer, NULL)
 #endif //PHP_BBS_MAIL_H
 

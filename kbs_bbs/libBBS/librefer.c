@@ -278,25 +278,82 @@ int refer_get_new(struct userec *user, char *filename) {
     sethomefile(buf, user->userid, filename);
     if (stat(buf, &st)<0)
         return 0;
-    pos=(int)((char *) &(refer.flag)-(char *) &(refer));
-    if ((fd=open(buf, O_RDONLY))<0)
-        return 0;
+
     size=sizeof(refer);
     total_num=st.st_size/size;
-    if (total_num<=0) {
-        close(fd);
+    if (total_num<=0) 
         return 0;
-    }
+
+    if ((fd=open(buf, O_RDONLY))<0)
+        return 0;
+
+    pos=(int)((char *) &(refer.flag)-(char *) &(refer));
+    lseek(fd, pos, SEEK_SET);
 
     i=0;
     while (i<total_num) {
-        lseek(fd, ((i++)*size+pos), SEEK_SET);
+        if ((i++)>0)
+            lseek(fd, size, SEEK_CUR);
+
         read(fd, &ch, 1);
         if (!(ch&FILE_READ)) new_num++;
+        lseek(fd, -1, SEEK_CUR);
     }    
 
     close(fd);
     return new_num;
+}
+int refer_read_all(char *buf) {
+    struct stat st;
+    struct refer refer;
+    int pos, fd;
+    int total, i, size;
+    unsigned char ch;
+
+    if (stat(buf, &st)<0)
+        return 0;
+
+    size=sizeof(refer);
+    total=st.st_size/size;
+    if (total<=0)
+        return 0;
+
+    if ((fd=open(buf, O_RDWR))<0)
+        return 0;
+
+    pos=(int)((char *) &(refer.flag)-(char *) &(refer));
+    lseek(fd, pos, SEEK_SET);
+
+    i=0;
+    while (i<total) {
+        if ((i++)>0)
+            lseek(fd, size, SEEK_CUR);
+        
+        read(fd, &ch, 1);
+        if (!(ch&FILE_READ)) {
+            ch |= FILE_READ;
+            lseek(fd, -1, SEEK_CUR);
+            write(fd, &ch, 1);
+        }
+        lseek(fd, -1, SEEK_CUR);
+    }
+
+    close(fd);
+    
+    return 0;
+}
+int refer_truncate(char *buf) {
+    struct stat st;
+
+    if (stat(buf, &st)<0)
+        return 0;
+
+    if (st.st_size/sizeof(struct refer)<=0)
+        return 0;
+
+    unlink(buf);
+
+    return 0;
 }
 #endif
 #endif

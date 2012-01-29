@@ -811,6 +811,8 @@ while(0)
     int refer_get_refer_new(struct userec *user);
     int refer_get_reply_new(struct userec *user); 
     int refer_get_new(struct userec *user, char *filename); 
+    int refer_read_all(char *path);
+    int refer_truncate(char *path);
 #endif /* ENABLE_REFER */
 
 #ifdef TITLEKEYWORD

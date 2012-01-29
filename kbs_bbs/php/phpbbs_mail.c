@@ -913,7 +913,6 @@ PHP_FUNCTION(bbs_get_refer) {
         case 2:
             sprintf(filename, "%s", REPLY_DIR);
             break;
-            break;
         default:
             zend_error(E_WARNING, "Invalid refer mode");
             RETURN_FALSE;
@@ -960,6 +959,8 @@ PHP_FUNCTION(bbs_get_refer) {
  *         -2: invalid user id
  *         -3: system error
  *         >=0: element count
+ *
+ * @author: windinsn, Jan 29, 2012
  */
 PHP_FUNCTION(bbs_load_refer) {
 #ifdef ENABLE_REFER
@@ -1032,6 +1033,228 @@ PHP_FUNCTION(bbs_load_refer) {
     efree(refers);
 
     RETURN_LONG(num);
+#else
+    RETURN_FALSE;
+#endif
+}
+/**
+ * read a refer record
+ * prototype:
+ * bool bbs_read_refer(string userid, long mode, long position);
+ *
+ * @param string userid
+ * @param long mode:
+ *                1: refer
+ *                2: reply
+ *                others: invalid mode
+ * @param long position:
+ *                refer index position, from 0
+ *
+ * @return TRUE on success
+ *         FALSE on failure.
+ *
+ * @author: windinsn, Jan 29, 2012
+ */
+PHP_FUNCTION(bbs_read_refer)
+{
+#ifdef ENABLE_REFER
+    char *userid;
+    int userid_len;
+    long mode, pos;
+    char buf[STRLEN], path[STRLEN];
+    struct userec *user;
+    int total, offset, fd;
+    struct refer refer;
+    unsigned char ch;
+
+    if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sll", &userid, &userid_len, &mode, &pos)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+
+    switch(mode) {
+        case 1:
+            sprintf(buf, "%s", REFER_DIR);
+            break;
+        case 2:
+            sprintf(buf, "%s", REPLY_DIR);
+            break;  
+        default:
+            zend_error(E_WARNING, "Invalid refer mode");
+            RETURN_FALSE;
+    } 
+
+    total=refer_get_count(user, buf);
+    if (pos<0||pos>=total)
+        RETURN_FALSE;
+    
+    offset=(int)((char *) &(refer.flag)-(char *) &(refer));
+    sethomefile(path, user->userid, buf);
+    if ((fd=open(path, O_RDWR))==-1)
+        RETURN_FALSE;
+
+    lseek(fd, pos*sizeof(refer)+offset, SEEK_SET);
+    read(fd, &ch, 1);
+    if (!(ch&FILE_READ)) {
+        ch |= FILE_READ;
+        lseek(fd, -1, SEEK_CUR);
+        write(fd, &ch, 1);
+  
+        setmailcheck(user->userid);
+    }    
+    close(fd);
+
+    RETURN_TRUE;
+#else
+    RETURN_FALSE;
+#endif
+}
+/**
+ * Delete a refer element
+ * bool bbs_delete_refer(string userid, long mode, long position);
+ *
+ * @param string userid
+ * @param long mode:
+ *                 1: refer
+ *                 2: reply
+ *                 others: invalid mode
+ * @param long position:
+ *                 refer index position, from 0
+ *
+ * @return TRUE on success, FALSE on failure
+ * 
+ * @author: windinsn, Jan 29, 2012
+ */
+PHP_FUNCTION(bbs_delete_refer) 
+{
+#ifdef ENABLE_REFER
+    char *userid;
+    int userid_len;
+    long mode, pos;
+    struct userec *user;
+    int total;
+    char buf[STRLEN], path[STRLEN];
+    struct refer refer;
+
+    if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sll", &userid, &userid_len, &mode, &pos)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+
+    switch(mode) {
+        case 1:
+            sprintf(buf, "%s", REFER_DIR);
+            break;
+        case 2:
+            sprintf(buf, "%s", REPLY_DIR);
+            break;
+        default:
+            zend_error(E_WARNING, "Invalid refer mode");
+            RETURN_FALSE;
+    }
+
+    total=refer_get_count(user, buf);
+    if (pos<0||pos>=total)
+        RETURN_FALSE;
+
+    sethomefile(path, user->userid, buf);
+    if (get_record(path, &refer, sizeof(refer), pos+1)!=0) 
+        RETURN_FALSE;
+
+    if (0!=delete_record(path, sizeof(refer), pos+1, (RECORD_FUNC_ARG)refer_cmp, &refer))
+        RETURN_FALSE;
+
+    if (pos==total-1)
+        setmailcheck(user->userid);
+
+    RETURN_TRUE;
+#else
+    RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_read_all_refer)
+{
+#ifdef ENABLE_REFER
+    char *userid;
+    int userid_len;
+    long mode;
+    struct userec *user;
+    char filename[STRLEN];
+    char path[STRLEN];
+ 
+    if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &userid, &userid_len, &mode)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+
+    switch (mode) {
+        case 1:
+            sprintf(filename, "%s", REFER_DIR);
+            break;
+        case 2:
+            sprintf(filename, "%s", REPLY_DIR);
+            break;
+        default:
+            zend_error(E_WARNING, "Invalid refer mode");
+            RETURN_FALSE;
+    }
+
+    sethomefile(path, user->userid, filename);    
+    refer_read_all(path);
+    setmailcheck(user->userid);
+    RETURN_TRUE; 
+#else
+    RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_truncate_refer)
+{
+#ifdef ENABLE_REFER
+    char *userid;
+    int userid_len;
+    long mode;
+    struct userec *user;
+    char filename[STRLEN];
+    char path[STRLEN];
+
+    if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &userid, &userid_len, &mode)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+
+    switch (mode) {
+        case 1:
+            sprintf(filename, "%s", REFER_DIR);
+            break;
+        case 2:
+            sprintf(filename, "%s", REPLY_DIR);
+            break;
+        default:
+            zend_error(E_WARNING, "Invalid refer mode");
+            RETURN_FALSE;
+    }
+
+    sethomefile(path, user->userid, filename);
+    refer_truncate(path);
+    setmailcheck(user->userid);
+    
+    RETURN_TRUE;
 #else
     RETURN_FALSE;
 #endif
