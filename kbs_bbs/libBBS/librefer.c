@@ -41,6 +41,13 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
                 id[count] = uid;
                 count++;
             }
+        } else if (p==ptr && (strncmp(p, "发信人: ", 8)==0 || strncmp(p, "寄信人: ", 8)==0)) { /* 首行"发信人""寄信人"不匹配，避免昵称 */
+            if ((q = strstr(p, "\n"))!=NULL) {
+                p = q + 1;
+                ptrlen -= (q - p + 1);
+                continue;
+            } else
+                break;
         } else if (p>ptr && strncmp(p-1, "\n【 在 ", 7)==0) { /* “大作”行不匹配，避免昵称 */
             p += 6;
             ptrlen -= 6;
