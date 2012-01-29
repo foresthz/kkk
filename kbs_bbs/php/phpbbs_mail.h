@@ -21,6 +21,8 @@ PHP_FUNCTION(bbs_setmailreaded);
 PHP_FUNCTION(bbs_domailforward);
 PHP_FUNCTION(bbs_sendmail);
 
+PHP_FUNCTION(bbs_get_refer);
+PHP_FUNCTION(bbs_load_refer);
 
 #define PHP_BBS_MAIL_EXPORT_FUNCTIONS \
     PHP_FE(bbs_checknewmail, NULL) \
@@ -38,7 +40,9 @@ PHP_FUNCTION(bbs_sendmail);
     PHP_FE(bbs_delmail,NULL) \
     PHP_FE(bbs_setmailreaded,NULL) \
     PHP_FE(bbs_domailforward, NULL) \
-    PHP_FE(bbs_sendmail, NULL)
+    PHP_FE(bbs_sendmail, NULL) \
+    PHP_FE(bbs_get_refer, NULL) \
+    PHP_FE(bbs_load_refer, NULL) 
 
 #endif //PHP_BBS_MAIL_H
 

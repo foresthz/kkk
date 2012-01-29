@@ -805,6 +805,12 @@ while(0)
     int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh);
     int refer_remove(char *dir, int ent, struct refer *refer);
     int refer_cmp(struct refer *r1, struct refer *r2);
+    int refer_get_refer_count(struct userec *user);
+    int refer_get_reply_count(struct userec *user); 
+    int refer_get_count(struct userec *user, char *filename); 
+    int refer_get_refer_new(struct userec *user);
+    int refer_get_reply_new(struct userec *user); 
+    int refer_get_new(struct userec *user, char *filename); 
 #endif /* ENABLE_REFER */
 
 #ifdef TITLEKEYWORD

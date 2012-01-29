@@ -1,5 +1,18 @@
 #include "php_kbs_bbs.h"
 
+#ifdef ENABLE_REFER
+void bbs_make_refer_array(zval *array, struct refer *refer) {
+    add_assoc_string(array, "BOARD", refer->board, 1);
+    add_assoc_string(array, "USER", refer->user, 1);
+    add_assoc_string(array, "TITLE", refer->title, 1);
+    add_assoc_long(array, "ID", refer->id);
+    add_assoc_long(array, "GROUP_ID", refer->groupid);
+    add_assoc_long(array, "RE_ID", refer->reid);
+    add_assoc_long(array, "FLAG", refer->flag);
+    add_assoc_long(array, "TIME", refer->time);
+}
+#endif
+
 PHP_FUNCTION(bbs_checknewmail)
 {
     char *userid;
@@ -850,4 +863,176 @@ PHP_FUNCTION(bbs_sendmail)
     ret = bbs_sendmail(fname, title, receiver, isbig5, noansi, getSession());
     setCurrentUser(saveuser);
     RETURN_LONG(ret);
+}
+
+/**
+ * get the number of user's refer
+ * prototype:
+ * bool bbs_get_refer(string userid, long mode, long &total_num, long &new_num)
+ *
+ * @param string userid
+ * @param long mode:  
+ *         1: refer
+ *         2: reply
+ *         others: invalid mode
+ *
+ * @return TRUE on success
+ *         FALSE on failure.
+ *         and return total and new numbers in arguments.
+ *
+ * @author: windinsn, Jan 29, 2012
+ */
+PHP_FUNCTION(bbs_get_refer) {
+#ifdef ENABLE_REFER
+    char *userid;
+    int userid_len;
+    long mode;
+    zval *total_num, *new_num;
+    char filename[STRLEN];
+    struct userec *user;
+    int total_count=0,new_count=0;
+
+    if (ZEND_NUM_ARGS()!=4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slzz", &userid, &userid_len, &mode, &total_num, &new_num)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (!PZVAL_IS_REF(total_num)||!PZVAL_IS_REF(new_num)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_FALSE;
+    }
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+
+    switch (mode) {
+        case 1:
+            sprintf(filename, "%s", REFER_DIR);
+            break;
+        case 2:
+            sprintf(filename, "%s", REPLY_DIR);
+            break;
+            break;
+        default:
+            zend_error(E_WARNING, "Invalid refer mode");
+            RETURN_FALSE;
+    }
+
+    total_count=refer_get_count(user, filename);
+    new_count=refer_get_new(user, filename);
+
+    ZVAL_LONG(total_num, total_count);
+    ZVAL_LONG(new_num, new_count);
+
+    RETURN_TRUE;
+#else
+    RETURN_FALSE;
+#endif    
+}
+/**
+ * Load user refers array
+ * prototype:
+ * int bbs_load_refer(string userid, long mode, long start, long count, array &refers);
+ *
+ * @param string userid
+ * @param long mode:
+ *                1: refer
+ *                2: reply
+ *                others: invalid mode
+ * @param long start: start position, from 0
+ * @param long count: elements count
+ * @param array refers, element struct
+ *        array (
+ *            "BOARD":    board name
+ *            "USER":     user id
+ *            "TITLE":    article title
+ *            "ID":       article id
+ *            "GROUP_ID": article groupid
+ *            "RE_ID":    article reid
+ *            "FLAG":     some flags for refer:
+ *                        0x01: read
+ *            "TIME":     timestamp, refer time
+ *        );
+ *
+ * @return
+ *         -1: parameter error, parameter $refers should be passed by reference in php
+ *         -2: invalid user id
+ *         -3: system error
+ *         >=0: element count
+ */
+PHP_FUNCTION(bbs_load_refer) {
+#ifdef ENABLE_REFER
+    char *userid;
+    int userid_len;
+    long mode, start, count;
+    zval *list, *element;
+    struct userec *user;
+    char filename[STRLEN];
+    char buf[STRLEN];
+    int total, num, i;    
+    struct refer *refers;    
+
+    if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slllz", &userid, &userid_len, &mode, &start, &count, &list)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (!PZVAL_IS_REF(list)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-1);
+    }
+
+    if (userid_len>IDLEN)
+        RETURN_LONG(-2);
+    if (!getuser(userid, &user))
+        RETURN_LONG(-2);
+
+    switch(mode) {
+        case 1:
+            sprintf(filename, "%s", REFER_DIR);
+            break; 
+        case 2:
+            sprintf(filename, "%s", REPLY_DIR);
+            break;
+        default:
+            zend_error(E_WARNING, "Invalid refer mode");
+            RETURN_FALSE;
+    }
+
+    total=refer_get_count(user, filename);
+    if (total<=0)
+        RETURN_LONG(0);
+
+    start++;
+    if (start<=0)
+        start=1;
+
+    if (count>total-start+1)
+        count=total-start+1;
+    if (count<=0)
+        RETURN_LONG(0);
+
+    if (array_init(list)!=SUCCESS)
+        RETURN_LONG(-3);
+
+    refers=emalloc(count*sizeof(struct refer));
+    if (NULL==refers)
+        RETURN_LONG(-4);
+
+    
+    sethomefile(buf, user->userid, filename); 
+    num=get_records(buf, refers, sizeof(struct refer), start, count);
+
+    for (i=0; i<num; i++) {
+        MAKE_STD_ZVAL(element);
+        array_init(element);
+        bbs_make_refer_array(element, refers+i);
+        zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
+    }
+
+    efree(refers);
+
+    RETURN_LONG(num);
+#else
+    RETURN_FALSE;
+#endif
 }

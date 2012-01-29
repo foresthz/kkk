@@ -75,16 +75,16 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile) {
     char *ptr,*cur_ptr;
     off_t ptrlen, mmap_ptrlen;    
-    char c='\0', last_c;
-    int in_at=false;
-    char id[IDLEN+1];
-    int id_pos=0;
+    //char c='\0', last_c;
+    //int in_at=false;
+    //char id[IDLEN+1];
+    //int id_pos=0;
     struct userec *user;
     const struct boardheader *board;
     int users[MAX_REFER];
     int times=0;
-    int sent=false;
-    int i,uid;
+    //int sent=false;
+    int i;//,uid;
 
     board=getbcache(boardname);
     if (0==board)
@@ -241,6 +241,62 @@ int refer_cmp(struct refer *r1, struct refer *r2) {
     if (strncasecmp(r1->board, r2->board, IDLEN+6)==0&&r1->id==r2->id)
         return 1;
     return 0;
+}
+int refer_get_refer_count(struct userec *user) {
+    return refer_get_count(user, REFER_DIR);
+}
+int refer_get_reply_count(struct userec *user) {
+    return refer_get_count(user, REPLY_DIR);
+}
+int refer_get_count(struct userec *user, char *filename) {
+    char buf[STRLEN];
+    struct stat st;
+    struct refer refer;
+
+    sethomefile(buf, user->userid, filename);
+    if (stat(buf, &st)<0)
+        return 0;
+    return st.st_size/sizeof(refer);
+}
+int refer_get_refer_new(struct userec *user) {
+    return refer_get_new(user, REFER_DIR);
+}
+int refer_get_reply_new(struct userec *user) {
+    return refer_get_new(user, REPLY_DIR);
+}
+int refer_get_new(struct userec *user, char *filename) {
+    char buf[STRLEN];
+    struct stat st;
+    struct refer refer;
+    int pos, fd;
+    int i, size;
+    unsigned char ch;
+
+    int total_num=0;
+    int new_num=0;
+
+    sethomefile(buf, user->userid, filename);
+    if (stat(buf, &st)<0)
+        return 0;
+    pos=(int)((char *) &(refer.flag)-(char *) &(refer));
+    if ((fd=open(buf, O_RDONLY))<0)
+        return 0;
+    size=sizeof(refer);
+    total_num=st.st_size/size;
+    if (total_num<=0) {
+        close(fd);
+        return 0;
+    }
+
+    i=0;
+    while (i<total_num) {
+        lseek(fd, ((i++)*size+pos), SEEK_SET);
+        read(fd, &ch, 1);
+        if (!(ch&FILE_READ)) new_num++;
+    }    
+
+    close(fd);
+    return new_num;
 }
 #endif
 #endif
