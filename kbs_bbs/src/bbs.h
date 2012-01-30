@@ -656,6 +656,10 @@ extern struct sms_shm_head *head;
 #ifdef ENABLE_REFER
 #define REFER_DIR ".REFER"
 #define REPLY_DIR ".REPLY"
+
+#define REFER_MODE_AT    1
+#define REFER_MODE_REPLY 2
+
 #endif /* ENABLE_REFER */
 
 #include "func.h"

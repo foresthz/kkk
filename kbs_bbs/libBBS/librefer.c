@@ -15,11 +15,6 @@
 #define DEF_REPLY 040000000010LL
 #endif
 
-#define
-#define REFER_MODE_AT    1
-#define REFER_MODE_REPLY 2
-#endif
-
 int set_refer_file_from_mode(char *buf, const int mode) 
 {
     switch (mode) {
