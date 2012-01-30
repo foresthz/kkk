@@ -3930,7 +3930,7 @@ char refer_title_bar[STRLEN];
 int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     int save_currboardent, save_uinfo_currentboard, fd, num, retnum, key, repeat, ret;
     char buf[STRLEN];
-    const struct boardheader *board;
+    struct boardheader *board;
     fileheader_t article[1];
     struct read_arg *arg;
 
@@ -4094,6 +4094,11 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
                 break;
             case KEY_UP:
                 ret=READ_PREV;
+                break;
+            case 's':
+            case 'S':
+                savePos(DIR_MODE_NORMAL, NULL, num, board);
+                ReadBoard();
                 break;
             case '!':
                 Goodbye();
