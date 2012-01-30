@@ -800,6 +800,7 @@ while(0)
     char *string_copy(char *buf, const char *str, size_t * buflen);
 
 #ifdef ENABLE_REFER
+    int set_refer_file_from_mode(char *buf, const int mode);
     int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile);
     int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
     int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh);

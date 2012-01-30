@@ -15,6 +15,27 @@
 #define DEF_REPLY 040000000010LL
 #endif
 
+#define
+#define REFER_MODE_AT    1
+#define REFER_MODE_REPLY 2
+#endif
+
+int set_refer_file_from_mode(char *buf, const int mode) 
+{
+    switch (mode) {
+        case REFER_MODE_AT:
+            sprintf(buf, "%s", REFER_DIR);
+            break;
+        case REFER_MODE_REPLY:
+            sprintf(buf, "%s", REPLY_DIR);
+            break;
+        default:
+            return -1;
+    }
+    
+    return 0;
+}
+
 int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 {
     char *p, *q, *r;

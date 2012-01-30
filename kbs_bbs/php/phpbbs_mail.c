@@ -906,18 +906,11 @@ PHP_FUNCTION(bbs_get_refer) {
     if (!getuser(userid, &user))
         RETURN_FALSE;
 
-    switch (mode) {
-        case 1:
-            sprintf(filename, "%s", REFER_DIR);
-            break;
-        case 2:
-            sprintf(filename, "%s", REPLY_DIR);
-            break;
-        default:
-            zend_error(E_WARNING, "Invalid refer mode");
-            RETURN_FALSE;
+	if (set_refer_file_from_mode(filename, mode)!=0) {
+        zend_error(E_WARNING, "Invalid refer mode");
+        RETURN_FALSE;
     }
-
+	
     total_count=refer_get_count(user, filename);
     new_count=refer_get_new(user, filename);
 
@@ -987,16 +980,9 @@ PHP_FUNCTION(bbs_load_refer) {
     if (!getuser(userid, &user))
         RETURN_LONG(-2);
 
-    switch(mode) {
-        case 1:
-            sprintf(filename, "%s", REFER_DIR);
-            break; 
-        case 2:
-            sprintf(filename, "%s", REPLY_DIR);
-            break;
-        default:
-            zend_error(E_WARNING, "Invalid refer mode");
-            RETURN_FALSE;
+    if (set_refer_file_from_mode(filename, mode)!=0) {
+        zend_error(E_WARNING, "Invalid refer mode");
+        RETURN_FALSE;
     }
 
     total=refer_get_count(user, filename);
@@ -1075,17 +1061,10 @@ PHP_FUNCTION(bbs_read_refer)
     if (!getuser(userid, &user))
         RETURN_FALSE;
 
-    switch(mode) {
-        case 1:
-            sprintf(buf, "%s", REFER_DIR);
-            break;
-        case 2:
-            sprintf(buf, "%s", REPLY_DIR);
-            break;  
-        default:
-            zend_error(E_WARNING, "Invalid refer mode");
-            RETURN_FALSE;
-    } 
+   if (set_refer_file_from_mode(buf, mode)!=0) {
+        zend_error(E_WARNING, "Invalid refer mode");
+        RETURN_FALSE;
+    }
 
     total=refer_get_count(user, buf);
     if (pos<0||pos>=total)
@@ -1147,16 +1126,9 @@ PHP_FUNCTION(bbs_delete_refer)
     if (!getuser(userid, &user))
         RETURN_FALSE;
 
-    switch(mode) {
-        case 1:
-            sprintf(buf, "%s", REFER_DIR);
-            break;
-        case 2:
-            sprintf(buf, "%s", REPLY_DIR);
-            break;
-        default:
-            zend_error(E_WARNING, "Invalid refer mode");
-            RETURN_FALSE;
+    if (set_refer_file_from_mode(buf, mode)!=0) {
+        zend_error(E_WARNING, "Invalid refer mode");
+        RETURN_FALSE;
     }
 
     total=refer_get_count(user, buf);
@@ -1211,16 +1183,9 @@ PHP_FUNCTION(bbs_read_all_refer)
     if (!getuser(userid, &user))
         RETURN_FALSE;
 
-    switch (mode) {
-        case 1:
-            sprintf(filename, "%s", REFER_DIR);
-            break;
-        case 2:
-            sprintf(filename, "%s", REPLY_DIR);
-            break;
-        default:
-            zend_error(E_WARNING, "Invalid refer mode");
-            RETURN_FALSE;
+    if (set_refer_file_from_mode(filename, mode)!=0) {
+        zend_error(E_WARNING, "Invalid refer mode");
+        RETURN_FALSE;
     }
 
     sethomefile(path, user->userid, filename);    
@@ -1265,16 +1230,9 @@ PHP_FUNCTION(bbs_truncate_refer)
     if (!getuser(userid, &user))
         RETURN_FALSE;
 
-    switch (mode) {
-        case 1:
-            sprintf(filename, "%s", REFER_DIR);
-            break;
-        case 2:
-            sprintf(filename, "%s", REPLY_DIR);
-            break;
-        default:
-            zend_error(E_WARNING, "Invalid refer mode");
-            RETURN_FALSE;
+    if (set_refer_file_from_mode(filename, mode)!=0) {
+        zend_error(E_WARNING, "Invalid refer mode");
+        RETURN_FALSE;
     }
 
     sethomefile(path, user->userid, filename);
