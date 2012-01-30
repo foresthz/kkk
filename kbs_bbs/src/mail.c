@@ -3242,7 +3242,7 @@ int MailProc(void)
             maillist_conf.pos=8;
             break;
         case 1:
-            maillist_conf.pos=1;
+            maillist_conf.pos=2;
             break;
         case 3:
             maillist_conf.pos=3;
@@ -4004,6 +4004,7 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     clrtoeol();
     resetcolor();
 
+
     if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("ReEexp", key)))
         key=igetkey();
 
@@ -4086,6 +4087,14 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
             case Ctrl('W'):
                 ret=read_showauthorBM(conf, article, NULL);
                 break;  
+            case KEY_RIGHT:
+            case KEY_DOWN:
+            case KEY_PGDN:
+                ret=READ_NEXT;
+                break;
+            case KEY_UP:
+                ret=READ_PREV;
+                break;
             case '!':
                 Goodbye();
                 break;
@@ -4107,8 +4116,10 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     return ret;
 }
 int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
-    int bid, save_currboardent, save_uinfo_currentboard;
-    const struct boardheader *board;
+    int bid, save_currboardent, save_uinfo_currentboard, fd, pos;
+    struct boardheader *board;
+    fileheader_t article[1];
+    char buf[STRLEN];
 
     if (refer==NULL)
         return DONOTHING;
@@ -4137,6 +4148,17 @@ int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename,getSession());
 #endif
+
+    setbdir(DIR_MODE_NORMAL, buf, board->filename);
+    pos=-1;
+    if ((fd=open(buf, O_RDWR, 0644))>=0) {
+        get_records_from_id(fd, refer->id, article, 1, &pos);
+        close(fd);
+    } 
+    
+    if (pos>0) {
+        savePos(DIR_MODE_NORMAL, NULL, pos, board);
+    }
 
     move(0,0);
     clrtoeol();
