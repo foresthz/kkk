@@ -1454,3 +1454,42 @@ PHP_FUNCTION(bbs_fav_boards_nforum)
     }
 }
 #endif
+
+#ifdef TITLEKEYWORD
+PHP_FUNCTION(bbs_gettitkey)
+{   
+    int ac = ZEND_NUM_ARGS();
+    char *board; 
+    long b_len, all;
+    zval *element, *titkeys;
+    struct BoardStatus *bs;
+    char titkey[MAXTITLEKEY][8];
+    int i, count;
+                
+    if (ac!=3 || zend_parse_parameters(3 TSRMLS_CC, "sal", &board, &b_len, &titkeys, &all) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }           
+    array_init(titkeys);
+    bs = getbstatus(getbid(board, NULL));
+    memset(titkey, 0 ,MAXTITLEKEY * 8 * sizeof(char));
+    count = 0;
+    /* 先获取自定义标题标签 */
+    for (i=0;i<bs->tkcount;i++) {
+        strcpy(titkey[count], bs->titkey[i]);
+        count++;
+    }
+    if (all) {
+        for (i=0;i<publicshm->tkcount;i++) {
+            strcpy(titkey[count], publicshm->systitkey[i]);
+            count++;
+        }
+    }
+    for (i=0;i<count;i++) {
+        MAKE_STD_ZVAL(element);
+        array_init(element);
+        add_assoc_string(element, "desc", titkey[i], 1);
+        zend_hash_index_update(Z_ARRVAL_P(titkeys), i, (void *)&element, sizeof(zval *), NULL);
+    }
+    RETURN_LONG(count);
+}
+#endif
