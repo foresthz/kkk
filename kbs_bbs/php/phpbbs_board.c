@@ -1455,9 +1455,9 @@ PHP_FUNCTION(bbs_fav_boards_nforum)
 }
 #endif
 
-#ifdef TITLEKEYWORD
 PHP_FUNCTION(bbs_gettitkey)
 {   
+#ifdef TITLEKEYWORD
     int ac = ZEND_NUM_ARGS();
     char *board; 
     long b_len, all;
@@ -1491,5 +1491,7 @@ PHP_FUNCTION(bbs_gettitkey)
         zend_hash_index_update(Z_ARRVAL_P(titkeys), i, (void *)&element, sizeof(zval *), NULL);
     }
     RETURN_LONG(count);
-}
+#else
+    RETURN_FALSE;
 #endif
+}
