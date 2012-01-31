@@ -3979,7 +3979,9 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
 #endif    
     
 #ifdef HAVE_BRC_CONTROL
-    //brc_add_read
+    int bid = getbid(board->filename, NULL);
+    brc_initial(getCurrentUser()->userid, board->filename, getSession());
+    brc_add_read(refer->id, bid, getSession());
 #endif
     
 
