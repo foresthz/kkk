@@ -181,7 +181,7 @@ int send_refer_reply_to(struct userec *user, const struct boardheader *board, st
     memset(&refer, 0, sizeof(refer));
 
     strncpy(refer.board, board->filename, IDLEN+6);
-    strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+    strncpy(refer.user, fh->owner, IDLEN);
     strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);
     refer.id=fh->id;
     refer.groupid=fh->groupid;
@@ -222,7 +222,7 @@ int send_refer_msg_to(struct userec *user, const struct boardheader *board, stru
     memset(&refer, 0, sizeof(refer));
 
     strncpy(refer.board, board->filename, IDLEN+6);
-    strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+    strncpy(refer.user, fh->owner, IDLEN);
     strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);  
     refer.id=fh->id;
     refer.groupid=fh->groupid;

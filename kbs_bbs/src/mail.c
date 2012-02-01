@@ -130,9 +130,9 @@ int chkmail()
  * 4: 有新的回复
  */
 int chkrefer() {
-    if (chkrefer_dir(REFER_DIR)>0)
+    if (DEFINE(getCurrentUser(), DEF_REFER)&&chkrefer_dir(REFER_DIR)>0)
         return 3;
-    if (chkrefer_dir(REPLY_DIR)>0)
+    if (DEFINE(getCurrentUser(), DEF_REPLY)&&chkrefer_dir(REPLY_DIR)>0)
         return 4;
 
     return 0; 
