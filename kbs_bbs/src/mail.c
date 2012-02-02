@@ -3981,14 +3981,13 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
 
-    currboardent=getbnum_safe(board->filename, getSession(), 1);
+    currboardent=getbid(board->filename, NULL);
     currboard=board;
     uinfo.currentboard=currboardent;
 
 #ifdef HAVE_BRC_CONTROL
-    int bid = getbid(board->filename, NULL);
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
-    brc_add_read(refer->id, bid, getSession());
+    brc_add_read(refer->id, currboardent, getSession());
 #endif
     
     if (arg->readdata==NULL)
@@ -4113,6 +4112,12 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
+
+#ifdef HAVE_BRC_CONTROL
+    if (currboard) {
+        brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
+    }
+#endif
 
     if (ret==FULLUPDATE&&arg->oldpos!=0) {
         conf->new_pos=arg->oldpos;
