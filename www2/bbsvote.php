@@ -188,7 +188,7 @@ if ($votearr[0]["IPFLAG"])
 		}else if( $votearr[0]["TYPE"] == "数字" ){
 ?>
 <tr><td></td><td></td><td>请输入数值，最大<?php echo $votearr[0]["MAXTKT"];?>:
-<input type="text" name="ITEM" value="<?php echo $uservotearr[0]["VOTED"];?>"></td>
+<input type="text" name="ITEM" value="<?php echo $uservotearr[0]["VOTED1"];?>"></td>
 </tr>
 <input type="hidden" name="type" value="<?php echo $votearr[0]["TYPE"];?>">
 <?php
