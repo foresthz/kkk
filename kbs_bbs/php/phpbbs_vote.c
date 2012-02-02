@@ -117,7 +117,8 @@ static void bbs_make_user_vote_array(zval * array, struct ballot *vbal)
 {
     if (vbal && vbal->uid[0]) {
         add_assoc_string(array, "USERID", vbal->uid, 1);
-        add_assoc_long(array, "VOTED", vbal->voted);
+        add_assoc_long(array, "VOTED1", vbal->voted[0]);
+        add_assoc_long(array, "VOTED2", vbal->voted[1]);
         add_assoc_string(array, "MSG1", vbal->msg[0], 1);
         add_assoc_string(array, "MSG2", vbal->msg[1], 1);
         add_assoc_string(array, "MSG3", vbal->msg[2], 1);
@@ -221,7 +222,7 @@ PHP_FUNCTION(bbs_vote_num)
     char *msg;
     int msg_len;
     long ent;
-    long votevalue;
+    long votevalue1, votevalue2;
     struct votebal vbal;
     struct ballot uservote;
     struct ballot tmpball;
@@ -233,7 +234,7 @@ PHP_FUNCTION(bbs_vote_num)
     char *c,*cc;
     int llen;
 
-    if (ac != 4 || zend_parse_parameters(4 TSRMLS_CC, "slls", &bname, &bname_len, &ent, &votevalue, &msg, &msg_len) == FAILURE) {
+    if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sllls", &bname, &bname_len, &ent, &votevalue1, &votevalue2, &msg, &msg_len) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
 
@@ -291,12 +292,13 @@ PHP_FUNCTION(bbs_vote_num)
     if (! bbs_can_access_vote(controlfile))
         RETURN_LONG(-8);
 
-    if (vbal.type == 4 && votevalue > vbal.maxtkt)
+    if (vbal.type == 4 && votevalue1 > vbal.maxtkt)
         RETURN_LONG(-12);
 
     bzero(&uservote, sizeof(uservote));
     strcpy(uservote.uid,getCurrentUser()->userid);
-    uservote.voted = votevalue;
+    uservote.voted[0] = votevalue1;
+    uservote.voted[1] = votevalue2;
     strncpy(uservote.msg[0],lmsg[0],STRLEN);
     strncpy(uservote.msg[1],lmsg[1],STRLEN);
     strncpy(uservote.msg[2],lmsg[2],STRLEN);

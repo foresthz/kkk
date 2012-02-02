@@ -50,7 +50,8 @@
 			else
 				$msg = "";
 
-			$votevalueint = 0;
+			$votevalueint1 = 0;
+			$votevalueint2 = 0;
 
 			if( $votetype == "单选" || $votetype == "是非" ){
 				if(isset($_POST["ITEM"]))
@@ -65,15 +66,20 @@
 				if( $votetype == "是非" && ($itemvalue < 0 || $itemvalue > 2) )
 					html_error_quit("参数错误5");
 
-				$votevalueint = ( 1 << $itemvalue );
+				$votevalueint1 = ( 1 << $itemvalue );
 
 			}else if( $votetype == "复选" ){
 				$vcount = 0;
-				for($i = 0; $i < 32; $i++){
+				for($i = 0; $i < 64; $i++){
 					$itemstr = "ITEM".($i+1);
 					if(isset($_POST[$itemstr]) && $_POST[$itemstr]=="on"){
-						$votevalueint += ( 1 << $i );
-						$vcount++;
+						if ($i<32) {
+							$votevalueint1 += ( 1 << $i );
+							$vcount++;
+						} else {
+							$votevalueint2 += (1 <<($i-32));
+							$vcount++;
+						}
 					}
 				}
 				if($vcount > $votearr[0]["MAXTKT"]) {
@@ -82,18 +88,18 @@
 
 			}else if( $votetype == "数字" ){
 				if(isset($_POST["ITEM"]))
-					$votevalueint = $_POST["ITEM"];
+					$votevalueint1 = $_POST["ITEM"];
 				else
 					html_error_quit("参数错误3");
 
-				settype($votevalueint,"integer");
+				settype($votevalueint1,"integer");
 
-				if( $votevalueint < 0 )
+				if( $votevalueint1 < 0 )
 					html_error_quit("参数错误7");
 			}else if( $votetype != "问答" )
 				html_error_quit("参数错误8");
 
-			$retnum = bbs_vote_num($board,$num,$votevalueint,$msg);
+			$retnum = bbs_vote_num($board,$num,$votevalueint1,$votevalueint2,$msg);
 			if($retnum <= 0)
 				html_error_quit("投票错误".$retnum);
 			else {
@@ -143,8 +149,13 @@ if ($votearr[0]["IPFLAG"])
 		if($uservotearr[0]["USERID"]){
 			if( $votearr[0]["TYPE"] != "数字" ){
 				for( $i =0; $i < $votearr[0]["TOTALITEMS"]; $i++){
-					if( $uservotearr[0]["VOTED"] & (1 << $i) )
-						$oldvote[$i] = 1;
+					if ($i<32) {
+						if( $uservotearr[0]["VOTED1"] & (1 << $i) )
+							$oldvote[$i] = 1;
+					} else {
+						if( $uservotearr[0]["VOTED2"] & (1 << ($i-32)) )
+							$oldvote[$i] = 1;
+					}
 				}
 			}
 		}

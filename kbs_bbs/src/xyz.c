@@ -50,6 +50,7 @@ struct _setperm_select {
     unsigned int pbits;
     unsigned int basic;
     unsigned int oldbits;
+    struct dual_perm *dp;
 };
 int showperminfo(struct _select_def *conf, int i)
 {
@@ -144,15 +145,23 @@ int setperm_show(struct _select_def *conf, int i)
 int setperm_key(struct _select_def *conf, int key)
 {
     int sel;
+    struct _setperm_select *arg = (struct _setperm_select *) conf->arg;
 
     if (key == Ctrl('Q'))
         return SHOW_QUIT;
     if (key == Ctrl('A')) {
-        struct _setperm_select *arg = (struct _setperm_select *) conf->arg;
-
+        if (arg->dp) {
+            struct dual_perm *dp = arg->dp; 
+            dp->cancel = true;
+        }
         arg->pbits = arg->oldbits;
         return SHOW_QUIT;
     }
+    if (key == Ctrl('S') && arg->dp) {
+        struct dual_perm *dp = arg->dp;
+        dp->curr = (dp->curr==1)?0:1;
+        return SHOW_QUIT;
+    } 
     if (key <= 'z' && key >= 'a')
         sel = key - 'a';
     else
@@ -164,7 +173,7 @@ int setperm_key(struct _select_def *conf, int key)
     return SHOW_CONTINUE;
 }
 
-unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int numbers, int (*show)(struct _select_def *, int), int (*select)(struct _select_def *))
+unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int numbers, int (*show)(struct _select_def *, int), int (*select)(struct _select_def *), struct dual_perm *dp)
 {
     struct _select_def perm_conf;
     struct _setperm_select arg;
@@ -174,7 +183,7 @@ unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int 
     pts = (POINT *) malloc(sizeof(POINT) * (numbers + 1));
 
     move(4, 0);
-    prints("请按下你要的代码来设定%s, Ctrl+Q退出，Ctrl+A放弃修改退出.\n", prompt);
+    prints("请按下你要的代码来设定%s, Ctrl+Q退出，Ctrl+A放弃修改退出%s.\n", prompt, dp?", \033[32mCtrl+S切换选项\033[m":"");
     move(6, 0);
     clrtobot();
 
@@ -185,6 +194,7 @@ unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int 
     arg.pbits = pbits;
     arg.basic = basic;
     arg.oldbits = pbits;
+    arg.dp = dp?dp:NULL;
     bzero((char *) &perm_conf, sizeof(struct _select_def));
     perm_conf.item_count = numbers + 1;
     perm_conf.item_per_page = numbers + 1;
@@ -318,7 +328,7 @@ int x_level(void)
     clrtobot();
     move(2, 0);
     prints("请设定" NAME_USER_SHORT " '%s' 的权限\n", genbuf);
-    newlevel = setperms(lookupuser->userlevel, basicperm, "权限", NUMPERMS, setperm_show, NULL);
+    newlevel = setperms(lookupuser->userlevel, basicperm, "权限", NUMPERMS, setperm_show, NULL, NULL);
     move(2, 0);
     if (newlevel == lookupuser->userlevel)
         prints(NAME_USER_SHORT " '%s' 的权限没有更改\n", lookupuser->userid);
@@ -390,7 +400,7 @@ int XCheckLevel(void)
     clear();
     move(0,0); prints("\033[1;32m查阅具有特定权限的用户\033[m");
     move(2,0); prints("设定需要查阅的权限:");
-    arg.check_level=setperms(0,0,"权限",NUMPERMS,showperminfo,NULL);
+    arg.check_level=setperms(0,0,"权限",NUMPERMS,showperminfo,NULL,NULL);
     for (arg.count=0,i=0; i<NUMPERMS; i++)
         if (arg.check_level&(1<<i))
             arg.count++;
@@ -802,7 +812,7 @@ int x_usersmsdef(void)
         return 0;
     }
     move(2, 0);
-    newlevel = setperms(getSession()->currentmemo->ud.smsdef, 0, "短信参数", NUMSMSDEF, showsmsdef, NULL);
+    newlevel = setperms(getSession()->currentmemo->ud.smsdef, 0, "短信参数", NUMSMSDEF, showsmsdef, NULL, NULL);
     move(2, 0);
     if (newlevel == getSession()->currentmemo->ud.smsdef)
         prints("参数没有修改...\n");
@@ -837,7 +847,7 @@ int x_userdefine1(void)
     move(1, 0);
     clrtobot();
     move(2, 0);
-    newlevel = setperms(lookupuser->userdefine[1], 0, "参数", NUMDEFINES-32, showuserdefine1, NULL);
+    newlevel = setperms(lookupuser->userdefine[1], 0, "参数", NUMDEFINES-32, showuserdefine1, NULL, NULL);
     move(2, 0);
     if (newlevel == lookupuser->userdefine[1])
         prints("参数没有修改...\n");
@@ -872,7 +882,7 @@ int x_userdefine(void)
     move(1, 0);
     clrtobot();
     move(2, 0);
-    newlevel = setperms(lookupuser->userdefine[0], 0, "参数", 31, showuserdefine, NULL);
+    newlevel = setperms(lookupuser->userdefine[0], 0, "参数", 31, showuserdefine, NULL, NULL);
     move(2, 0);
     if (newlevel == lookupuser->userdefine[0])
         prints("参数没有修改...\n");
@@ -1993,7 +2003,7 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
     clrtobot();
     move(2, 0);
     prints("\033[1;31m修改\033[1;32m%s\033[1;31m的文章属性:\033[m \033[1;33m%s\033[m", fh->owner, fh->title);
-    newlevel = setperms(oldlevel, perms, "参数", FH_SELECT_NUM, show_fhselect, fhselect_select);
+    newlevel = setperms(oldlevel, perms, "参数", FH_SELECT_NUM, show_fhselect, fhselect_select, NULL);
     move(22, 0);
     if ((newlevel & perms) == (oldlevel & perms))
         prints("参数没有修改...\n");

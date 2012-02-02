@@ -9,7 +9,7 @@
 
 struct ballot {
     char uid[IDLEN+2];            /* 投票人       */
-    unsigned int voted;         /* 投票的内容   */
+    unsigned int voted[2];         /* 投票的内容   */
     char msg[3][STRLEN];        /* 建议事项     */
 };
 
@@ -17,7 +17,7 @@ struct votebal {
     char userid[IDLEN + 1];
     char title[STRLEN];
     char type;
-    char items[32][38];
+    char items[64][38];
     int maxdays;
     int maxtkt;
     int totalitems;
@@ -54,7 +54,7 @@ char *vote_type[] = { "是非", "单选", "复选", "数字", "问答" };
 
 struct voterecord {
     char userid[IDLEN+2];
-    char selectvalue[33];
+    char selectvalue[65];
     char ip[IPLEN];
 };      
         

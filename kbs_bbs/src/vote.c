@@ -24,7 +24,7 @@ extern int page, range;
 struct votebal currvote;
 struct votelimit currlimit;     /*Haohmaru.99.11.17.根据版主设的限制条件判断是否让该使用者投票 */
 char controlfile[STRLEN], limitfile[STRLEN];
-unsigned int result[33];
+unsigned int result[65];
 int vnum;
 int voted_flag;
 FILE *sug;
@@ -395,18 +395,20 @@ int count_result(struct ballot *ptr, int idx, char *arg)
         for (i = 0; i < 3; i++)
             fprintf(sug, "%s\n", ptr->msg[i]);
     }
-    result[32]++;
+    result[64]++;
     if (currvote.type == VOTE_ASKING) {
         return 0;
     }
     if (currvote.type != VOTE_VALUE) {
         for (i = 0; i < 32; i++) {
-            if ((ptr->voted >> i) & 1)
+            if ((ptr->voted[0] >> i) & 1)
                 (result[i])++;
+            if ((ptr->voted[1] >> i) & 1)
+                (result[32+i])++;
         }
     } else {
-        result[31] += ptr->voted;
-        result[(ptr->voted * 10) / (currvote.maxtkt + 1)]++;
+        result[63] += ptr->voted[0];
+        result[(ptr->voted[0] * 10) / (currvote.maxtkt + 1)]++;
     }
     return 0;
 }
@@ -486,7 +488,7 @@ static int mk_result(int num)
     get_result_title();
     fprintf(sug, "** 投票结果:\n\n");
     if (currvote.type == VOTE_VALUE) {
-        total = result[32];
+        total = result[64];
         for (i = 0; i < 10; i++) {
             fprintf(sug,
                     "\033[1m  %4d\033[m 到 \033[1m%4d\033[m 之间有 \033[1m%4d\033[m 票  约占 \033[1m%d%%\033[m\n",
@@ -495,9 +497,9 @@ static int mk_result(int num)
                     , (result[i] * 100) / ((total <= 0) ? 1 : total));
         }
         fprintf(sug, "此次投票结果平均值是: \033[1m%d\033[m\n",
-                result[31] / ((total <= 0) ? 1 : total));
+                result[63] / ((total <= 0) ? 1 : total));
     } else if (currvote.type == VOTE_ASKING) {
-        total = result[32];
+        total = result[64];
     } else {
         for (i = 0; i < currvote.totalitems; i++) {
             total += result[i];
@@ -506,13 +508,13 @@ static int mk_result(int num)
             /*            fprintf(sug, "(%c) %-40s  %4d 票  约占 \033[1m%d%%\033[m\n",'A'+i,
                currvote.items[i], result[i] , (result[i]*100)/((total<=0)?1:total));
              */
-            fprintf(sug, "(%c) %-40s  %4d 票  约占 \033[1m%d%%\033[m\n", 'A' + i,
+            fprintf(sug, "(%c) %-40s  %4d 票  约占 \033[1m%d%%\033[m\n", (i<58)? 'A' + i : i - 25,
                     currvote.items[i], result[i],
                     (result[i] * 100) /
-                    ((result[32] <= 0) ? 1 : result[32]));
+                    ((result[64] <= 0) ? 1 : result[64]));
         }
     }
-    fprintf(sug, "\n投票总人数 = \033[1m%d\033[m 人\n", result[32]);
+    fprintf(sug, "\n投票总人数 = \033[1m%d\033[m 人\n", result[64]);
     fprintf(sug, "投票总票数 =\033[1m %d\033[m 票\n\n", total);
     if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
         sprintf(record_file, "vote/%s/record.%d", currboard->filename, (int)getpid());
@@ -602,7 +604,7 @@ int check_result(int num)
     get_result_title();
     fprintf(sug, "** 投票结果:\n\n");
     if (currvote.type == VOTE_VALUE) {
-        total = result[32];
+        total = result[64];
         for (i = 0; i < 10; i++) {
             fprintf(sug,
                     "\033[1m  %4d\033[m 到 \033[1m%4d\033[m 之间有 \033[1m%4d\033[m 票  约占 \033[1m%d%%\033[m\n",
@@ -611,21 +613,21 @@ int check_result(int num)
                     , (result[i] * 100) / ((total <= 0) ? 1 : total));
         }
         fprintf(sug, "此次投票结果平均值是: \033[1m%d\033[m\n",
-                result[31] / ((total <= 0) ? 1 : total));
+                result[63] / ((total <= 0) ? 1 : total));
     } else if (currvote.type == VOTE_ASKING) {
-        total = result[32];
+        total = result[64];
     } else {
         for (i = 0; i < currvote.totalitems; i++) {
             total += result[i];
         }
         for (i = 0; i < currvote.totalitems; i++) {
-            fprintf(sug, "(%c) %-40s  %4d 票  约占 \033[1m%d%%\033[m\n", 'A' + i,
+            fprintf(sug, "(%c) %-40s  %4d 票  约占 \033[1m%d%%\033[m\n", (i<58)? 'A' + i : i - 25,
                     currvote.items[i], result[i],
                     (result[i] * 100) /
-                    ((result[32] <= 0) ? 1 : result[32]));
+                    ((result[64] <= 0) ? 1 : result[64]));
         }
     }
-    fprintf(sug, "\n投票总人数 = \033[1m%d\033[m 人\n", result[32]);
+    fprintf(sug, "\n投票总人数 = \033[1m%d\033[m 人\n", result[64]);
     fprintf(sug, "投票总票数 =\033[1m %d\033[m 票\n\n", total);
     fprintf(sug,
             "\033[44m\033[36m——————————————┤使用者%s├——————————————\033[m\n\n\n",
@@ -650,16 +652,24 @@ struct votebal *bal;
     int num, oldnum=-1;
     char buf[STRLEN];
 
-    for (num = 0; num < 32; num++)
+    for (num = 0; num < 64; num++)
         bal->items[num][0] = '\0';
     move(3, 0);
     prints("请依序输入可选择项, 按 ENTER 完成设定.\n");
 
     while (1) {
-        for (num = 0; num < 32; num++) {
-            sprintf(buf, "%c) ", num + 'A');
-            getdata((num % 16) + 4, (num / 16) * 40, buf, bal->items[num], 36,
-                    DOECHO, NULL, false);
+        for (num = 0; num < 64; num++) {
+            if (num == 32) {
+                move(4, 0);
+                clrtobot();
+            }
+            sprintf(buf, "%c) ", (num<58)? 'A' + num : num - 25);
+            if (num<32)
+                getdata((num % 16) + 4, (num / 16) * 40, buf, bal->items[num], 36,
+                        DOECHO, NULL, false);
+            else
+                getdata((num % 16) + 4, ((num-32) / 16) * 40, buf, bal->items[num], 36,
+                        DOECHO, NULL, false);
             if (strlen(bal->items[num]) == 0) {
                 if (num != 0)
                     break;
@@ -669,7 +679,7 @@ struct votebal *bal;
         if (oldnum != -1) {
             int i;
             for (i=num+1; i<oldnum; i++) {
-                move((i % 16) + 4, (i / 16) * 40);
+                move((i % 16) + 4, (i<32)?(i / 16) * 40 : ((i - 32) / 16)* 40);
                 prints("                                        ");
             }
         }
@@ -947,16 +957,23 @@ struct _setperm_select {
     unsigned int pbits;
     unsigned int basic;
     unsigned int oldbits;
+    struct dual_perm *dp;
 };
 int vote_select(struct _select_def *conf)
 {
     int count;
     struct _setperm_select *arg = (struct _setperm_select *) conf->arg;
+    struct dual_perm *dp = (struct dual_perm *) arg->dp;
 
     if (conf->pos == conf->item_count)
         return SHOW_QUIT;
     arg->pbits ^= (1 << (conf->pos - 1));
-    count = vote_check(arg->pbits);
+    if (dp) {
+        int ch;
+        ch = (dp->curr)?0:1;
+        count = vote_check(arg->pbits) + vote_check(dp->value[ch]);
+    } else
+        count = vote_check(arg->pbits);
     if (count > currvote.maxtkt) {
         if (currvote.maxtkt == 1) {
             arg->pbits = (1 << (conf->pos - 1));
@@ -974,13 +991,17 @@ int showvoteitems(struct _select_def *conf, int i)
 {
     char buf[STRLEN];
     struct _setperm_select *arg = (struct _setperm_select *) conf->arg;
+    struct dual_perm *dp = (struct dual_perm *) arg->dp;
+    int n=0;
 
+    if (dp)
+        n = dp->curr;
     i = i - 1;
     if (i == conf->item_count - 1) {
         prints("--退出--");
     } else {
         sprintf(buf, "%c.%2.2s%-36.36s", 'A' + i,
-                ((arg->pbits >> i) & 1 ? "◎" : "  "), currvote.items[i]);
+                ((arg->pbits >> i) & 1 ? "◎" : "  "), currvote.items[i+32*n]);
         prints("%s", buf);
     }
     return SHOW_CONTINUE;
@@ -1037,16 +1058,33 @@ struct ballot *uv;
 int multivote(uv)
 struct ballot *uv;
 {
-    unsigned int i;
+    int i;
+    struct dual_perm dp;
 
-    i = uv->voted;
+    dp.value[0] = uv->voted[0];
+    dp.value[1] = uv->voted[1];
+    dp.curr = 0;
+    dp.cancel = false;
+
     move(0, 0);
     show_voteing_title();
-    uv->voted =
-        setperms(uv->voted, 0, "选票", currvote.totalitems, showvoteitems,
-                 vote_select);
-    if (uv->voted == i)
+    if (currvote.totalitems<33)
+        dp.value[0] = setperms(dp.value[0], 0, "选票", currvote.totalitems, showvoteitems, vote_select, NULL);
+    else {
+        i = 0;
+        while (1) {
+            dp.value[i] = setperms(dp.value[i], 0, "选票", i==0?32:currvote.totalitems-32, showvoteitems, vote_select, &dp);
+            if (dp.cancel)
+                return -1;
+            if (i==dp.curr)
+                break;
+            i = dp.curr;
+        }
+    }
+    if (uv->voted[0] == dp.value[0] && uv->voted[1] == dp.value[1])
         return -1;
+    uv->voted[0] = dp.value[0];
+    uv->voted[1] = dp.value[1];
     return 1;
 }
 
@@ -1056,20 +1094,20 @@ struct ballot *uv;
     unsigned int chs;
     char buf[10];
 
-    chs = uv->voted;
+    chs = uv->voted[0];
     move(0, 0);
     show_voteing_title();
     prints("此次作答的值不能超过 \033[1m%d\033[m", currvote.maxtkt);
-    if (uv->voted != 0)
-        sprintf(buf, "%d", uv->voted);
+    if (uv->voted[0] != 0)
+        sprintf(buf, "%d", uv->voted[0]);
     else
         memset(buf, 0, sizeof(buf));
     do {
         getdata(3, 0, "请输入一个值? [0]: ", buf, 5, DOECHO, NULL, false);
-        uv->voted = abs(atoi(buf));
-    } while ((int) uv->voted > currvote.maxtkt && buf[0] != '\n'
+        uv->voted[0] = abs(atoi(buf));
+    } while ((int) uv->voted[0] > currvote.maxtkt && buf[0] != '\n'
              && buf[0] != '\0');
-    if (buf[0] == '\n' || buf[0] == '\0' || uv->voted == chs)
+    if (buf[0] == '\n' || buf[0] == '\0' || uv->voted[0] == chs)
         return -1;
     return 1;
 }
@@ -1140,7 +1178,7 @@ int user_vote(int num)
                 aborted = true;
             break;
         case VOTE_ASKING:
-            uservote.voted = 0;
+            uservote.voted[0] = 0;
             aborted = !getsug(&uservote);
             break;
     }
@@ -1482,8 +1520,14 @@ int get_vote_record(struct ballot *ptr, int idx, char *arg)
     } else
         strcpy(vc[pos].ip, "unknown");
     for (i=0;i<32;i++) {
-        if ((ptr->voted>>i)&1) {
+        if ((ptr->voted[0]>>i)&1) {
             sprintf(sv, "%c", 'A'+i);
+            strcat(vc[pos].selectvalue, sv);
+        }
+    }
+    for (i=0;i<32;i++) {
+        if ((ptr->voted[1]>>i)&1) {
+            sprintf(sv, "%c", i<26?'a'+i:i+7);
             strcat(vc[pos].selectvalue, sv);
         }
     }

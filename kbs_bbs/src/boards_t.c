@@ -1373,7 +1373,7 @@ static int fav_key(struct _select_def *conf, int command)
                 return SHOW_CONTINUE;
             clear();
             oldlevel = getSession()->favbrd_list[ptr->tag].level;
-            newlevel = setperms(oldlevel, 0, "权限", NUMPERMS, showperminfo, NULL);
+            newlevel = setperms(oldlevel, 0, "权限", NUMPERMS, showperminfo, NULL, NULL);
             if (newlevel != oldlevel) {
                 getSession()->favbrd_list[ptr->tag].level = newlevel;
                 save_favboard(2, getSession());

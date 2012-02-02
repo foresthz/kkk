@@ -291,7 +291,7 @@ void do_move(int destcol, int destline, void (*outc)(char));
 /* xyz.c */
 int qqwry_search(char *description,const char *ip_address);
 int showperminfo(struct _select_def *conf, int i);
-unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int numbers, int (*show)(struct _select_def *, int), int (*select)(struct _select_def *));
+unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int numbers, int (*show)(struct _select_def *, int), int (*select)(struct _select_def *), struct dual_perm *);
 int fhselect(struct _select_def* conf,struct fileheader *fh,long flag);
 
 /* boards_t.c */

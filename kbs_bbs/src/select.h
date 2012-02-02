@@ -123,6 +123,12 @@ union _select_return_value {
     char* returnstr;
 };
 
+/* 可设定两个perm */
+struct dual_perm {
+    unsigned int value[2];
+    int curr;
+    bool cancel;
+};
 int simple_select_loop(const struct _select_item* item_conf,int flag,int titlex,int titley,union _select_return_value* ret);
 #endif
 
