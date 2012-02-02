@@ -3978,20 +3978,6 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     key=ansimore_withzmodem(buf, false, article->title); 
 #endif    
     
-#ifdef HAVE_BRC_CONTROL
-    int bid = getbid(board->filename, NULL);
-    brc_initial(getCurrentUser()->userid, board->filename, getSession());
-    brc_add_read(refer->id, bid, getSession());
-#endif
-    
-
-    if (arg->readdata==NULL)
-        arg->readdata=malloc(sizeof(struct refer));
-    memcpy(arg->readdata, refer, sizeof(struct refer));
-
-    ret=FULLUPDATE;
-
-#ifndef NOREPLY
     save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
 
@@ -3999,6 +3985,19 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     currboard=board;
     uinfo.currentboard=currboardent;
 
+#ifdef HAVE_BRC_CONTROL
+    int bid = getbid(board->filename, NULL);
+    brc_initial(getCurrentUser()->userid, board->filename, getSession());
+    brc_add_read(refer->id, bid, getSession());
+#endif
+    
+    if (arg->readdata==NULL)
+        arg->readdata=malloc(sizeof(struct refer));
+    memcpy(arg->readdata, refer, sizeof(struct refer));
+
+    ret=FULLUPDATE;
+
+#ifndef NOREPLY
     move(t_lines-1, 0);
 
     prints("\033[44m\033[36m[通知模式] \033[32m[阅读文章]\033[33m 结束Q,| 上一篇 | 下一篇<空格>, | 同主题^x,p ");
@@ -4108,6 +4107,9 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
         }
     } while(repeat);
 
+
+#endif /* NOREPLY */
+
     uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
@@ -4119,7 +4121,7 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
         arg->readmode=READ_NORMAL;
         return SELCHANGE;
     }
-#endif /* NOREPLY */    
+
     return ret;
 }
 int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
