@@ -64,7 +64,15 @@
 		$filename = "boards/" . $boardName . "/" . $articles[1]["FILENAME"];
 		$contents .= bbs_get_quote($filename);
 	}
-	$ret = bbs_postarticle($boardName, rtrim($_POST["title"]), 
+	$title = rtrim($_POST["title"]);
+	if (isset($_POST["titkey"])) {
+		$tk = intval(@$_POST["titkey"]);
+		$titkey = array();
+		$count = bbs_gettitkey($boardName, $titkey, 1);
+		if ($tk>0 && $tk<=$count)
+			$title = '['.$titkey[$tk-1]["desc"].']'.$title;
+	}
+	$ret = bbs_postarticle($boardName, $title, 
 		($tmpl ? $contents :$_POST["text"]), intval(@$_POST["signature"]), $reID, 
 		$outgo, $anony, @intval($_POST["mailback"]), $is_tex);
 	switch ($ret) {

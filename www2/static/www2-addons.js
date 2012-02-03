@@ -385,7 +385,7 @@ function showReplyFormReal(rf) {
 	changeQM('s');
 	makeViewable("divReplyForm");
 }
-function replyForm(board,reid,title,att,signum,sig,ano,outgo,lsave) {
+function replyForm(board,reid,title,att,signum,sig,ano,outgo,lsave,titkey) {
 	this.board = board;
 	this.reid = reid;
 	this.title = title;
@@ -396,11 +396,20 @@ function replyForm(board,reid,title,att,signum,sig,ano,outgo,lsave) {
 	this.outgo = outgo;
 	this.lsave = lsave;
 	this.pDiv = (parent && parent.document.getElementById("divReplyForm"));
+	this.titkey = '';
 	if (this.pDiv) {
 		var self = this;
 		addBootFn(function() {
 			parent.showReplyFormReal(self);
 		});
+	}
+	if (!reid && titkey.length) {
+		var tk = titkey.split("\033");
+		this.titkey += '&nbsp;<select name="titkey"><option value="a">选择标签</option>';
+		for (var i=1;i<=tk.length;i++) {
+			this.titkey += '<option value="' + i + '">' + tk[i-1] + '</option>';
+		}
+		this.titkey += '</select>';
 	}
 }
 replyForm.prototype.f = function() {
@@ -411,7 +420,10 @@ replyForm.prototype.f = function() {
 	var nt = "";
 	if (this.reid) nt = (this.title.substr(0,4).toLowerCase() == "re: ") ? this.title : ("Re: " + this.title);
 	html += '标&nbsp;&nbsp;题: <input type="text" tabindex="1" name="title" size="40" maxlength="100" value="'
-		+ htmlize(nt,1) + '"' + (this.reid?'':focusEle) + '/><br/>';
+		+ htmlize(nt,1) + '"' + (this.reid?'':focusEle) + '/>';
+	if (!this.reid)
+		html += this.titkey;
+	html += '<br/>';
 	if (this.att) {
 		html += '附&nbsp;&nbsp;件: <input type="text" name="attachname" size="40" value="" disabled="disabled" />'
 			+ ' <a href="bbsupload.php" target="_blank">操作附件</a>(新窗口打开)<br/>';

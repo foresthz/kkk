@@ -57,6 +57,16 @@
 	$brd_encode = urlencode($board);
 	
 	bbs_board_nav_header($brdarr, $reid ? "回复文章" : "发表文章");
+	if (!$reid) {
+		$titkey = array();
+		$count = bbs_gettitkey($board, $titkey, 1);
+		for ($i=0;$i<$count;$i++) {
+			if ($i==0)
+				$tk = $titkey[0]["desc"];
+			else
+				$tk = $tk."\033".$titkey[$i]["desc"];
+		}
+	}
 ?>
 <script type="text/javascript" src="static/www2-addons.js"></script>
 <script type="text/javascript"><!--
@@ -65,7 +75,7 @@
 	echo bbs_is_anony_board($brdarr)?"1":"0"; ?>,<?php echo bbs_is_outgo_board($brdarr)?"1":"0"; ?>,<?php
 		$local_save = 0;
 		if ($reid > 0) $local_save = !strncmp($articles[1]["INNFLAG"], "LL", 2);
-	echo $local_save?"1":"0"; ?>);w(o.f());
+	echo $local_save?"1":"0"; ?>, "<?php echo $tk; ?>");w(o.f());
 //-->
 </script>
 <?php
