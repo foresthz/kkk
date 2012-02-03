@@ -405,7 +405,7 @@ function replyForm(board,reid,title,att,signum,sig,ano,outgo,lsave,titkey) {
 	}
 	if (!reid && titkey.length) {
 		var tk = titkey.split("\033");
-		this.titkey += '&nbsp;<select name="titkey"><option value="a">选择标签</option>';
+		this.titkey += '&nbsp;<select name="titkey"><option value="0">选择标签</option>';
 		for (var i=1;i<=tk.length;i++) {
 			this.titkey += '<option value="' + i + '">' + tk[i-1] + '</option>';
 		}
