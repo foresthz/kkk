@@ -965,6 +965,188 @@ void a_copypaste(MENU *pm,int mode)
     return;
 }
 
+
+/* jiangjun, 2012.02.05, [精华区] 区段剪切/复制/粘贴操作, 参考etnlengent的精华区功能 */
+void a_range_copypaste(MENU *pm,int mode)
+{
+    MENU menu;
+    ITEM *item;
+    FILE *fp;
+    struct stat st;
+    char filebuf[STRLEN], title[STRLEN],filename[STRLEN],path[PATHLEN],newpath[PATHLEN],ans[4],*p;
+    int copy,ret,i,count;
+    long ap;
+    size_t len;
+    enum {PASTE_ERROR,PASTE_CUT,PASTE_COPY} type;
+#define ACP_ANY_RETURN(msg) do{clrtoeol();prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));igetkey();pm->page=9999;return;}while(0)
+    move(t_lines-1,0); clrtoeol();
+    sethomefile(filebuf,getCurrentUser()->userid,".RCP");
+    if (mode==0||mode==1) {
+        int begin, end;
+        snprintf(genbuf, STRLEN, "输入区段%s起始文章序号: ", mode==0?"复制":"剪切");
+        getdata(t_lines - 1, 0, genbuf, ans, 4, DOECHO, NULL, true);
+        begin = atoi(ans);
+        if (begin<=0 || begin>pm->num)
+            ACP_ANY_RETURN("错误的文章号!!! ");
+        getdata(t_lines - 1, 40, "输入终止文章序号: ", ans, 4, DOECHO, NULL, true);
+        end = atoi(ans);
+        if (end > pm->num || begin >= end)
+            ACP_ANY_RETURN("错误的文章号!!! ");
+        count = end-begin+1;
+        if ((fp=fopen(filebuf, "w"))==NULL)
+            ACP_ANY_RETURN("文件读取错误");
+        fprintf(fp, "%d\n%d\n", mode, count);
+        for (i=begin-1;i<end;i++) {
+            item=M_ITEM(pm,i);
+            snprintf(title,STRLEN,"%s",item->title);
+            snprintf(filename,STRLEN,"%s",item->fname);
+            snprintf(path,PATHLEN,"%s/%s",pm->path,filename);
+            fprintf(fp,"%s\n%s\n%s\n%ld\n",title,filename,path,item->attachpos);
+        }
+        fclose(fp);
+        snprintf(genbuf, STRLEN, "完成\033[32m%d\033[m篇文章区段%s标识, 但在粘贴后方可删除源文件或目录!", count, (!mode)?"复制":"剪切");
+        ACP_ANY_RETURN(genbuf);
+    }
+
+    if ((fp=fopen(filebuf,"r"))==NULL)
+        ACP_ANY_RETURN("使用区段粘贴命令前应先使用区段剪切或区段复制命令...");
+
+    /* 粘贴开始 */
+#define ACP_FGETS(len) if(!fgets(genbuf,((len)+1),fp)||!genbuf[0]||genbuf[0]=='\r'||genbuf[0]=='\n'){type=PASTE_ERROR;break;}
+#define ACP_DUMPS(dst,src,len) do{snprintf((dst),(len),"%s",(src));if((p=strpbrk((dst),"\r\n"))){*p=0;}}while(0)
+#define ACP_ANY_BREAK(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));igetkey();pm->page=9999;break;}
+#define ACP_ANY_CONTINUE(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));igetkey();pm->page=9999;continue;}
+    do {
+        ap=0;
+        ACP_FGETS(2);
+        if (!isdigit(genbuf[0])) {
+            type=PASTE_ERROR;
+            continue;
+        }
+        switch (atoi(genbuf)) {
+            case 0:
+                type=PASTE_COPY;
+                break;
+            case 1:
+                type=PASTE_CUT;
+                break;
+            default:
+                type=PASTE_ERROR;
+                continue;
+        }
+        ACP_FGETS(4);
+        if (!isdigit(genbuf[0])) {
+            type=PASTE_ERROR;
+            continue;
+        }
+        count = atoi(genbuf);
+    } while(0);
+    if (type==PASTE_ERROR) {
+        fclose(fp);
+        ACP_ANY_RETURN("区段标识错误，请重新进行区段剪切或复制命令...");
+    }
+    snprintf(genbuf, STRLEN, "确定区段%s并粘贴?(Y/N) [N]", type==PASTE_COPY?"复制":"剪切");
+    a_prompt(-1, genbuf, ans);
+    if (ans[0]!='Y'&&ans[0]!='y') {
+        pm->page=9999;
+        fclose(fp);
+        return;
+    }
+    i = 0;
+    do {
+        ACP_FGETS(STRLEN);
+        ACP_DUMPS(title,genbuf,STRLEN);
+        ACP_FGETS(STRLEN);
+        ACP_DUMPS(filename,genbuf,STRLEN);
+        ACP_FGETS(PATHLEN);
+        ACP_DUMPS(path,genbuf,PATHLEN);
+        ACP_FGETS(21);
+        if (!isdigit(genbuf[0])) {
+            type=PASTE_ERROR;
+            break;
+        }
+        ap=atol(genbuf);
+
+        snprintf(newpath,PATHLEN,"%s/%s",pm->path,filename);
+        if (!((access(newpath,F_OK)==-1)&&(errno==ENOENT))) {
+            move(t_lines-1, 0);clrtoeol();
+            snprintf(genbuf, STRLEN, "当前路径下已存在名为\033[32m%s\033[m文件或目录, 任意键继续", filename);
+            ACP_ANY_CONTINUE(genbuf);
+        }
+        if (!strncmp(path,newpath,(len=strlen(path)))&&newpath[len]=='/') {
+            move(t_lines-1, 0);clrtoeol();
+            ACP_ANY_BREAK("当前操作剪切或复制目录至其子目录中, 将导致死循环, 操作终止");
+        }
+        if (stat(path,&st)==-1||!(S_ISDIR(st.st_mode)||S_ISREG(st.st_mode))) {
+            move(t_lines-1, 0);clrtoeol();
+            snprintf(genbuf, STRLEN, "源文件或目录%s不存在, 任意键继续", filename);
+            ACP_ANY_CONTINUE(genbuf);
+        }
+
+        a_additem(pm,title,filename,NULL,0,ap);
+        if (a_savenames(pm)) {
+            a_loadnames(pm,getSession());
+            a_additem(pm,title,filename,NULL,0,ap);
+            if (a_savenames(pm)) {
+                a_loadnames(pm,getSession());
+                ACP_ANY_BREAK("整理精华区失败...");
+            }
+        }
+        if (!(type==PASTE_CUT&&!rename(path,newpath))) {
+            if (S_ISDIR(st.st_mode)) {
+                sprintf(genbuf,"/bin/cp -pr %s %s",path,newpath);
+                if (system(genbuf)) {
+                    move(t_lines-1, 0);clrtoeol();
+                    ACP_ANY_BREAK("复制目录过程中发生错误...");
+                }
+            } else {
+                if (f_cp(path,newpath,0)) {
+                    move(t_lines-1, 0);clrtoeol();
+                    ACP_ANY_BREAK("复制文件过程中发生错误...");
+                }
+            }
+            copy=1;
+        }
+
+        if (type==PASTE_CUT) {
+            int i;
+            if (copy)
+                S_ISDIR(st.st_mode)?f_rm(path):unlink(path);
+            if ((p=strrchr(path,'/')))
+                *p=0;
+            memset(&menu,0,sizeof(MENU));
+            menu.path=path;
+            a_loadnames(&menu,getSession());
+            for (i=0; i<menu.num; i++)
+                if (!strcmp(M_ITEM(&menu,i)->fname,filename))
+                    a_delitem(&menu,i--);
+            ret=a_savenames(&menu);
+            a_freenames(&menu);
+            if (ret) {
+                move(t_lines-1, 0);clrtoeol();
+                ACP_ANY_BREAK("剪切文件过程中发生错误...");
+            }
+        }
+        i++;
+    } while(i<count);
+    fclose(fp);
+    if (type==PASTE_CUT) {
+        sethomefile(genbuf,getCurrentUser()->userid,".RCP");
+        unlink(genbuf);
+    }
+    pm->page=9999;
+    if (i) {
+        move(t_lines-1, 0);clrtoeol();
+        snprintf(genbuf, STRLEN, "完成%d篇文章的区段%s操作", i, (type==PASTE_COPY)?"复制":"剪切");
+        ACP_ANY_RETURN(genbuf);
+    }
+#undef AC_ANY_RETURN
+#undef AC_ANY_BREAK
+#undef AC_ANY_CONTINUE
+#undef ACP_FGETS
+#undef ACP_DUMPS
+    return;
+}
 /* etnlegend, 2006.04.29, [精华区] 删除操作 */
 void a_delete(MENU *pm)
 {
@@ -1177,6 +1359,9 @@ void a_manager(MENU *pm,int ch)
              */
         case 'p':
             a_copypaste(pm, 2);
+            break;
+        case 'P':
+            a_range_copypaste(pm, 2);
             break;
         case 'f': {
             int i;
@@ -1463,6 +1648,12 @@ void a_manager(MENU *pm,int ch)
                 break;
             case 'x':              //added by bad 03-2-10
                 a_copypaste(pm, 1);
+                break;
+            case 'C':
+                a_range_copypaste(pm, 0);
+                break;
+            case 'X':
+                a_range_copypaste(pm, 1);
                 break;
 
             case Ctrl('S'):
