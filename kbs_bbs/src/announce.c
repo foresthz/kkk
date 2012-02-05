@@ -966,7 +966,7 @@ void a_copypaste(MENU *pm,int mode)
 }
 
 
-/* jiangjun, 2012.02.05, [精华区] 区段剪切/复制/粘贴操作, 参考etnlengent的精华区功能 */
+/* jiangjun, 2012.02.05, [精华区] 区段剪切/复制/粘贴操作, 参考etnlegend的精华区功能 */
 void a_range_copypaste(MENU *pm,int mode)
 {
     MENU menu;
@@ -1043,7 +1043,7 @@ void a_range_copypaste(MENU *pm,int mode)
     } while(0);
     if (type==PASTE_ERROR) {
         fclose(fp);
-        ACP_ANY_RETURN("区段标识错误，请重新进行区段剪切或复制命令...");
+        ACP_ANY_RETURN("区段标识错误，请重新进行区段剪切或复制操作...");
     }
     snprintf(genbuf, STRLEN, "确定区段%s并粘贴?(Y/N) [N]", type==PASTE_COPY?"复制":"剪切");
     a_prompt(-1, genbuf, ans);
