@@ -355,7 +355,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
     long start;
     zval *z_threads;
     zval *retprev;
-    int ins_top = 0;
+    long ins_top = 0;
     int i, j;
     const struct boardheader *bp;
     int is_bm;
