@@ -16,6 +16,7 @@ PHP_FUNCTION(bbs_getcurrentuser);
 PHP_FUNCTION(bbs_setonlineuser);
 PHP_FUNCTION(bbs_check_ban_ip);
 PHP_FUNCTION(bbs_wwwlogin);
+PHP_FUNCTION(bbs_wwwlogin_as_user);
 PHP_FUNCTION(bbs_setguest_nologin);
 PHP_FUNCTION(bbs_setSYSOP_nologin);
 PHP_FUNCTION(bbs_wwwlogoff);
@@ -41,6 +42,7 @@ PHP_FUNCTION(bbs_getsessionid);
     PHP_FE(bbs_setonlineuser, fifth_arg_force_ref_00011) \
     PHP_FE(bbs_check_ban_ip, NULL) \
     PHP_FE(bbs_wwwlogin, NULL) \
+    PHP_FE(bbs_wwwlogin_as_user, NULL) \
     PHP_FE(bbs_setguest_nologin, NULL) \
     PHP_FE(bbs_setSYSOP_nologin, NULL) \
     PHP_FE(bbs_wwwlogoff, NULL) \

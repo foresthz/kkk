@@ -334,6 +334,43 @@ PHP_FUNCTION(bbs_wwwlogin)
     setcurrentuinfo(pu, utmpent);
     RETURN_LONG(ret);
 }
+/**
+ * bool bbs_wwwlogin_as_user(string userid, long kick_multi, string from_host, string from_full_host)
+ *
+ * 特别注意: 本函数在未验证用户密码、登录IP控制、权限检查的前提下强制性设置当前操作的用户
+ * 不建议调用，除非你完全理解这样操作可能产生的严重后果
+ *
+ * 这个函数用于KBS API中，由于api的access token过期时间晚于bbs session的过期时间，因此在api token未过期时强制登陆bbs
+ * 所需的权限检查在access token创建时已完成。
+ *
+ * @author windinsn, Feb 7,2012
+ */
+PHP_FUNCTION(bbs_wwwlogin_as_user)
+{
+    long kick_multi=0;
+    struct user_info *pu=NULL;
+    int utmpent;
+    char *userid, *fromhost, *fullfrom;
+    int userid_len, fromhost_len, fullfrom_len;
+    int uid=0;
+    struct userec *user; 
+
+
+    if (ZEND_NUM_ARGS()!=4||zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slss", &userid, &userid_len, &kick_multi, &fromhost, &fromhost_len, &fullfrom, &fullfrom_len)!=SUCCESS)
+        WRONG_PARAM_COUNT;
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+    
+    uid=getuser(userid, &user);
+    if (uid<=0)
+        RETURN_FALSE;
+
+    setcurrentuser(user, uid);
+    www_user_login(getCurrentUser(), getSession()->currentuid, kick_multi, fromhost, fullfrom, &pu, &utmpent);
+    setcurrentuinfo(pu, utmpent);
+    RETURN_TRUE; 
+}
 
 /*
  * 本函数设置 currentuser 为 guest 但不登录，这样做非常的危险!
