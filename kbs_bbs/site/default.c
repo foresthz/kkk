@@ -88,7 +88,11 @@ const char * const user_definestr[] = {
     "讯息栏模式：呼叫器/人数",  /* DEF_NOTMSGFRIEND */
     "菜单模式选择：一般/精简",  /* DEF_NORMALSCR */
     "阅读文章是否使用绕卷选择", /* DEF_CIRCLE */
+#ifdef SAVE_POS
+    "游标停於第一篇未读/上次记录",       /* DEF_FIRSTNEW */
+#else
     "阅读文章游标停於第一篇未读",       /* DEF_FIRSTNEW */
+#endif
     "屏幕标题色彩：一般/变换",  /* DEF_TITLECOLOR */
     "接受所有人的讯息",         /* DEF_ALLMSG */
     "接受好友的讯息",           /* DEF_FRIENDMSG */

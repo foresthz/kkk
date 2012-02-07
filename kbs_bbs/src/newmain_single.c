@@ -1370,6 +1370,11 @@ void user_login()
     }
     /* etnlegend, 2006.10.22, 我看你们还怎么减上站数! */
     started=2;
+#ifdef SAVE_POS
+    /* 读取上次的版面光标位置 */
+    if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW))
+        load_article_pos();
+#endif
 
 #ifndef SSHBBS
     if (

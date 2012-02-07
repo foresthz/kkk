@@ -1465,3 +1465,56 @@ int read_callfunc0(struct _select_def* conf, void* data, void* extraarg)
 {
     return (*(int(*)())extraarg)();
 }
+
+#ifdef SAVE_POS
+/* 保存本次的版面光标位置 */
+void save_article_pos()
+{
+    struct _read_pos *ptr;
+    int fd;
+    int bid;
+    char filepath[STRLEN], buf[STRLEN];
+    struct fileheader tmp;
+
+    ptr = read_pos_head;
+    sethomefile(filepath, getCurrentUser()->userid, ".savedartpos");
+    if ((fd=open(filepath, O_CREAT|O_RDWR, 0664)) != NULL) {
+       while (ptr != NULL) {
+            if (ptr->mode == DIR_MODE_NORMAL && (bid=getbid(ptr->key, NULL))!=0) {
+                setbdir(DIR_MODE_NORMAL, buf, ptr->key);
+                if (get_record(buf, &tmp, sizeof(struct fileheader), ptr->pos)==0) {
+                    safewrite(fd, &bid, sizeof(int));
+                    safewrite(fd, &(tmp.id), sizeof(int));
+                    safewrite(fd, &(ptr->pos), sizeof(int));
+                }
+            }
+            ptr = ptr->next;
+        }
+        close(fd);
+    }
+}
+
+/* 读取上次的版面光标位置 */
+void load_article_pos()
+{
+    struct boardheader *bh;
+    int fd;
+    int i, count, pos, (*savedpos)[3];
+    char filepath[STRLEN];
+
+    sethomefile(filepath, getCurrentUser()->userid, ".savedartpos");
+    count = get_num_records(filepath, 3 * sizeof(int));
+    if (count>0 && (fd=open(filepath, O_RDONLY, 0664)) != NULL) {
+        savedpos = malloc(count * 3 * sizeof(int));
+        read(fd, savedpos, count * 3 * sizeof(int));
+        for (i=0;i<count;i++) {
+            if (!(bh=(struct boardheader *)getboard(savedpos[i][0])))
+                continue;
+            pos = get_ent_from_id(DIR_MODE_NORMAL, savedpos[i][1], bh->filename);
+            savePos(DIR_MODE_NORMAL, NULL, pos?pos:savedpos[i][2], bh);
+        }
+        close(fd);
+        unlink(filepath);
+    }
+}
+#endif

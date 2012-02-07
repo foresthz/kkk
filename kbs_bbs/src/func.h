@@ -823,6 +823,11 @@ while(0)
     void load_title_key(int init, int bid, const char *board);
 #endif
 
+#ifdef SAVE_POS
+    void save_article_pos();
+    void load_article_pos();
+#endif
+
 #ifdef SMS_SUPPORT
     int smsid2uid(char* smsid);
     void uid2smsid(struct user_info* uin,char* smsid);
