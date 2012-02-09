@@ -59,7 +59,11 @@ int nnline = 0, xxxline = 0;
 int more_size, more_num;
 int displayflag = 0, shownflag = 1;
 
+#ifdef HIDE_EM_FLAG
+static int mem_more(char *ptr, int size, int newsize, int quit, char *keystr, char *fn, char *title);
+#else
 static int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title);
+#endif
 
 int NNread_init()
 {
@@ -421,6 +425,76 @@ void R_monitor(void *data)
     UNUSED_ARG(data);
 }
 
+#ifdef HIDE_EM_FLAG
+/* 去除文章中的表情符号, jiangjun, 20120209 */
+int is_em_flag(char *buf, int len)
+{
+    char *p;
+    if (strncmp(buf, "img", len)==0)
+        return 1;
+    if (strncmp(buf, "/upload", len)==0)
+        return 1;
+    if (strncmp(buf, "upload=", 7)==0) {
+        for (p=buf+7;*p!='\0';p++) {
+            if (!isdigit(*p))
+                return 0;
+        }
+        return 1;
+    }
+    if (strncmp(buf, "ema", 3)==0 || strncmp(buf, "emb", 3)==0 || strncmp(buf, "emc", 3)==0) {
+        for (p=buf+3;*p!='\0';p++) {
+            if (!isdigit(*p))
+                return 0;
+        }
+        return 1;
+    }
+    if (strncmp(buf, "em", 2)==0) {
+        for (p=buf+2;*p!='\0';p++) {
+            if (!isdigit(*p))
+                return 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+int remove_em_flags(char *ptr, int size)
+{
+#define EM_FLAG_LEN 16  /* 表情符号长度不会超过16吧 */
+    char *p, *q;
+    char buf[EM_FLAG_LEN];
+    int em_len, newsize, attsize;
+
+    newsize = size;
+    attsize = 0;
+    if ((p=memmem(ptr, size, ATTACHMENT_PAD, ATTACHMENT_SIZE))!=NULL) {
+        attsize = size - (p - ptr);
+        size = p - ptr;
+    }
+    p = ptr;
+    do {
+        if ((p=memmem(ptr, size, "[", 1))!=NULL) {
+            if ((q=memmem(p, size, "]", 1))!=NULL && ((em_len=q-p-1))<EM_FLAG_LEN) {
+                strncpy(buf, p+1, em_len);
+                buf[em_len] = '\0';
+                if (is_em_flag(buf, em_len)) { /* 如果是表情符号, 向前挪动, 并从']'的下一个继续搜索 */
+                    size -= (q+1-ptr);
+                    memmove(p, q+1, size+attsize);
+                    newsize -= q+1-p;
+                    ptr = p;
+                    continue;
+                }
+            }
+            /* 不是表情符号, 从'['的下一个继续搜索 */
+            size -= (p+1-ptr);
+            ptr = p+1;
+        } else
+            break;
+    } while (size>0);
+#undef EM_FLAG_LEN
+    return newsize;
+}
+#endif /* HIDE_EM_FLAG */
+
 struct MemMoreLines {
     char *ptr;
     int size;
@@ -435,6 +509,9 @@ struct MemMoreLines {
     char currty;
     int currlen;
     int total;
+#ifdef HIDE_EM_FLAG
+    int hide_size;
+#endif
 };
 
 /*
@@ -605,7 +682,11 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
 }
 
 int effectiveline;              /*有效行数, 只计算前面的部分, 头部不含, 空行不含, 签名档不含, 引言不含 */
+#ifdef HIDE_EM_FLAG
+void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size, int hide_size)
+#else
 void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
+#endif
 {
     int i, s, u;
     char *p0, oldty = 0;
@@ -615,6 +696,11 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
     l->start = 0;
     l->num = 0;
     l->total = 0;
+#ifdef HIDE_EM_FLAG
+    l->hide_size = 0;
+    if (hide_size!=-1)
+        l->hide_size = hide_size;
+#endif
     effectiveline = 0;
     for (i = 0, p0 = ptr, s = size; i < 50 && s >= 0; i++) {
         u = (l->start + l->num) % 100;
@@ -690,7 +776,11 @@ int seek_MemMoreLines(struct MemMoreLines *l, int n)
     }
     if (n < l->start) {
         i = l->total;
+#ifdef HIDE_EM_FLAG
+        init_MemMoreLines(l, l->ptr, l->size, -1);
+#else
         init_MemMoreLines(l, l->ptr, l->size);
+#endif
         l->total = i;
     }
     if (n < l->start + l->num) {
@@ -717,7 +807,17 @@ int mmap_show(char *fn, int row, int numlines)
     BBS_TRY {
         if (safe_mmapfile(fn, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL) == 0)
             BBS_RETURN(0);
+#ifdef HIDE_EM_FLAG
+        char *p;
+        int newsize;
+        p = (char *)malloc(size);
+        memcpy(p, ptr, size);
+        newsize = remove_em_flags(p, size);
+        retv = mem_show(p, newsize, row, numlines, fn);
+        free(p);
+#else
         retv = mem_show(ptr, size, row, numlines, fn);
+#endif
     }
     BBS_CATCH {
     }
@@ -736,7 +836,17 @@ int mmap_more(char *fn, int quit, char *keystr, char *title)
     BBS_TRY {
         if (safe_mmapfile(fn, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL) == 0)
             BBS_RETURN(-1);
+#ifdef HIDE_EM_FLAG
+        char *p;
+        int newsize;
+        p = (char *)malloc(size);
+        memcpy(p, ptr, size);
+        newsize = remove_em_flags(p, size);
+        retv = mem_more(p, newsize, size, quit, keystr, fn, title);
+        free(p);
+#else
         retv = mem_more(ptr, size, quit, keystr, fn, title);
+#endif
     }
     BBS_CATCH {
     }
@@ -772,7 +882,11 @@ void mem_printline(struct MemMoreLines *l, char *fn,char* begin)
                 prints("\033[m附件: %s (%s) 链接:\n",attachname,attlenbuf);
         } else {
             if (current_attach_link)
+#ifdef HIDE_EM_FLAG
+                (*current_attach_link)(slink,255,p,attlen,ptr-begin+l->hide_size+ATTACHMENT_SIZE-1,current_attach_link_arg);
+#else
                 (*current_attach_link)(slink,255,p,attlen,ptr-begin+ATTACHMENT_SIZE-1,current_attach_link_arg);
+#endif
             else
                 strcpy(slink,"(用www方式阅读本文可以下载此附件)");
             prints("\033[4m%s\033[m\n",slink);
@@ -819,7 +933,11 @@ static int mem_show(char *ptr, int size, int row, int numlines, char *fn)
     struct MemMoreLines l;
     int i, curr_line;
 
+#ifdef HIDE_EM_FLAG
+    init_MemMoreLines(&l, ptr, size, -1);
+#else
     init_MemMoreLines(&l, ptr, size);
+#endif
     move(row, 0);
     clrtobot();
     prints("\033[m");
@@ -862,7 +980,11 @@ void mem_printbotline(int l1, int l2, int total, int read, int size)
     resetcolor();
 }
 
+#ifdef HIDE_EM_FLAG
+int mem_more(char *ptr, int size, int origsize, int quit, char *keystr, char *fn, char *title)
+#else
 int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
+#endif
 {
     extern int t_lines;
     struct MemMoreLines l;
@@ -872,7 +994,11 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
     int oldmode;
     displayflag = 0;
     shownflag = 1;
+#ifdef HIDE_EM_FLAG
+    init_MemMoreLines(&l, ptr, size, origsize-size);
+#else
     init_MemMoreLines(&l, ptr, size);
+#endif
 
     prints("\033[m");
     while (1) {
@@ -1167,7 +1293,11 @@ int draw_content_more(char *ptr, int size, char *fn, struct fileheader *fh)
 
     displayflag = 0;
     shownflag = 1;
+#ifdef HIDE_EM_FLAG
+    init_MemMoreLines(&l, ptr, size, -1);
+#else
     init_MemMoreLines(&l, ptr, size);
+#endif
 
     move(BBS_PAGESIZE / 2+3, 0);
     /*    prints("\033[34m——————————————————预览窗口—————————————————");*/
