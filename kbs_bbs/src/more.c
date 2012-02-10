@@ -38,7 +38,11 @@ enum LINE_CODE {
     LINE_ATTACHALLLINK           //本文链接
 };
 
+#ifdef DEF_HIDEEMFLAG
+static int mem_show(char *ptr, int size, int origsize, int row, int numlines, char *fn);
+#else
 static int mem_show(char *ptr, int size, int row, int numlines, char *fn);
+#endif
 
 static generate_attach_link_t current_attach_link;
 static void* current_attach_link_arg;
@@ -59,8 +63,8 @@ int nnline = 0, xxxline = 0;
 int more_size, more_num;
 int displayflag = 0, shownflag = 1;
 
-#ifdef HIDE_EM_FLAG
-static int mem_more(char *ptr, int size, int newsize, int quit, char *keystr, char *fn, char *title);
+#ifdef DEF_HIDEEMFLAG
+static int mem_more(char *ptr, int size, int origsize, int quit, char *keystr, char *fn, char *title);
 #else
 static int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title);
 #endif
@@ -425,7 +429,7 @@ void R_monitor(void *data)
     UNUSED_ARG(data);
 }
 
-#ifdef HIDE_EM_FLAG
+#ifdef DEF_HIDEEMFLAG
 /* 去除文章中的表情符号, jiangjun, 20120209 */
 int is_em_flag(char *buf, int len)
 {
@@ -493,7 +497,7 @@ int remove_em_flags(char *ptr, int size)
 #undef EM_FLAG_LEN
     return newsize;
 }
-#endif /* HIDE_EM_FLAG */
+#endif /* DEF_HIDEEMFLAG */
 
 struct MemMoreLines {
     char *ptr;
@@ -509,7 +513,7 @@ struct MemMoreLines {
     char currty;
     int currlen;
     int total;
-#ifdef HIDE_EM_FLAG
+#ifdef DEF_HIDEEMFLAG
     int hide_size;
 #endif
 };
@@ -682,7 +686,7 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
 }
 
 int effectiveline;              /*有效行数, 只计算前面的部分, 头部不含, 空行不含, 签名档不含, 引言不含 */
-#ifdef HIDE_EM_FLAG
+#ifdef DEF_HIDEEMFLAG
 void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size, int hide_size)
 #else
 void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
@@ -696,10 +700,8 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
     l->start = 0;
     l->num = 0;
     l->total = 0;
-#ifdef HIDE_EM_FLAG
-    l->hide_size = 0;
-    if (hide_size!=-1)
-        l->hide_size = hide_size;
+#ifdef DEF_HIDEEMFLAG
+    l->hide_size = hide_size;
 #endif
     effectiveline = 0;
     for (i = 0, p0 = ptr, s = size; i < 50 && s >= 0; i++) {
@@ -776,8 +778,8 @@ int seek_MemMoreLines(struct MemMoreLines *l, int n)
     }
     if (n < l->start) {
         i = l->total;
-#ifdef HIDE_EM_FLAG
-        init_MemMoreLines(l, l->ptr, l->size, -1);
+#ifdef DEF_HIDEEMFLAG
+        init_MemMoreLines(l, l->ptr, l->size, l->hide_size);
 #else
         init_MemMoreLines(l, l->ptr, l->size);
 #endif
@@ -807,14 +809,18 @@ int mmap_show(char *fn, int row, int numlines)
     BBS_TRY {
         if (safe_mmapfile(fn, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL) == 0)
             BBS_RETURN(0);
-#ifdef HIDE_EM_FLAG
-        char *p;
-        int newsize;
-        p = (char *)malloc(size);
-        memcpy(p, ptr, size);
-        newsize = remove_em_flags(p, size);
-        retv = mem_show(p, newsize, row, numlines, fn);
-        free(p);
+#ifdef DEF_HIDEEMFLAG
+        if (getCurrentUser() && DEFINE(getCurrentUser(), DEF_HIDEEMFLAG)) {
+            char *p;
+            int newsize;
+            p = (char *)malloc(size);
+            memcpy(p, ptr, size);
+            newsize = remove_em_flags(p, size);
+            retv = mem_show(p, newsize, size, row, numlines, fn);
+            free(p);
+        } else {
+            retv = mem_show(ptr, size, size, row, numlines, fn);
+        }
 #else
         retv = mem_show(ptr, size, row, numlines, fn);
 #endif
@@ -836,14 +842,18 @@ int mmap_more(char *fn, int quit, char *keystr, char *title)
     BBS_TRY {
         if (safe_mmapfile(fn, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL) == 0)
             BBS_RETURN(-1);
-#ifdef HIDE_EM_FLAG
-        char *p;
-        int newsize;
-        p = (char *)malloc(size);
-        memcpy(p, ptr, size);
-        newsize = remove_em_flags(p, size);
-        retv = mem_more(p, newsize, size, quit, keystr, fn, title);
-        free(p);
+#ifdef DEF_HIDEEMFLAG
+        if (getCurrentUser() && DEFINE(getCurrentUser(), DEF_HIDEEMFLAG)) {
+            char *p;
+            int newsize;
+            p = (char *)malloc(size);
+            memcpy(p, ptr, size);
+            newsize = remove_em_flags(p, size);
+            retv = mem_more(p, newsize, size, quit, keystr, fn, title);
+            free(p);
+        } else {
+            retv = mem_more(ptr, size, size, quit, keystr, fn, title);
+        }
 #else
         retv = mem_more(ptr, size, quit, keystr, fn, title);
 #endif
@@ -882,7 +892,7 @@ void mem_printline(struct MemMoreLines *l, char *fn,char* begin)
                 prints("\033[m附件: %s (%s) 链接:\n",attachname,attlenbuf);
         } else {
             if (current_attach_link)
-#ifdef HIDE_EM_FLAG
+#ifdef DEF_HIDEEMFLAG
                 (*current_attach_link)(slink,255,p,attlen,ptr-begin+l->hide_size+ATTACHMENT_SIZE-1,current_attach_link_arg);
 #else
                 (*current_attach_link)(slink,255,p,attlen,ptr-begin+ATTACHMENT_SIZE-1,current_attach_link_arg);
@@ -927,14 +937,18 @@ void mem_printline(struct MemMoreLines *l, char *fn,char* begin)
     outns("\n", 1);
 }
 
+#ifdef DEF_HIDEEMFLAG
+static int mem_show(char *ptr, int size, int origsize, int row, int numlines, char *fn)
+#else
 static int mem_show(char *ptr, int size, int row, int numlines, char *fn)
+#endif
 {
     extern int t_lines;
     struct MemMoreLines l;
     int i, curr_line;
 
-#ifdef HIDE_EM_FLAG
-    init_MemMoreLines(&l, ptr, size, -1);
+#ifdef DEF_HIDEEMFLAG
+    init_MemMoreLines(&l, ptr, size, origsize-size);
 #else
     init_MemMoreLines(&l, ptr, size);
 #endif
@@ -980,7 +994,7 @@ void mem_printbotline(int l1, int l2, int total, int read, int size)
     resetcolor();
 }
 
-#ifdef HIDE_EM_FLAG
+#ifdef DEF_HIDEEMFLAG
 int mem_more(char *ptr, int size, int origsize, int quit, char *keystr, char *fn, char *title)
 #else
 int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
@@ -994,7 +1008,7 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
     int oldmode;
     displayflag = 0;
     shownflag = 1;
-#ifdef HIDE_EM_FLAG
+#ifdef DEF_HIDEEMFLAG
     init_MemMoreLines(&l, ptr, size, origsize-size);
 #else
     init_MemMoreLines(&l, ptr, size);
@@ -1293,8 +1307,8 @@ int draw_content_more(char *ptr, int size, char *fn, struct fileheader *fh)
 
     displayflag = 0;
     shownflag = 1;
-#ifdef HIDE_EM_FLAG
-    init_MemMoreLines(&l, ptr, size, -1);
+#ifdef DEF_HIDEEMFLAG
+    init_MemMoreLines(&l, ptr, size, 0);
 #else
     init_MemMoreLines(&l, ptr, size);
 #endif
@@ -1350,7 +1364,21 @@ int draw_content(char *fn, struct fileheader *fh)
     BBS_TRY {
         if (safe_mmapfile(fn, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL) == 0)
             BBS_RETURN(-1);
+#ifdef DEF_HIDEEMFLAG
+        if (DEFINE(getCurrentUser(), DEF_HIDEEMFLAG)) {
+            char *p;
+            int newsize;
+            p = (char *)malloc(size);
+            memcpy(p, ptr, size);
+            newsize = remove_em_flags(p, size);
+            retv = draw_content_more(p, newsize, fn, fh);
+            free(p);
+        } else {
+            retv = draw_content_more(ptr, size, fn, fh);
+        }
+#else
         retv = draw_content_more(ptr, size, fn, fh);
+#endif
     }
     BBS_CATCH {
     }
