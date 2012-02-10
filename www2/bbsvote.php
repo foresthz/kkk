@@ -60,13 +60,16 @@
 					html_error_quit("参数错误3");
 
 				settype($itemvalue,"integer");
-				if( $itemvalue < 0 || $itemvalue > 31 )
+				if( $itemvalue < 0 || $itemvalue > $votearr[0]["TOTALITEMS"]-1)
 					html_error_quit("参数错误4");
 
 				if( $votetype == "是非" && ($itemvalue < 0 || $itemvalue > 2) )
 					html_error_quit("参数错误5");
 
-				$votevalueint1 = ( 1 << $itemvalue );
+				if ($itemvalue<32)
+					$votevalueint1 = ( 1 << $itemvalue );
+				else
+					$votevalueint2 = ( 1 << ($itemvalue-32) );
 
 			}else if( $votetype == "复选" ){
 				$vcount = 0;
