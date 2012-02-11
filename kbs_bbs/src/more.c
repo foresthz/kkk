@@ -434,15 +434,34 @@ void R_monitor(void *data)
 int is_em_flag(char *buf, int len)
 {
     char *p;
-    if (strncmp(buf, "img", len)==0)
-        return 1;
-    if (strncmp(buf, "/upload", len)==0)
+    if (strcmp(buf, "/img")==0 || strcmp(buf, "/swf")==0 || strcmp(buf, "/url")==0 ||
+        strcmp(buf, "/email")==0 || strcmp(buf, "/mp3")==0 || strcmp(buf, "/upload")==0 ||
+        strcmp(buf, "/color")==0 || strcmp(buf, "/face")==0 || strcmp(buf, "/size")==0 ||
+        strcmp(buf, "b")==0 || strcmp(buf, "i")==0 || strcmp(buf, "u")==0 ||
+        strcmp(buf, "/b")==0 || strcmp(buf, "/i")==0 || strcmp(buf, "/u")==0)
         return 1;
     if (strncmp(buf, "upload=", 7)==0) {
         for (p=buf+7;*p!='\0';p++) {
             if (!isdigit(*p))
                 return 0;
         }
+        return 1;
+    }
+    if (strncmp(buf, "color=#", 7)==0) {
+        for (p=buf+7;*p!='\0';p++) {
+            if (!isalnum(*p))
+                return 0;
+        }
+        return 1;
+    }
+    if (strncmp(buf, "size=", 5)==0) {
+        for (p=buf+5;*p!='\0';p++) {
+            if (!isdigit(*p))
+                return 0;
+        }
+        return 1;
+    }
+    if (strncmp(buf, "face=", 5)==0) { /* 字体需要一个一个对比么? */
         return 1;
     }
     if (strncmp(buf, "ema", 3)==0 || strncmp(buf, "emb", 3)==0 || strncmp(buf, "emc", 3)==0) {
@@ -463,7 +482,7 @@ int is_em_flag(char *buf, int len)
 }
 int remove_em_flags(char *ptr, int size)
 {
-#define EM_FLAG_LEN 16  /* 表情符号长度不会超过16吧 */
+#define EM_FLAG_LEN 32  /* 表情符号长度不会超过16吧, 字体会! */
     char *p, *q;
     char buf[EM_FLAG_LEN];
     int em_len, newsize, attsize;
