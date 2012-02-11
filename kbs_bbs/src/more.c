@@ -514,7 +514,7 @@ struct MemMoreLines {
     int currlen;
     int total;
 #ifdef DEF_HIDEEMFLAG
-    int hide_size;
+    int hidden_size;
 #endif
 };
 
@@ -687,7 +687,7 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
 
 int effectiveline;              /*有效行数, 只计算前面的部分, 头部不含, 空行不含, 签名档不含, 引言不含 */
 #ifdef DEF_HIDEEMFLAG
-void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size, int hide_size)
+void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size, int hidden_size)
 #else
 void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
 #endif
@@ -701,7 +701,7 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
     l->num = 0;
     l->total = 0;
 #ifdef DEF_HIDEEMFLAG
-    l->hide_size = hide_size;
+    l->hidden_size = hidden_size;
 #endif
     effectiveline = 0;
     for (i = 0, p0 = ptr, s = size; i < 50 && s >= 0; i++) {
@@ -779,7 +779,7 @@ int seek_MemMoreLines(struct MemMoreLines *l, int n)
     if (n < l->start) {
         i = l->total;
 #ifdef DEF_HIDEEMFLAG
-        init_MemMoreLines(l, l->ptr, l->size, l->hide_size);
+        init_MemMoreLines(l, l->ptr, l->size, l->hidden_size);
 #else
         init_MemMoreLines(l, l->ptr, l->size);
 #endif
@@ -893,7 +893,7 @@ void mem_printline(struct MemMoreLines *l, char *fn,char* begin)
         } else {
             if (current_attach_link)
 #ifdef DEF_HIDEEMFLAG
-                (*current_attach_link)(slink,255,p,attlen,ptr-begin+l->hide_size+ATTACHMENT_SIZE-1,current_attach_link_arg);
+                (*current_attach_link)(slink,255,p,attlen,ptr-begin+l->hidden_size+ATTACHMENT_SIZE-1,current_attach_link_arg);
 #else
                 (*current_attach_link)(slink,255,p,attlen,ptr-begin+ATTACHMENT_SIZE-1,current_attach_link_arg);
 #endif

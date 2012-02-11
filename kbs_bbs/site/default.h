@@ -498,8 +498,9 @@
 #define DEF_SHOWREALUSERDATA 010000000000
 #define DEF_HIDEIP   040000000001LL
 #define DEF_SHOWSIZE            040000000002LL
+#define DEF_HIDEEMFLAG          040000000004LL
 
-#define NUMDEFINES 34
+#define NUMDEFINES 35
 #endif
 
 /* Don't mess with this. */
