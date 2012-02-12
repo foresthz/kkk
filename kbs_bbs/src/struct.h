@@ -123,6 +123,11 @@ struct user_info {              /* Structure used in UTMP file */
     int currentboard;
     time_t currboard_freshtime;
     unsigned int mailcheck;             /* if have new mail or new msg, stiger */
+#ifdef ENABLE_REFER
+    struct refer_info *refer_head[2];
+    time_t ri_loadedtime[2];
+    time_t ri_updatetime[2];
+#endif
 };
 
 struct usermemo {

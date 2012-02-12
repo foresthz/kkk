@@ -130,9 +130,12 @@ int chkmail()
  * 4: 有新的回复
  */
 int chkrefer() {
-    if (DEFINE(getCurrentUser(), DEF_REFER)&&chkrefer_dir(REFER_DIR)>0)
+    /* 需要更新一下uinfo中的记录 */
+    sync_refer_info(REFER_MODE_AT, 1);
+    sync_refer_info(REFER_MODE_REPLY, 1);
+    if (DEFINE(getCurrentUser(), DEF_REFER)&&check_refer_info(REFER_MODE_AT)>0/*chkrefer_dir(REFER_DIR)>0*/)
         return 3;
-    if (DEFINE(getCurrentUser(), DEF_REPLY)&&chkrefer_dir(REPLY_DIR)>0)
+    if (DEFINE(getCurrentUser(), DEF_REPLY)&&check_refer_info(REFER_MODE_REPLY)>0/*chkrefer_dir(REPLY_DIR)>0*/)
         return 4;
 
     return 0; 
@@ -4454,13 +4457,13 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
 }
 int refer_at(void) {
     sprintf(refer_title_bar, "[@我的文章]");
-    return refer_list(REFER_DIR);
+    return refer_list(REFER_DIR, REFER_MODE_AT);
 }
 int refer_reply(void) {
     sprintf(refer_title_bar, "[回复我的文章]");
-    return refer_list(REPLY_DIR);
+    return refer_list(REPLY_DIR, REFER_MODE_REPLY);
 }
-int refer_list(char filename[STRLEN]) {
+int refer_list(char filename[STRLEN], int mode) {
     char dir[255];
     int oldmode;
     int returnmode=CHANGEMODE;
@@ -4480,13 +4483,169 @@ int refer_list(char filename[STRLEN]) {
 
     in_mail=true;
     while(returnmode==CHANGEMODE) {
+        sync_refer_info(mode, 0);
         returnmode=new_i_read(DIR_MODE_REFER, dir, refer_title, (READ_ENT_FUNC)referdoent, &refer_comms[0], sizeof(struct refer));
         sethomefile(dir, getCurrentUser()->userid, filename);
+        load_refer_info(mode);
     }
     in_mail=false;
     modify_user_mode(oldmode);     
 
     return FULLUPDATE;
+}
+
+
+/*
+ * 将refer信息放入uinfo中，jiangju，20120212
+ */
+
+void free_refer_info(struct refer_info *ri)
+{
+    if (ri) {
+        if (ri->next)
+            free_refer_info(ri->next);
+        free(ri);
+    }
+    return;
+}
+
+void clear_refer_info(int mode)
+{
+    free_refer_info(uinfo.refer_head[mode-1]);
+}
+
+/* 读入文件信息至uinfo，如果文件未更新，则不更新uinfo */
+int load_refer_info(int mode)
+{
+    int i, count;
+    char buf[STRLEN], filename[STRLEN];
+    struct refer *rf;
+    struct refer_info *p;
+    struct stat st;
+    int fd;
+
+    if (set_refer_file_from_mode(buf, mode)!=0)
+        return -1;
+
+    sethomefile(filename, getCurrentUser()->userid, buf);
+    if (stat(filename, &st)==-1)
+        return -1;
+    if (uinfo.ri_loadedtime[mode-1]>st.st_mtime)
+        return 0;
+    uinfo.refer_head[mode-1] = NULL;
+    count = st.st_size / sizeof(struct refer); //get_num_records(filename, sizeof(struct refer));
+    if (count<=0)
+        return -1;
+    if ((fd=open(filename, O_RDONLY))<0)
+        return -1;
+    clear_refer_info(mode);
+    rf = (struct refer*)malloc(count * sizeof(struct refer));
+    read(fd, rf, count * sizeof(struct refer));
+    for (i=0;i<count;i++){
+        p = (struct refer_info*)malloc(sizeof(struct refer_info));
+        if ((p->bid = getbid(rf[i].board, NULL))==0)
+            continue;
+        p->id = rf[i].id;
+        p->flag = rf[i].flag;
+        p->next = uinfo.refer_head[mode-1];
+        uinfo.refer_head[mode-1] = p;
+    }
+    close(fd);
+    uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0);
+    return 0;
+}
+
+/* 从uinfo中获得对应的refer状态 */
+int get_refer_info(struct refer *rf, int mode)
+{
+    int bid;
+    struct refer_info *p;
+
+    p = uinfo.refer_head[mode-1];
+    while(p!=NULL) {
+        if (p->bid == (bid=getbid(rf->board, NULL)) && p->id == rf->id) {
+            rf->flag |= p->flag;
+            return 1;
+        }
+        p = p->next;
+    }
+    return 0;
+}
+
+/* 同步uinfo与refer记录文件
+   首先将uinfo的refer信息写回文件，写之前如果文件被更新，则写入后重新load
+   如果updatetime==loadedtime，表示uinfo未更新，则不用写入
+   reload为0时，强制不更新uinfo，用于读取refer列表前更新文件 */
+int sync_refer_info(int mode, int reload)
+{
+    int i, count;
+    char buf[STRLEN], filename[STRLEN];
+    struct refer *rf;
+    struct stat st;
+    int fd;
+
+    if (set_refer_file_from_mode(buf, mode)!=0)
+        return -1;
+    sethomefile(filename, getCurrentUser()->userid, buf);
+    if (stat(filename, &st)==-1)
+        return -1;
+    if (reload && uinfo.ri_loadedtime[mode-1]>st.st_mtime)
+        reload = 0;
+
+    if (uinfo.ri_updatetime[mode-1]>uinfo.ri_loadedtime[mode-1]) {
+        count = get_num_records(filename, sizeof(struct refer));
+        if (count<=0)
+            return -1;
+        if ((fd=open(filename, O_RDWR))<0)
+            return -1;
+
+        rf = (struct refer*)malloc(count * sizeof(struct refer));
+        read(fd, rf, count * sizeof(struct refer));
+        for (i=0;i<count;i++)
+            get_refer_info(&rf[i], mode);
+        lseek(fd, 0, SEEK_SET);
+        safewrite(fd, rf, count * sizeof(struct refer));
+        close(fd);
+    }
+    if (reload)
+        load_refer_info(mode);
+    return 0;
+}
+
+int set_refer_info(int bid, int id, int mode)
+{
+    struct refer_info *p;
+
+    p = uinfo.refer_head[mode-1];
+    while (p!=NULL) {
+        if (p->bid==bid && p->id==id) {
+            p->flag |= FILE_READ;
+            uinfo.ri_updatetime[mode-1]=time(0);
+            if(p==uinfo.refer_head[mode-1])
+                setmailcheck(getCurrentUser()->userid);
+            return 0;
+        }
+        p = p->next;
+    }
+    return 0;
+}
+
+/* 从uinfo中检查refer状态，如果文件更新过，写入后重新load */
+int check_refer_info(int mode)
+{
+    char buf[STRLEN], filename[STRLEN];
+    struct stat st;
+
+    if (set_refer_file_from_mode(buf, mode)!=0)
+        return -1;
+    sethomefile(filename, getCurrentUser()->userid, buf);
+    if (stat(filename, &st)==-1)
+        return -1;
+    //if (uinfo.ri_loadedtime[mode-1]<st.st_mtime)
+    //    sync_refer_info(mode, 1);
+    if (uinfo.refer_head[mode-1]->flag & FILE_READ)
+        return 0;
+    return 1;
 }
 #endif
 

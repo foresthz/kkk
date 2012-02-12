@@ -1375,6 +1375,12 @@ void user_login()
     if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW))
         load_article_pos();
 #endif
+#ifdef ENABLE_REFER
+    if (DEFINE(getCurrentUser(), DEF_REFER))
+        load_refer_info(REFER_MODE_AT);
+    if (DEFINE(getCurrentUser(), DEF_REPLY))
+        load_refer_info(REFER_MODE_REPLY);
+#endif
 
 #ifndef SSHBBS
     if (

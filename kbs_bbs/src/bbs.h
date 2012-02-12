@@ -660,6 +660,12 @@ extern struct sms_shm_head *head;
 #define REFER_MODE_AT    1
 #define REFER_MODE_REPLY 2
 
+struct refer_info {
+    int bid;
+    int id;
+    unsigned int flag;
+    struct refer_info *next;
+};
 #endif /* ENABLE_REFER */
 
 #include "func.h"

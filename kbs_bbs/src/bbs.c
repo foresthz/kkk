@@ -1843,6 +1843,12 @@ reget:
         list_select_add_key(conf,KEY_REFRESH);
         arg->readmode=READ_NORMAL;
     }
+#ifdef ENABLE_REFER
+    if (DEFINE(getCurrentUser(), DEF_REFER))
+        set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
+    if (DEFINE(getCurrentUser(), DEF_REPLY))
+        set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+#endif
     return ret;
 }
 
@@ -6622,6 +6628,12 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
                 break;
         }
     } while (repeat);
+#ifdef ENABLE_REFER
+    if (DEFINE(getCurrentUser(), DEF_REFER))
+        set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
+    if (DEFINE(getCurrentUser(), DEF_REPLY))
+        set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+#endif
     if (ret==FULLUPDATE&&arg->oldpos!=0) {
         conf->new_pos=arg->oldpos;
         arg->oldpos=0;
