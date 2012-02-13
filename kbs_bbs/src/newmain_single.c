@@ -1376,10 +1376,9 @@ void user_login()
         load_article_pos();
 #endif
 #ifdef ENABLE_REFER
-    if (DEFINE(getCurrentUser(), DEF_REFER))
-        load_refer_info(REFER_MODE_AT);
-    if (DEFINE(getCurrentUser(), DEF_REPLY))
-        load_refer_info(REFER_MODE_REPLY);
+    /* 应该是不管用户是否启用，都需要load记录至uinfo */
+    load_refer_info(REFER_MODE_AT, 1);
+    load_refer_info(REFER_MODE_REPLY, 1);
 #endif
 
 #ifndef SSHBBS

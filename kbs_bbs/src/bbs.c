@@ -1844,10 +1844,9 @@ reget:
         arg->readmode=READ_NORMAL;
     }
 #ifdef ENABLE_REFER
-    if (DEFINE(getCurrentUser(), DEF_REFER))
-        set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
-    if (DEFINE(getCurrentUser(), DEF_REPLY))
-        set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
+    set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
+    set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
 #endif
     return ret;
 }
@@ -5141,6 +5140,11 @@ int Goodbye(void)                       /*离站 选单 */
         started = 0;
     }
 
+#ifdef ENABLE_REFER
+    /* 退出时清空uinfo中的refer记录 */
+    clear_refer_info(REFER_MODE_AT);
+    clear_refer_info(REFER_MODE_REPLY);
+#endif
     if (num_user_logins(getCurrentUser()->userid) == 0 || !strcmp(getCurrentUser()->userid, "guest")) {   /*检查还有没有人在线上 */
         FILE *fp;
         char buf[STRLEN], *ptr;
@@ -6629,10 +6633,9 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
         }
     } while (repeat);
 #ifdef ENABLE_REFER
-    if (DEFINE(getCurrentUser(), DEF_REFER))
-        set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
-    if (DEFINE(getCurrentUser(), DEF_REPLY))
-        set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
+    set_refer_info(currboardent, fh->id, REFER_MODE_AT);
+    set_refer_info(currboardent, fh->id, REFER_MODE_REPLY);
 #endif
     if (ret==FULLUPDATE&&arg->oldpos!=0) {
         conf->new_pos=arg->oldpos;

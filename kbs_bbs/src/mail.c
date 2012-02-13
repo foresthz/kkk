@@ -4486,7 +4486,7 @@ int refer_list(char filename[STRLEN], int mode) {
         sync_refer_info(mode, 0);
         returnmode=new_i_read(DIR_MODE_REFER, dir, refer_title, (READ_ENT_FUNC)referdoent, &refer_comms[0], sizeof(struct refer));
         sethomefile(dir, getCurrentUser()->userid, filename);
-        load_refer_info(mode);
+        load_refer_info(mode, 0);
     }
     in_mail=false;
     modify_user_mode(oldmode);     
@@ -4499,23 +4499,24 @@ int refer_list(char filename[STRLEN], int mode) {
  * 将refer信息放入uinfo中，jiangju，20120212
  */
 
-void free_refer_info(struct refer_info *ri)
+void free_refer_info(struct refer_info **ri)
 {
-    if (ri) {
-        if (ri->next)
-            free_refer_info(ri->next);
-        free(ri);
+    if (*ri) {
+        if ((*ri)->next)
+            free_refer_info(&((*ri)->next));
+        free(*ri);
+        *ri = NULL;
     }
     return;
 }
 
 void clear_refer_info(int mode)
 {
-    free_refer_info(uinfo.refer_head[mode-1]);
+    free_refer_info(&(uinfo.refer_head[mode-1]));
 }
 
 /* 读入文件信息至uinfo，如果文件未更新，则不更新uinfo */
-int load_refer_info(int mode)
+int load_refer_info(int mode, int init)
 {
     int i, count;
     char buf[STRLEN], filename[STRLEN];
@@ -4530,15 +4531,19 @@ int load_refer_info(int mode)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (uinfo.ri_loadedtime[mode-1]>st.st_mtime)
+    if (uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
         return 0;
-    uinfo.refer_head[mode-1] = NULL;
+    if (init) {
+        uinfo.refer_head[mode-1] = NULL;
+        uinfo.ri_loadedtime[mode-1] = 0;
+        uinfo.ri_updatetime[mode-1] = 0;
+    } else
+        clear_refer_info(mode);
     count = st.st_size / sizeof(struct refer); //get_num_records(filename, sizeof(struct refer));
     if (count<=0)
         return -1;
     if ((fd=open(filename, O_RDONLY))<0)
         return -1;
-    clear_refer_info(mode);
     rf = (struct refer*)malloc(count * sizeof(struct refer));
     read(fd, rf, count * sizeof(struct refer));
     for (i=0;i<count;i++){
@@ -4601,14 +4606,17 @@ int sync_refer_info(int mode, int reload)
 
         rf = (struct refer*)malloc(count * sizeof(struct refer));
         read(fd, rf, count * sizeof(struct refer));
-        for (i=0;i<count;i++)
-            get_refer_info(&rf[i], mode);
+        for (i=0;i<count;i++) {
+            if (!(rf[i].flag & FILE_READ))
+                get_refer_info(&rf[i], mode);
+        }
         lseek(fd, 0, SEEK_SET);
         safewrite(fd, rf, count * sizeof(struct refer));
         close(fd);
+        uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0); /* 防止由于sync引起文件时间改变而导致重新load */
     }
     if (reload)
-        load_refer_info(mode);
+        load_refer_info(mode, 0);
     return 0;
 }
 
@@ -4618,7 +4626,7 @@ int set_refer_info(int bid, int id, int mode)
 
     p = uinfo.refer_head[mode-1];
     while (p!=NULL) {
-        if (p->bid==bid && p->id==id) {
+        if (p->bid==bid && p->id==id && !(p->flag&FILE_READ)) {
             p->flag |= FILE_READ;
             uinfo.ri_updatetime[mode-1]=time(0);
             if(p==uinfo.refer_head[mode-1])
@@ -4643,9 +4651,13 @@ int check_refer_info(int mode)
         return -1;
     //if (uinfo.ri_loadedtime[mode-1]<st.st_mtime)
     //    sync_refer_info(mode, 1);
-    if (uinfo.refer_head[mode-1]->flag & FILE_READ)
-        return 0;
-    return 1;
+    if (uinfo.refer_head[mode-1]) {
+        if (uinfo.refer_head[mode-1]->flag & FILE_READ)
+            return 0;
+        else
+            return 1;
+    }
+    return 0;
 }
 #endif
 
