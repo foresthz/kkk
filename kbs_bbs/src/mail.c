@@ -4515,10 +4515,11 @@ void clear_refer_info(int mode)
     free_refer_info(&(uinfo.refer_head[mode-1]));
 }
 
-/* 读入文件信息至uinfo，如果文件未更新，则不更新uinfo */
+/* 读入文件信息至uinfo，如果文件未更新，则不更新uinfo
+   改进：只load所有未读记录，并将最后一篇放到refer_head（不管是否已读） */
 int load_refer_info(int mode, int init)
 {
-    int i, count;
+    int i, bid, count;
     char buf[STRLEN], filename[STRLEN];
     struct refer *rf;
     struct refer_info *p;
@@ -4547,9 +4548,10 @@ int load_refer_info(int mode, int init)
     rf = (struct refer*)malloc(count * sizeof(struct refer));
     read(fd, rf, count * sizeof(struct refer));
     for (i=0;i<count;i++){
-        p = (struct refer_info*)malloc(sizeof(struct refer_info));
-        if ((p->bid = getbid(rf[i].board, NULL))==0)
+        if ((bid = getbid(rf[i].board, NULL))==0 || (rf[i].flag&FILE_READ && i<count-1)) 
             continue;
+        p = (struct refer_info*)malloc(sizeof(struct refer_info));
+        p->bid = bid;
         p->id = rf[i].id;
         p->flag = rf[i].flag;
         p->next = uinfo.refer_head[mode-1];
@@ -4594,7 +4596,7 @@ int sync_refer_info(int mode, int reload)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (reload && uinfo.ri_loadedtime[mode-1]>st.st_mtime)
+    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
         reload = 0;
 
     if (uinfo.ri_updatetime[mode-1]>uinfo.ri_loadedtime[mode-1]) {
@@ -4641,6 +4643,8 @@ int set_refer_info(int bid, int id, int mode)
 /* 从uinfo中检查refer状态，如果文件更新过，写入后重新load */
 int check_refer_info(int mode)
 {
+    /* 这部分检查挪到调用之前，因为可能因为检查AT而遗漏REPLY */
+    /*
     char buf[STRLEN], filename[STRLEN];
     struct stat st;
 
@@ -4649,8 +4653,9 @@ int check_refer_info(int mode)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    //if (uinfo.ri_loadedtime[mode-1]<st.st_mtime)
-    //    sync_refer_info(mode, 1);
+    if (uinfo.ri_loadedtime[mode-1]<st.st_mtime)
+        sync_refer_info(mode, 1);
+    */
     if (uinfo.refer_head[mode-1]) {
         if (uinfo.refer_head[mode-1]->flag & FILE_READ)
             return 0;
