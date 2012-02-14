@@ -113,6 +113,10 @@ const char * const user_definestr[] = {
     "",
     "隐藏ip",                 /* DEF_HIDEIP */
     "不显示文章字节数",       /* DEF_SHOWSIZE */
+#ifdef ENABLE_REFER
+    "启用 @ 提醒",            /* DEF_REFER */
+    "启用回复提醒",           /* DEF_REPLY */
+#endif
     "隐藏WEB表情符号"         /* DEF_HIDEEMFLAG */
 };
 #endif

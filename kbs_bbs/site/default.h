@@ -498,9 +498,17 @@
 #define DEF_SHOWREALUSERDATA 010000000000
 #define DEF_HIDEIP   040000000001LL
 #define DEF_SHOWSIZE            040000000002LL
-#define DEF_HIDEEMFLAG          040000000004LL
+#ifdef ENABLE_REFER
+#define DEF_REFER               040000000004LL
+#define DEF_REPLY               040000000010ll
+#endif
+#define DEF_HIDEEMFLAG          040000000020LL
 
+#ifdef ENABLE_REFER
+#define NUMDEFINES 37
+#else
 #define NUMDEFINES 35
+#endif
 #endif
 
 /* Don't mess with this. */
