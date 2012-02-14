@@ -4566,6 +4566,7 @@ int load_refer_info(int mode, int init)
         uinfo.refer_head[mode-1] = p;
     }
     close(fd);
+    free(rf);
     uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0);
     return 0;
 }
@@ -4626,6 +4627,7 @@ int sync_refer_info(int mode, int reload)
         lseek(fd, i*sizeof(struct refer), SEEK_SET);
         safewrite(fd, &(rf[i]), (count-i) * sizeof(struct refer));
         close(fd);
+        free(rf);
         uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0); /* 防止由于sync引起文件时间改变而导致重新load */
     }
     if (reload)
