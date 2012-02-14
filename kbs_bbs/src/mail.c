@@ -4499,6 +4499,14 @@ int refer_list(char filename[STRLEN], int mode) {
  * 将refer信息放入uinfo中，jiangju，20120212
  */
 
+void init_refer_info(int mode)
+{
+    uinfo.refer_head[mode-1] = NULL;
+    uinfo.ri_loadedtime[mode-1] = 0;
+    uinfo.ri_updatetime[mode-1] = 0;
+    return;
+}
+
 void free_refer_info(struct refer_info **ri)
 {
     if (*ri) {
@@ -4534,11 +4542,9 @@ int load_refer_info(int mode, int init)
         return -1;
     if (uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
         return 0;
-    if (init) {
-        uinfo.refer_head[mode-1] = NULL;
-        uinfo.ri_loadedtime[mode-1] = 0;
-        uinfo.ri_updatetime[mode-1] = 0;
-    } else
+    if (init)
+        init_refer_info(mode);
+    else
         clear_refer_info(mode);
     count = st.st_size / sizeof(struct refer); //get_num_records(filename, sizeof(struct refer));
     if (count<=0)
@@ -4572,6 +4578,8 @@ int get_refer_info(struct refer *rf, int mode)
     while(p!=NULL) {
         if (p->bid == (bid=getbid(rf->board, NULL)) && p->id == rf->id) {
             rf->flag |= p->flag;
+            if (p->next==NULL) /* 最后一个了 */
+                return 2;
             return 1;
         }
         p = p->next;
@@ -4608,12 +4616,13 @@ int sync_refer_info(int mode, int reload)
 
         rf = (struct refer*)malloc(count * sizeof(struct refer));
         read(fd, rf, count * sizeof(struct refer));
-        for (i=0;i<count;i++) {
-            if (!(rf[i].flag & FILE_READ))
-                get_refer_info(&rf[i], mode);
+        for (i=count-1;i>=0;i--) { /* 逆序寻找，达到最后一个时就不再往前找了 */
+            if (!(rf[i].flag & FILE_READ) && get_refer_info(&rf[i], mode)==2)
+                break;
         }
-        lseek(fd, 0, SEEK_SET);
-        safewrite(fd, rf, count * sizeof(struct refer));
+        /* 只写入查找过的rf记录 */
+        lseek(fd, i*sizeof(struct refer), SEEK_SET);
+        safewrite(fd, &(rf[i]), (count-i) * sizeof(struct refer));
         close(fd);
         uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0); /* 防止由于sync引起文件时间改变而导致重新load */
     }
