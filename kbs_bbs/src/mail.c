@@ -4488,7 +4488,7 @@ int refer_list(char filename[STRLEN], int mode) {
         sync_refer_info(mode, 0);
         returnmode=new_i_read(DIR_MODE_REFER, dir, refer_title, (READ_ENT_FUNC)referdoent, &refer_comms[0], sizeof(struct refer));
         sethomefile(dir, getCurrentUser()->userid, filename);
-        load_refer_info(mode, 1);
+        load_refer_info(mode, 0);
     }
     in_mail=false;
     modify_user_mode(oldmode);     
@@ -4542,7 +4542,7 @@ int load_refer_info(int mode, int init)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
+    if (uinfo.ri_loadedtime[mode-1]>=st.st_atime)
         return 0;
     if (init)
         init_refer_info(mode);
@@ -4607,7 +4607,7 @@ int sync_refer_info(int mode, int reload)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
+    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_atime)
         reload = 0;
 
     if (uinfo.ri_updatetime[mode-1]>uinfo.ri_loadedtime[mode-1]) {
