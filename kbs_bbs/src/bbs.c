@@ -1630,6 +1630,11 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 #ifdef HAVE_BRC_CONTROL
     brc_add_read(fileinfo->id,currboardent,getSession());
 #endif
+#ifdef ENABLE_REFER
+    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
+    set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
+    set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+#endif
 #ifndef NOREPLY
     move(t_lines - 1, 0);
     switch (arg->readmode) {
@@ -1843,11 +1848,6 @@ reget:
         list_select_add_key(conf,KEY_REFRESH);
         arg->readmode=READ_NORMAL;
     }
-#ifdef ENABLE_REFER
-    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
-    set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
-#endif
     return ret;
 }
 
@@ -6492,6 +6492,11 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
 #ifdef HAVE_BRC_CONTROL
     brc_add_read(fh->id,currboardent,getSession());
 #endif /* HAVE_BRC_CONTROL */
+#ifdef ENABLE_REFER
+    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
+    set_refer_info(currboardent, fh->id, REFER_MODE_AT);
+    set_refer_info(currboardent, fh->id, REFER_MODE_REPLY);
+#endif
     arg=(struct read_arg*)conf->arg;
     move(t_lines-1,0);
     clrtoeol();
@@ -6632,11 +6637,6 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
                 break;
         }
     } while (repeat);
-#ifdef ENABLE_REFER
-    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboardent, fh->id, REFER_MODE_AT);
-    set_refer_info(currboardent, fh->id, REFER_MODE_REPLY);
-#endif
     if (ret==FULLUPDATE&&arg->oldpos!=0) {
         conf->new_pos=arg->oldpos;
         arg->oldpos=0;

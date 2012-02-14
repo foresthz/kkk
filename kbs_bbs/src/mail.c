@@ -4488,7 +4488,7 @@ int refer_list(char filename[STRLEN], int mode) {
         sync_refer_info(mode, 0);
         returnmode=new_i_read(DIR_MODE_REFER, dir, refer_title, (READ_ENT_FUNC)referdoent, &refer_comms[0], sizeof(struct refer));
         sethomefile(dir, getCurrentUser()->userid, filename);
-        load_refer_info(mode, 0);
+        load_refer_info(mode, 1);
     }
     in_mail=false;
     modify_user_mode(oldmode);     
