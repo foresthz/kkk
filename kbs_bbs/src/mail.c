@@ -4542,8 +4542,6 @@ int load_refer_info(int mode, int init)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (uinfo.ri_loadedtime[mode-1]>=st.st_atime)
-        return 0;
     if (init)
         init_refer_info(mode);
     else
