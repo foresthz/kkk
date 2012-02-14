@@ -4438,7 +4438,7 @@ void refer_title(struct _select_def* conf) {
 char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, struct _select_def* conf) {
     char *date;
     char c1[8],c2[8];
-    int same=false;
+    int same=false, orig=0;
 
     date=ctime(&ent->time)+4;
     if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
@@ -4450,8 +4450,10 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
     }
     if (readfh&&0==strncasecmp(ent->board, readfh->board, IDLEN+6)&&ent->groupid==readfh->groupid)
         same=true;
+    if (strncmp(ent->title, "Re: ", 4))
+        orig=1;
 
-    sprintf(buf, " %s%4d %s %-12s %6.6s  %-12s %s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", ent->user, date, ent->board, ent->title);
+    sprintf(buf, " %s%4d %s %-12s %6.6s  %-12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", ent->user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
 }
