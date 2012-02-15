@@ -1015,7 +1015,7 @@ void a_range_copypaste(MENU *pm,int mode)
 #define ACP_FGETS(len) if(!fgets(genbuf,((len)+1),fp)||!genbuf[0]||genbuf[0]=='\r'||genbuf[0]=='\n'){type=PASTE_ERROR;break;}
 #define ACP_DUMPS(dst,src,len) do{snprintf((dst),(len),"%s",(src));if((p=strpbrk((dst),"\r\n"))){*p=0;}}while(0)
 #define ACP_ANY_BREAK(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));igetkey();pm->page=9999;break;}
-#define ACP_ANY_CONTINUE(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));igetkey();pm->page=9999;continue;}
+#define ACP_ANY_CONTINUE(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));ch=igetkey();pm->page=9999;continue;}
     do {
         ap=0;
         ACP_FGETS(2);
@@ -1053,7 +1053,10 @@ void a_range_copypaste(MENU *pm,int mode)
         return;
     }
     i = 0;
+    int ch = 0;
     do {
+        if (toupper(ch)=='Q')
+            break;
         ACP_FGETS(STRLEN);
         ACP_DUMPS(title,genbuf,STRLEN);
         ACP_FGETS(STRLEN);
@@ -1070,7 +1073,7 @@ void a_range_copypaste(MENU *pm,int mode)
         snprintf(newpath,PATHLEN,"%s/%s",pm->path,filename);
         if (!((access(newpath,F_OK)==-1)&&(errno==ENOENT))) {
             move(t_lines-1, 0);clrtoeol();
-            snprintf(genbuf, STRLEN, "当前路径下已存在名为\033[32m%s\033[m文件或目录, 任意键继续", filename);
+            snprintf(genbuf, STRLEN, "当前路径下已存在名为\033[32m%s\033[m文件或目录, \033[31mQ\033[m终止操作, 其他任意键继续", filename);
             ACP_ANY_CONTINUE(genbuf);
         }
         if (!strncmp(path,newpath,(len=strlen(path)))&&newpath[len]=='/') {
@@ -1079,7 +1082,7 @@ void a_range_copypaste(MENU *pm,int mode)
         }
         if (stat(path,&st)==-1||!(S_ISDIR(st.st_mode)||S_ISREG(st.st_mode))) {
             move(t_lines-1, 0);clrtoeol();
-            snprintf(genbuf, STRLEN, "源文件或目录%s不存在, 任意键继续", filename);
+            snprintf(genbuf, STRLEN, "源文件或目录%s不存在, 按\033[31mQ\033[m终止操作, 其他任意键继续", filename);
             ACP_ANY_CONTINUE(genbuf);
         }
 
