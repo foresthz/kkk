@@ -4605,7 +4605,7 @@ int sync_refer_info(int mode, int reload)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_atime)
+    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
         reload = 0;
 
     if (uinfo.ri_updatetime[mode-1]>uinfo.ri_loadedtime[mode-1]) {
