@@ -31,6 +31,8 @@ int get_textfile_string(const char *file, char **ptr, char *result[], int maxcou
             (*ptr)[i] = '\0';
             i++;
             count++;
+            if (count>=maxcount)
+                break;
             if (i==st.st_size)
                 break;
             if ((*ptr)[i] == '\r') {
@@ -41,8 +43,6 @@ int get_textfile_string(const char *file, char **ptr, char *result[], int maxcou
             } else {
                 result[count] = &((*ptr)[i]);
             }
-            if (count>=maxcount)
-                break;
         }
     }
     close(fd);
