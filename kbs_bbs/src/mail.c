@@ -4533,19 +4533,39 @@ int load_refer_info(int mode, int init)
     char buf[STRLEN], filename[STRLEN];
     struct refer *rf;
     struct refer_info *p;
-    struct stat st;
-    int fd;
+    char *ptr;
+    off_t size;
 
     if (set_refer_file_from_mode(buf, mode)!=0)
         return -1;
 
     sethomefile(filename, getCurrentUser()->userid, buf);
-    if (stat(filename, &st)==-1)
-        return -1;
     if (init)
         init_refer_info(mode);
     else
         clear_refer_info(mode);
+    /* 使用mmap读取文件 */
+    BBS_TRY {
+        if (!safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL))
+            BBS_RETURN(-1);
+        count = size / sizeof(struct refer);
+        rf = (struct refer *)ptr;
+        for (i=0;i<count;i++) {
+            if ((bid=getbid(rf[i].board, NULL))==0 || (rf[i].flag&FILE_READ && i<count-1))
+                continue;
+            p = (struct refer_info*)malloc(sizeof(struct refer_info));
+            p->bid = bid;
+            p->id = rf[i].id;
+            p->flag = rf[i].flag;
+            p->next = uinfo.refer_head[mode-1];
+            uinfo.refer_head[mode-1] = p;
+        }
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    end_mmapfile(ptr, size, -1); 
+#if 0
     count = st.st_size / sizeof(struct refer); //get_num_records(filename, sizeof(struct refer));
     if (count<=0)
         return -1;
@@ -4565,6 +4585,7 @@ int load_refer_info(int mode, int init)
     }
     close(fd);
     free(rf);
+#endif
     uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0);
     return 0;
 }
@@ -4598,17 +4619,34 @@ int sync_refer_info(int mode, int reload)
     char buf[STRLEN], filename[STRLEN];
     struct refer *rf;
     struct stat st;
-    int fd;
+    char *ptr;
+    off_t size;
 
     if (set_refer_file_from_mode(buf, mode)!=0)
         return -1;
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
-        reload = 0;
+    //if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
+    //    reload = 0;
 
     if (uinfo.ri_updatetime[mode-1]>uinfo.ri_loadedtime[mode-1]) {
+        /* 使用mmap同步写入，不用再判断记录位置啥的了 */
+        BBS_TRY {
+            if (!safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &size, NULL))
+                BBS_RETURN(-1);
+            count = size / sizeof(struct refer);
+            rf = (struct refer *)ptr;
+            for (i=count-1;i>=0;i--) {
+                if (!(rf[i].flag & FILE_READ) && get_refer_info(&rf[i], mode)==2)
+                    break;
+            }
+        }
+        BBS_CATCH {
+        }
+        BBS_END;
+        end_mmapfile(ptr, size, -1);
+#if 0
         count = get_num_records(filename, sizeof(struct refer));
         if (count<=0)
             return -1;
@@ -4628,6 +4666,7 @@ int sync_refer_info(int mode, int reload)
         safewrite(fd, &(rf[i]), (count-i) * sizeof(struct refer));
         close(fd);
         free(rf);
+#endif
         uinfo.ri_updatetime[mode-1] = uinfo.ri_loadedtime[mode-1] = time(0); /* 防止由于sync引起文件时间改变而导致重新load */
     }
     if (reload)
