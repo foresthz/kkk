@@ -3285,7 +3285,7 @@ int select_keyword(char *title)
         count++;
     }
     if (count==0) {
-        getdata(t_lines-1, 0, "无标题标签可供选择, 回车继续", tmp, 1, DOECHO, NULL, true)
+        getdata(t_lines-1, 0, "无标题标签可供选择, 回车继续", tmp, 1, DOECHO, NULL, true);
         return 0;
     }
     if (sel>=count) { /* 上次选择大于本次总和 */

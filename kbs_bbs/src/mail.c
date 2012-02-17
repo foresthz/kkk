@@ -3950,7 +3950,7 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
             setmailcheck(getCurrentUser()->userid); 
     }
 
-    board=getbcache(refer->board);
+    board=(struct boardheader *)getbcache(refer->board);
     if (0==board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
         prints("指定版面不存在...");
@@ -4141,7 +4141,7 @@ int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
     if (refer==NULL)
         return DONOTHING;
 
-    board=getbcache(refer->board);
+    board=(struct boardheader *)getbcache(refer->board);
     if (0==board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
         prints("指定版面不存在...");
