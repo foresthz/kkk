@@ -4621,6 +4621,8 @@ int sync_refer_info(int mode, int reload)
             if (!(rf[i].flag & FILE_READ) && get_refer_info(&rf[i], mode)==2)
                 break;
         }
+        /* 万一最后一个被双登的读掉了，就gg了，因此... */
+        i=(i<0)?0:i;
         /* 只写入查找过的rf记录 */
         lseek(fd, i*sizeof(struct refer), SEEK_SET);
         safewrite(fd, &(rf[i]), (count-i) * sizeof(struct refer));
