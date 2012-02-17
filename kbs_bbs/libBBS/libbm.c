@@ -305,7 +305,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
 int get_title_key(const char *board, char titlekey[][8], int max)
 {
     char filename[STRLEN];
-    char *ptr, *key[MAXDENYREASON];
+    char *ptr, *key[MAXBOARDTITLEKEY];
     int count, i;
     
     max = (max>MAXBOARDTITLEKEY) ? MAXBOARDTITLEKEY : max;
