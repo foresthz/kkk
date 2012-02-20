@@ -13,8 +13,9 @@
 int get_textfile_string(const char *file, char **ptr, char *result[], int maxcount)
 {
     int fd;
-    int i, count;
+    int count, size;
     struct stat st;
+    char *p, *q;
     
     if ((fd=open(file, O_RDONLY))==-1)
         return 0;
@@ -25,7 +26,20 @@ int get_textfile_string(const char *file, char **ptr, char *result[], int maxcou
     *ptr = (char *)malloc(st.st_size);
     read(fd, *ptr, st.st_size);
     count = 0;
-    result[0] = *ptr;
+    result[0] = q = p = *ptr;
+    size = st.st_size;
+    while (size>0 && (p=(char *)memmem(p, size, "\n", 1))!=NULL) {
+        *p = '\0';
+        p++;
+        count++;
+        if (count>=maxcount)
+            break;
+        if (*p == '\r')
+            p++;
+        size -= p-q;
+        result[count] = q = p;
+    }
+    /*
     for (i=1;i<st.st_size;i++) {
         if ((*ptr)[i] == '\n') {
             (*ptr)[i] = '\0';
@@ -45,6 +59,7 @@ int get_textfile_string(const char *file, char **ptr, char *result[], int maxcou
             }
         }
     }
+    */
     close(fd);
     return count;
 }
