@@ -569,13 +569,13 @@ void utmpd()
         /* utmp */
         switch (utmpreq.command) {
         case UTMP_NEW:                // getnewutmp
-            id = getnewutmpent2(&utmpreq.arg.new.utmp, utmpreq.arg.new.is_www);
+            id = getnewutmpent2(&utmpreq.arg._new.utmp, utmpreq.arg._new.is_www);
             break;
         /*case 2:
             id = -1;
             break;              // clear, by uentp*/
         case UTMP_CLR:                // clear, by id
-            clear_utmp3(utmpreq.arg.clr.uent, utmpreq.arg.clr.uid, utmpreq.arg.clr.pid);
+            clear_utmp3(utmpreq.arg._clr.uent, utmpreq.arg._clr.uid, utmpreq.arg._clr.pid);
             id = 0;
             break;
         default:

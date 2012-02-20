@@ -202,8 +202,8 @@ static void logloop()
 int getnewutmpent(struct user_info *up, int is_www)
 {
     utmpreq.command = UTMP_NEW;
-    memcpy(&utmpreq.arg.new.utmp, up, sizeof(*up));
-    utmpreq.arg.new.is_www = is_www;
+    memcpy(&utmpreq.arg._new.utmp, up, sizeof(*up));
+    utmpreq.arg._new.is_www = is_www;
     /* connect and send request */
     return sendutmpreq(&utmpreq);
 }
@@ -596,9 +596,9 @@ int search_ulist(struct user_info *uentp, int (*fptr)(int, struct user_info *), 
 void clear_utmp(int uent, int useridx, int pid)
 {
     utmpreq.command = UTMP_CLR;
-    utmpreq.arg.clr.uent = uent;
-    utmpreq.arg.clr.uid = useridx;
-    utmpreq.arg.clr.pid = pid;
+    utmpreq.arg._clr.uent = uent;
+    utmpreq.arg._clr.uid = useridx;
+    utmpreq.arg._clr.pid = pid;
     /* connect and clear */
     sendutmpreq(&utmpreq);
 }

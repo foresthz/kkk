@@ -625,11 +625,11 @@ struct utmpreqhdr {
         struct {
             struct user_info utmp;
             int is_www;
-        } new;
+        } _new;
         struct {
             int uent;
             int uid;
             int pid;
-        } clr;
+        } _clr;
     } arg;
 };
