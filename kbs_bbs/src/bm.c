@@ -541,7 +541,7 @@ int modify_denytime(time_t *denytime, int *autofree)
             if (days > 1) /* 至少需要1天 */
                 days--;
         } else if (ch>='0' && ch<='9') { /* 直接输入日期，可输入三位数字 */
-            if (!start)
+            if (!start && ch!='0')
                 days = ch - '0';
             else {
                 int day = ch - '0';
