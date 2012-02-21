@@ -874,7 +874,7 @@ PHP_FUNCTION(bbs_updatearticle2)
     }
     for (i = 0; i < 4; i++) {
         fgets(buf2, sizeof(buf2), fin);
-        if ((i==0) && (strncmp(buf2,"发信人",6)!=0)) {
+        if ((i==0) && (strncmp(buf2,"发信人",6)!=0) && (strncmp(buf2, "寄信人", 6)!=0)) {
             break;
         }
         fprintf(fout, "%s", buf2);
