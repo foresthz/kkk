@@ -654,6 +654,9 @@ static char *post_article(char *homepath, char *userid, char *board, int (*write
     resolve_boards();
 #ifdef ENABLE_REFER
     resolve_ucache();
+    struct userec windinsn;
+    getCurrentUser() = &windinsn;
+    strcpy(windinsn.userid, header.owner);
 #endif
     linkflag = find_thread(&threadfh, board, header.title);
     header.eff_size = get_effsize(article);
