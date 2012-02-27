@@ -652,6 +652,9 @@ static char *post_article(char *homepath, char *userid, char *board, int (*write
      */
     chdir(BBSHOME);
     resolve_boards();
+#ifdef ENABLE_REFER
+    resolve_ucache();
+#endif
     linkflag = find_thread(&threadfh, board, header.title);
     header.eff_size = get_effsize(article);
     ret = after_post(NULL, &header, board, linkflag ? &threadfh : NULL, 0, getSession());
