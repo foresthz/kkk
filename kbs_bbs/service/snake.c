@@ -566,6 +566,7 @@ int snake()
             pressanykey();
             move(22, 35);
             clrtoeol();
+            c = 0;
             continue;
         }
         if ( times(&faint) - t > delay || accel) {
