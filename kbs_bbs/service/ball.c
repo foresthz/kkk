@@ -26,6 +26,8 @@ struct ball ballpath[MAX_BALL];
 int ngtype[CPG];
 int score=0, hole;
 
+int erase_ball(int, int);
+
 void ball_help()
 {
     move(3, 40);
@@ -55,7 +57,20 @@ void show_frame()
     ball_help();
 }
 
-void show_balls()
+void show_ng_score()
+{
+    int i;
+    char buf[STRLEN];
+    move(20, 10);
+    for (i=0;i<CPG;i++) {
+        sprintf(buf, "\033[1;3%dm●\033[m", ngtype[i]);
+        prints(buf);
+    }
+    move(20, 26);
+    prints("%d", score);
+}
+
+void show_all_balls()
 {
     int i, j, btype;
     char buf[STRLEN];
@@ -70,6 +85,7 @@ void show_balls()
             prints(buf);
         }
     }
+    /*
     move(20, 10);
     for (i=0;i<CPG;i++) {
         sprintf(buf, "\033[1;3%dm●\033[m", ngtype[i]);
@@ -77,6 +93,8 @@ void show_balls()
     }
     move(20, 26);
     prints("%d", score);
+    */
+    show_ng_score();
 
     return;
 }
@@ -125,7 +143,7 @@ int get_path()
     return found;
 }
 
-void show_point(struct point p[], int btype, int count)
+void show_path_point(struct point p[], int btype, int count)
 {
     int i;
     char buf[STRLEN];
@@ -147,7 +165,7 @@ void show_path()
         b = ballpath[b.key];
     } while (b.key!=-1);
 
-    show_point(ballpath2, btype, count);
+    show_path_point(ballpath2, btype, count);
     refresh();
 }
 
@@ -156,15 +174,27 @@ int create_ball()
     return rand()%7+1;
 }
 
-/* 安放一个ball */
+/* 安放并显示一个ball，检查安放位置可否消除，caller保证有hole */
 void deposit_ball(int btype)
 {
+    char buf[STRLEN];
     int row, col;
+    int erase;
     while (1) {
         row = rand()%MAX_ROW;
         col = rand()%MAX_COL;
         if (balls[row][col]==0) {
             balls[row][col] = btype;
+            /* 显示该ball */
+            move(row*2+1, col*4+2);
+            sprintf(buf, "\033[1;3%dm●\033[m", btype);
+            prints(buf);
+
+            erase = erase_ball(row, col);
+            if (erase) {
+                hole += erase;
+                score += (erase - 4) * 10;
+            }
             break;
         }
     }
@@ -192,7 +222,7 @@ void create_group()
     return;
 }
 
-/* 安放一组（3个）ball，没有空位就不安放 */
+/* 安放一组（3个）ball并产生下一组，没有空位就不安放 */
 int deposit_group()
 {
     int i;
@@ -202,6 +232,8 @@ int deposit_group()
         deposit_ball(ngtype[i]);
         hole--;
     }
+    create_group();
+    show_ng_score();
     return 0;
 }
 
@@ -216,18 +248,18 @@ int move_ball()
     return 0;
 }
 
-/* 消除连接成功的ball */
-int erase_ball()
+/* 消除连接成功的ball，并去掉被消除ball的显示 */
+int erase_ball(int crow, int ccol)
 {
     struct point dp[4] = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
     int dir, v, count, totalcount=1, row, col;
 
-    v = balls[end.p.row][end.p.col];
+    v = balls[crow][ccol];
     for (dir=0;dir<4;dir++) {
         count = 1;
         /* 沿小的方向检查 */
-        row = end.p.row;
-        col = end.p.col;
+        row = crow;
+        col = ccol;
         while (1) {
             row = row - dp[dir].row;
             col = col - dp[dir].col;
@@ -236,8 +268,8 @@ int erase_ball()
             count++;
         }
         /* 沿大的方向检查 */
-        row = end.p.row;
-        col = end.p.col;
+        row = crow;
+        col = ccol;
         while (1) {
             row = row + dp[dir].row;
             col = col + dp[dir].col;
@@ -251,6 +283,8 @@ int erase_ball()
                 row = row - dp[dir].row;
                 col = col - dp[dir].col;
                 balls[row][col] = 0;
+                move(row*2+1, col*4+2);
+                prints("  ");
                 count--;
             }
         }
@@ -268,11 +302,11 @@ int ball_main()
     show_frame();
     init_ball();
     create_group();
+    show_all_balls();
     while(1) {
         moveball = 0;
         bzero(&start, sizeof(struct ball));
         bzero(&end, sizeof(struct ball));
-        show_balls();
         while(!moveball) {
             if (start.key) {    //显示选中ball
                 move(start.p.row*2+1, start.p.col*4+2);
@@ -340,16 +374,17 @@ int ball_main()
                                 move(22, 10);clrtoeol();
                             } else {
                                 /* 移动完毕 */
-                                show_balls();
+                                show_all_balls();
                                 usleep(200);
                                 refresh();
                                 /* 消除连接的成功balls */
-                                erase = erase_ball();
+                                erase = erase_ball(end.p.row, end.p.col);
                                 if (erase) {
                                     hole += erase;
                                     score += (erase - 4) * 10;
-                                }
-                                moveball = 1;
+                                    show_ng_score();
+                                } else
+                                    moveball = 1;
                             }
                             start.key = end.key = 0;
                         }
@@ -365,13 +400,13 @@ int ball_main()
             return 0;
         if (!erase) {  // 上次移动未产生消除ball时，放置旧的，产生新的
             if (deposit_group()==-1) {
-                show_balls();
+                show_all_balls();
                 move(22, 10);
                 prints("游戏结束");
                 pressreturn();
                 return 0;
             }
-            create_group();
+            //create_group(); 如果deposit_group刚好放满，就GG了，所以挪到deposit_group中
         }
     }
     return 0;
