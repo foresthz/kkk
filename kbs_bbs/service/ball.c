@@ -6,6 +6,7 @@
 #define MAX_BALL 81
 #define IBC      5  // initial ball count
 #define CPG      3  // ball count per group
+#define BALL_REC_FILE "etc/ball.rec"
 
 struct point {
     int row;
@@ -25,6 +26,9 @@ struct ball start, end;
 struct ball ballpath[MAX_BALL];
 int ngtype[CPG];
 int score=0, hole;
+int topS[20];
+char topID[20][IDLEN+2];
+time_t toptime[20];
 
 int erase_ball(int, int);
 
@@ -38,6 +42,8 @@ void ball_help()
     prints("Home/A、End/D  移动光标至行首、行尾");
     move(9, 42);
     prints("PgUp/W、PgDn/S 移动光标至列首、列尾");
+    move(11, 42);
+    prints("Ctrl+C 退出游戏");
 }
 
 void show_frame()
@@ -55,6 +61,117 @@ void show_frame()
     move(20, 0);
     prints("下轮颜色:            得分:");
     ball_help();
+}
+
+void ball_saverec()
+{
+    FILE *fp;
+    int n;
+    char buf[128];
+
+    sprintf(buf, BALL_REC_FILE);
+    fp = fopen(buf, "w");
+    for (n = 0; n <= 19; n++) {
+        fprintf(fp, "%12s %10d %d\n", topID[n], topS[n], (int) toptime[n]);
+    }
+    fclose(fp);
+}
+
+void ball_loadrec()
+{
+    FILE *fp; 
+    int n;
+    char buf[128];
+            
+    sprintf(buf, BALL_REC_FILE);
+    for (n = 0; n <= 19; n++) {
+        strcpy(topID[n], "unknown.");
+        topS[n] = 0; 
+        toptime[n] = 0;
+    }   
+    fp = fopen(buf, "r");
+    if (fp == NULL) {
+        ball_saverec();
+        return;
+    }   
+    for (n = 0; n <= 19; n++)
+        fscanf(fp, "%s %d %d\n", topID[n], &topS[n], (int *) &toptime[n]);
+    fclose(fp);
+}
+
+void ball_showrec()
+{   
+    int n;
+    char buf[200];
+
+    ball_loadrec();
+    clear();
+    prints
+        ("\033[44;37m                           -    彩球连珠排行榜   -                              \r\n\033[m");
+    prints
+        ("\033[41m No.        ID                 Score                   时间                        \033[m\n\r");
+    for (n = 0; n <= 19; n++) {
+        sprintf(buf,
+                "\033[1;37m%3d\033[32m%13s\033[0;37m\033[m%20d           \033[1;37m%s\033[m\n\r",
+                n + 1, topID[n], topS[n], Ctime(toptime[n]));
+        prints(buf);
+    }
+    prints("\033[41m                                                                               \033[m\n\r");
+    pressanykey();
+}
+
+void ball_sort()
+{
+    int n, n2, tmp, rank = 19;
+    time_t time;
+    char tmpID[IDLEN+2];
+    clear();
+    prints("祝贺! 您刷新了自己的纪录!\r\n");
+    pressanykey();
+    for (n = 0; n <= 18; n++)
+        for (n2 = n + 1; n2 <= 19; n2++)
+            if (topS[n] < topS[n2]) {
+                tmp = topS[n];
+                topS[n] = topS[n2];
+                topS[n2] = tmp;
+                strcpy(tmpID, topID[n]);
+                strcpy(topID[n], topID[n2]);
+                strcpy(topID[n2], tmpID);
+                time = toptime[n];
+                toptime[n] = toptime[n2];
+                toptime[n2] = time;
+                if (rank == 19)
+                    rank = n;
+            }
+    rank = 20 - rank;
+}
+
+void ball_checkrec(int score, time_t time)
+{
+    char id[IDLEN+2];
+    int n;
+    ball_loadrec();
+    strcpy(id, getCurrentUser()->userid);
+    for (n = 0; n <= 19; n++)
+        if (!strcmp(topID[n], id)) {
+            if (score > topS[n]) {
+                topS[n] = score;
+                toptime[n] = time;
+                ball_sort();
+                ball_saverec();
+                ball_showrec();
+            }
+            return;
+        }
+    if (score > topS[19]) {
+        strcpy(topID[19], id);
+        topS[19] = score;
+        toptime[19] = time;
+        ball_sort();
+        ball_saverec();
+        ball_showrec();
+        return;
+    }
 }
 
 void show_ng_score()
@@ -299,6 +416,7 @@ int ball_main()
     srand(time(0));
 
     row=col=0;
+    ball_showrec();
     show_frame();
     init_ball();
     create_group();
@@ -391,18 +509,22 @@ int ball_main()
                     }
                     break;
                 case Ctrl('C'):
-                    return 0;
+                    moveball = 1;
+                    break;
                 default:
                     break;
             }
         }
-        if (i==Ctrl('C'))
+        if (i==Ctrl('C')) {
+            ball_checkrec(score, time(0));
             return 0;
+        }
         if (!erase) {  // 上次移动未产生消除ball时，放置旧的，产生新的
             if (deposit_group()==-1) {
                 show_all_balls();
                 move(22, 10);
                 prints("游戏结束");
+                ball_checkrec(score, time(0));
                 pressreturn();
                 return 0;
             }
