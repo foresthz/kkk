@@ -344,10 +344,10 @@ int deposit_group()
 {
     int i;
     for (i=0;i<CPG;i++) {
-        if (hole<=0)
-            return -1;
         deposit_ball(ngtype[i]);
         hole--;
+        if (hole<=0)
+            return -1;
     }
     create_group();
     show_ng_score();
