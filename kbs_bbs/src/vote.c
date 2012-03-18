@@ -433,7 +433,7 @@ int get_result_title()
     fprintf(sug, "⊙ 主题：%s\n", currvote.title);
     if (currvote.type == VOTE_VALUE)
         fprintf(sug, "⊙ 此次投票的值不可超过：%d\n\n", currvote.maxtkt);
-    if (currvote.type != VOTE_VALUE && currvote.type != VOTE_ASKING) {
+    if (currvote.type != VOTE_ASKING) {
         if (currvote.flag & VOTE_TRUE_FLAG)
             fprintf(sug, "⊙ 此次投票记录\033[1;31m用户投票内容%s\033[m\n\n", (currvote.flag & VOTE_IP_FLAG)? "及完整IP":"");
     }
@@ -516,7 +516,7 @@ static int mk_result(int num)
     }
     fprintf(sug, "\n投票总人数 = \033[1m%d\033[m 人\n", result[64]);
     fprintf(sug, "投票总票数 =\033[1m %d\033[m 票\n\n", total);
-    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+    if (currvote.type != VOTE_ASKING && (currvote.flag & VOTE_TRUE_FLAG)) {
         sprintf(record_file, "vote/%s/record.%d", currboard->filename, (int)getpid());
         fclose(sug);
         f_cp(nname, record_file, 0); /* 备份记录文件 */
@@ -530,7 +530,7 @@ static int mk_result(int num)
     unlink(sugname);
     fclose(sug);
     sug = NULL;
-    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+    if (currvote.type != VOTE_ASKING && (currvote.flag & VOTE_TRUE_FLAG)) {
         dump_vote_record();
         sprintf(vote_file, "vote/%s/vote_file", currboard->filename);
         f_cp(record_file, vote_file, 0);
@@ -542,7 +542,7 @@ static int mk_result(int num)
         post_file(getCurrentUser(), "", nname, "vote", title, 0, 1, getSession());
     }
     post_file(getCurrentUser(), "", nname, currboard->filename, title, 0, 1, getSession());
-    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+    if (currvote.type != VOTE_ASKING && (currvote.flag & VOTE_TRUE_FLAG)) {
         sprintf(title, "[公告] %s 版的投票结果(明细)", currboard->filename);
         mail_file("deliver", vote_file, currvote.userid, title, 0, NULL);
         if (normal_board(currboard->filename)) {
@@ -637,7 +637,7 @@ int check_result(int num)
     fclose(sug);
     sug = NULL;
     /* 检查结果时也可查看详细记录 */
-    if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE && (currvote.flag & VOTE_TRUE_FLAG)) {
+    if (currvote.type != VOTE_ASKING && (currvote.flag & VOTE_TRUE_FLAG)) {
         dump_vote_record();
         write_vote_record(nname, 0);
     }
@@ -799,7 +799,7 @@ char *bname;
     clear();
     /* 不是数值和问答时，可在结果中记录用户投票信息 */
     ball->flag = 0;
-    if (ball->type != VOTE_ASKING && ball->type != VOTE_VALUE) {
+    if (ball->type != VOTE_ASKING) {
         getdata(1, 0, "是否记录用户详细投票信息？[N]", buf, 3, DOECHO, NULL, true);
         if (buf[0] == 'y' || buf[0] == 'Y') {
             ball->flag |= VOTE_TRUE_FLAG;
@@ -1021,7 +1021,7 @@ void show_voteing_title()
            ctime(&closedate), buf, (voted_flag) ? "(修改前次投票)" : "");
     prints("投票主题是: \033[1m%-50s\033[m类型: \033[1m%s\033[m \n", currvote.title,
            vote_type[currvote.type - 1]);
-    if (currvote.type != VOTE_VALUE && currvote.type != VOTE_ASKING) {
+    if (currvote.type != VOTE_ASKING) {
         if (currvote.flag & VOTE_TRUE_FLAG)
             prints("此次投票记录\033[1;31m用户投票内容%s\033[m\n", (currvote.flag & VOTE_IP_FLAG)? "及完整IP":"");
     }
@@ -1103,7 +1103,7 @@ struct ballot *uv;
     else
         memset(buf, 0, sizeof(buf));
     do {
-        getdata(3, 0, "请输入一个值? [0]: ", buf, 5, DOECHO, NULL, false);
+        getdata(4, 0, "请输入一个值? [0]: ", buf, 5, DOECHO, NULL, false);
         uv->voted[0] = abs(atoi(buf));
     } while ((int) uv->voted[0] > currvote.maxtkt && buf[0] != '\n'
              && buf[0] != '\0');
@@ -1519,16 +1519,20 @@ int get_vote_record(struct ballot *ptr, int idx, char *arg)
         }   
     } else
         strcpy(vc[pos].ip, "unknown");
-    for (i=0;i<32;i++) {
-        if ((ptr->voted[0]>>i)&1) {
-            sprintf(sv, "%c", 'A'+i);
-            strcat(vc[pos].selectvalue, sv);
+    if (currvote.type == VOTE_VALUE) {  // 记录数字投票结果
+        sprintf(vc[pos].selectvalue, "%d", ptr->voted[0]);
+    } else {
+        for (i=0;i<32;i++) {
+            if ((ptr->voted[0]>>i)&1) {
+                sprintf(sv, "%c", 'A'+i);
+                strcat(vc[pos].selectvalue, sv);
+            }
         }
-    }
-    for (i=0;i<32;i++) {
-        if ((ptr->voted[1]>>i)&1) {
-            sprintf(sv, "%c", i<26?'a'+i:i+7);
-            strcat(vc[pos].selectvalue, sv);
+        for (i=0;i<32;i++) {
+            if ((ptr->voted[1]>>i)&1) {
+                sprintf(sv, "%c", i<26?'a'+i:i+7);
+                strcat(vc[pos].selectvalue, sv);
+            }
         }
     }
     pos ++;
