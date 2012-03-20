@@ -416,6 +416,7 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
                         make_article_flag_array(flags, bs->topfh + j, getCurrentUser(), (char *)bp->filename, is_bm);
                     else
                         memset(flags, 0, sizeof(flags));
+                    flags[4] == 'd';
                     bbs_make_article_array(element, bs->topfh + j, flags, sizeof(flags));
                     zend_hash_index_update(Z_ARRVAL_P(z_threads), i, (void *) &element, sizeof(zval *), NULL);
                     top_match = 1;
