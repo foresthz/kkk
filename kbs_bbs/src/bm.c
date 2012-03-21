@@ -503,7 +503,7 @@ int addtodeny(char *uident)
 #endif
         /* 使用封禁模版功能 */
         if (deny_announce(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
-            deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0)<0) {
+            deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
         }
@@ -704,7 +704,7 @@ int modify_user_deny(char *uident, char *denystr)
                             WAIT_RETURN;
                         }
                         if (deny_announce(uident,currboard,newmsg,day,getCurrentUser(),time(0),1)<0 ||
-                            deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1)<0) {
+                            deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }

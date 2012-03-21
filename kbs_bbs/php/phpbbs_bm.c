@@ -386,7 +386,7 @@ PHP_FUNCTION(bbs_denyadd)
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
-        deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
+        deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,autofree);
 /*
         struct userec *saveptr;
         int my_flag = 0;
@@ -548,7 +548,7 @@ PHP_FUNCTION(bbs_denymod)
     setbfile(path, board, "deny_users");
     if (replace_from_file_by_id(path, userid, buf)>=0) {
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1);
-        deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),1);
+        deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),1,autofree);
 /*
         struct userec *saveptr;
         int my_flag = 0;

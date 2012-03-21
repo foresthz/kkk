@@ -267,7 +267,7 @@ extern "C"
 #endif
     time_t get_denied_time(const char *buf);
     int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode);
-    int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode);
+    int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode, int autofree);
 
 #ifndef CYGWIN
 #define time(x) bbstime(x)

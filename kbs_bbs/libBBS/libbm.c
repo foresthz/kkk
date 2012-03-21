@@ -203,7 +203,8 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         fn = fopen(postfile, "w+");
         fprintf(fn, "由于 \x1b[4m%s\x1b[m 在 \x1b[4m%s\x1b[m 版的 \x1b[4m%s\x1b[m 行为，\n", uident, bh->filename, reason);
         fprintf(fn, DENY_BOARD_AUTOFREE " \x1b[4m%d\x1b[m 天。\n", day);
-        /* day不允许0天，有需要的自行改造
+        /* day不允许0天，有需要的自行改造 */
+        /*
         if (day)
             fprintf(fn, DENY_BOARD_AUTOFREE " \x1b[4m%d\x1b[m 天。\n", day);
         else
@@ -236,7 +237,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
  *      0:添加
  *      1:修改
  */
-int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
+int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode, int autofree)
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
@@ -257,8 +258,12 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
         sprintf(title, "修改%s在%s版的发文权限封禁", uident, bh->filename);
     }
     if (dashf(tmplfile)) {
-        char sender[STRLEN], sitename[STRLEN], opfrom[STRLEN], daystr[4], opbuf[STRLEN];
-        sprintf(daystr, "%d", day);
+        char sender[STRLEN], sitename[STRLEN], opfrom[STRLEN], daystr[16], opbuf[STRLEN], replyhint[STRLEN];
+        sprintf(daystr, "\x1b[4m%d\x1b[m 天", day);
+        if (!autofree)
+            sprintf(replyhint, "，到期后请回复\n此信申请恢复权限");
+        else
+            replyhint[0] = '\0';
         if (sysop) {
             sprintf(sender, "SYSOP (%s) ", NAME_SYSOP);
             sprintf(sitename, "%s (%24.24s)", BBS_FULL_NAME, ctime_r(&time, timebuf));
@@ -270,8 +275,8 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             sprintf(opfrom, "%s", SHOW_USERIP(operator, getSession()->fromhost));
             sprintf(opbuf, NAME_BM ":\x1b[4m%s\x1b[m", operator->userid);
         }
-        if (write_formatted_file(tmplfile, mailfile, "sssssssss",
-                    sender, title, sitename, opfrom, bh->filename, reason, daystr, opbuf, ctime_r(&time, timebuf))<0)
+        if (write_formatted_file(tmplfile, mailfile, "ssssssssss",
+                    sender, title, sitename, opfrom, bh->filename, reason, daystr, replyhint, opbuf, ctime_r(&time, timebuf))<0)
             return -1;
     } else {
         FILE *fn;
@@ -283,10 +288,15 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             fprintf(fn, "来  源: %s\n", NAME_BBS_ENGLISH);
             fprintf(fn, "\n");
             fprintf(fn, "由于您在 \x1b[4m%s\x1b[m 版 \x1b[4m%s\x1b[m，我很遗憾地通知您， \n", bh->filename, reason);
-            if (day)
+            fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", day);
+            /* day不允许0天，有需要的自行改造 */
+            /* if (day)
                 fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", day);
             else
                 fprintf(fn, DENY_DESC_NOAUTOFREE);
+            */
+            if (!autofree)
+                fprintf(fn, "，到期后请回复\n此信申请恢复权限。\n");
             fprintf(fn, "\n");
             fprintf(fn, "                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, operator->userid);
             fprintf(fn, "                              %s\n", ctime_r(&time, timebuf));
@@ -297,10 +307,15 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             fprintf(fn, "来  源: %s \n", SHOW_USERIP(operator, getSession()->fromhost));
             fprintf(fn, "\n");
             fprintf(fn, "由于您在 \x1b[4m%s\x1b[m 版 \x1b[4m%s\x1b[m，我很遗憾地通知您， \n", bh->filename, reason);
-            if (day)
+            fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", day);
+            /* day不允许0天，有需要的自行改造 */
+            /* if (day)
                 fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", day);
             else
                 fprintf(fn, DENY_DESC_NOAUTOFREE);
+            */
+            if (!autofree)
+                fprintf(fn, "，到期后请回复\n此信申请恢复权限。\n");
 #ifdef ZIXIA
             GetDenyPic(fn, DENYPIC, ndenypic, dpcount);
 #endif 
