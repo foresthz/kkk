@@ -210,7 +210,12 @@ int set_denymsg(char *denymsg)
     return select_deny_reason(reason, denymsg, count);
 }
 
+#ifdef RECORD_DENY_FILE
+/* 记录封禁原文，jiangjun， 20120321 */
+int addtodeny(char *uident, const struct fileheader *fh)
+#else
 int addtodeny(char *uident)
+#endif
 {                               /* 添加 禁止POST用户 */
     char /*buf2[50], */strtosave[256], date[STRLEN] = "0";
     //int maxdeny;
@@ -502,11 +507,19 @@ int addtodeny(char *uident)
         unlink(filename);
 #endif
         /* 使用封禁模版功能 */
+#ifdef RECORD_DENY_FILE
+        if (deny_announce(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,fh)<0 ||
+            deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
+            move(13, 0);
+            prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+        }
+#else
         if (deny_announce(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
             deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
         }
+#endif
         bmlog(getCurrentUser()->userid, currboard->filename, 10, 1);
     }
     return 0;
@@ -703,11 +716,19 @@ int modify_user_deny(char *uident, char *denystr)
                             prints("\033[31m修改封禁时发生错误 <Enter>");
                             WAIT_RETURN;
                         }
+#ifdef RECORD_DENY_FILE
+                        if (deny_announce(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,NULL)<0 ||
+                            deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
+                            move(13, 0);
+                            prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+                        }
+#else
                         if (deny_announce(uident,currboard,newmsg,day,getCurrentUser(),time(0),1)<0 ||
                             deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }
+#endif
                     }
                     return 0;
                 }
@@ -741,6 +762,9 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     int find;                   /*Haohmaru.99.12.09 */
     char *lptr;
     time_t ldenytime;
+#ifdef RECORD_DENY_FILE
+    int denyfile=0;
+#endif
 
     /*   static page=0; *//*
      * * Haohmaru.12.18
@@ -777,7 +801,15 @@ Here:
             if (*ans == 'A')
                 usercomplete("增加无法 POST 的使用者: ", uident);
             else
+#ifdef RECORD_DENY_FILE
+            {
                 strncpy(uident, fileinfo->owner, STRLEN - 4);
+                /* O方式增加封禁名单，记录封禁原文 */
+                denyfile=1;
+            }
+#else
+                strncpy(uident, fileinfo->owner, STRLEN - 4);
+#endif
             /*
              * Haohmaru.99.4.1,增加被封ID正确性检查
              */
@@ -820,7 +852,11 @@ Here:
             }
 
             if (*uident != '\0') {
+#ifdef RECORD_DENY_FILE
+                addtodeny(uident, (denyfile)?fileinfo:NULL);
+#else
                 addtodeny(uident);
+#endif
             }
         } else if ((*ans == 'M') && count) {
             int len;

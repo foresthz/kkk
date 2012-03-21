@@ -266,7 +266,11 @@ extern "C"
     int get_denied_freetype(const char *buf);
 #endif
     time_t get_denied_time(const char *buf);
+#ifdef RECORD_DENY_FILE
+    int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode, const struct fileheader *fh);
+#else
     int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode);
+#endif
     int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode, int autofree);
 
 #ifndef CYGWIN

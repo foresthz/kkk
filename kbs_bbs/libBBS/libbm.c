@@ -160,7 +160,11 @@ time_t get_denied_time(const char *buf)
  *      0:添加
  *      1:修改
  */
+#ifdef RECORD_DENY_FILE
+int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode, const struct fileheader *fh)
+#else
 int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
+#endif
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], postfile[STRLEN], title[STRLEN], title1[STRLEN], timebuf[STRLEN];
@@ -225,6 +229,31 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     post_file(operator, "", postfile, bh->filename, title, 0, 1, getSession());
 #else
     post_file(operator, "", postfile, bh->filename, title, 0, 2, getSession());
+#endif
+#ifdef RECORD_DENY_FILE
+    if (fh) {
+        char filebuf[STRLEN], filestr[256];
+        FILE *fn, *fn2;
+        int size;
+        
+        fn = fopen(postfile, "r+");
+        fseek(fn, 0, SEEK_END);
+        setbfile(filebuf, bh->filename, fh->filename);
+        if ((fn2=fopen(filebuf, "r"))==NULL) {
+            fprintf(fn, "\033[1;31;45m系统问题, 无法显示全文, 请联系技术站务. \033[K\033[m\n");
+        } else {
+            fprintf(fn, "\033[1;33;45m以下是被封文章全文:\033[K\033[m\n");
+            while ((size=-attach_fgets(filestr,256,fn2))) {
+                if (size<0)
+                    fprintf(fn,"%s",filestr);
+                else
+                    put_attach(fn2,fn,size);
+            }
+            fclose(fn2);
+            fprintf(fn, "\033[1;33;45m全文结束.\033[K\033[m\n");
+        }
+        fclose(fn);
+    }
 #endif
     post_file(operator, "", postfile, "denypost", title1, 0, -1, getSession());
     unlink(postfile);

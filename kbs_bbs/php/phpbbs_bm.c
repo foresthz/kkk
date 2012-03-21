@@ -385,7 +385,12 @@ PHP_FUNCTION(bbs_denyadd)
 
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
+#ifdef RECORD_DENY_FILE
+        //TODO: 想办法获得对应的fh
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,NULL);
+#else
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
+#endif
         deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,autofree);
 /*
         struct userec *saveptr;
@@ -547,7 +552,11 @@ PHP_FUNCTION(bbs_denymod)
 
     setbfile(path, board, "deny_users");
     if (replace_from_file_by_id(path, userid, buf)>=0) {
+#ifdef RECORD_DENY_FILE
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1,NULL);
+#else
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1);
+#endif
         deny_mailuser(userid,brd,denystr,denyday,getCurrentUser(),time(0),1,autofree);
 /*
         struct userec *saveptr;
