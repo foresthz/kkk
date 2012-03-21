@@ -202,10 +202,16 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         FILE *fn;
         fn = fopen(postfile, "w+");
         fprintf(fn, "由于 \x1b[4m%s\x1b[m 在 \x1b[4m%s\x1b[m 版的 \x1b[4m%s\x1b[m 行为，\n", uident, bh->filename, reason);
+        fprintf(fn, DENY_BOARD_AUTOFREE " \x1b[4m%d\x1b[m 天。\n", day);
+        /* day不允许0天，有需要的自行改造
         if (day)
             fprintf(fn, DENY_BOARD_AUTOFREE " \x1b[4m%d\x1b[m 天。\n", day);
         else
             fprintf(fn, DENY_BOARD_NOAUTOFREE "\n");
+        */
+#ifdef ZIXIA
+        GetDenyPic(fn, DENYPIC, ndenypic, dpcount);
+#endif 
         if (sysop) {
             fprintf(fn, "                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, operator->userid);
         } else {
@@ -295,6 +301,9 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
                 fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", day);
             else
                 fprintf(fn, DENY_DESC_NOAUTOFREE);
+#ifdef ZIXIA
+            GetDenyPic(fn, DENYPIC, ndenypic, dpcount);
+#endif 
             fprintf(fn, "\n");
             fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", operator->userid);
             fprintf(fn, "                              %s\n", ctime_r(&time, timebuf));

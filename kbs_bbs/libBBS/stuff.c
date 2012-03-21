@@ -3367,13 +3367,16 @@ int write_formatted_file(const char *src, const char *dest, const char *format, 
                 }
                 
                 char *p;
-                p = malloc(STRLEN);
                 if (sysdef==0) {
-                    if (l>count)
+                    if (l>count) {
+                        p = malloc(STRLEN);
                         sprintf(p, "[错误的参数$%d]", l);
-                    else
+                    } else {
+                        p = malloc(strlen(va_str[l-1])+1);
                         strcpy(p, va_str[l-1]);
+                    }
                 } else {
+                    p = malloc(STRLEN);
                     sprintf(p, "[错误的参数$%s]", tmpbuf);
                 }
                 if (fmtlen>0) {

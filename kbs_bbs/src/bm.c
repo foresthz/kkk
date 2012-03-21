@@ -219,9 +219,9 @@ int addtodeny(char *uident)
      * Haohmaru.99.4.1.auto notify
      */
     time_t now;
-    char buffer[STRLEN];
-    FILE *fn;
-    char filename[STRLEN];
+    //char buffer[STRLEN];
+    //FILE *fn;
+    //char filename[STRLEN];
     int autofree = 0;
     //char filebuf[STRLEN];
     char denymsg[STRLEN];
@@ -399,6 +399,7 @@ int addtodeny(char *uident)
     }
 
     if (addtofile(genbuf, strtosave) == 1) {
+#if 0
         struct userec *lookupuser, *saveptr;
         int my_flag = 0;        /* Bigman. 2001.2.19 */
         struct userec saveuser;
@@ -499,6 +500,13 @@ int addtodeny(char *uident)
             sprintf(buffer, "%s 封 %s 在 %s", getCurrentUser()->userid, uident, currboard->filename);
         post_file(getCurrentUser(), "", filename, "denypost", buffer, 0, -1, getSession());
         unlink(filename);
+#endif
+        /* 使用封禁模版功能 */
+        if (deny_announce(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
+            deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0)<0) {
+            move(13, 0);
+            prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+        }
         bmlog(getCurrentUser()->userid, currboard->filename, 10, 1);
     }
     return 0;
