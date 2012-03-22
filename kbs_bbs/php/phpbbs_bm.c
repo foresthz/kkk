@@ -349,6 +349,20 @@ PHP_FUNCTION(bbs_denyadd)
     strcpy(board,brd->filename);
     if (!is_BM(brd, getCurrentUser()))
         RETURN_LONG(-2);
+#ifdef RECORD_DENY_FILE
+    //TODO: 想办法获得对应的fh
+    struct fileheader fh;
+    bzero(&fh, sizeof(struct fileheader));
+    if (id) {
+        int fd;
+        setbdir(DIR_MODE_NORMAL, path, board);
+        if ((fd = open(path, O_RDWR, 0644)) >= 0) {
+            get_records_from_id(fd, id, &fh, 1, NULL);
+            close(fd);
+            strcpy(userid, fh->owner);
+        }
+    }
+#endif
     if (getuser(userid,&lookupuser)==0)
         RETURN_LONG(-3);
     strcpy(userid,lookupuser->userid);
@@ -388,17 +402,6 @@ PHP_FUNCTION(bbs_denyadd)
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
 #ifdef RECORD_DENY_FILE
-        //TODO: 想办法获得对应的fh
-        struct fileheader fh;
-        bzero(&fh, sizeof(struct fileheader));
-        if (id) {
-            int fd;
-            setbdir(DIR_MODE_NORMAL, path, board);
-            if ((fd = open(path, O_RDWR, 0644)) >= 0) {
-                get_records_from_id(fd, id, &fh, 1, NULL);
-                close(fd);
-            }
-        }
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,(fh.id)?&fh:NULL);
 #else
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
