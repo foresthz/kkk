@@ -762,9 +762,6 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     int find;                   /*Haohmaru.99.12.09 */
     char *lptr;
     time_t ldenytime;
-#ifdef RECORD_DENY_FILE
-    int denyfile=0;
-#endif
 
     /*   static page=0; *//*
      * * Haohmaru.12.18
@@ -796,6 +793,9 @@ Here:
 
         if (*ans == 'A' || (*ans == 'O' && fileinfo != NULL)) {
             struct userec *denyuser;
+#ifdef RECORD_DENY_FILE
+            int denyfile=0;
+#endif
 
             move(1, 0);
             if (*ans == 'A')
