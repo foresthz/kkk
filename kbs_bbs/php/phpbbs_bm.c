@@ -359,7 +359,7 @@ PHP_FUNCTION(bbs_denyadd)
         if ((fd = open(path, O_RDWR, 0644)) >= 0) {
             get_records_from_id(fd, id, &fh, 1, NULL);
             close(fd);
-            strcpy(userid, fh->owner);
+            strcpy(userid, fh.owner);
         }
     }
 #endif
