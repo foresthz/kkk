@@ -1133,6 +1133,8 @@ conWriter.prototype.t = function() {
 		if (!zd) {
 			ret += '[<a href="bbsprop.php' + qry + '">属性</a>] ';
 			ret += '[<a onclick="return confirm(\'你真的要删除本文吗?\')" href="bbsdel.php?board=' + this.board + '&id=' + this.id + '">删除</a>] ';
+			if (isBM(this.bid))
+				ret += '[<a href="bbsdeny.php' + qry + '">封禁</a>] ';
 		}
 	}
 	ret += '</div><div id="divReplyForm"></div>';
@@ -1197,6 +1199,8 @@ tconWriter.prototype.o = function(arts) {
 			ret += '[<a href="bbspst.php?board=' + this.board + '&reid=' + id + '">回复文章</a>] ';
 		}
 		ret += '[本篇作者：<a href="bbsqry.php?userid=' + owner + '">' + owner + '</a>] ';
+		if (isBM(this.bid))
+			ret += '[<a href="bbsdeny.php?board=' + this.board + '&id=' + id + '">封禁</a>] ';
 		if (isLogin()) {
 			ret += '[<a href="bbspstmail.php?board=' + this.board + '&id=' + id + '">回信给作者</a>] ';
 		}

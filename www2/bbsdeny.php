@@ -52,11 +52,14 @@ if (isset($_GET['act'])) {
 			$userid = ltrim(trim($_POST['userid']));
 			$denyday = intval($_POST['denyday']);
 			$exp = (trim($_POST['exp2']))?trim($_POST['exp2']):$denyreasons[intval($_POST['exp'])]['desc'];
+			$id = 0;
+			if (isset($_POST['id']))
+				$id = intval($_POST['id']);
 			if (!$userid || !$denyday || !$exp)
 				break;
 			if (!strcasecmp($userid,'guest') || !strcasecmp($userid,'SYSOP'))
 				html_error_quit("不能封禁 ".$userid);
-			switch (bbs_denyadd($board,$userid,$exp,$denyday,0)) {
+			switch (bbs_denyadd($board,$userid,$exp,$denyday,$id,0)) {
 				case -1:
 				case -2:
 					html_error_quit("讨论区错误");
@@ -128,6 +131,13 @@ switch ($ret) {
 		break;
 	default:    
 }
+if (isset($_GET['id'])) {
+	$articles = array ();
+	$id = $_GET['id'];
+	if (bbs_get_records_from_id($board, $id,$dir_modes["NORMAL"],$articles)<=0)
+		html_error_quit("错误的文章号");
+	$userid = $articles[1]["OWNER"];
+}
 
 $maxdenydays = ($currentuser["userlevel"]&BBS_PERM_SYSOP)?70:14;
 ?>
@@ -151,7 +161,14 @@ $maxdenydays = ($currentuser["userlevel"]&BBS_PERM_SYSOP)?70:14;
 <form action="<?php $_SERVER['PHP_SELF']; ?>?act=add&board=<?php echo $brd_encode; ?>" method="post" class="medium">
 	<fieldset><legend>添加封禁用户</legend>
 		<div class="inputs">
-			<label>用户名</label><input type="text" name="userid" size="12" maxlength="12" /><br/>
+			<label>用户名</label><input type="text" name="userid" size="12" maxlength="12" <?php if($userid) echo "value=\"".$userid."\" readonly";?> />
+<?php
+	if ($userid) {
+		echo "<input name=\"id\" value=\"".$id."\" type=\"hidden\" />";
+		echo "<a href=\"bbsdeny.php?board=".$brd_encode."\">封禁其他ID</a>";
+	}
+?>
+			<br/>
 			<label>封禁时间</label><select name="denyday">
 <?php
 	$i = 1;

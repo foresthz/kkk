@@ -337,8 +337,14 @@ PHP_FUNCTION(bbs_denyadd)
     char path[STRLEN];
 
     int ac = ZEND_NUM_ARGS();
+#ifdef RECORD_DENY_FILE
+    int id;
+    if (ac != 6 || zend_parse_parameters(6 TSRMLS_CC, "ssslll", &board, &board_len, &userid ,&userid_len ,&exp ,&exp_len ,&denyday ,&id ,&manual_deny) == FAILURE)
+        WRONG_PARAM_COUNT;
+#else
     if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &board, &board_len, &userid ,&userid_len ,&exp ,&exp_len ,&denyday ,&manual_deny) == FAILURE)
         WRONG_PARAM_COUNT;
+#endif
 
     if (getbid(board, &brd) == 0)
         RETURN_LONG(-1);
@@ -387,7 +393,17 @@ PHP_FUNCTION(bbs_denyadd)
     if (addtofile(path, buf) == 1) {
 #ifdef RECORD_DENY_FILE
         //TODO: 想办法获得对应的fh
-        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,NULL);
+        struct fileheader fh;
+        bzero(&fh, sizeof(struct fileheader));
+        if (id) {
+            int fd;
+            setbdir(DIR_MODE_NORMAL, path, board);
+            if ((fd = open(path, O_RDWR, 0644)) >= 0) {
+                get_records_from_id(fd, id, &fh, 1, NULL);
+                close(fd);
+            }
+        }
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,(fh.id)?&fh:NULL);
 #else
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
 #endif
