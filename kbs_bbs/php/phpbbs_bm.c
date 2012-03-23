@@ -337,7 +337,7 @@ PHP_FUNCTION(bbs_denyadd)
     char path[STRLEN];
 
     int ac = ZEND_NUM_ARGS();
-    int id;
+    int id = 0;
     if (ac != 6 || zend_parse_parameters(6 TSRMLS_CC, "ssslll", &board, &board_len, &userid ,&userid_len ,&exp ,&exp_len ,&denyday ,&id ,&manual_deny) == FAILURE)
         if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &board, &board_len, &userid ,&userid_len ,&exp ,&exp_len ,&denyday ,&manual_deny) == FAILURE)
             WRONG_PARAM_COUNT;
