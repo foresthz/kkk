@@ -1127,7 +1127,13 @@ int user_vote(int num)
        )
         return -1;
     move(t_lines - 2, 0);
-    get_record(controlfile, &currvote, sizeof(struct votebal), num);
+    if (get_record(controlfile, &currvote, sizeof(struct votebal), num)<0) {
+        move(0, 0);
+        clear();
+        prints("该投票已结束，请选择其他投票");
+        pressreturn();
+        return -1;
+    }
     sprintf(fname, "vote/%s/flag.%lu", currboard->filename, currvote.opendate);
     if ((pos =
                 search_record(fname, &uservote, sizeof(uservote),
@@ -1183,6 +1189,13 @@ int user_vote(int num)
             break;
     }
     clear();
+    if (!dashf(buf)) {
+        move(0, 0);
+        clear();
+        prints("该投票已结束，请选择其他投票");
+        pressreturn();
+        return -1;
+    }
     if (aborted == true) {
         prints("保留 【%s】原来的的投票。\n", currvote.title);
     } else {
