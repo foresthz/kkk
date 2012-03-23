@@ -392,7 +392,7 @@ PHP_FUNCTION(bbs_denyadd)
 
     now = time(0);
     undenytime = now + denyday * 24 * 60 * 60;
-    tmtime = gmtime(&undenytime);
+    tmtime = localtime(&undenytime);
 
     if (autofree)
         sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
@@ -558,7 +558,7 @@ PHP_FUNCTION(bbs_denymod)
 
     now = time(0);
     undenytime = now + denyday * 24 * 60 * 60;
-    tmtime = gmtime(&undenytime);
+    tmtime = localtime(&undenytime);
 
     if (autofree)
         sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
