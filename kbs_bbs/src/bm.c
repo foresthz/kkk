@@ -392,14 +392,14 @@ int addtodeny(char *uident)
         struct tm *tmtime;
         time_t undenytime = now + denyday * 24 * 60 * 60;
 
-        tmtime = gmtime(&undenytime);
+        tmtime = localtime(&undenytime);
 
         sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);   /*Haohmaru 98,09,25,显示是谁什么时候封的 */
     } else {
         struct tm *tmtime;
         time_t undenytime = now + denyday * 24 * 60 * 60;
 
-        tmtime = gmtime(&undenytime);
+        tmtime = localtime(&undenytime);
         sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
     }
 
