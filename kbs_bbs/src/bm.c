@@ -534,8 +534,9 @@ int modify_denytime(time_t *denytime, int *autofree)
 
     /* 设定时间从当前开始计算 */
     now = time(0);
+    tm_time = localtime(&now);
     if (denytime)
-        days = ((*denytime)+28800)/86400 - (now+28800)/86400;
+        days = ((*denytime)+tm_time->tm_gmtoff)/86400 - (now+tm_time->tm_gmtoff)/86400;
     else
         days = 1;
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
@@ -592,7 +593,7 @@ int modify_denytime(time_t *denytime, int *autofree)
             break;
         } else if (ch==KEY_ESC) {
             if (denytime)
-                return ((*denytime)+28800)/86400 - (now+28800)/86400;
+                return ((*denytime)+tm_time->tm_gmtoff)/86400 - (now+tm_time->tm_gmtoff)/86400;
             else
                 return -1;
         } else
@@ -631,7 +632,8 @@ int modify_user_deny(char *uident, char *denystr)
     strcpy(newmsg, denymsg);
     newfree = autofree;
     newtime = denytime;
-    day = (denytime+28800)/86400 - (time(0)+28800)/86400;
+    tm_time = localtime(&newtime);
+    day = (denytime+tm_time->tm_gmtoff)/86400 - (time(0)+tm_time->tm_gmtoff)/86400;
     while(1) {
         tm_time = localtime(&newtime);
         move(3, 0);
