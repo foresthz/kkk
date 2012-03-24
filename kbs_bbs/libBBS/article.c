@@ -1261,7 +1261,7 @@ int post_file_alt(const char *filename, struct userec *user, const char *title, 
     }
     if (conf_cross)
         fprintf(fp_out, "【 以下文字转载自 %s 讨论区 】\n", from_board);
-    if (bh.flag & BOARD_ATTACH) {
+    if ((bh.flag&BOARD_ATTACH)||(!user||HAS_PERM(user,PERM_SYSOP))) {
         while (true) {
             size = fread(bufcp, 1, READ_BUFFER_SIZE, fp_in);
             if (size == 0)
