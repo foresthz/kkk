@@ -203,7 +203,7 @@ int send_refer_msg_to(struct userec *user, const struct boardheader *board, stru
         return -1;
     if (!DEFINE(user, DEF_REFER))
         return -2;
-    if (0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
+    if (!getSession()->currentuser || 0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
         return -3;
     if (!check_read_perm(user,board))
         return -4;
