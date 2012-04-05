@@ -434,7 +434,7 @@ void R_monitor(void *data)
 int is_em_flag(char *buf, int len)
 {
     char *p;
-    if (strcmp(buf, "/img")==0 || strcmp(buf, "/swf")==0 || strcmp(buf, "/url")==0 ||
+    if (strcmp(buf, "/img")==0 || strcmp(buf, "/swf")==0 || strcmp(buf, "/url")==0 || strcmp(buf, "/code")==0 ||
         strcmp(buf, "/email")==0 || strcmp(buf, "/mp3")==0 || strcmp(buf, "/upload")==0 ||
         strcmp(buf, "/color")==0 || strcmp(buf, "/face")==0 || strcmp(buf, "/size")==0 ||
         strcmp(buf, "b")==0 || strcmp(buf, "i")==0 || strcmp(buf, "u")==0 ||
@@ -474,6 +474,13 @@ int is_em_flag(char *buf, int len)
     if (strncmp(buf, "em", 2)==0) {
         for (p=buf+2;*p!='\0';p++) {
             if (!isdigit(*p))
+                return 0;
+        }
+        return 1;
+    }
+    if (strncmp(buf, "code=", 5)==0) {
+        for (p=buf+5;*p!='\0';p++) {
+            if (!isalnum(*p))
                 return 0;
         }
         return 1;
