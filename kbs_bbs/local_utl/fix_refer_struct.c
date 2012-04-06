@@ -47,6 +47,7 @@ int conv_refer_dir(struct userec *user, char *filename) {
 		pretty.groupid=ugly.groupid;
 		pretty.reid=ugly.reid;
 		pretty.flag=ugly.flag;	
+		pretty.time=ugly.time;
 
 		fwrite(&pretty, sizeof(struct refer_pretty), 1, out);
 
