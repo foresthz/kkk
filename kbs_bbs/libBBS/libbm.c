@@ -239,6 +239,19 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         fn = fopen(postfile, "r+");
         fseek(fn, 0, SEEK_END);
         setbfile(filebuf, bh->filename, fh->filename);
+        if (!dashf(filebuf)) {
+            int i;
+            char prefix[4]="MDJ", *p, ch;
+            p = strrchr(filebuf, '/') + 1;
+            ch = *p;
+            for (i=0;i<3;i++) {
+                if (ch == prefix[i])
+                    continue;
+                *p = prefix[i];
+                if (dashf(filebuf))
+                    break;
+            }
+        }
         if ((fn2=fopen(filebuf, "r"))==NULL) {
             fprintf(fn, "\033[1;31;45m系统问题, 无法显示全文, 请联系技术站务. \033[K\033[m\n");
         } else {
