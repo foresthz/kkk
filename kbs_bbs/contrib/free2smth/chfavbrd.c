@@ -52,7 +52,7 @@ void create_favboard(char *userid)
             *tmp = 0;
 	if(*buf==0) break;
 	puts(buf);
-        k = getbnum(buf);
+        k = getbid(buf, NULL);
         if (k) {
             favbrd_list[0].bid[i] = k - 1;
             i++;

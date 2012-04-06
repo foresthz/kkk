@@ -76,7 +76,7 @@ main()
         user.userdefine |= DEF_SOUNDMSG;
         user.userdefine &= ~DEF_MAILMSG;
 */
-        substitute_record(BBSHOME "/.PASSWDS", &user, sizeof(user), i);
+        substitute_record(BBSHOME "/.PASSWDS", &user, sizeof(user), i, NULL, NULL);
     }
     printf("\n\033[1m%d \033[32mUsers Attribute Tranfered...\033[m\n", i);
     fclose(rec);

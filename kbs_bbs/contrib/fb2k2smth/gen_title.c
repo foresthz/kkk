@@ -103,9 +103,9 @@ int generate_board_title(struct boardheader *bh, void *arg)
     fclose(fp);
     close(fd2);
     memcpy(&btmp, getbcache(bh->filename), sizeof(btmp));
-	bs=getbstatus(getbnum(bh->filename));
+	bs=getbstatus(getbid(bh->filename, NULL));
 	bs->nowid=gen_threadid + 1;
-    set_board(getbnum(bh->filename), &btmp, NULL);
+    set_board(getbid(bh->filename, NULL), &btmp, NULL);
     return 0;
 }
 
