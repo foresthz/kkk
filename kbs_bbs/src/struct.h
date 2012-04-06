@@ -350,7 +350,7 @@ struct _new_postlog {
 
 #ifdef ENABLE_REFER
 struct refer {
-    char board[IDLEN+6];
+    char board[STRLEN];
     char user[IDLEN+1];
     char title[ARTICLE_TITLE_LEN];
     unsigned int id, groupid, reid, flag;

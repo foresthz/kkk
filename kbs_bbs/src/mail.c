@@ -4453,7 +4453,7 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
 
-    sprintf(buf, " %s%4d %s %-12s %6.6s  %-12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", ent->user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
+    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", ent->user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
 }
