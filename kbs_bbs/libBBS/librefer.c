@@ -180,7 +180,7 @@ int send_refer_reply_to(struct userec *user, const struct boardheader *board, st
 
     memset(&refer, 0, sizeof(refer));
 
-    strncpy(refer.board, board->filename, IDLEN+6);
+    strncpy(refer.board, board->filename, STRLEN);
     strncpy(refer.user, fh->owner, IDLEN);
     strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);
     refer.id=fh->id;
@@ -221,7 +221,7 @@ int send_refer_msg_to(struct userec *user, const struct boardheader *board, stru
 
     memset(&refer, 0, sizeof(refer));
 
-    strncpy(refer.board, board->filename, IDLEN+6);
+    strncpy(refer.board, board->filename, STRLEN);
     strncpy(refer.user, fh->owner, IDLEN);
     strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);  
     refer.id=fh->id;
@@ -254,7 +254,7 @@ int refer_remove(char *dir, int ent, struct refer *refer) {
     return 1; 
 }
 int refer_cmp(struct refer *r1, struct refer *r2) {
-    if (strncasecmp(r1->board, r2->board, IDLEN+6)==0&&r1->id==r2->id)
+    if (strncasecmp(r1->board, r2->board, STRLEN)==0&&r1->id==r2->id)
         return 1;
     return 0;
 }
