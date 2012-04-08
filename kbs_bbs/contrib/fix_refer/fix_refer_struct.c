@@ -32,6 +32,7 @@ int conv_refer_dir(struct userec *user, char *filename) {
 		return 0;
 
 	memset(&pretty, 0, sizeof(struct refer_pretty));
+
 	in=fopen(buf, "r");
 	if(!in) {
 		printf("can not open dir file %s\n", buf);
