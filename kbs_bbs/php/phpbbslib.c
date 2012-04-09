@@ -107,7 +107,7 @@ PHP_FUNCTION(bbs_csv_to_al);
 /*
  * define what functions can be used in the PHP embedded script
  */
-static function_entry kbs_bbs_functions[] = {
+static zend_function_entry kbs_bbs_functions[] = {
     PHP_BBS_ADMIN_EXPORT_FUNCTIONS
     PHP_BBS_ANNOUNCE_EXPORT_FUNCTIONS
     PHP_BBS_ARTICLE_EXPORT_FUNCTIONS
