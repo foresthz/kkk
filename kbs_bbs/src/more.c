@@ -555,7 +555,7 @@ struct MemMoreLines {
 */
 int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
 {
-    int i, w, in_esc = 0, db = 0, lastspace = 0, autoline = 1;
+    int i, w, in_esc = 0, db = 0, space = 0, lastspace = 0, autoline = 1;
     char *p = p0;
     int att_size;
 
@@ -591,10 +591,13 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
             } else if (*p == '\033') {
                 db = 0;
                 in_esc = 1;
-                lastspace = i - 1;
+                space = i - 1; /* 先记录下\033位置 */
             } else if (in_esc) {
                 if (strchr("suHmMfL@PABCDJK", *p) != NULL) {
                     if (strchr("suHABCDJ", *p) != NULL) autoline=0;
+                    /* 不是颜色控制符时才在\033处折行, 即如果是颜色控制符, lastspace不记录在\033处 */
+                    else if (*p != 'm')
+                        lastspace = space;
                     in_esc = 0;
                     continue;
                 }
