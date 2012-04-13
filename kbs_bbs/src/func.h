@@ -525,6 +525,8 @@ while(0)
     int Origin2(char text[256]);
     /*加入edit mark*/
     int add_edit_mark(char *fname, int mode, char *title, session_t* session);
+    /* 备份修改的文章 */
+    void edit_backup(const char *board, const char *userid, const char *oldpath, struct fileheader *fh, session_t* session);
     int get_postfilename(char *filename, char *direct, int use_subdir);
     int mail_file(char *fromid, char *tmpfile, char *userid, char *title, int unlink, struct fileheader *fh);
     int mail_file_sent(char *fromid, char *tmpfile, char *userid, char *title, int unlink, session_t* session);     /*peregrine */
@@ -572,6 +574,7 @@ while(0)
      */
     char get_article_flag(struct fileheader *ent, struct userec *user, const char *boardname, int is_bm, char *common_flag,  session_t* session);
     time_t get_posttime(const struct fileheader *fileinfo);
+    char get_posttype(const struct fileheader *fileinfo);
     void set_posttime(struct fileheader *fileinfo);
     char* checkattach(char *buf, long size,long *len,char** attachptr);
 

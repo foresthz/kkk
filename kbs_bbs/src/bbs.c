@@ -3888,6 +3888,14 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     strncpy(buf, genbuf, 512);
     buf[511]=0;
     attachpos = fileinfo->attachment;
+
+    /* 修改之前备份一下旧文件及fh */
+    char backup[STRLEN];
+    struct fileheader tmpfh;
+    gettmpfilename(backup, "edit_backup");
+    f_cp(buf, backup, 0);
+    memcpy(&tmpfh, fileinfo, sizeof(struct fileheader));
+
     if (vedit_post(buf, false, &eff_size,&attachpos, public_board(currboard)) != -1) {
         int changemark=0;
         if (ADD_EDITMARK) {
@@ -3925,7 +3933,10 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             if (edit_top)
                 board_update_toptitle(arg->bid, true);
         }
+        /* 备份修改的文章 */
+        edit_backup(currboard->filename, getCurrentUser()->userid, backup, &tmpfh, getSession());
     }
+    unlink(backup);
     newbbslog(BBSLOG_USER, "edited post '%s' on %s", fileinfo->title, currboard->filename);
     if (edit_top)
         return DIRCHANGED;

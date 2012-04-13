@@ -362,6 +362,13 @@ void set_posttime2(struct fileheader *dest, struct fileheader *src)
     dest->posttime = src->posttime;
 }
 
+char get_posttype(const struct fileheader *fileinfo)
+{
+    if (fileinfo->filename[1] == '/')
+        return fileinfo->filename[2];
+    else
+        return fileinfo->filename[0];
+}
 /**
  * ฐๆรๆฯเนุกฃ
  */

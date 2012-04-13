@@ -195,6 +195,12 @@ PHP_FUNCTION(bbs_attachment_add)
         RETURN_ERROR(POST_MODPERM);
     }
 
+    /* 备份修改前原文 */
+    struct fileheader xfh;
+    memcpy(&xfh, &f, sizeof(struct fileheader));
+    setbfile(dir, brd->filename, xfh.filename);
+    edit_backup(brd->filename, getCurrentUser()->userid, dir, &xfh, getSession());
+
     setbfile(dir, brd->filename, f.filename);
     add_edit_mark(dir, 0, f.title, getSession());
 
@@ -262,6 +268,12 @@ PHP_FUNCTION(bbs_attachment_del)
     if (ret) {
         RETURN_ERROR(POST_MODPERM);
     }
+
+    /* 备份修改前原文 */
+    struct fileheader xfh;
+    memcpy(&xfh, &f, sizeof(struct fileheader));
+    setbfile(dir, brd->filename, xfh.filename);
+    edit_backup(brd->filename, getCurrentUser()->userid, dir, &xfh, getSession());
 
     setbfile(dir, brd->filename, f.filename);
     add_edit_mark(dir, 0, f.title, getSession());
@@ -842,6 +854,11 @@ PHP_FUNCTION(bbs_updatearticle2)
     if (check_badword_str(title, strlen(title), getSession()) || check_badword_str(content, strlen(content),getSession()))
         RETURN_LONG(-7); // 标题或正文过滤
 #endif
+
+    /* 备份修改前原文 */
+    memcpy(&xfh, &f, sizeof(struct fileheader));
+    setbfile(infile, brd->filename, xfh.filename);
+    edit_backup(brd->filename, getCurrentUser()->userid, infile, &xfh, getSession());
 
     /* 修改标题开始 */
     if (strcmp(title, f.title))

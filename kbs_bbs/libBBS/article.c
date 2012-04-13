@@ -60,6 +60,8 @@ int isowner(const struct userec *user, const struct fileheader *fileinfo)
     posttime = get_posttime(fileinfo);
     if (posttime < user->firstlogin)
         return 0;
+    if (get_posttype(fileinfo) == 'E')
+        return 0;
     return 1;
 }
 
@@ -477,6 +479,9 @@ int undelete_change_file_attr(char* board,struct fileheader* fhptr)
    if (!dashf(buf)) {
       return -1;
    }
+   if (get_posttype(fhptr) == 'E') {
+       return -1;
+   }
    fp = fopen(buf, "r");
    if (!fp)
       return -1;
@@ -615,6 +620,9 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
 
     sprintf(buf, "boards/%s/%s", boardname, fileinfo->filename);
     if (!dashf(buf)) {
+        return -1;
+    }
+    if (get_posttype(fileinfo) == 'E') {
         return -1;
     }
     fp = fopen(buf, "r");
@@ -762,6 +770,34 @@ void cancelpost(const char *board, const char *userid, struct fileheader *fh, in
     }
 }
 
+void edit_backup(const char *board, const char *userid, const char *oldpath, struct fileheader *fh, session_t* session)
+{
+    static const char post_sufix[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char newpath[PATHLEN], buf[STRLEN];
+    time_t now = time(NULL);
+    struct tm *t;
+
+    t = localtime(&now);
+    if (fh->filename[1] == '/')
+        fh->filename[2] = 'E';
+    else
+        fh->filename[0] = 'E';
+    setbfile(newpath, board, fh->filename);
+    while (dashf(newpath)) {
+        fh->filename[strlen(fh->filename)-1] = post_sufix[rand()%62];
+        fh->filename[strlen(fh->filename)-2] = post_sufix[rand()%62];
+        setbfile(newpath, board, fh->filename);
+    }
+    f_cp(oldpath, newpath, 0);
+
+    sprintf(buf, "文章修改备份(%4d-%02d-%02d %02d:%02d:%02d) - %s", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, userid);
+    strncpy(fh->title, buf, ARTICLE_TITLE_LEN - 1);
+    fh->title[ARTICLE_TITLE_LEN - 1] = 0;
+    fh->accessed[sizeof(fh->accessed) - 1] = now / (3600 * 24) % 100;
+    setbdir(DIR_MODE_JUNK, buf, board);
+    append_record(buf, fh, sizeof(struct fileheader));
+    return;
+}
 
 void add_loginfo(char *filepath, struct userec *user, char *currboard, int Anony, session_t* session)
 {                               /* POST 最后一行 添加 */

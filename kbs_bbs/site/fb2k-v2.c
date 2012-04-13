@@ -301,6 +301,10 @@ void set_posttime2(struct fileheader *dest, struct fileheader *src)
     return;
 }
 
+char get_posttype(const struct fileheader *fileinfo)
+{
+    return fileinfo->filename[0];
+}
 /**
  * ฐๆรๆฯเนุกฃ
  */
