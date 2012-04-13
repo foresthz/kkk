@@ -1208,6 +1208,10 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         return buf;
     }
 
+    if (toupper(type)=='E') {
+        sprintf(buf," \033[1;33m[ÐÞ¸Ä]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,ent->owner,date,attachch,TITLE);
+        return buf;
+    }
 
     if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
         strcpy(highstr,"1;");

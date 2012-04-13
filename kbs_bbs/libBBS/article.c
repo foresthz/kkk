@@ -60,7 +60,7 @@ int isowner(const struct userec *user, const struct fileheader *fileinfo)
     posttime = get_posttime(fileinfo);
     if (posttime < user->firstlogin)
         return 0;
-    if (get_posttype(fileinfo) == 'E')
+    if (POSTFILE_BASENAME(fileinfo->filename)[0]=='E')
         return 0;
     return 1;
 }
@@ -479,7 +479,7 @@ int undelete_change_file_attr(char* board,struct fileheader* fhptr)
    if (!dashf(buf)) {
       return -1;
    }
-   if (get_posttype(fhptr) == 'E') {
+   if (POSTFILE_BASENAME(fhptr->filename)[0]=='E') {
        return -1;
    }
    fp = fopen(buf, "r");
@@ -622,7 +622,7 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
     if (!dashf(buf)) {
         return -1;
     }
-    if (get_posttype(fileinfo) == 'E') {
+    if (POSTFILE_BASENAME(fileinfo->filename)[0]=='E') {
         return -1;
     }
     fp = fopen(buf, "r");
@@ -2066,6 +2066,14 @@ char get_article_flag(struct fileheader *ent, struct userec *user, const char *b
     /*
      * add end
      */
+    /* 修改文章备份 */
+    if (POSTFILE_BASENAME(ent->filename)[0]=='E') {
+        type=(type==' '?'e':'E');
+        if (common_flag)
+            *common_flag='e';
+        return type;
+    }
+
     if ((ent->accessed[0] & FILE_DIGEST)) {
         common_type = 'g';
         if (type == ' ')
