@@ -775,9 +775,9 @@ void edit_backup(const char *board, const char *userid, const char *oldpath, str
     static const char post_sufix[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     char newpath[PATHLEN], buf[STRLEN];
     time_t now = time(NULL);
-    struct tm *t;
+    //struct tm *t;
 
-    t = localtime(&now);
+    //t = localtime(&now);
     if (fh->filename[1] == '/')
         fh->filename[2] = 'E';
     else
@@ -790,7 +790,8 @@ void edit_backup(const char *board, const char *userid, const char *oldpath, str
     }
     f_cp(oldpath, newpath, 0);
 
-    sprintf(buf, "文章修改备份(%4d-%02d-%02d %02d:%02d:%02d) - %s", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, userid);
+    //sprintf(buf, "文章修改备份(%4d-%02d-%02d %02d:%02d:%02d) - %s", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, userid);
+    sprintf(buf, "%-32.32s + %s", fh->title, userid);
     strncpy(fh->title, buf, ARTICLE_TITLE_LEN - 1);
     fh->title[ARTICLE_TITLE_LEN - 1] = 0;
     fh->accessed[sizeof(fh->accessed) - 1] = now / (3600 * 24) % 100;
