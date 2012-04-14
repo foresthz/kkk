@@ -145,13 +145,19 @@ static int update_index_attpos(const struct boardheader *bh, int ent, struct fil
     struct write_dir_arg dirarg;
     char dir[PATHLEN];
     int ret;
+    unsigned int changemark;
 
     setbdir(DIR_MODE_NORMAL, dir, bh->filename);
     init_write_dir_arg(&dirarg);
     dirarg.filename = dir;
     dirarg.ent = ent;
     fh->attachment = attpos;
-    if (change_post_flag(&dirarg,DIR_MODE_NORMAL, bh, fh, FILE_ATTACHPOS_FLAG, fh, false,getSession())!=0)
+    changemark |= FILE_ATTACHPOS_FLAG;
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+    /* 记录修改时间 */
+    changemark |= FILE_EDIT_FLAG;
+#endif
+    if (change_post_flag(&dirarg,DIR_MODE_NORMAL, bh, fh, changemark, fh, false,getSession())!=0)
         ret = 1;
     else
         ret = 0;
@@ -932,6 +938,10 @@ PHP_FUNCTION(bbs_updatearticle2)
         f.eff_size = effsize;
         changemark |= FILE_EFFSIZE_FLAG;
     }
+
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+    changemark |= FILE_EDIT_FLAG;
+#endif
 
     /* 更新索引开始 */
     setbdir(mode, dirpath, brd->filename);

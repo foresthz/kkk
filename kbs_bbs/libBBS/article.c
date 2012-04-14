@@ -2660,10 +2660,15 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
     struct fileheader *originFh;
     int ret = 0;
 
-    if (fileinfo && POSTFILE_BASENAME(fileinfo->filename)[0] == 'Z' && !(flag&FILE_NOREPLY_FLAG) && !(flag&FILE_ATTACHPOS_FLAG) && !(flag&FILE_EFFSIZE_FLAG) && !(flag&FILE_MODTITLE_FLAG))
+    if (fileinfo && POSTFILE_BASENAME(fileinfo->filename)[0] == 'Z' && !(flag&FILE_NOREPLY_FLAG) && !(flag&FILE_ATTACHPOS_FLAG) && !(flag&FILE_EFFSIZE_FLAG) && !(flag&FILE_MODTITLE_FLAG)
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+            && !(flag&FILE_EDIT_FLAG)
+#endif
+            )
         /*
          * 置顶的文章不能做操作
          * 可进行置底文章的标题修改、attachpos及eff_size的更新，此时 mode 为 DIR_MODE_ZHIDING
+         * 记录置顶文章修改时间
          */
         return 1;
 
@@ -2723,6 +2728,13 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
             if (dobmlog)
                 bmlog(session->currentuser->userid, board->filename, 16, 1);
         }
+    }
+#endif /* NEWSMTH */
+
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+    /* 记录文章修改时间 */
+    if (flag & FILE_EDIT_FLAG) {
+        originFh->edittime = time(0);
     }
 #endif /* NEWSMTH */
 

@@ -453,6 +453,9 @@ extern int KEY_ESC_arg;
 #define FILE_FEN_FLAG       0x2000
 #define FILE_MODTITLE_FLAG  0x4000
 #define FILE_MODMISC_FLAG   0x8000 /* 回文转寄，转信以及TeX */
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+#define FILE_EDIT_FLAG      0x10000 /* 修改文章标记 */
+#endif
 
 /* 0-1 locks used sem count, @author kxn */
 #define SEMLOCK_COUNT       20

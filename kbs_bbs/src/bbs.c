@@ -1486,6 +1486,10 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         prints("  origin: bid=%d, id=%d, groupid=%d, reid=%d\n", fileinfo->o_bid, fileinfo->o_id, fileinfo->o_groupid, fileinfo->o_reid);
         prints("  innflag=%c%c,  owner=%s\n", fileinfo->innflag[0], fileinfo->innflag[1], fileinfo->owner);
         prints("  eff_size=%d,  attachment=%d,  posttime=%s", fileinfo->eff_size, fileinfo->attachment, ctime((time_t *)&fileinfo->posttime));
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+        if (fileinfo->edittime)
+            prints("  edittime=%s", ctime(&fileinfo->edittime));
+#endif
         prints("  title=%s\n", fileinfo->title);
 #ifdef HAVE_REPLY_COUNT
         prints("  replycount=%d,  last_owner=%s\n  last_posttime=%s", fileinfo->replycount, fileinfo->last_owner, ctime((time_t *)&fileinfo->last_posttime));
@@ -3914,6 +3918,9 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             fileinfo->eff_size = eff_size;
             changemark |= FILE_EFFSIZE_FLAG;
         }
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+        changemark |= FILE_EDIT_FLAG;
+#endif
         if (changemark) {
             struct write_dir_arg dirarg;
             struct fileheader xfh;
