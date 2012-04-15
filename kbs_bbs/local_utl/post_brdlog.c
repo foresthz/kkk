@@ -68,6 +68,8 @@ int fillbcache(void *fptr1,int idx,void* arg)
         return 0;*/
     if (!*(fptr->filename) || (!(fptr->level & PERM_POSTMASK) && (fptr->level & ~PERM_DEFAULT)))
         return 0;
+    if (fptr->title[0] == 'A')
+        return 0;
 
     if (fptr->flag & BOARD_GROUP)
         return 0;

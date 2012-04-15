@@ -116,7 +116,7 @@ int fillbcache(const struct boardheader *fptr,int idx,void* arg)
 #endif
         return 0;
 #ifdef NEWSMTH
-    if (!*(fptr->filename) || (all && (!(fptr->level & PERM_POSTMASK)) && (fptr->level & ~PERM_DEFAULT)) || (!all && !check_see_perm(NULL,fptr)&&!public_board(fptr)))
+    if (!*(fptr->filename) || (all && (!(fptr->level & PERM_POSTMASK)) && (fptr->level & ~PERM_DEFAULT)) || (!all && !check_see_perm(NULL,fptr)&&!public_board(fptr)) || (fptr->title[0] == 'A'))
 #else
     if (!check_see_perm(NULL,fptr)||!*(fptr->filename))
 #endif
