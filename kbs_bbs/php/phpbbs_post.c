@@ -145,7 +145,7 @@ static int update_index_attpos(const struct boardheader *bh, int ent, struct fil
     struct write_dir_arg dirarg;
     char dir[PATHLEN];
     int ret;
-    unsigned int changemark;
+    unsigned int changemark = 0;
 
     setbdir(DIR_MODE_NORMAL, dir, bh->filename);
     init_write_dir_arg(&dirarg);
