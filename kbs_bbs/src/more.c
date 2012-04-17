@@ -431,20 +431,53 @@ void R_monitor(void *data)
 
 #ifdef DEF_HIDEEMFLAG
 /* 去除文章中的表情符号, jiangjun, 20120209 */
-int is_em_flag(char *buf, int len)
+int is_em_flag(char *buf, char *tag)
 {
     char *p;
+    if (strcmp(buf, "b")==0 || strcmp(buf, "i")==0 || strcmp(buf, "u")==0) {
+        strcpy(tag, buf);
+        return 1;
+    }
     if (strcmp(buf, "/img")==0 || strcmp(buf, "/swf")==0 || strcmp(buf, "/url")==0 || strcmp(buf, "/code")==0 ||
         strcmp(buf, "/email")==0 || strcmp(buf, "/mp3")==0 || strcmp(buf, "/upload")==0 ||
         strcmp(buf, "/color")==0 || strcmp(buf, "/face")==0 || strcmp(buf, "/size")==0 ||
-        strcmp(buf, "b")==0 || strcmp(buf, "i")==0 || strcmp(buf, "u")==0 ||
-        strcmp(buf, "/b")==0 || strcmp(buf, "/i")==0 || strcmp(buf, "/u")==0)
-        return 1;
+        strcmp(buf, "/b")==0 || strcmp(buf, "/i")==0 || strcmp(buf, "/u")==0) {
+        strcpy(tag, buf+1);
+        return -1;
+    }
+    /* 带url地址的返回2 */
+    if (strncmp(buf, "img=", 4)==0) {
+        strncpy(tag, buf, 3);
+        tag[3] = '\0';
+        return 2;
+    }
+    if (strncmp(buf, "swf=", 4)==0) {
+        strncpy(tag, buf, 3);
+        tag[3] = '\0';
+        return 2;
+    }
+    if (strncmp(buf, "url=", 4)==0) {
+        strncpy(tag, buf, 3);
+        tag[3] = '\0';
+        return 2;
+    }
+    if (strncmp(buf, "mp3=", 4)==0) {
+        strncpy(tag, buf, 3);
+        tag[3] = '\0';
+        return 2;
+    }
+    if (strncmp(buf, "email=", 6)==0) {
+        strncpy(tag, buf, 5);
+        tag[5] = '\0';
+        return 2;
+    }
     if (strncmp(buf, "upload=", 7)==0) {
         for (p=buf+7;*p!='\0';p++) {
             if (!isdigit(*p))
                 return 0;
         }
+        strncpy(tag, buf, 6);
+        tag[6] = '\0';
         return 1;
     }
     if (strncmp(buf, "color=#", 7)==0) {
@@ -452,6 +485,8 @@ int is_em_flag(char *buf, int len)
             if (!isalnum(*p))
                 return 0;
         }
+        strncpy(tag, buf, 5);
+        tag[5] = '\0';
         return 1;
     }
     if (strncmp(buf, "size=", 5)==0) {
@@ -459,16 +494,22 @@ int is_em_flag(char *buf, int len)
             if (!isdigit(*p))
                 return 0;
         }
+        strncpy(tag, buf, 4);
+        tag[4] = '\0';
         return 1;
     }
     if (strncmp(buf, "face=", 5)==0) { /* 字体需要一个一个对比么? */
+        strncpy(tag, buf, 4);
+        tag[4] = '\0';
         return 1;
     }
+    /* 非成对标签，tag[0]='\0' */
     if (strncmp(buf, "ema", 3)==0 || strncmp(buf, "emb", 3)==0 || strncmp(buf, "emc", 3)==0) {
         for (p=buf+3;*p!='\0';p++) {
             if (!isdigit(*p))
                 return 0;
         }
+        tag[0] = '\0';
         return 1;
     }
     if (strncmp(buf, "em", 2)==0) {
@@ -476,6 +517,7 @@ int is_em_flag(char *buf, int len)
             if (!isdigit(*p))
                 return 0;
         }
+        tag[0] = '\0';
         return 1;
     }
     if (strncmp(buf, "code=", 5)==0) {
@@ -483,35 +525,103 @@ int is_em_flag(char *buf, int len)
             if (!isalnum(*p))
                 return 0;
         }
+        strncpy(tag, buf, 4);
+        tag[4] = '\0';
         return 1;
     }
     return 0;
 }
+
+struct em_arg {
+    char *p;
+    char *q;
+    char tag[8];
+    struct em_arg *next;
+};
+
 int remove_em_flags(char *ptr, int size)
 {
-#define EM_FLAG_LEN 32  /* 表情符号长度不会超过16吧, 字体会! */
-    char *p, *q;
-    char buf[EM_FLAG_LEN];
-    int em_len, newsize, attsize;
+    char *p, *q, *end;
+    char *buf, tag[8];
+    int em_len, newsize, attsize, type;
+    struct em_arg *head, *e;
 
     newsize = size;
     attsize = 0;
-    if ((p=memmem(ptr, size, ATTACHMENT_PAD, ATTACHMENT_SIZE))!=NULL) {
-        attsize = size - (p - ptr);
-        size = p - ptr;
-    }
+    if ((end=memmem(ptr, size, ATTACHMENT_PAD, ATTACHMENT_SIZE))!=NULL) {
+        attsize = size - (end - ptr);
+        size = end - ptr;
+    } else
+        end = ptr + size;
     p = ptr;
+    head = NULL;
+    e = NULL;
+    buf = NULL;
     do {
         if ((p=memmem(ptr, size, "[", 1))!=NULL) {
-            if ((q=memmem(p, size, "]", 1))!=NULL && ((em_len=q-p-1))<EM_FLAG_LEN) {
+            if ((q=memmem(p, size, "]", 1))!=NULL) {
+                em_len = q-p-1;
+                buf = (char *)malloc(em_len+1);
                 strncpy(buf, p+1, em_len);
                 buf[em_len] = '\0';
-                if (is_em_flag(buf, em_len)) { /* 如果是表情符号, 向前挪动, 并从']'的下一个继续搜索 */
-                    size -= (q+1-ptr);
-                    memmove(p, q+1, size+attsize);
-                    newsize -= q+1-p;
-                    ptr = p;
-                    continue;
+                type = is_em_flag(buf, tag);
+                free(buf);
+                buf = NULL;
+                if (type>0) {
+                    if (tag[0]=='\0') { /* 是单个表情符号, 向前挪动, 并从']'的下一个继续搜索 */
+                        size -= (q+1-ptr);
+                        memmove(p, q+1, size+attsize);
+                        newsize -= q+1-p;
+                        ptr = p;
+                        continue;
+                    } else { /* 是成对表情符号的第一个，临时保存 */
+                        e = (struct em_arg*)malloc(sizeof(struct em_arg));
+                        e->p = p;
+                        e->q = q;
+                        if (type==2) { /* 带url时重新指定p、q */
+                            e->p = p+1;
+                            e->q = p+1+strlen(tag);
+                        }
+                        strcpy(e->tag, tag);
+                        e->next = head;
+                        head = e;
+                    }
+                } else if (type==-1) { /* 是成对表情符号的第二个，从后往前寻找对应的符号 */
+                    e = head;
+                    while (e && strcmp(e->tag, tag)) /* 循环找到对应符号 */
+                        e = e->next;
+                    if (e) { /* 有对应的符号 */
+                        int t;
+                        struct em_arg *a;
+
+                        t = e->q+1-e->p;
+                        /* 挪第一个 */
+                        size = end-(e->q+1);
+                        memmove(e->p, e->q+1, size+attsize);
+                        newsize -= t;
+
+                        e = head;
+                        while (e && strcmp(e->tag, tag)) { /* 循环校正指针位置 */
+                            a = e;
+                            a->p -= t;
+                            a->q -= t;
+                            e = a->next;
+                        }
+                        if (e==head)
+                            head = e->next;
+                        else
+                            a->next = e->next;
+                        free(e);
+
+                        /* 挪第二个 */
+                        p -= t;
+                        q -= t;
+                        size = end-(q+1);
+                        memmove(p, q+1, size+attsize);
+                        newsize -= q+1-p;
+                        ptr = p;
+                        continue;
+                    }
                 }
             }
             /* 不是表情符号, 从'['的下一个继续搜索 */
@@ -520,7 +630,11 @@ int remove_em_flags(char *ptr, int size)
         } else
             break;
     } while (size>0);
-#undef EM_FLAG_LEN
+    while (head) {
+        e = head;
+        head = e->next;
+        free(e);
+    }
     return newsize;
 }
 #endif /* DEF_HIDEEMFLAG */
