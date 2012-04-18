@@ -3289,6 +3289,8 @@ int select_keyword(char *title)
         count++;
     }
     for (i=0;i<publicshm->tkcount;i++) {
+        if (count>=MAXTITLEKEY)
+            break;
         strcpy(titkey[count], publicshm->systitkey[i]);
         count++;
     }

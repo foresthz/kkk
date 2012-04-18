@@ -1480,6 +1480,8 @@ PHP_FUNCTION(bbs_gettitkey)
     }
     if (all) {
         for (i=0;i<publicshm->tkcount;i++) {
+            if (count>=MAXTITLEKEY)
+                break;
             strcpy(titkey[count], publicshm->systitkey[i]);
             count++;
         }

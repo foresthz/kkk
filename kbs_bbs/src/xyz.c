@@ -1197,7 +1197,7 @@ int a_edits_new(void){
         "mailcheck", "s_fill", "f_fill.realname", "f_fill.unit", "f_fill.address", "f_fill.telephone", "f_fill.real",
         "f_fill.chinese", "f_fill.toomany", "f_fill.proxy", "smail", "f_fill", "../.badname", "../.badIP", "badword",
         "sysconf.ini", "www_menu.js", "../0Announce/hotinfo", "../0Announce/systeminfo","forbm", "forcloak", "forlongid",
-        "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", "../" USER_TITLE_FILE,
+        "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", "../" USER_TITLE_FILE, "title_keyword",
 #ifdef FLOWBANNER
         "banner",
 #endif
@@ -1214,7 +1214,7 @@ int a_edits_new(void){
         "注册单失败档(联络电话)", "注册单失败档(真实资料)", "注册单失败档(中文填写)", "注册单失败档(过多的ID)",
         "注册单失败档(不能穿梭注册)", "身份确认完成档", "身份确认失败档", "不可注册的 ID", "不可登录的 IP",
         "系统自动过滤的词语", "sysconf.ini", "WWW主菜单", "近期热点", "系统热点", "给新任版主的信", "给隐身用户的信",
-        "给长期用户的信", "转信版和新闻组对应", "封禁理由列表", "新用户个人定制区","给新注册用户的信", "用户职务表",
+        "给长期用户的信", "转信版和新闻组对应", "封禁理由列表", "新用户个人定制区","给新注册用户的信", "用户职务表", "标题关键字",
 #ifdef FLOWBANNER
         "全站流动信息",
 #endif
@@ -1314,6 +1314,9 @@ int a_edits_new(void){
                             /* 编辑后需要重新配置的项目 */
                             if (!strcmp(e_file[pos-1], "../Welcome")) {
                                 my_unlink("Welcome.rec");
+                            }
+                            if (!strcmp(e_file[pos-1], "title_keyword")) {
+                                load_title_key(0, 0, NULL);
                             }
 #ifdef FILTER
                             if (!strcmp(e_file[pos-1], "badword")) {

@@ -26,18 +26,21 @@ int get_textfile_string(const char *file, char **ptr, char *result[], int maxcou
     *ptr = (char *)malloc(st.st_size);
     read(fd, *ptr, st.st_size);
     count = 0;
-    result[0] = q = p = *ptr;
+    q = p = *ptr;
+    if (*p!='#' && *p!='\n') /* 跳过注释行和长度为0的行 */
+        result[count++] = p;
     size = st.st_size;
     while (size>0 && (p=(char *)memmem(p, size, "\n", 1))!=NULL) {
         *p = '\0';
         p++;
-        count++;
-        if (count>=maxcount)
-            break;
         if (*p == '\r')
             p++;
         size -= p-q;
-        result[count] = q = p;
+        if (size<=0 || count>=maxcount)
+            break;
+        q = p;
+        if (*p!='#' && *p!='\n') /* 跳过注释行和长度为0的行 */
+            result[count++] = p;
     }
     /*
     for (i=1;i<st.st_size;i++) {
@@ -386,10 +389,10 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
 int get_title_key(const char *board, char titlekey[][8], int max)
 {
     char filename[STRLEN];
-    char *ptr, *key[MAXBOARDTITLEKEY];
+    char *ptr, *key[MAXTITLEKEY];
     int count, i;
-    
-    max = (max>MAXBOARDTITLEKEY) ? MAXBOARDTITLEKEY : max;
+
+    max = (max>MAXTITLEKEY) ? MAXTITLEKEY : max;
     if (board)
         setvfile(filename, board, "title_keyword");
     else
