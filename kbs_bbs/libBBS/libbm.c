@@ -19,7 +19,7 @@ int get_textfile_string(const char *file, char **ptr, char *result[], int maxcou
     
     if ((fd=open(file, O_RDONLY))==-1)
         return 0;
-    if (fstat(fd, &st)!=0) {
+    if (fstat(fd, &st)!=0 || st.st_size==0) {
         close(fd);
         return 0;
     }
