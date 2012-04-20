@@ -1197,7 +1197,10 @@ int a_edits_new(void){
         "mailcheck", "s_fill", "f_fill.realname", "f_fill.unit", "f_fill.address", "f_fill.telephone", "f_fill.real",
         "f_fill.chinese", "f_fill.toomany", "f_fill.proxy", "smail", "f_fill", "../.badname", "../.badIP", "badword",
         "sysconf.ini", "www_menu.js", "../0Announce/hotinfo", "../0Announce/systeminfo","forbm", "forcloak", "forlongid",
-        "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", "../" USER_TITLE_FILE, "title_keyword",
+        "../innd/newsfeeds.bbs", "deny_reason", "initial_favboard","tonewuser", "../" USER_TITLE_FILE, 
+#ifdef TITLEKEYWORD
+        "title_keyword",
+#endif
 #ifdef FLOWBANNER
         "banner",
 #endif
@@ -1315,9 +1318,11 @@ int a_edits_new(void){
                             if (!strcmp(e_file[pos-1], "../Welcome")) {
                                 my_unlink("Welcome.rec");
                             }
+#ifdef TITLEKEYWORD
                             if (!strcmp(e_file[pos-1], "title_keyword")) {
                                 load_title_key(0, 0, NULL);
                             }
+#endif
 #ifdef FILTER
                             if (!strcmp(e_file[pos-1], "badword")) {
                                 my_unlink(BADWORD_IMG_FILE);
