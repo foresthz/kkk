@@ -42,10 +42,12 @@ int canundeny(char *linebuf, unsigned long nowtime)
 int sgetline(char *buf, char *linebuf, int *idx, int maxlen)
 {
     int len = 0;
+    bool null_line;
 
     while (len < maxlen) {
         char ch;
 
+        null_line = false;
         linebuf[len] = buf[*idx];
         ch = buf[*idx];
         (*idx)++;
@@ -56,12 +58,16 @@ int sgetline(char *buf, char *linebuf, int *idx, int maxlen)
             break;
         }
         if (ch == 0x0a) {
-            linebuf[len] = 0;
-            break;
+            if (len) {
+                linebuf[len] = 0;
+                break;
+            } else
+                null_line = true;
         }
         if (ch == 0)
             break;
-        len++;
+        if (!null_line)
+            len++;
     }
     return len;
 }
