@@ -97,12 +97,15 @@ int undenyboard(struct boardheader *bh,void* arg)
                             int len = sgetline(buf, linebuf, &idx2, 255);
 
                             if (!canundeny(linebuf, nowtime)) {
+                                /* 回车能不能不这么加?
                                 if (idx1 != 0) {
                                     buf[idx1] = 0x0a;
                                     idx1++;
                                 }
+                                */
                                 memcpy(buf + idx1, linebuf, len);
                                 idx1 += len;
+                                buf[++idx1] = '\n';
                             } else {
                                 char uid[IDLEN + 1], *p;
 
@@ -117,8 +120,10 @@ int undenyboard(struct boardheader *bh,void* arg)
                                 deldeny(&deliveruser, bh->filename, uid, 1, 0, getSession());
                             }
                         }
+                        /* 回车能不能不这么加?
                         buf[idx1] = 0x0a;
                         idx1++;
+                        */
                         lseek(d_fd, 0, SEEK_SET);
                         write(d_fd, buf, idx1);
                         ftruncate(d_fd, idx1);
