@@ -101,6 +101,8 @@ int undenyboard(struct boardheader *bh,void* arg)
                         idx2 = 0;
                         while (idx2 < st.st_size) {
                             int len = sgetline(buf, linebuf, &idx2, 255);
+                            if (len==0)
+                                break;
 
                             if (!canundeny(linebuf, nowtime)) {
                                 /* 回车能不能不这么加?
@@ -111,7 +113,7 @@ int undenyboard(struct boardheader *bh,void* arg)
                                 */
                                 memcpy(buf + idx1, linebuf, len);
                                 idx1 += len;
-                                buf[++idx1] = '\n';
+                                buf[idx1++] = '\n';
                             } else {
                                 char uid[IDLEN + 1], *p;
 
