@@ -6004,6 +6004,8 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
 #ifdef BOARD_SECURITY_LOG
     gettmpfilename(buf, "bm_func");
     if ((func_arg.fn = fopen(buf, "w"))!=NULL) {
+        if (BMch==BM_IMPORT)
+            fprintf(func_arg.fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", annpath);
         fprintf(func_arg.fn, "\033[45m本主题文章列表\033[K\033[m\n");
         fprintf(func_arg.fn, "\033[44m文章ID 作者         日期    标题\033[K\033[m\n");
     }

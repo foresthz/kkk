@@ -80,6 +80,9 @@ int b_rules_edit()
     int aborted;
     int oldmode;
     struct stat st;
+#ifdef BOARD_SECURITY_LOG
+    char oldrules[STRLEN];
+#endif
 
     if (!chk_currBM(currBM, getCurrentUser())) {
         return 0;
@@ -89,6 +92,10 @@ int b_rules_edit()
     setvfile(buf, currboard->filename, "rules");
     oldmode = uinfo.mode;
     modify_user_mode(EDITUFILE);
+#ifdef BOARD_SECURITY_LOG
+    gettmpfilename(oldrules, "old_rules");
+    f_cp(buf, oldrules, 0);
+#endif
     aborted = vedit(buf, false,NULL, NULL, 0);
     modify_user_mode(oldmode);
     if (aborted == -1) {
@@ -100,12 +107,17 @@ int b_rules_edit()
         post_file(getCurrentUser(), "", buf, "BoardRules", buf1, 0, 2, getSession());
         if (normal_board(currboard->filename))
             post_file(getCurrentUser(), "", buf, "BoardManager", buf1, 0, 2, getSession());
-
+#ifdef BOARD_SECURITY_LOG
+        board_file_report(currboard->filename, "修改 <治版方针>", oldrules, buf);
+#endif
         clear();
         move(3,0);
         prints("已经提交新的治版方针,请等待批准\n");
         pressreturn();
     }
+#ifdef BOARD_SECURITY_LOG
+    unlink(oldrules);
+#endif
     return FULLUPDATE;
 }
 #endif
