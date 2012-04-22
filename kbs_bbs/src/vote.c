@@ -123,6 +123,13 @@ int b_notes_edit()
     clear();
     makevdir(currboard->filename);
     setvfile(buf, currboard->filename, "notes");
+
+#ifdef BOARD_SECURITY_LOG
+    char oldfilename[STRLEN];
+    gettmpfilename(oldfilename, "old_notes");
+    f_cp(buf, oldfilename, 0); 
+#endif
+
     getdata(1, 0, "(E)±à¼­ (D)É¾³ý ±¾ÌÖÂÛÇøµÄ±¸ÍüÂ¼? [E]: ", ans, 2,
             DOECHO, NULL, true);
     if (ans[0] == 'D' || ans[0] == 'd') {
@@ -131,6 +138,10 @@ int b_notes_edit()
             move(3, 0);
             prints("±¸ÍüÂ¼ÒÑ¾­É¾³ý...\n");
             pressanykey();
+#ifdef BOARD_SECURITY_LOG
+            board_file_report(currboard->filename, "É¾³ý <±¸ÍüÂ¼>", oldfilename, buf);
+            unlink(oldfilename);
+#endif
             my_unlink(buf);
             aborted = 1;
         } else
@@ -139,6 +150,10 @@ int b_notes_edit()
         oldmode = uinfo.mode;
         modify_user_mode(EDITUFILE);
         aborted = vedit(buf, false,NULL, NULL, 0);
+#ifdef BOARD_SECURITY_LOG
+        board_file_report(currboard->filename, "ÐÞ¸Ä <±¸ÍüÂ¼>", oldfilename, buf);
+        unlink(oldfilename);
+#endif
         modify_user_mode(oldmode);
     }
     if (aborted == -1) {

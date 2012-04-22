@@ -142,7 +142,7 @@ static int canread(int level, char *path, char * fname, char *title)
     if (dashd(buf)) {
         strcat(buf,"/.allow");
         if (!dashf(buf)) return 1;
-        if (!seek_in_file(buf,getCurrentUser()->userid)) return 0;
+        if (!seek_in_file(buf,getCurrentUser()->userid,NULL)) return 0;
         return 1;
     }
     return 1;

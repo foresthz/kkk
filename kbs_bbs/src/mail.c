@@ -2072,7 +2072,7 @@ int g_send(void)
                     move(2, 0);
                     prints("信件无法被寄给: \033[1m%s\033[m\n", lookupuser->userid);
                     break;
-                } else if (seek_in_file(maillists, uident)) {
+                } else if (seek_in_file(maillists, uident, NULL)) {
                     move(2, 0);
                     prints("已经列为收件人之一 \n");
                     break;
@@ -2086,7 +2086,7 @@ int g_send(void)
                 break;
             case 'D':
             case 'd': {
-                if (seek_in_file(maillists, uident)) {
+                if (seek_in_file(maillists, uident, NULL)) {
                     del_from_file(maillists, uident);
                     cnt--;
                 }
@@ -2134,7 +2134,7 @@ int g_send(void)
                                 errstr = "这个使用者代号是错误的.\n";
                             } else if (!(lookupuser->userlevel & PERM_BASIC)) {
                                 errstr = "信件无法被寄给他\n";
-                            } else if (seek_in_file(maillists, uident)) {
+                            } else if (seek_in_file(maillists, uident, NULL)) {
                                 i--;
                                 continue;
                             }

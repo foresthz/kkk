@@ -457,6 +457,16 @@ int do_del_ding(char *boardname, int bid, int ent, struct fileheader *fh, sessio
 
         f_mv(fn_old,fn_new);
         board_update_toptitle(bid, true);
+#ifdef BOARD_SECURITY_LOG
+        char title[STRLEN];
+        if (strlen(fh->title)>40) {
+            strnzhcpy(buf, fh->title, 38);
+            strcat(buf, "..");
+        } else
+            strcpy(buf, fh->title);
+        sprintf(title, "删除置顶 <%s>", buf);
+        board_security_report(NULL, getCurrentUser(), title, boardname, fh);
+#endif
 
     }
     return 0;   /* success */
@@ -2528,6 +2538,16 @@ int add_top(struct fileheader *fileinfo, const char *boardname, int flag)
     link(newpath, path);
     append_record(dirpath, &top, sizeof(top));
     board_update_toptitle(getbid(boardname, NULL), true);
+#ifdef BOARD_SECURITY_LOG
+    char buf[STRLEN], title[STRLEN];
+    if (strlen(fileinfo->title)>40) {
+        strnzhcpy(buf, fileinfo->title, 38);
+        strcat(buf, "..");
+    } else
+        strcpy(buf, fileinfo->title);
+    sprintf(title, "置顶 <%s>", buf);
+    board_security_report(NULL, getCurrentUser(), title, boardname, fileinfo);
+#endif
     return 0;
 }
 
@@ -2907,6 +2927,50 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
     }
     if (dirarg->needlock)
         un_lock(dirarg->fd, 0, SEEK_SET, 0);
+#ifdef BOARD_SECURITY_LOG
+    /* DIR_MODE_NORMAL中，记录下列标记操作 */
+    if (currmode == DIR_MODE_NORMAL && (flag & FILE_MARK_FLAG || flag & FILE_DIGEST_FLAG || flag & FILE_NOREPLY_FLAG
+            || flag & FILE_SIGN_FLAG || flag & FILE_DELETE_FLAG || flag & FILE_PERCENT_FLAG)) {
+        char title[ARTICLE_TITLE_LEN];
+        if (strlen(originFh->title)>40) {
+            strnzhcpy(buf, originFh->title, 38);
+            strcat(buf, "..");
+        } else
+            strcpy(buf, originFh->title);
+        if (flag & FILE_MARK_FLAG) {
+            if (data->accessed[0] & FILE_MARKED)
+                sprintf(title, "标m <%s>", buf);
+            else
+                sprintf(title, "去m <%s>", buf);
+        } else if (flag & FILE_DIGEST_FLAG) {
+            if (data->accessed[0] & FILE_DIGEST)
+                sprintf(title, "标g <%s>", buf);
+            else
+                sprintf(title, "去g <%s>", buf);
+        } else if (flag & FILE_NOREPLY_FLAG) {
+            if (data->accessed[1] & FILE_READ)
+                sprintf(title, "标; <%s>", buf);
+            else
+                sprintf(title, "去; <%s>", buf);
+        } else if (flag & FILE_SIGN_FLAG) {
+            if (data->accessed[0] & FILE_SIGN)
+                sprintf(title, "标# <%s>", buf);
+            else
+                sprintf(title, "去# <%s>", buf);
+        } else if (flag & FILE_PERCENT_FLAG) {
+            if (data->accessed[0] & FILE_PERCENT)
+                sprintf(title, "标%% <%s>", buf);
+            else
+                sprintf(title, "去%% <%s>", buf);
+        } else if (flag & FILE_DELETE_FLAG) {
+            if (data->accessed[1] & FILE_DEL)
+                sprintf(title, "标X <%s>", buf);
+            else
+                sprintf(title, "去X <%s>", buf);
+        }
+        board_security_report(NULL, getCurrentUser(), title, board->filename, originFh);
+    }
+#endif
     return ret;
 }
 

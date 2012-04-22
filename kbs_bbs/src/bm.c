@@ -237,7 +237,7 @@ int addtodeny(char *uident)
     now = time(0);
     strncpy(date, ctime(&now) + 4, 7);
     setbfile(genbuf, currboard->filename, "deny_users");
-    if (seek_in_file(genbuf, uident) || !strcmp(currboard->filename, "denypost"))
+    if (seek_in_file(genbuf, uident, NULL) || !strcmp(currboard->filename, "denypost"))
         return -1;
     /*
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))

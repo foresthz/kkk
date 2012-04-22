@@ -1091,7 +1091,7 @@ int deny_me(const char *user,const char *board)
     char buf[STRLEN];
 
     setbfile(buf, board, "deny_users");
-    return seek_in_file(buf, user);
+    return seek_in_file(buf, user, NULL);
 }
 
 
@@ -1208,7 +1208,7 @@ static int isJury(const struct userec *user, const struct boardheader *board)
         return 0;
     makevdir(board->filename);
     setvfile(buf, board->filename, "jury");
-    return seek_in_file(buf, user->userid);
+    return seek_in_file(buf, user->userid, NULL);
 }
 
 
@@ -1334,6 +1334,28 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only, int
     unlink(filename);
     if (dobmlog)
         bmlog(user->userid, board, 11, 1);
+#ifdef BOARD_SECURITY_LOG
+    {
+        char denystr[256], denymsg[STRLEN], operator[IDLEN+2];
+        time_t ut;
+        if (seek_in_file(fn, lookupuser?lookupuser->userid:uident, denystr)==0)
+            return -1;
+        get_denied_reason(denystr, denymsg);
+        get_denied_operator(denystr, operator);
+        ut = get_denied_time(denystr);
+        fn1 = fopen(filename, "w");
+        fprintf(fn1, "\033[36m本次封禁原始信息\033[m\n");
+        fprintf(fn1, "\033[33m封禁用户: \033[4;32m%s\033[m\n", lookupuser?lookupuser->userid:uident);
+        fprintf(fn1, "\033[33m封禁原因: \033[4;32m%s\033[m\n", denymsg);
+        fprintf(fn1, "\033[33m操作用户: \033[4;32m%s\033[m\n", operator);
+        if (time(0)<ut)
+            fprintf(fn1, "\033[31m本次操作为提前解封\033[m\n");
+        fclose(fn1);
+        sprintf(buffer, "恢复 %s 在本版的发文权限", lookupuser?lookupuser->userid:uident);
+        board_security_report(filename, user, buffer, board, 0);
+        unlink(filename);
+    }
+#endif
     if (notice_only)
         return 1;
     else

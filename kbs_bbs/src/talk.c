@@ -1968,7 +1968,7 @@ int wait_friend(void)
         return -1;
     }
     sprintf(buf, "%d@%s", tuid, getCurrentUser()->userid);
-    if (!seek_in_file("friendbook", buf))
+    if (!seek_in_file("friendbook", buf, NULL))
         fprintf(fp, "%s\n", buf);
     fclose(fp);
     move(3, 0);

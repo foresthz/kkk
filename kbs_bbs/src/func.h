@@ -169,7 +169,7 @@ extern "C"
     time_t get_exit_time(const struct userec *lookupuser, char *exittime);
     int dashf(const char *fname);
     int dashd(const char *fname);
-    int seek_in_file(const char* filename, const char* seekstr);
+    int seek_in_file(const char* filename, const char* seekstr, char *result);
     char *setbdir(enum BBS_DIR_MODE digestmode, char *buf,const  char *boardname);
     char *setcachebdir(enum BBS_DIR_MODE digestmode, char *buf,const  char *boardname);
     void makevdir(const char *bname);
@@ -254,12 +254,10 @@ extern "C"
     void trimstr(char*);
     void securityreport(char *str, struct userec *lookupuser, char fdata[9][STRLEN], session_t *session);
     int remove_blank_ctrlchar(const char *src, char *des, bool head, bool end, bool cc);
+    /* libbm.c added by jiangjun */
     int get_textfile_string(const char *file, char **ptr, char *result[], int maxcount);
     int get_deny_reason(const char *board, char denyreason[][STRLEN], int max);
     int save_deny_reason(const char *board, char denyreason[][STRLEN], int count);
-    int write_formatted_file(const char *src, const char *dest, const char *format, ...);
-    void system_file_report(char *str, char *oldfile, char *newfile, session_t *session);
-    int www_sync_stay(struct userec *user, struct user_info *uinfo);
     int get_denied_reason(const char *buf, char *reason);
     int get_denied_operator(const char *buf, char *opt);
 #ifdef DENY_MANUAL
@@ -272,6 +270,14 @@ extern "C"
     int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode);
 #endif
     int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *op, time_t time, int mode, int autofree);
+#ifdef BOARD_SECURITY_LOG
+    void board_file_report(const char *board, char *title, char *oldfile, char *newfile);
+    int board_security_report(const char *filename, struct userec *user, const char *title, const char *bname, const struct fileheader *fh);
+#endif
+    /* end of libbm.c */
+    int write_formatted_file(const char *src, const char *dest, const char *format, ...);
+    void system_file_report(char *str, char *oldfile, char *newfile, session_t *session);
+    int www_sync_stay(struct userec *user, struct user_info *uinfo);
 
 #ifndef CYGWIN
 #define time(x) bbstime(x)

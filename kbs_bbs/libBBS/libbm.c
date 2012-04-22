@@ -100,14 +100,22 @@ int save_deny_reason(const char *board, char denyreason[][STRLEN], int count)
     int i;
     FILE *fn;
 
-    if (board)
-        setvfile(filename, board, "deny_reason");
-    else
-        sprintf(filename, "etc/deny_reason");
+    setvfile(filename, board, "deny_reason");
+
+#ifdef BOARD_SECURITY_LOG
+    char oldfilename[STRLEN];
+    gettmpfilename(oldfilename, "old_deny_reason");
+    f_cp(filename, oldfilename, 0); 
+#endif
+
     if ((fn=fopen(filename, "w"))!=NULL) {
         for (i=0;i<count;i++)
             fprintf(fn, "%s\n", denyreason[i]);
         fclose(fn);
+#ifdef BOARD_SECURITY_LOG
+        board_file_report(board, "修改 <版面封禁理由>", oldfilename, filename);
+        unlink(oldfilename);
+#endif
     }
     return 0;
 }
@@ -272,6 +280,16 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     }
 #endif
     post_file(operator, "", postfile, "denypost", title1, 0, -1, getSession());
+#ifdef BOARD_SECURITY_LOG
+    FILE *fn;
+    fn = fopen(postfile, "w");
+    fprintf(fn, "\033[33m封禁用户: \033[4;32m%s\033[m\n", uident);
+    fprintf(fn, "\033[33m封禁原因: \033[4;32m%s\033[m\n", reason);
+    fprintf(fn, "\033[33m封禁天数: \033[4;32m %d 天\033[m\n", day);
+    fclose(fn);
+    sprintf(title, "%s %s 在本版的发文权限", mode==0?"取消":"修改", uident);
+    board_security_report(postfile, operator, title, bh->filename, fh);
+#endif
     unlink(postfile);
 
     return 0;
@@ -414,16 +432,192 @@ int save_title_key(const char *board, char titlekey[][8], int count)
     int i;
     FILE *fn;
     
-    if (board)
-        setvfile(filename, board, "title_keyword");
-    else
-        sprintf(filename, "etc/title_keyword");
+    setvfile(filename, board, "title_keyword");
+
+#ifdef BOARD_SECURITY_LOG
+    char oldfilename[STRLEN];
+    gettmpfilename(oldfilename, "old_title_keyword");
+    f_cp(filename, oldfilename, 0);
+#endif
+
     if ((fn=fopen(filename, "w"))!=NULL) {
         for (i=0;i<count;i++)
             fprintf(fn, "%s\n", titlekey[i]);
         fclose(fn);
-        load_title_key(0, board?getbid(board, NULL):0, board);
+        load_title_key(0, getbid(board, NULL), board);
+#ifdef BOARD_SECURITY_LOG
+        board_file_report(board, "修改 <标题关键字>", oldfilename, filename);
+        unlink(oldfilename);
+#endif
     }
+    return 0;
+}
+#endif
+
+#ifdef BOARD_SECURITY_LOG
+/* 版面配置文件修改记录, 通过diff获得新旧文件差异
+ */
+void board_file_report(const char *board, char *title, char *oldfile, char *newfile)
+{       
+    FILE *fn, *fn2;
+    char filename[STRLEN], buf[256];
+
+    gettmpfilename(filename, "board_report_file", getpid());
+    if((fn=fopen(filename, "w"))!=NULL){
+        if(strstr(title, "删除")){
+            fprintf(fn, "\033[1;33;45m删除文件信息备份\033[K\033[m\n");
+    
+            if((fn2=fopen(oldfile, "r"))!=NULL){
+                while(fgets(buf, 256, fn2)!=NULL)
+                    fputs(buf, fn);
+                fclose(fn2);
+                fprintf(fn, "\n");
+            }
+            fclose(fn);
+        } else {
+            char genbuf[STRLEN*2], filediff[STRLEN];
+            gettmpfilename(filediff, "filediff", getpid());
+            if(!dashf(oldfile)){
+                f_touch(oldfile);
+            }
+            sprintf(genbuf, "diff -u %s %s > %s", oldfile, newfile, filediff);
+            system(genbuf);
+            fprintf(fn, "\033[1;33;45m修改文件信息备份\033[K\033[m\n");
+        
+            if((fn2=fopen(filediff, "r"))!=NULL){
+                /* 跳过前2行 */
+                fgets(buf, 256, fn2);fgets(buf, 256, fn2);
+                while(fgets(buf, 256, fn2)!=NULL){
+                    if(buf[0]=='-')
+                        fprintf(fn, "\033[1;35m%s\033[m", buf);
+                    else if(buf[0]=='+')
+                        fprintf(fn, "\033[1;36m%s\033[m", buf);
+                    else
+                        fputs(buf, fn);
+                }
+                fclose(fn2);
+                fprintf(fn, "\n");
+            }
+            fclose(fn);
+            unlink(filediff);
+        }
+        board_security_report(filename, getCurrentUser(), title, board, NULL);
+        unlink(filename);
+    }
+}
+
+/* 获得版面安全记录的最新id */
+int board_last_log_id(const char *board)
+{
+    struct fileheader fh;
+    char filename[STRLEN * 2];
+    int count;
+
+    setbdir(DIR_MODE_BOARD, filename, board);
+    memset(&fh, 0, sizeof(struct fileheader));
+    count = get_num_records(filename, sizeof(struct fileheader));
+    if (count <= 0)
+        return 0;
+    get_record(filename, &fh, sizeof(struct fileheader), count);
+
+    if (fh.id != 0)
+        return fh.id;
+    return 0;
+}
+
+/* 版面安全记录，在DIR_MODE_BOARD中添加文章, jiangjun, 20100610 */
+int board_security_report(const char *filename, struct userec *user, const char *title, const char *bname, const struct fileheader *xfh)
+{       
+    struct fileheader fh;
+    struct boardheader bh;
+    FILE *fin, *fout;
+    char buf[STRLEN], bufcp[READ_BUFFER_SIZE], timebuf[STRLEN];
+    int mode, fd;
+    time_t now;
+    size_t size;
+            
+    bzero(&fh, sizeof(struct fileheader));
+    setbpath(buf, bname);
+    if (!getboardnum(bname, &bh))
+        return 1;
+    if (GET_POSTFILENAME(fh.filename, buf))
+        return 2;
+    POSTFILE_BASENAME(fh.filename)[0] = 'B';
+    set_posttime(&fh);
+    
+    mode = 0;
+    if (user == NULL)
+        mode = 1;  //自动发信
+    if (mode)
+        memcpy(fh.owner, DELIVER, OWNER_LEN);
+    else
+        memcpy(fh.owner, user -> userid, OWNER_LEN);
+    fh.owner[OWNER_LEN - 1] = 0;
+    strnzhcpy(fh.title, title, ARTICLE_TITLE_LEN);
+    setbfile(buf, bname, fh.filename);
+    if (!(fout = fopen(buf, "w")))
+        return 3;
+
+    if (mode) {
+        now = time(NULL);
+        fprintf(fout, "发信人: "DELIVER" (自动发信系统), 信区: %s安全记录\n", bname);
+        fprintf(fout, "标  题: %s\n", fh.title);
+        fprintf(fout, "发信站: %s自动发信系统 (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
+    } else {
+        now = time(NULL);
+        fprintf(fout, "发信人: %s (%s), 信区: %s安全记录\n", user->userid, user->username, bname);
+        fprintf(fout, "标  题: %s\n", fh.title);
+        fprintf(fout, "发信站: %s (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
+    }
+    fprintf(fout, "\033[36m版面管理安全记录\033[m\n");
+    fprintf(fout, "\033[33m记录原因: \033[32m%s %s\033[m\n", (mode)?"":user->userid, title);
+    if (!mode)
+        fprintf(fout, "\033[33m用户来源: \033[32m%s\033[m\n", getSession()->fromhost);
+    if (filename != NULL) {
+        if (!(fin = fopen(filename, "r"))) {
+            fprintf(fout, "\n\033[45;31m系统错误，无法记录相关详细信息\033[K\033[m\n");
+        } else {
+            fprintf(fout, "\n\033[36m本次操作附加信息\033[m\n");
+            while (true) {
+                size = fread(bufcp, 1, READ_BUFFER_SIZE, fin);
+                if (size == 0)
+                    break;
+                fwrite(bufcp, size, 1, fout);
+            }
+            fclose(fin);
+        }
+    }
+    if (xfh) {
+        fprintf(fout, "\n\033[36m本次操作对应文章信息\033[m\n");
+        fprintf(fout, "\033[33m文章标题: \033[4;32m%s\033[m\n", xfh->title);
+        fprintf(fout, "\033[33m文章作者: \033[4;32m%s\033[m\n", xfh->owner);
+        fprintf(fout, "\033[33m文章ID号: \033[4;32m%d\033[m\n", xfh->id);
+        fprintf(fout, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime((time_t *)&xfh->posttime));
+    }
+    fclose(fout);
+    fh.eff_size = get_effsize_attach(buf, &fh.attachment);
+    setbdir(DIR_MODE_BOARD, buf, bname);
+    if ((fd = open(buf, O_WRONLY|O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) == -1) {
+        return 5;
+    }
+    writew_lock(fd, 0, SEEK_SET, 0);
+    fh.id = board_last_log_id(bname) + 1;
+    fh.groupid = fh.id;
+    fh.reid = fh.id;
+    if (xfh)
+        fh.o_id = xfh->id;
+    else
+        fh.o_id = 0;
+    lseek(fd, 0, SEEK_END);
+    if (safewrite(fd, &fh, sizeof(struct fileheader)) == -1) {
+        un_lock(fd, 0, SEEK_SET, 0);
+        close(fd);
+        setbfile(buf, bname, fh.filename);
+        unlink(buf);
+        return 6;
+    }
+    un_lock(fd, 0, SEEK_SET, 0);
+    close(fd);
     return 0;
 }
 #endif

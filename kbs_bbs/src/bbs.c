@@ -535,6 +535,16 @@ int do_commend(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
                fileinfo->accessed[1] |= FILE_COMMEND;
                substitute_record(direct, fileinfo, sizeof(*fileinfo), ent);
         */
+#ifdef BOARD_SECURITY_LOG
+        char buf[STRLEN], title[STRLEN];
+        if (strlen(fileinfo->title)>40) {
+            strnzhcpy(buf, fileinfo->title, 38);
+            strcat(buf, "..");
+        } else
+            strcpy(buf, fileinfo->title);
+        sprintf(title, "推荐 <%s>", buf);
+        board_security_report(NULL, getCurrentUser(), title, currboard->filename, fileinfo);
+#endif
     } else {
         prints("取消");
     }
@@ -985,6 +995,11 @@ void readtitle(struct _select_def* conf)
         case DIR_MODE_SELF:
             readmode="自删";
             break;
+#ifdef BOARD_SECURITY_LOG
+        case DIR_MODE_BOARD:
+            readmode="版主";
+            break;
+#endif
         default:
             readmode="未知";
             break;
@@ -2357,6 +2372,31 @@ int junk_mode(struct _select_def *conf,struct fileheader *fh,void *varg)
     return NEWDIRECT;
 }
 
+#ifdef BOARD_SECURITY_LOG
+int board_log_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
+{
+    struct read_arg* arg=(struct read_arg*)conf->arg;
+
+    if (!chk_currBM(currboard->BM, getCurrentUser())) {
+        return FULLUPDATE;
+    }
+
+    if (arg->mode == DIR_MODE_BOARD) {
+        arg->newmode = DIR_MODE_NORMAL;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
+    } else {
+        arg->newmode = DIR_MODE_BOARD;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
+        if (!dashf(arg->direct)) {
+            arg->newmode = DIR_MODE_NORMAL;
+            setbdir(arg->mode, arg->direct, currboard->filename);
+            return FULLUPDATE;
+        }
+    }
+    return NEWDIRECT;
+}
+#endif
+
 static char search_data[STRLEN];
 
 int search_mode(struct _select_def* conf,struct fileheader *fileinfo,int mode, char *index)
@@ -2420,17 +2460,33 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
     static char title[32];
     struct read_arg *arg=(struct read_arg*)conf->arg;
     char buf[STRLEN],ans[4];
+#ifdef BOARD_SECURITY_LOG
+    int isbm;
+#ifdef NEWSMTH
+    isbm = check_board_delete_read_perm(getCurrentUser(), currboard, 0);
+#else
+    isbm = chk_currBM(currboard->BM, getCurrentUser());
+#endif
+#endif
+
     if (!mode) {
         move(t_lines-2,0);
         clrtoeol();
         prints("%s","切换模式到: 0)取消 1)文摘区 2)同主题 3)保留区 4)原作 5)同作者 6)标题关键字");
         move(t_lines-1,0);
         clrtoeol();
-        if (getdata(t_lines-1,12,"7)超级文章选择"
+        sprintf(buf, "%s%s%s", "7)超级文章选择"
 #ifdef NEWSMTH
                     " 8)本版精华区搜索"
 #endif /* NEWSMTH */
-                    " 9)自删文章 [1]: ",ans,2,DOECHO,NULL,true)==-1)
+                    " 9)自删文章", 
+#ifdef BOARD_SECURITY_LOG
+                    isbm?" A)版主模式":"",
+#else
+                    "",
+#endif
+                    " [1]: ");
+        if (getdata(t_lines-1, 12, buf, ans,2,DOECHO,NULL,true)==-1)
             return FULLUPDATE;
         switch (ans[0]) {
             case '0':
@@ -2492,6 +2548,12 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
             case '9':
                 mode=DIR_MODE_SELF;
                 break;
+#ifdef BOARD_SECURITY_LOG
+            case 'a':
+            case 'A':
+                mode=DIR_MODE_BOARD;
+                break;
+#endif
             default:
                 mode=DIR_MODE_NORMAL;
                 break;
@@ -2519,6 +2581,10 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
             return deleted_mode(conf,fh,NULL);
         case DIR_MODE_JUNK:
             return junk_mode(conf,fh,NULL);
+#ifdef BOARD_SECURITY_LOG
+        case DIR_MODE_BOARD:
+            return board_log_mode(conf,fh,NULL);
+#endif
         default:
             break;
     }
@@ -4119,6 +4185,24 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
             }
         }
         setboardtitle(currboard->filename, 1);
+#ifdef BOARD_SECURITY_LOG
+        /* 由于要记录原标题，所以不能用change_post_flag来记录 */
+        FILE *fn;
+        char path[STRLEN], title[STRLEN];
+        gettmpfilename(path, "edit_title");
+        if ((fn = fopen(path, "w"))!=NULL) {
+            if (strlen(fileinfo->title)>40) {
+                strnzhcpy(buf, fileinfo->title, 38);
+                strcat(buf, "..");
+            } else
+                strcpy(buf, fileinfo->title);
+            sprintf(title, "修改标题 <%s>", buf);
+            fprintf(fn, "\033[33m原 标 题: \033[4;32m%s\033[m\n", tmp2);
+            fclose(fn);
+            board_security_report(path, getCurrentUser(), title, currboard->filename, fileinfo);
+            unlink(path);
+        }
+#endif
     }
     if (edit_top)
         return DIRCHANGED;
@@ -5661,6 +5745,9 @@ struct BMFunc_arg {
     bool saveorigin;    /*在合集操作的时候表明是否保存原文*/
     char* announce_path; /*收录精华区的时候的位置*/
     bool setflag; /*设置还是取消*/
+#ifdef BOARD_SECURITY_LOG
+    FILE *fn;       /* 同主题操作记录文件 */
+#endif
 };
 
 /*版主同主题函数，用于apply_record的回调函数*/
@@ -5669,6 +5756,10 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
     struct read_arg* arg=(struct read_arg*)conf->arg;
     struct BMFunc_arg* func_arg=(struct BMFunc_arg*)extraarg;
     int ret=APPLY_CONTINUE;
+#ifdef BOARD_SECURITY_LOG
+    struct fileheader xfh;
+    memcpy(&xfh, fh, sizeof(struct fileheader));
+#endif
 
     conf->pos=ent;
     if (arg->writearg) {
@@ -5744,6 +5835,14 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             fh->accessed[0]|=FILE_IMPORTED;
             break;
     }
+#ifdef BOARD_SECURITY_LOG
+    if (ret!=APPLY_REAPPLY && func_arg->fn!=NULL) {
+        char date[8];
+        strncpy(date, ctime((time_t *)&xfh.posttime) + 4, 6);
+        date[6] = '\0';
+        fprintf(func_arg->fn, "%6d %-12s %6s  %s%s\n", xfh.id, xfh.owner, date, xfh.id==xfh.groupid?"● ":"", xfh.title);
+    }
+#endif
     return ret;
 }
 
@@ -5902,10 +6001,68 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         if (conf->new_pos!=0)
             conf->pos=conf->new_pos;
     }
+#ifdef BOARD_SECURITY_LOG
+    gettmpfilename(buf, "bm_func");
+    if ((func_arg.fn = fopen(buf, "w"))!=NULL) {
+        fprintf(func_arg.fn, "\033[45m本主题文章列表\033[K\033[m\n");
+        fprintf(func_arg.fn, "\033[44m文章ID 作者         日期    标题\033[K\033[m\n");
+    }
+#endif
     apply_thread(conf,fh,BM_thread_func,true,true,(void*)&func_arg);
     un_lock(arg->fd, 0, SEEK_SET, 0);
     free_write_dir_arg(&dirarg);
     arg->writearg=NULL;
+#ifdef BOARD_SECURITY_LOG
+    if (func_arg.fn)
+        fclose(func_arg.fn);
+    char tmp[STRLEN], title[STRLEN];
+    if (strncmp(fh->title, "Re: ", 4)==0)
+        strcpy(title, fh->title+4);
+    else
+        strcpy(title, fh->title);
+    if (strlen(title)>40) {
+        strnzhcpy(tmp, title, 38);
+        strcat(tmp, "..");
+    } else
+        strcpy(tmp, title);
+    switch (BMch) {
+        case BM_DELETE:
+            sprintf(title, "%s <%s>", "同主题d", tmp);
+            break;
+        case BM_MARK:
+            if (fh->accessed[0] & FILE_MARKED)
+                sprintf(title, "%s <%s>", "同主题去m", tmp);
+            else
+                sprintf(title, "%s <%s>", "同主题标m", tmp);
+            break;
+        case BM_DELMARKDEL:
+            sprintf(title, "%s <%s>", "同主题删X", tmp);
+            break;
+        case BM_MARKDEL:
+            if (fh->accessed[1] & FILE_DEL)
+                sprintf(title, "%s <%s>", "同主题去X", tmp);
+            else
+                sprintf(title, "%s <%s>", "同主题标X", tmp);
+            break;
+        case BM_NOREPLY:
+            if (fh->accessed[1] & FILE_READ )
+                sprintf(title, "%s <%s>", "同主题去;", tmp);
+            else
+                sprintf(title, "%s <%s>", "同主题标;", tmp);
+            break;
+        case BM_IMPORT:
+            sprintf(title, "%s <%s>", "同主题I", tmp);
+            break;
+        case BM_TOTAL:
+            sprintf(title, "%s <%s>", "合集", tmp);
+            break;
+        case BM_TMP:
+            sprintf(title, "%s <%s>", "同主题i", tmp);
+            break;
+    }
+    board_security_report(buf, getCurrentUser(), title, currboard->filename, fh);
+    unlink(buf);
+#endif
 
 #ifdef HAVE_REPLY_COUNT
     if (BMch == BM_DELETE)

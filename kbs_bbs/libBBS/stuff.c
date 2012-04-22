@@ -408,6 +408,12 @@ char* setbdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
             type=1;
             prefix=".SELF";
             break;
+#ifdef BOARD_SECURITY_LOG
+        case DIR_MODE_BOARD:
+            type=0;
+            prefix=".BRDLOG";
+            break;
+#endif
         case DIR_MODE_MAIL:
         case DIR_MODE_FRIEND:
         case DIR_MODE_TOP10:
@@ -529,7 +535,7 @@ int id_invalid(const char *userid)
     return 0;
 }
 
-int seek_in_file(const char* filename, const char* seekstr)
+int seek_in_file(const char* filename, const char* seekstr, char *result)
 {
     int len, slen, retv=0;
     char *ptr, *head, *end;
@@ -551,6 +557,12 @@ int seek_in_file(const char* filename, const char* seekstr)
             if( (ptr==head || ptr[-1]=='\n')    /* 文件开头或者一行开头 */
               &&(len<=slen || !isalnum(ptr[slen]))){    /* 文件末尾或者下个字符为非数字字母 */
                 retv = 1;
+                if (result) {
+                    char *p;
+                    p = (char *)memmem(ptr, end-ptr, "\n", 1);
+                    strncpy(result, ptr, p-ptr);
+                    result[p-ptr] = '\0';
+                }
                 break;
             }
             ptr += slen;

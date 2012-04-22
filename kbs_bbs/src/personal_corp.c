@@ -225,7 +225,7 @@ static int pc_add_friend(char *uident, char *fpath, int echo)
     }
     strcpy(uident, lookupuser->userid);
 
-    seek = seek_in_file(fpath, uident);
+    seek = seek_in_file(fpath, uident, NULL);
     if (seek) {
         if (echo) {
             move(2, 0);
@@ -571,7 +571,7 @@ static int pc_is_friend(char *userid)
     char fpath[STRLEN];
 
     sethomefile(fpath, userid, "pc_friend");
-    if (seek_in_file(fpath, getCurrentUser()->userid))
+    if (seek_in_file(fpath, getCurrentUser()->userid, NULL))
         return 1;
 
     return 0;

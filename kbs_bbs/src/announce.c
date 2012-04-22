@@ -1283,7 +1283,7 @@ static int a_control_user(char *fpath)
             move(1, 0);
             usercomplete("增加访问允许成员: ", uident);
             if (*uident != '\0') {
-                if (seek_in_file(buf,uident)) {
+                if (seek_in_file(buf,uident,NULL)) {
                     move(2,0);
                     prints("%s 已经在名单中\n",uident);
                     continue;
@@ -1295,7 +1295,7 @@ static int a_control_user(char *fpath)
             move(1, 0);
             namecomplete("删除访问允许成员: ", uident);
             if (uident[0] != '\0') {
-                if (seek_in_file(buf, uident)) {
+                if (seek_in_file(buf, uident, NULL)) {
                     del_from_file(buf, uident);
                 }
                 continue;
