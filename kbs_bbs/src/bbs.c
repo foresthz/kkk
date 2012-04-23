@@ -4277,7 +4277,11 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     if (fileinfo==NULL)
         return DONOTHING;
 
-    if (arg->mode==DIR_MODE_DELETED||arg->mode==DIR_MODE_JUNK||arg->mode==DIR_MODE_SELF)
+    if (arg->mode==DIR_MODE_DELETED||arg->mode==DIR_MODE_JUNK||arg->mode==DIR_MODE_SELF
+#ifdef BOARD_SECURITY_LOG
+            || arg->mode == DIR_MODE_BOARD
+#endif
+            )
         return DONOTHING;
 
     if (chk_currBM(currBM, getCurrentUser())) mode |= 0x1;
@@ -4462,7 +4466,11 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     if (ent>arg->filecount)
         return del_ding(conf,fileinfo,extraarg);
 
-    if (arg->mode== DIR_MODE_DELETED|| arg->mode== DIR_MODE_JUNK || arg->mode==DIR_MODE_SELF)
+    if (arg->mode== DIR_MODE_DELETED|| arg->mode== DIR_MODE_JUNK || arg->mode==DIR_MODE_SELF
+#ifdef BOARD_SECURITY_LOG
+            || arg->mode == DIR_MODE_BOARD
+#endif
+            )
         return DONOTHING;
 
     if (deny_del_article(currboard, fileinfo, getSession())) {
@@ -4615,7 +4623,10 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     char szBuf[STRLEN],*p;
     struct read_arg* arg=(struct read_arg*)conf->arg;
     int ret=FULLUPDATE;
-
+#ifdef BOARD_SECURITY_LOG
+    if (arg->mode == DIR_MODE_BOARD)
+        return DONOTHING;
+#endif
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
         if (!chk_currBM(currBM, getCurrentUser())
 #ifdef FB2KPC
@@ -6623,7 +6634,11 @@ static char* read_top_ent(char *buf,int num,struct fileheader *fh,struct filehea
     if (titlelen > ARTICLE_TITLE_LEN) {
         titlelen = ARTICLE_TITLE_LEN;
     }
-    if (! DEFINE(getCurrentUser(), DEF_SHOWSIZE) && arg->mode != DIR_MODE_DELETED && arg->mode != DIR_MODE_JUNK) {
+    if (! DEFINE(getCurrentUser(), DEF_SHOWSIZE) && arg->mode != DIR_MODE_DELETED && arg->mode != DIR_MODE_JUNK
+#ifdef BOARD_SECURITY_LOG
+            && arg->mode != DIR_MODE_BOARD
+#endif
+            ) {
         char sizebuf[30];
         strnzhcpy(title, fh->title, titlelen - 7);
         if (fh->eff_size < 1000)

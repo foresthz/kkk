@@ -279,6 +279,11 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
     if (mode==DIR_MODE_SELF)
         return -4;
 
+#ifdef BOARD_SECURITY_LOG
+    if (mode == DIR_MODE_BOARD)
+        return -4;
+#endif
+
     if (checkreadonly(bh->filename))      /* Leeward 98.03.28 */
         return -5;
 
@@ -2722,7 +2727,12 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
      * return 1;
      */
 
-    if (currmode == DIR_MODE_DELETED || currmode == DIR_MODE_JUNK || currmode == DIR_MODE_SELF)
+    if (currmode == DIR_MODE_DELETED || currmode == DIR_MODE_JUNK || currmode == DIR_MODE_SELF
+#ifdef BOARD_SECURITY_LOG
+        /* 版面安全记录区不允许操作 */
+            || currmode == DIR_MODE_BOARD
+#endif
+            )
         /*
          * 在删除区，自删区不能做操作
          */
