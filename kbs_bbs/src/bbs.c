@@ -5836,7 +5836,7 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             break;
     }
 #ifdef BOARD_SECURITY_LOG
-    if (ret!=APPLY_REAPPLY && func_arg->fn!=NULL) {
+    if (func_arg->fn!=NULL) {
         char date[8];
         strncpy(date, ctime((time_t *)&xfh.posttime) + 4, 6);
         date[6] = '\0';

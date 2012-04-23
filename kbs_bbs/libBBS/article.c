@@ -627,6 +627,9 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
     int i;
     FILE *fp;
     int fd;
+#ifdef BOARD_SECURITY_LOG
+    char opt[IDLEN+2]="";
+#endif
 
     sprintf(buf, "boards/%s/%s", boardname, fileinfo->filename);
     if (!dashf(buf)) {
@@ -641,6 +644,9 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
 
     strcpy(UTitle, fileinfo->title);
     if ((p = strrchr(UTitle, '-')) != NULL) {   /* create default article title */
+#ifdef BOARD_SECURITY_LOG
+        strcpy(opt, p+2);
+#endif
         *p = 0;
         for (i = strlen(UTitle) - 1; i >= 0; i--) {
             if (UTitle[i] != ' ')
@@ -732,6 +738,20 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
         modify_reply_count(boardname, fileinfo->groupid, 1, 0, NULL);
 #endif /* HAVE_REPLY_COUNT */
 
+#ifdef BOARD_SECURITY_LOG
+    p = strrchr(dirfname, '/') + 1;
+    if (p && strcmp(p, ".DELETED")==0) {
+        FILE *fn;
+        gettmpfilename(genbuf, "undel_post");
+        if ((fn=fopen(genbuf, "w"))!=NULL) {
+            fprintf(fn, "\033[33m±¾ÎÄÓÉ \033[31m%s\033[33m É¾³ý\033[m\n", opt);
+            fclose(fn);
+            sprintf(buf, "»Ö¸´ <%s>", UFile.title);
+            board_security_report(genbuf, getCurrentUser(), buf, boardname, &UFile);
+            unlink(genbuf);
+        }
+    }
+#endif
     if (title != NULL) {
         sprintf(title, "%s", UFile.title);
     }
