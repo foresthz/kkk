@@ -6225,6 +6225,11 @@ int split_thread(struct _select_def* conf, struct fileheader* fh, void* extraarg
     refresh_reply_count(currboard->filename, o_groupid);
 #endif
 
+#ifdef BOARD_SECURITY_LOG
+    sprintf(buf, "ÇÐ·Ö <%s>", fh->title);
+    board_security_report(NULL, getCurrentUser(), buf, currboard->filename, fh);
+#endif
+
     return DIRCHANGED;
 }
 

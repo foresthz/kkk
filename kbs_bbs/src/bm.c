@@ -994,6 +994,23 @@ static int func_clear_send_mail(char *userid,void *varg)
 {
     return club_maintain_send_mail(userid,(char*)(((void**)varg)[0]),1,(*(int*)(((void**)varg)[1])),currboard,getSession());
 }
+#ifdef BOARD_SECURITY_LOG
+struct clear_club_report_arg {
+    FILE *fn;
+    int count;
+    int write_perm;
+};
+
+static int func_clear_security_report(char *userid, void *varg)
+{
+    struct clear_club_report_arg *cc = (struct clear_club_report_arg *)(((void**)varg)[0]);
+    char *comment = (char *)(((void**)varg)[1]);
+    fprintf(cc->fn, "\033[3%dm%4d  %-12s  %s  删除  %s\033[m\n",
+            (cc->count%2)?2:3, cc->count, userid, !(cc->write_perm)?"读取":"发表", comment);
+    cc->count++;
+    return 0;
+}
+#endif
 typedef int (*APPLY_USERS_FUNC)(int(*)(struct userec*,void*),void*);
 int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
 {
@@ -1010,6 +1027,11 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
     char genbuf[1024],buf[256],line[256],fn[256],userid[16],ans[4],**p_users, *sp_com;
     int i,j,k,write_perm,need_refresh,count,page;
     void *arg[2];
+#ifdef BOARD_SECURITY_LOG
+    char filename[STRLEN];
+    FILE *ft;
+#endif
+
     if (!chk_currBM(currBM,getCurrentUser()))
         return DONOTHING;
     if (!(currboard->flag&(BOARD_CLUB_READ|BOARD_CLUB_WRITE))||!(currboard->clubnum>0)||(currboard->clubnum>MAXCLUB))
@@ -1163,6 +1185,17 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
             }
             club_maintain_send_mail(user->userid,comment,0,write_perm,currboard,getSession());
             prints("\033[1;32m%s\033[0;33m<Enter>\033[m","增加成功!");
+#ifdef BOARD_SECURITY_LOG
+            gettmpfilename(filename, "club_member");
+            if ((ft = fopen(filename, "w"))!=NULL) {
+                fprintf(ft, "\033[44m用户ID        类别  操作  附加说明\033[K\033[m\n");
+                fprintf(ft, "%-12s  %s  增加  %s\n", user->userid, !write_perm?"读取":"发表", comment);
+                fclose(ft);
+                sprintf(buf, "授予 %s 俱乐部%s权限", user->userid, !write_perm?"读取":"发表");
+                board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+                unlink(filename);
+            }
+#endif
             WAIT_RETURN;
         } else if (ans[0]=='D') {
             move(1,0);
@@ -1203,6 +1236,17 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
             }
             club_maintain_send_mail(user->userid,comment,1,write_perm,currboard,getSession());
             prints("\033[1;32m%s\033[0;33m<Enter>\033[m","删除成功!");
+#ifdef BOARD_SECURITY_LOG
+            gettmpfilename(filename, "club_member");
+            if ((ft = fopen(filename, "w"))!=NULL) {
+                fprintf(ft, "\033[44m用户ID        类别  操作  附加说明\033[K\033[m\n");
+                fprintf(ft, "%-12s  %s  删除  %s\n", user->userid, !write_perm?"读取":"发表", comment);
+                fclose(ft);
+                sprintf(buf, "取消 %s 俱乐部%s权限", user->userid, !write_perm?"读取":"发表");
+                board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+                unlink(filename);
+            }
+#endif
             WAIT_RETURN;
         } else if (ans[0]=='I') {
             move(1,0);
@@ -1252,6 +1296,11 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
             need_refresh=1;
             i=0;
             j=0;
+#ifdef BOARD_SECURITY_LOG
+            gettmpfilename(filename, "club_member");
+            if ((ft = fopen(filename, "w"))!=NULL)
+                fprintf(ft, "\033[44m序号  用户ID        类别  操作  附加说明\033[K\033[m\n");
+#endif
             while (fgets(line,256,fp)) {
                 k=strlen(line);
                 if (line[k-1]==10||line[k-1]==13)
@@ -1276,6 +1325,11 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
                         if (!del_user_club_perm(user,currboard,write_perm)) {
                             club_maintain_send_mail(user->userid, sp_com ? sp_com : comment,1,write_perm,currboard,getSession());
                             j++;
+#ifdef BOARD_SECURITY_LOG
+                            if (ft)
+                                fprintf(ft, "\033[3%dm%4d  %-12s  %s  删除  %s\033[m\n",
+                                        (i+j)%2?2:3, i+j, user->userid, !write_perm?"读取":"发表", sp_com?sp_com:comment);
+#endif
                         }
                         break;
                     case '+':
@@ -1297,6 +1351,11 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
                         if (!set_user_club_perm(user,currboard,write_perm)) {
                             club_maintain_send_mail(user->userid, sp_com ? sp_com : comment,0,write_perm,currboard,getSession());
                             i++;
+#ifdef BOARD_SECURITY_LOG
+                            if (ft)
+                                fprintf(ft, "\033[3%dm%4d  %-12s  %s  增加  %s\033[m\n",
+                                        (i+j)%2?2:3, i+j, user->userid, !write_perm?"读取":"发表", sp_com?sp_com:comment);
+#endif
                         }
                         break;
                 }
@@ -1306,6 +1365,16 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
             move(2,0);
             prints("\033[1;37m增加 \033[1;33m%d\033[1;37m 位用户, 删除 \033[1;33m%d\033[1;37m 位用户..."
                    "\033[1;32m%s\033[0;33m<Enter>\033[m",i,j,"操作已完成!");
+#ifdef BOARD_SECURITY_LOG
+            if (ft) {
+                fclose(ft);
+                if (i+j) {
+                    sprintf(buf, "批量操作俱乐部%s授权列表", !write_perm?"读取":"发表");
+                    board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+                }
+                unlink(filename);
+            }
+#endif
             WAIT_RETURN;
         } else if (ans[0]=='M') {
             /* 注: 俱乐部群信部分原作者为 asing@zixia */
@@ -1367,6 +1436,24 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
             ApplyToNameList(func_clear_send_mail,&arg);
             move(3,0);
             prints("\033[1;32m%s\033[0;33m<Enter>\033[m","已完成清理!");
+#ifdef BOARD_SECURITY_LOG
+            gettmpfilename(filename, "club_member");
+            if ((ft = fopen(filename, "w"))!=NULL) {
+                struct clear_club_report_arg cc;
+
+                fprintf(ft, "\033[44m序号  用户ID        类别  操作  附加说明\033[K\033[m\n");
+                cc.fn = ft;
+                cc.count = 1;
+                cc.write_perm = write_perm;
+                arg[0] = &cc;
+                arg[1] = comment;
+                ApplyToNameList(func_clear_security_report, &arg);
+                fclose(ft);
+                sprintf(buf, "清理俱乐部%s授权列表", !write_perm?"读取":"发表");
+                board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+                unlink(filename);
+            }
+#endif
             WAIT_RETURN;
         } else {
             CreateNameList();
