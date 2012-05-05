@@ -1983,6 +1983,7 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
     unsigned int oldlevel=0;
     unsigned int perms=0;
     unsigned int newlevel;
+    unsigned int changed=0;
     int oldmode;
     struct write_dir_arg dirarg;
     struct read_arg* arg=(struct read_arg*)conf->arg;
@@ -2016,9 +2017,27 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
     if ((newlevel & perms) == (oldlevel & perms))
         prints("参数没有修改...\n");
     else {
+        struct fileheader *ofh=NULL, *tfh=NULL;
+        int t;
+        if (conf->pos < arg->filecount) {
+            ofh = fh;
+            if ((t=is_top(fh, currboard->filename))) {
+                tfh = &(brdshm->bstatus[arg->bid-1].topfh[t-1]);
+            }
+        } else {
+            tfh = fh;
+            ofh = (struct fileheader *)malloc(sizeof(struct fileheader));
+            if (get_records_from_id(arg->fd, fh->id, ofh, 1, NULL)==0) {
+                free(ofh);
+                ofh = NULL;
+            }
+        }
         for (i=0; i<FH_SELECT_NUM; i++) {
             if ((perms & (1<<i)) && ((oldlevel & (1<<i)) != (newlevel & (1<<i)))) {
-                fh_select[i].set(fh, newlevel & (1<<i));
+                if (ofh)
+                    fh_select[i].set(ofh, newlevel & (1<<i));
+                if (tfh)
+                    fh_select[i].set(tfh, newlevel & (1<<i));
                 if (i == 3) {
                     char bfile[PATHLEN];
                     setbfile(bfile, currboard->filename, fh->filename);
@@ -2029,40 +2048,45 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
         }
 
         /* 需要区分普通文章与置顶文章，同时考虑同步问题 */
-        /* 先更新置顶 */
-        if (is_top(fh, currboard->filename)) {
+        /* 更新原文 */
+        if (ofh) {
+            init_write_dir_arg(&dirarg);
+            dirarg.fd=arg->fd;
+            if (conf->pos < arg->filecount)
+                dirarg.ent = conf->pos;
+            if (prepare_write_dir(&dirarg, ofh, arg->mode) == 0) {
+                originFh = dirarg.fileptr + (dirarg.ent - 1);
+                memcpy(originFh, ofh, sizeof(struct fileheader));
+
+                if (dirarg.needlock)
+                    un_lock(dirarg.fd, 0, SEEK_SET, 0);
+            }
+            free_write_dir_arg(&dirarg);
+            if (fh!=ofh) {
+                free(ofh);
+                ofh = NULL;
+            }
+            changed |= 0x1;
+        }
+        /* 更新置顶 */
+        if (tfh) {
             init_write_dir_arg(&dirarg);
             char filename[STRLEN];
-            POSTFILE_BASENAME(fh->filename)[0] = 'Z';
             setbdir(DIR_MODE_ZHIDING, filename, currboard->filename);
             dirarg.filename = filename;
-            if (prepare_write_dir(&dirarg, fh, arg->mode) == 0) {
+            if (prepare_write_dir(&dirarg, tfh, arg->mode) == 0) {
                 originFh = dirarg.fileptr + (dirarg.ent - 1);
-                memcpy(originFh, fh, sizeof(struct fileheader));
+                memcpy(originFh, tfh, sizeof(struct fileheader));
 
                 if (dirarg.needlock)
                     un_lock(dirarg.fd, 0, SEEK_SET, 0);
             }
             free_write_dir_arg(&dirarg);
             board_update_toptitle(arg->bid, true);
+            changed |= 0x2;
         }
 
-        /* 然后更新原文 */
-        init_write_dir_arg(&dirarg);
-        dirarg.fd=arg->fd;
-        if (conf->pos < arg->filecount)
-            dirarg.ent = conf->pos;
-        if (POSTFILE_BASENAME(fh->filename)[0] != 'M')
-            POSTFILE_BASENAME(fh->filename)[0] = 'M';
-        if (prepare_write_dir(&dirarg, fh, arg->mode) == 0) {
-            originFh = dirarg.fileptr + (dirarg.ent - 1);
-            memcpy(originFh, fh, sizeof(struct fileheader));
-
-            if (dirarg.needlock)
-                un_lock(dirarg.fd, 0, SEEK_SET, 0);
-
-            free_write_dir_arg(&dirarg);
-            prints("新的参数设定完成...\n\n");
+        if (changed) {
 #ifdef BOARD_SECURITY_LOG
             /* 只修改文章回文转寄属性时不记录 */
             char buf[STRLEN];
@@ -2076,6 +2100,14 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
                                 (newlevel&(1<<i))?"\033[31m关闭\033[m  ->  \033[32m开启\033[m":"\033[32m开启\033[m  ->  \033[31m关闭\033[m");
                         count++;
                     }
+                }
+                if (count) {
+                    fprintf(fn, "\033[33m受影响      : ");
+                    if (changed & 0x1)
+                        fprintf(fn, "\033[32m文章原文\033[m ");
+                    if (changed & 0x2)
+                        fprintf(fn, "\033[32m置底文章\033[m");
+                    fprintf(fn, "\n");
                 }
                 fclose(fn);
             }
@@ -2091,17 +2123,15 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
             }
             unlink(buf);
 #endif
+            prints("新的参数设定完成...\n\n");
         } else {
-            free_write_dir_arg(&dirarg);
             prints("系统错误，失败...\n");
         }
-        if (conf->pos > arg->filecount)
-            POSTFILE_BASENAME(fh->filename)[0] = 'Z';
 
     }
     pressreturn();
     modify_user_mode(oldmode);
-    return FULLUPDATE;
+    return DIRCHANGED;
 }
 
 /*
