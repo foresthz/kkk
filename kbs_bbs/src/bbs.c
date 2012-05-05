@@ -2725,10 +2725,10 @@ int read_sec_top(int *retbid)
         } else if (ch==KEY_END) {
             secid = SECNUM - 1;
 #ifdef READ_SEC_TOP
-        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R' || ch==KEY_DOWN || ch==KEY_UP) {
+        } else if (ch=='\n' || ch=='\r' || ch==' ' || ch=='R' || ch==KEY_DOWN || ch==KEY_UP || ch=='J' || ch=='K') {
             const struct boardheader *bh;
             int bid;
-            bid=(ch==KEY_UP)?10:1;
+            bid=(ch==KEY_UP||ch=='K')?10:1;
             while (1) {
                 bid=select_sec_top(secid, bid);
                 if (bid<0) {
