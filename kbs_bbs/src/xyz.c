@@ -2052,7 +2052,7 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
         dirarg.fd=arg->fd;
         if (conf->pos < arg->filecount)
             dirarg.ent = conf->pos;
-        else
+        if (POSTFILE_BASENAME(fh->filename)[0] != 'M')
             POSTFILE_BASENAME(fh->filename)[0] = 'M';
         if (prepare_write_dir(&dirarg, fh, arg->mode) == 0) {
             originFh = dirarg.fileptr + (dirarg.ent - 1);
