@@ -2074,7 +2074,7 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
             char filename[STRLEN];
             setbdir(DIR_MODE_ZHIDING, filename, currboard->filename);
             dirarg.filename = filename;
-            if (prepare_write_dir(&dirarg, tfh, arg->mode) == 0) {
+            if (prepare_write_dir(&dirarg, tfh, DIR_MODE_ZHIDING) == 0) {
                 originFh = dirarg.fileptr + (dirarg.ent - 1);
                 memcpy(originFh, tfh, sizeof(struct fileheader));
 
