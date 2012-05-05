@@ -1451,6 +1451,9 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     struct board_attach_link_info bali;
     struct read_arg* arg=conf->arg;
     if (fileinfo==NULL) return DONOTHING;
+#ifdef BOARD_SECURITY_LOG
+    if (arg->mode == DIR_MODE_BOARD) return DONOTHING;
+#endif
 
     clear();
 
