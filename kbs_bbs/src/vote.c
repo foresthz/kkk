@@ -459,12 +459,12 @@ int get_result_title()
             , vote_type[currvote.type - 1]);
     fprintf(sug, "⊙ 主题：%s\n", currvote.title);
     if (currvote.type == VOTE_VALUE)
-        fprintf(sug, "⊙ 此次投票的值不可超过：%d\n\n", currvote.maxtkt);
+        fprintf(sug, "⊙ 此次投票的值不可超过：%d\n", currvote.maxtkt);
     if (currvote.type != VOTE_ASKING) {
         if (currvote.flag & VOTE_TRUE_FLAG)
-            fprintf(sug, "⊙ 此次投票记录\033[1;31m用户投票内容%s\033[m\n\n", (currvote.flag & VOTE_IP_FLAG)? "及完整IP":"");
+            fprintf(sug, "⊙ 此次投票记录\033[1;31m用户投票内容%s\033[m\n", (currvote.flag & VOTE_IP_FLAG)? "及完整IP":"");
     }
-    fprintf(sug, "⊙ 票选题目描述：\n\n");
+    fprintf(sug, "\n⊙ 票选题目描述：\n\n");
     sprintf(buf, "vote/%s/desc.%lu", currboard->filename, currvote.opendate);
     b_suckinfile(sug, buf);
     return 0;
@@ -918,6 +918,10 @@ char *bname;
                 post_file(getCurrentUser(), "", votename, "vote", buf, 0, 1, getSession());
             }
             post_file(getCurrentUser(), "", votename, bname, buf, 0, 1, getSession());
+#ifdef BOARD_SECURITY_LOG
+            sprintf(buf, "开启投票 <%s>", ball->title);
+            board_security_report(votename, getCurrentUser(), buf, currboard->filename, NULL);
+#endif
             unlink(votename);
         }
     }
@@ -1411,6 +1415,17 @@ int allnum, pagenum;
                 clear();
                 break;
             }
+#ifdef BOARD_SECURITY_LOG
+            char sugname[STRLEN];
+            gettmpfilename(sugname, "vote_close");
+            if ((sug = fopen(sugname, "w")) != NULL) {
+                get_result_title();
+                fclose(sug);
+            }
+            sprintf(buf, "结束投票 <%s>", currvote.title);
+            board_security_report(sugname, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(sugname);
+#endif
             mk_result(allnum + 1);
             sprintf(buf, "提早结束投票 %s", currvote.title);
             /* securityreport(buf, NULL, NULL, getSession()); */
@@ -1449,6 +1464,16 @@ int allnum, pagenum;
                 clear();
                 break;
             }
+#ifdef BOARD_SECURITY_LOG
+            gettmpfilename(sugname, "vote_delete");
+            if ((sug = fopen(sugname, "w")) != NULL) {
+                get_result_title();
+                fclose(sug);
+            }
+            sprintf(buf, "关闭投票 <%s>", currvote.title);
+            board_security_report(sugname, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(sugname);
+#endif
             sprintf(buf, "强制关闭投票 %s", currvote.title);
             /* securityreport(buf, NULL, NULL, getSession()); */
             bbslog("user","%s",buf);
