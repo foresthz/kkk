@@ -669,7 +669,8 @@ PHP_FUNCTION(bbs_make_tmpl_file)
 
     if (ptemp[ent-1].tmpl->filename[0]) {
         setbfile(path,bname, ptemp[ent-1].tmpl->filename);
-        if (dashf(path)) {
+        if (stat(path, &st) == 0 && S_ISREG(st.st_mode) && st.st_size>2) {
+        //if (dashf(path)) {
             if ((fpsrc = fopen(path,"r"))!=NULL) {
                 char buf[256];
 
