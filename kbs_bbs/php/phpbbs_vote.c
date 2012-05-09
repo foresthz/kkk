@@ -627,6 +627,7 @@ PHP_FUNCTION(bbs_make_tmpl_file)
 
     char *text[21];
     int t_len[21];
+    struct stat st;
 
     if (ac != 23 || zend_parse_parameters(23 TSRMLS_CC, "slsssssssssssssssssssss", &bname, &bname_len, &ent, &text[0],&t_len[0],
                                           &text[1],&t_len[1],&text[2],&t_len[2],&text[3],&t_len[3],&text[4],&t_len[4],&text[5],&t_len[5],&text[6],&t_len[6],&text[7],
