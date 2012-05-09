@@ -196,6 +196,10 @@ int tmpl_add()
     template_num ++;
 
     tmpl_save();
+#ifdef BOARD_SECURITY_LOG
+    sprintf(buf, "添加模版 <%s>", tmpl.title);
+    board_security_report(NULL, getCurrentUser(), buf, currboard->filename, NULL);
+#endif
 
     return 0;
 }
@@ -230,6 +234,25 @@ int content_add()
     ptemplate[t_now].tmpl->content_num ++;
 
     tmpl_save();
+#ifdef BOARD_SECURITY_LOG
+    char filename[STRLEN];
+    FILE *fn;
+    gettmpfilename(filename, "tmpl_content_add");
+    if ((fn=fopen(filename, "w"))!=NULL) {
+        int i;
+        fprintf(fn, "\033[33m新增模版选项\033[m\n");
+        fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+        for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
+            fprintf(fn, "%s%4d %-50s %4d%s\n", (i==ptemplate[t_now].tmpl->content_num-1)?"\033[4;32m":"", 
+                    i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
+                    (i==ptemplate[t_now].tmpl->content_num-1)?" [新增]\033[m":"\033[m");
+        }
+        fclose(fn);
+    }
+    sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+    board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+    unlink(filename);
+#endif
 
     return 0;
 
@@ -321,7 +344,7 @@ static int content_key(struct _select_def *conf, int key)
                 return SHOW_REFRESH;
             newm=atoi(ans);
 
-            if (newm <= 0 || newm > ptemplate[t_now].tmpl->content_num)
+            if (newm <= 0 || newm > ptemplate[t_now].tmpl->content_num || newm == conf->pos)
                 return SHOW_REFRESH;
 
             if (newm > conf->pos) {
@@ -331,10 +354,6 @@ static int content_key(struct _select_def *conf, int key)
                 for (i=conf->pos; i<newm; i++)
                     memcpy(& ptemplate[t_now].cont[i-1], & ptemplate[t_now].cont[i], sizeof(struct s_content));
                 memcpy(&ptemplate[t_now].cont[newm-1], &sc, sizeof(struct s_content));
-
-                tmpl_save();
-
-                return SHOW_REFRESH;
             } else if (newm < conf->pos) {
                 int i;
                 struct s_content sc;
@@ -342,12 +361,35 @@ static int content_key(struct _select_def *conf, int key)
                 for (i=conf->pos; i>newm; i--)
                     memcpy(& ptemplate[t_now].cont[i-1], & ptemplate[t_now].cont[i-2], sizeof(struct s_content));
                 memcpy(&ptemplate[t_now].cont[newm-1], &sc, sizeof(struct s_content));
+            }
+            tmpl_save();
+#ifdef BOARD_SECURITY_LOG
+            char filename[STRLEN], buf[STRLEN];
+            FILE *fn;
 
-                tmpl_save();
-
-                return SHOW_REFRESH;
-            } else
-                return SHOW_REFRESH;
+            gettmpfilename(filename, "tmpl_content_add");
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                int i;
+                fprintf(fn, "\033[33m移动选项次序\033[m\n");
+                fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
+                    if (newm>conf->pos && i==conf->pos-1)
+                        fprintf(fn, "%s%4d %-50s %4d%s\n", "\033[4;31m", i+1, ptemplate[t_now].cont[newm-1].text,
+                                ptemplate[t_now].cont[newm-1].length, " [原位置]\033[m");
+                    fprintf(fn, "%s%4d %-50s %4d%s\n", (i==newm-1)?"\033[4;32m":"",
+                            i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
+                            (i==newm-1)?" [新位置]\033[m":"\033[m");
+                    if (newm<conf->pos && i==conf->pos-1)
+                        fprintf(fn, "%s%4d %-50s %4d%s\n", "\033[4;31m", i+1, ptemplate[t_now].cont[newm-1].text,
+                                ptemplate[t_now].cont[newm-1].length, " [原位置]\033[m");
+                }
+                fclose(fn);
+            }
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(filename);
+#endif
+            return SHOW_REFRESH;
 
         }
         case 'a':
@@ -371,9 +413,30 @@ static int content_key(struct _select_def *conf, int key)
                 int i=0;
                 struct s_content *ct;
 
+#ifdef BOARD_SECURITY_LOG
+                char filename[STRLEN], buf[STRLEN];
+                FILE *fn;
+                gettmpfilename(filename, "tmpl_content_add");
+                if ((fn=fopen(filename, "w"))!=NULL) {
+                    int i;
+                    fprintf(fn, "\033[33m删除模版选项\033[m\n");
+                    fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                    for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
+                        fprintf(fn, "%s%4d %-50s %4d%s\n", (i==conf->pos-1)?"\033[4;31m":"",
+                                i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
+                                (i==conf->pos-1)?" [删除]\033[m":"\033[m");
+                    }
+                    fclose(fn);
+                }
+                sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+                board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+                unlink(filename);
+#endif
                 if (ptemplate[t_now].tmpl->content_num == 1) {
                     ptemplate[t_now].tmpl->content_num = 0;
                     free(ptemplate[t_now].cont);
+                    /* 防止 temp_free 再次 free 之 */
+                    ptemplate[t_now].cont = NULL;
 
                     tmpl_save();
                     return SHOW_QUIT;
