@@ -467,6 +467,28 @@ static int content_key(struct _select_def *conf, int key)
             if (newtitle[0] == '\0' || newtitle[0]=='\n' || ! strcmp(newtitle,ptemplate[t_now].cont[conf->pos-1].text))
                 return SHOW_REFRESH;
 
+#ifdef BOARD_SECURITY_LOG
+            char filename[STRLEN], buf[STRLEN];
+            FILE *fn;
+            gettmpfilename(filename, "tmpl_question_mod");
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                int i;
+                fprintf(fn, "\033[33m修改模版选项\033[m\n");
+                fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
+                    fprintf(fn, "%s%4d %-50s %4d%s\n", (i==conf->pos-1)?"\033[4;31m":"",
+                            i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
+                            (i==conf->pos-1)?" [修改前]\033[m":"\033[m");
+                    if (i==conf->pos-1)
+                        fprintf(fn, "%s%4d %-50s %4d%s\n", "\033[4;32m",
+                                i+1, newtitle, ptemplate[t_now].cont[i].length, " [修改后]\033[m");
+                }
+                fclose(fn);
+            }
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(filename);
+#endif
             strncpy(ptemplate[t_now].cont[conf->pos-1].text, newtitle, 50);
             ptemplate[t_now].cont[conf->pos-1].text[49]='\0';
 
@@ -487,6 +509,28 @@ static int content_key(struct _select_def *conf, int key)
             if (nl <= 0 || nl > MAX_CONTENT_LENGTH || nl == ptemplate[t_now].cont[conf->pos-1].length)
                 return SHOW_REFRESH;
 
+#ifdef BOARD_SECURITY_LOG
+            char filename[STRLEN], buf[STRLEN];
+            FILE *fn;
+            gettmpfilename(filename, "tmpl_question_mod");
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                int i;
+                fprintf(fn, "\033[33m修改模版选项\033[m\n");
+                fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
+                    fprintf(fn, "%s%4d %-50s %4d%s\n", (i==conf->pos-1)?"\033[4;31m":"",
+                            i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
+                            (i==conf->pos-1)?" [修改前]\033[m":"\033[m");
+                    if (i==conf->pos-1)
+                        fprintf(fn, "%s%4d %-50s %4d%s\n", "\033[4;32m",
+                                i+1, ptemplate[t_now].cont[i].text, nl, " [修改后]\033[m");
+                }
+                fclose(fn);
+            }
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(filename);
+#endif
             ptemplate[t_now].cont[conf->pos-1].length = nl;
 
             tmpl_save();
@@ -674,6 +718,20 @@ static int tmpl_key(struct _select_def *conf, int key)
             if (newtitle[0] == '\0' || newtitle[0]=='\n' || ! strcmp(newtitle,ptemplate[conf->pos-1].tmpl->title))
                 return SHOW_REFRESH;
 
+#ifdef BOARD_SECURITY_LOG
+            char filename[STRLEN], buf[STRLEN];
+            FILE *fn;
+            gettmpfilename(filename, "tmpl_name_mod");
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                fprintf(fn, "\033[33m修改模版名称\033[m\n");
+                fprintf(fn, "\033[33m模版名称: \033[31m%s\033[m  ->  \033[32m%s\033[m\n", ptemplate[conf->pos-1].tmpl->title, newtitle);
+                fprintf(fn, "\033[33m模版序号: \033[32m%d\033[m\n", conf->pos);
+                fclose(fn);
+            }
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(filename);
+#endif
             strncpy(ptemplate[conf->pos-1].tmpl->title, newtitle, 50);
             ptemplate[conf->pos-1].tmpl->title[49]='\0';
 
@@ -720,8 +778,45 @@ return SHOW_REFRESH;
             }
 
             setbfile(filepath, currboard->filename, ptemplate[conf->pos-1].tmpl->filename);
+#ifdef BOARD_SECURITY_LOG
+            char oldfile[STRLEN];
+            if (!dashf(filepath))
+                f_touch(filepath);
+            gettmpfilename(oldfile, "tmpl_content_old");
+            f_cp(filepath, oldfile, 0);
+#endif
 
             vedit(filepath,0,NULL,NULL,0);
+#ifdef BOARD_SECURITY_LOG
+            char buf[STRLEN*2], filediff[STRLEN];
+            FILE *fn, *fnd;
+            gettmpfilename(filediff, "tmpl_content_mod");
+            sprintf(buf, "diff -u %s %s > %s", oldfile, filepath, filediff);
+            system(buf);
+            unlink(oldfile);
+            if ((fn=fopen(oldfile, "w"))!=NULL) {
+                fprintf(fn, "\033[33m修改模版正文\033[m\n");
+                if ((fnd=fopen(filediff, "r"))!=NULL) {
+                    /* 跳过前2行 */
+                    fgets(buf, 256, fnd);fgets(buf, 256, fnd);
+                    while(fgets(buf, 256, fnd)!=NULL){
+                        if(buf[0]=='-')
+                            fprintf(fn, "\033[1;35m%s\033[m", buf);
+                        else if(buf[0]=='+')
+                            fprintf(fn, "\033[1;36m%s\033[m", buf);
+                        else
+                            fputs(buf, fn);
+                    }
+                    fclose(fnd);
+                    fprintf(fn, "\n");
+                }
+                fclose(fn);
+            }
+            unlink(filediff);
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(oldfile, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(oldfile);
+#endif
             modify_user_mode(oldmode);
 
             return SHOW_REFRESH;
