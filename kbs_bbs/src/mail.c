@@ -4008,7 +4008,7 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     resetcolor();
 
 
-    if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("ReEexp", key)))
+    if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("RrEexp", key)))
         key=igetkey();
 
     repeat=0;
