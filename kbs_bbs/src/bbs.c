@@ -2620,6 +2620,9 @@ int set_board_rule(struct boardheader *bh, int flag)
         setvfile(buf, bh->filename, "rules");
         sprintf(buf2,"%s通过%s治版方针", getCurrentUser()->userid, bh->filename);
         post_file(sysop, "", buf, "BoardRules", buf2, 0, 2, getSession());
+#ifdef BOARD_SECURITY_LOG
+        board_security_report(NULL, getCurrentUser(), buf2, bh->filename, NULL);
+#endif
         sprintf(buf2,"审核通过%s版治版方针", bh->filename);
         if (normal_board(currboard -> filename))
             post_file(sysop, "", buf, "BoardManager", buf2, 0, 2, getSession());
@@ -2630,6 +2633,9 @@ int set_board_rule(struct boardheader *bh, int flag)
         setvfile(buf, bh -> filename, "rules");
         sprintf(buf2, "%s删除%s治版方针草案", getCurrentUser() -> userid, bh -> filename);
         post_file(sysop, "", buf, "BoardRules", buf2, 0, 2, getSession());
+#ifdef BOARD_SECURITY_LOG
+        board_security_report(NULL, getCurrentUser(), buf2, bh->filename, NULL);
+#endif
         unlink(buf);
     } else if (flag == 3) {
         char buf[256];
@@ -2637,6 +2643,9 @@ int set_board_rule(struct boardheader *bh, int flag)
         setvfile(buf, bh->filename, "rules");
         sprintf(buf2, "%s追回%s治版方针", getCurrentUser()->userid, bh->filename);
         post_file(sysop, "", buf, "BoardRules", buf2, 0, 2, getSession());
+#ifdef BOARD_SECURITY_LOG
+        board_security_report(NULL, getCurrentUser(), buf2, bh->filename, NULL);
+#endif
     }
     return 0;
 }
