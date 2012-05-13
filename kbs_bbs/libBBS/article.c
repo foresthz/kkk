@@ -1244,6 +1244,13 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
         set_posttime(&postfile);
         add_top(&postfile, toboard -> filename, 0);
     }
+    sprintf(buf4, "审核通过%s版治版方针", toboard->filename);
+    if (!strcmp(title, buf4) && mode==2) {
+        postfile.accessed[0] |= FILE_MARKED;
+        postfile.accessed[1] |= FILE_READ;
+        set_posttime(&postfile);
+        add_top(&postfile, toboard->filename, 0);
+    }
 #endif /* SMTH */
     if (after_post(user, &postfile, toboard->filename, NULL, !(Anony), session) == -2)
         return -2;
