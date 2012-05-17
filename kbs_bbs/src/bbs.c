@@ -1224,7 +1224,10 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     }
 
     if (toupper(type)=='E') {
-        sprintf(buf," \033[1;33m[ÐÞ¸Ä]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,ent->owner,date,attachch,TITLE);
+        if (strncmp(ent->title, "Re:", 3))
+            sprintf(buf," \033[1;33m[ÐÞ¸Ä]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,ent->owner,date,attachch,TITLE);
+        else
+            sprintf(buf," \033[1;33m[ÐÞ¸Ä]\033[m%s %-13.13s%s %s%s ",strbuf,ent->owner,date,attachch,TITLE);
         return buf;
     }
 
