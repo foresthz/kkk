@@ -720,13 +720,42 @@ time_t bbstime(time_t * t)
     return publicshm->nowtime;
 }
 
+int get_bad_id(char *str, char *id, time_t *t)
+{
+    char buf[128], *p, *saveptr;
+
+    strcpy(buf, str);
+    p = strtok_r(buf, " \n\t\r", &saveptr);
+    if (p==NULL)
+        return -1;
+    if (*p=='#')
+        return 0;
+    if (*p=='*') {
+        strncpy(id, p+1, IDLEN);
+        if (id[strlen(id)-1]=='*') {
+            id[strlen(id)-1] = '\0';
+            return 4;
+        }
+        return 3;
+    }
+    strncpy(id, p, IDLEN);
+    if (id[strlen(id)-1]=='*') {
+        id[strlen(id)-1] = '\0';
+        return 2;
+    }
+    if ((p=strtok_r(NULL, " \n\t\r", &saveptr))!=NULL) // 时间戳，其他情况不应该有
+        *t = atol(p);
+    return 1;
+}
+
 int bad_user_id(const char *userid)
 {
     FILE *fp;
-    char buf[STRLEN];
-    char *ptr, ch;
-    int i;
+    char buf[STRLEN], badid[IDLEN+2];
+    char ch;
+    int i, type, ret;
     const char *p;
+    time_t t, now;
 
     i = 0;
     p = userid;
@@ -741,6 +770,46 @@ int bad_user_id(const char *userid)
         return 1;
     if ((fp = fopen(".badname", "r")) != NULL) {
         while (fgets(buf, STRLEN, fp) != NULL) {
+            bzero(badid, IDLEN+2);
+            t = 0;
+            ret = 0;
+            type = get_bad_id(buf, badid, &t);
+            if (type<=0 || strcasestr(userid, badid)==0) {  // 不包含就直接下一条
+                bzero(buf, STRLEN);
+                continue;
+            }
+            switch (type) {
+                case 1:
+                    if (strcasecmp(userid, badid)==0) {
+                        if (t) {
+                            now = time(0);
+                            if (now - t < 24 * 30 * 3600)
+                                ret = 1;
+                        } else
+                            ret = 1;
+                        // 这里是不是可以直接return了？
+                    }
+                    break;
+                case 2:
+                    if (strncasecmp(userid, badid, strlen(badid))==0)
+                        ret = 1;
+                    break;
+                case 3:
+                    if (strcasestr(userid, badid) && strcasecmp(userid+strlen(userid)-strlen(badid), badid)==0)
+                        ret = 1;
+                    break;
+                case 4:
+                    if (strcasestr(userid, badid))
+                        ret = 1;
+                    break;
+                default:
+                    break;
+            }
+            if (ret) {
+                fclose(fp);
+                return ret;
+            }
+#if 0
             if ((ptr = strpbrk(buf, " \n\t\r"))) {
                 *ptr = 0;
                 ptr = buf;
@@ -775,6 +844,7 @@ int bad_user_id(const char *userid)
                     }
                 }
             }
+#endif
             bzero(buf, STRLEN);
         }
         fclose(fp);
