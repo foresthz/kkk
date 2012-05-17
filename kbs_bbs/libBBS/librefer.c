@@ -164,7 +164,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     return 0;
 }
 int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh) {
-    if (0==strncasecmp(user->userid, "guest", 5)||0==strncasecmp(user->userid, "sysop", 5))
+    if (0==strcmp(user->userid, "guest")||0==strcmp(user->userid, "SYSOP"))
         return -1;
     if (!DEFINE(user, DEF_REPLY))
         return -2;
@@ -199,7 +199,7 @@ int send_refer_reply_to(struct userec *user, const struct boardheader *board, st
     return 0;
 }
 int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
-    if (0==strncasecmp(user->userid, "guest", 5))
+    if (0==strcmp(user->userid, "guest"))
         return -1;
     if (!DEFINE(user, DEF_REFER))
         return -2;
