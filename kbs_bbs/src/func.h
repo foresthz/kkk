@@ -56,6 +56,7 @@ extern "C"
     /* defined in ucache.c */
     int lock_user(char* userid);
     void unlock_user(int fd);
+    int touch_lastlogin(char *userid);
 
     void load_user_title(ARG_VOID);
     struct userec *getuserbynum(int num);

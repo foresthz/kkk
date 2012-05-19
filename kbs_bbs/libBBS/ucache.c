@@ -1237,3 +1237,12 @@ void unlock_user(int fd)
     close(fd);
     return ;
 }
+
+int touch_lastlogin(char *userid)
+{
+    struct userec *user;
+    if (!getuser(userid, &user))
+        return 1;
+    user->lastlogin = time(NULL);
+    return 0;
+}
