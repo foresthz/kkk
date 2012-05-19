@@ -621,6 +621,34 @@ static int tmpl_key(struct _select_def *conf, int key)
             if (ans[0] == 'Y' || ans[0] == 'y') {
                 int i;
 
+#ifdef BOARD_SECURITY_LOG
+                char filename[STRLEN], filepath[STRLEN], buf[STRLEN];
+                FILE *fn;
+                gettmpfilename(filename, "tmpl_del");
+                if ((fn=fopen(filename, "w"))!=NULL) {
+                    fprintf(fn, "\033[33m模版标题: \033[32m%s\033[m\n", ptemplate[conf->pos-1].tmpl->title_tmpl);
+                    fprintf(fn, "\033[33m模版内容: \033[m\n");
+                    if (ptemplate[conf->pos-1].tmpl->filename[0]) {
+                        setbfile(filepath, currboard->filename, ptemplate[conf->pos-1].tmpl->filename);
+                        if (dashf(filepath)) {
+                            FILE *fo;
+                            if ((fo=fopen(filepath, "r"))!=NULL) {
+                                while (fgets(buf, STRLEN, fo))
+                                    fputs(buf, fn);
+                                fclose(fo);
+                            }
+                        }
+                    }
+                    fprintf(fn, "\033[33m模版选项: \033[m\n");
+                    fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                    for (i=0;i<ptemplate[conf->pos-1].tmpl->content_num;i++)
+                        fprintf(fn, "%4d %-50s %4d\n", i+1, ptemplate[conf->pos-1].cont[i].text, ptemplate[conf->pos-1].cont[i].length);
+                    fclose(fn);
+                }
+                sprintf(buf, "删除模版 <%s>", ptemplate[conf->pos-1].tmpl->title);
+                board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+                unlink(filename);
+#endif
                 deepfree(ptemplate + conf->pos - 1, currboard->filename);
 
                 template_num--;
@@ -847,6 +875,20 @@ return SHOW_REFRESH;
             if (newtitle[0] == '\0' || newtitle[0]=='\n' || ! strcmp(newtitle,ptemplate[conf->pos-1].tmpl->title_tmpl))
                 return SHOW_REFRESH;
 
+#ifdef BOARD_SECURITY_LOG
+            char buf[STRLEN*2], filename[STRLEN];
+            FILE *fn;
+            gettmpfilename(filename, "tmpl_title_mod");
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                fprintf(fn, "\033[33m修改模版标题\033[m\n");
+                fprintf(fn, "\033[33m模版标题: \033[31m%s\033[m  ->  \033[32m%s\033[m\n", ptemplate[conf->pos-1].tmpl->title_tmpl, newtitle);
+                fprintf(fn, "\033[33m模版序号: \033[32m%d\033[m\n", conf->pos);
+                fclose(fn);
+            }
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(filename);
+#endif
             strncpy(ptemplate[conf->pos-1].tmpl->title_tmpl, newtitle, STRLEN);
             ptemplate[conf->pos-1].tmpl->title_tmpl[STRLEN-1]='\0';
 
