@@ -1243,6 +1243,7 @@ int touch_lastlogin(char *userid)
     struct userec *user;
     if (!getuser(userid, &user))
         return 1;
-    user->lastlogin = time(NULL);
+    if (!HAS_PERM(user, PERM_SYSOP))
+        user->lastlogin = time(NULL);
     return 0;
 }

@@ -586,7 +586,8 @@ PHP_FUNCTION(bbs_user_touch_lastlogin)
         userid[IDLEN] = 0;
     if (!getuser(userid, &user))
         RETURN_LONG(1);
-    user->lastlogin = time(NULL);
+    if (!HAS_PERM(user, PERM_SYSOP))
+        user->lastlogin = time(NULL);
     RETURN_LONG(0);
 }
 
