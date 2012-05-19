@@ -3603,6 +3603,9 @@ int delete_range_base(
     unsigned char *tab, *gab;
     int fd_src,fd_dst,count,total,reserved,id_from,id_to,i,j,n_src,n_dst,ret,len;
     void *pm,*p;
+#ifdef BOARD_SECURITY_LOG
+    struct fileheader *r_src;
+#endif
     /* 合法性检测 */
     if (!videntity||!*videntity)
         return 0x10;
@@ -3688,6 +3691,12 @@ int delete_range_base(
                 }
             } else
                 dst=NULL;
+#ifdef BOARD_SECURITY_LOG
+            if (!DRBP_MAIL) {
+                r_src = (struct fileheader *)malloc(count * sizeof(struct fileheader));
+                memcpy(r_src, src, count * sizeof(struct fileheader));
+            }
+#endif
             /* 依据条件进行标记 */
             if (!func) {
                 if (!DRBP_MAIL) {
@@ -3766,6 +3775,10 @@ int delete_range_base(
                     free(tab);
                     free(gab);
                     free(dst);
+#ifdef BOARD_SECURITY_LOG
+                    if (!DRBP_MAIL)
+                        free(r_src);
+#endif
                     return 0x60;
                 }
             }
@@ -3814,6 +3827,10 @@ int delete_range_base(
                 free(tab);
                 free(gab);
                 free(dst);
+#ifdef BOARD_SECURITY_LOG
+                if (!DRBP_MAIL)
+                    free(r_src);
+#endif
                 return 0x61;
             }
             if (msync(pm,(st_src.st_size-(count-n_src)*sizeof(struct fileheader)),MS_SYNC)==-1) {
@@ -3821,14 +3838,51 @@ int delete_range_base(
                 free(tab);
                 free(gab);
                 free(dst);
+#ifdef BOARD_SECURITY_LOG
+                if (!DRBP_MAIL)
+                    free(r_src);
+#endif
                 return 0x62;
             }
+#ifdef BOARD_SECURITY_LOG
+            if (!DRBP_MAIL) {
+                char filename[STRLEN], title[STRLEN], date[8];
+                FILE *fn;
+                const struct boardheader *bh;
+                bh=getbcache(videntity);
+                gettmpfilename(filename, "range_delete");
+                if ((fn=fopen(filename, "w"))!=NULL){
+                    fprintf(fn, "\033[45m%s文章列表\033[K\033[m\n",
+                            (vmode&DELETE_RANGE_BASE_MODE_OPMASK)==DELETE_RANGE_BASE_MODE_RANGE?"常规区段删除":"区段删除拟删");
+                    fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
+                    for (i=0;i<count;i++) {
+                        if (DRBP_TGET(i)) {
+                            strncpy(date, ctime((time_t *)&r_src[i].posttime) + 4, 6);
+                            date[6] = '\0';
+                            fprintf(fn, "%8d %-12s %6s  %s%s\n", r_src[i].id, r_src[i].owner, date, r_src[i].id==r_src[i].groupid?"● ":"", r_src[i].title);
+                        }
+                    }
+                    fclose(fn);
+                }
+                sprintf(title, "%s%s文章: [%d - %d]", (vmode&DELETE_RANGE_BASE_MODE_OPMASK)==DELETE_RANGE_BASE_MODE_RANGE?"常规区段删除":"区段删除拟删",
+                        strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
+                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                unlink(filename);
+                free(r_src);
+            }
+#endif
             DRBP_RSRC;
             free(tab);
             free(gab);
             free(dst);
             return 0x00;
         case DELETE_RANGE_BASE_MODE_FORCE:                  /* 强制区段删除 */
+#ifdef BOARD_SECURITY_LOG
+            if (!DRBP_MAIL) {
+                r_src = (struct fileheader *)malloc(count * sizeof(struct fileheader));
+                memcpy(r_src, src, count * sizeof(struct fileheader));
+            }
+#endif
             if (!func) {
                 if (!DRBP_MAIL) {
                     if (DRBP_DST)
@@ -3862,6 +3916,10 @@ int delete_range_base(
                     ftruncate(fd_dst,st_dst.st_size);
                     DRBP_RDST;
                     DRBP_RSRC;
+#ifdef BOARD_SECURITY_LOG
+                    if (!DRBP_MAIL)
+                        free(r_src);
+#endif
                     return 0x70;
                 }
             }
@@ -3887,23 +3945,102 @@ int delete_range_base(
             memmove(src,&src[count],reserved*sizeof(struct fileheader));
             if (ftruncate(fd_src,(st_src.st_size-count*sizeof(struct fileheader)))==-1) {
                 DRBP_RSRC;
+#ifdef BOARD_SECURITY_LOG
+                if (!DRBP_MAIL)
+                    free(r_src);
+#endif
                 return 0x71;
             }
             if (msync(pm,(st_src.st_size-count*sizeof(struct fileheader)),MS_SYNC)==-1) {
                 DRBP_RSRC;
+#ifdef BOARD_SECURITY_LOG
+                if (!DRBP_MAIL)
+                    free(r_src);
+#endif
                 return 0x72;
             }
+#ifdef BOARD_SECURITY_LOG
+            if (!DRBP_MAIL) {
+                char filename[STRLEN], title[STRLEN], date[8];
+                FILE *fn;
+                const struct boardheader *bh;
+                bh=getbcache(videntity);
+                gettmpfilename(filename, "range_delete");
+                if ((fn=fopen(filename, "w"))!=NULL){
+                    fprintf(fn, "\033[45m强制区段删除文章列表\033[K\033[m\n");
+                    fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
+                    for (i=0;i<count;i++) {
+                        if (DRBP_TGET(i)) {
+                            strncpy(date, ctime((time_t *)&r_src[i].posttime) + 4, 6);
+                            date[6] = '\0';
+                            fprintf(fn, "%8d %-12s %6s  %s%s\n", r_src[i].id, r_src[i].owner, date, r_src[i].id==r_src[i].groupid?"● ":"", r_src[i].title);
+                        }
+                    }
+                    fclose(fn);
+                }
+                sprintf(title, "强制区段删除%s文章: [%d - %d]", strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
+                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                unlink(filename);
+                free(r_src);
+            }
+#endif
             DRBP_RSRC;
             return 0x00;
         case DELETE_RANGE_BASE_MODE_MPDEL:                  /* 区段标记拟删 */
             for (i=0;i<count;i++)
                 !DRBP_UNDEL(&src[i])?(src[i].accessed[1]|=FILE_DEL):(src[i].accessed[1]&=~FILE_DEL);
+#ifdef BOARD_SECURITY_LOG
+            if (!DRBP_MAIL) {
+                char filename[STRLEN], title[STRLEN], date[8];
+                FILE *fn;
+                const struct boardheader *bh;
+                bh=getbcache(videntity);
+                gettmpfilename(filename, "range_delete");
+                if ((fn=fopen(filename, "w"))!=NULL){
+                    fprintf(fn, "\033[45m区段标记拟删文章列表\033[K\033[m\n");
+                    fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
+                    for (i=0;i<count;i++) {
+                        if (!DRBP_UNDEL(&src[i])) {
+                            strncpy(date, ctime((time_t *)&src[i].posttime) + 4, 6);
+                            date[6] = '\0';
+                            fprintf(fn, "%8d %-12s %6s  %s%s\n", src[i].id, src[i].owner, date, src[i].id==src[i].groupid?"● ":"", src[i].title);
+                        }
+                    }
+                    fclose(fn);
+                }
+                sprintf(title, "区段标记%s拟删文章: [%d - %d]", strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
+                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                unlink(filename);
+            }
+#endif
             DRBP_RDST;
             DRBP_RSRC;
             return 0x00;
         case DELETE_RANGE_BASE_MODE_CLEAR:                  /* 区段清除拟删 */
             for (i=0;i<count;i++)
                 src[i].accessed[1]&=~FILE_DEL;
+#ifdef BOARD_SECURITY_LOG
+            if (!DRBP_MAIL) {
+                char filename[STRLEN], title[STRLEN], date[8];
+                FILE *fn;
+                const struct boardheader *bh;
+                bh=getbcache(videntity);
+                gettmpfilename(filename, "range_delete");
+                if ((fn=fopen(filename, "w"))!=NULL){
+                    fprintf(fn, "\033[45m区段清除拟删文章列表\033[K\033[m\n");
+                    fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
+                    for (i=0;i<count;i++) {
+                        strncpy(date, ctime((time_t *)&src[i].posttime) + 4, 6);
+                        date[6] = '\0';
+                        fprintf(fn, "%8d %-12s %6s  %s%s\n", src[i].id, src[i].owner, date, src[i].id==src[i].groupid?"● ":"", src[i].title);
+                    }
+                    fclose(fn);
+                }
+                sprintf(title, "区段清除%s拟删文章: [%d - %d]", strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
+                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                unlink(filename);
+            }
+#endif
             DRBP_RDST;
             DRBP_RSRC;
             return 0x00;

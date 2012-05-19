@@ -5870,7 +5870,7 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
         char date[8];
         strncpy(date, ctime((time_t *)&xfh.posttime) + 4, 6);
         date[6] = '\0';
-        fprintf(func_arg->fn, "%6d %-12s %6s  %s%s\n", xfh.id, xfh.owner, date, xfh.id==xfh.groupid?"● ":"", xfh.title);
+        fprintf(func_arg->fn, "%8d %-12s %6s  %s%s\n", xfh.id, xfh.owner, date, xfh.id==xfh.groupid?"● ":"", xfh.title);
     }
 #endif
     return ret;
@@ -6037,7 +6037,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         if (BMch==BM_IMPORT)
             fprintf(func_arg.fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", annpath);
         fprintf(func_arg.fn, "\033[45m本主题文章列表\033[K\033[m\n");
-        fprintf(func_arg.fn, "\033[44m文章ID 作者         日期    标题\033[K\033[m\n");
+        fprintf(func_arg.fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
     }
 #endif
     apply_thread(conf,fh,BM_thread_func,true,true,(void*)&func_arg);
