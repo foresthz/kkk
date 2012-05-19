@@ -3848,8 +3848,6 @@ int delete_range_base(
             if (!DRBP_MAIL) {
                 char filename[STRLEN], title[STRLEN], date[8];
                 FILE *fn;
-                const struct boardheader *bh;
-                bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
                     fprintf(fn, "\033[45;33m%s文章列表\033[K\033[m\n",
@@ -3866,7 +3864,7 @@ int delete_range_base(
                 }
                 sprintf(title, "%s%s文章: [%d - %d]", (vmode&DELETE_RANGE_BASE_MODE_OPMASK)==DELETE_RANGE_BASE_MODE_RANGE?"常规区段删除":"区段删除拟删",
                         strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
-                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                board_security_report(filename, getCurrentUser(), title, videntity, NULL);
                 unlink(filename);
                 free(r_src);
             }
@@ -3963,23 +3961,19 @@ int delete_range_base(
             if (!DRBP_MAIL) {
                 char filename[STRLEN], title[STRLEN], date[8];
                 FILE *fn;
-                const struct boardheader *bh;
-                bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
                     fprintf(fn, "\033[45;33m强制区段删除文章列表\033[K\033[m\n");
                     fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
                     for (i=0;i<count;i++) {
-                        if (DRBP_TGET(i)) {
-                            strncpy(date, ctime((time_t *)&r_src[i].posttime) + 4, 6);
-                            date[6] = '\0';
-                            fprintf(fn, "%8d %-12s %6s  %s%s\n", r_src[i].id, r_src[i].owner, date, r_src[i].id==r_src[i].groupid?"● ":"", r_src[i].title);
-                        }
+                        strncpy(date, ctime((time_t *)&r_src[i].posttime) + 4, 6);
+                        date[6] = '\0';
+                        fprintf(fn, "%8d %-12s %6s  %s%s\n", r_src[i].id, r_src[i].owner, date, r_src[i].id==r_src[i].groupid?"● ":"", r_src[i].title);
                     }
                     fclose(fn);
                 }
                 sprintf(title, "强制区段删除%s文章: [%d - %d]", strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
-                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                board_security_report(filename, getCurrentUser(), title, videntity, NULL);
                 unlink(filename);
                 free(r_src);
             }
@@ -3993,8 +3987,6 @@ int delete_range_base(
             if (!DRBP_MAIL) {
                 char filename[STRLEN], title[STRLEN], date[8];
                 FILE *fn;
-                const struct boardheader *bh;
-                bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
                     fprintf(fn, "\033[45;33m区段标记拟删文章列表\033[K\033[m\n");
@@ -4009,7 +4001,7 @@ int delete_range_base(
                     fclose(fn);
                 }
                 sprintf(title, "区段标记%s拟删文章: [%d - %d]", strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
-                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                board_security_report(filename, getCurrentUser(), title, videntity, NULL);
                 unlink(filename);
             }
 #endif
@@ -4023,8 +4015,6 @@ int delete_range_base(
             if (!DRBP_MAIL) {
                 char filename[STRLEN], title[STRLEN], date[8];
                 FILE *fn;
-                const struct boardheader *bh;
-                bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
                     fprintf(fn, "\033[45;33m区段清除拟删文章列表\033[K\033[m\n");
@@ -4037,7 +4027,7 @@ int delete_range_base(
                     fclose(fn);
                 }
                 sprintf(title, "区段清除%s拟删文章: [%d - %d]", strcmp(vdir_src, ".DIR")==0?"版面":"文摘区", id_from+1, id_to+1);
-                board_security_report(filename, getCurrentUser(), title, bh->filename, NULL);
+                board_security_report(filename, getCurrentUser(), title, videntity, NULL);
                 unlink(filename);
             }
 #endif
@@ -4162,7 +4152,7 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
 #ifdef BOARD_SECURITY_LOG
    fn = fopen(filename, "w");
    if (fn) {
-       fprintf(fn, "\033[45;33m%s区段恢复文章列表\033[m\n", mode==1?"常规":"强制");
+       fprintf(fn, "\033[45;33m%s区段恢复文章列表\033[K\033[m\n", mode==1?"常规":"强制");
        fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
    }
 #endif
