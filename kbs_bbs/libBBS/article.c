@@ -4093,6 +4093,11 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
    char path_src[256],path_dst[256];
    int fd_src,fd_dst,total_dst,num,i;
    void *pm_src,*pm_dst;
+#ifdef BOARD_SECURITY_LOG
+   char filename[STRLEN], title[STRLEN], date[8];
+   FILE *fn;
+   gettmpfilename(filename, "range_undelete");
+#endif
 
    if(mode!=1 && mode!=2)
       return 3;
@@ -4154,12 +4159,26 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
 
    fh_src=(struct fileheader*)pm_src+from;/* 要恢复的第一篇文章 */
 
+#ifdef BOARD_SECURITY_LOG
+   fn = fopen(filename, "w");
+   if (fn) {
+       fprintf(fn, "\033[45m%s区段恢复文章列表\033[m\n", mode==1?"常规":"强制");
+       fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
+   }
+#endif
    if(mode == 1) /* 常规区段恢复 */
       for(i=num;i>0;--i,++fh_src){
          tmpfile=*fh_src;
          if((!(tmpfile.accessed[1]&FILE_DEL)) && (undelete_change_file_attr(board,&tmpfile)==0)){
             undelete_insert_file(&tmpfile,(struct fileheader*)pm_dst,&total_dst);
             fh_src->filename[0]='\0';
+#ifdef BOARD_SECURITY_LOG
+            if (fn) {
+                strncpy(date, ctime((time_t *)&tmpfile.posttime) + 4, 6);
+                date[6] = '\0';
+                fprintf(fn, "%8d %-12s %6s  %s%s\n", tmpfile.id, tmpfile.owner, date, tmpfile.id==tmpfile.groupid?"● ":"", tmpfile.title);
+            }
+#endif
          }
       }
 
@@ -4169,19 +4188,36 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
          if(undelete_change_file_attr(board,&tmpfile)==0){
             undelete_insert_file(&tmpfile,(struct fileheader*)pm_dst,&total_dst);
             fh_src->filename[0]='\0';
+#ifdef BOARD_SECURITY_LOG
+            if (fn) {
+                strncpy(date, ctime((time_t *)&tmpfile.posttime) + 4, 6);
+                date[6] = '\0';
+                fprintf(fn, "%8d %-12s %6s  %s%s\n", tmpfile.id, tmpfile.owner, date, tmpfile.id==tmpfile.groupid?"● ":"", tmpfile.title);
+            }
+#endif
          }
       }
 
+#ifdef BOARD_SECURITY_LOG
+   if (fn)
+       fclose(fn);
+#endif
    if(ftruncate(fd_dst,total_dst*sizeof(struct fileheader))==-1){
       munmap(pm_dst,st_dst.st_size);
       munmap(pm_src,st_src.st_size);
       RELES_FILE;
+#ifdef BOARD_SECURITY_LOG
+      unlink(filename);
+#endif
       return 3;
    }
    if(msync(pm_dst,total_dst*sizeof(struct fileheader),MS_SYNC)==-1){
       munmap(pm_dst,st_dst.st_size);
       munmap(pm_src,st_src.st_size);
       RELES_FILE;
+#ifdef BOARD_SECURITY_LOG
+      unlink(filename);
+#endif
       return 3;
    }
 
@@ -4189,6 +4225,9 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
       munmap(pm_src,st_src.st_size);
       munmap(pm_dst,st_dst.st_size);
       RELES_FILE;
+#ifdef BOARD_SECURITY_LOG
+      unlink(filename);
+#endif
       return 3;
    }
 
@@ -4196,6 +4235,11 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
    munmap(pm_dst,st_dst.st_size);
    RELES_FILE;
 
+#ifdef BOARD_SECURITY_LOG
+   sprintf(title, "%s区段恢复删除区文章: [%d - %d]", mode==1?"常规":"强制", from+1, to+1);
+   board_security_report(filename, getCurrentUser(), title, board, NULL);
+   unlink(filename);
+#endif
    return 0;
 
 #undef RELES_FILE
