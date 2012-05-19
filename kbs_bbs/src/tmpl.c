@@ -240,8 +240,8 @@ int content_add()
     gettmpfilename(filename, "tmpl_content_add");
     if ((fn=fopen(filename, "w"))!=NULL) {
         int i;
-        fprintf(fn, "\033[33m新增模版选项\033[m\n");
-        fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+        fprintf(fn, "\033[45;33m新增模版选项\033[m\n");
+        fprintf(fn, "\033[44m序号 问题名称                                           回答长度\033[K\033[m\n");
         for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
             fprintf(fn, "%s%4d %-50s %4d%s\n", (i==ptemplate[t_now].tmpl->content_num-1)?"\033[4;32m":"", 
                     i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
@@ -370,8 +370,8 @@ static int content_key(struct _select_def *conf, int key)
             gettmpfilename(filename, "tmpl_content_add");
             if ((fn=fopen(filename, "w"))!=NULL) {
                 int i;
-                fprintf(fn, "\033[33m移动选项次序\033[m\n");
-                fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                fprintf(fn, "\033[45;33m移动选项次序\033[m\n");
+                fprintf(fn, "\033[44m序号 问题名称                                           回答长度\033[K\033[m\n");
                 for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
                     if (newm>conf->pos && i==conf->pos-1)
                         fprintf(fn, "%s%4d %-50s %4d%s\n", "\033[4;31m", i+1, ptemplate[t_now].cont[newm-1].text,
@@ -419,8 +419,8 @@ static int content_key(struct _select_def *conf, int key)
                 gettmpfilename(filename, "tmpl_content_add");
                 if ((fn=fopen(filename, "w"))!=NULL) {
                     int i;
-                    fprintf(fn, "\033[33m删除模版选项\033[m\n");
-                    fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                    fprintf(fn, "\033[45;33m删除模版选项\033[m\n");
+                    fprintf(fn, "\033[44m序号 问题名称                                           回答长度\033[K\033[m\n");
                     for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
                         fprintf(fn, "%s%4d %-50s %4d%s\n", (i==conf->pos-1)?"\033[4;31m":"",
                                 i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
@@ -473,8 +473,8 @@ static int content_key(struct _select_def *conf, int key)
             gettmpfilename(filename, "tmpl_question_mod");
             if ((fn=fopen(filename, "w"))!=NULL) {
                 int i;
-                fprintf(fn, "\033[33m修改模版选项\033[m\n");
-                fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                fprintf(fn, "\033[45;33m修改选项内容\033[m\n");
+                fprintf(fn, "\033[44m序号 问题名称                                           回答长度\033[K\033[m\n");
                 for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
                     fprintf(fn, "%s%4d %-50s %4d%s\n", (i==conf->pos-1)?"\033[4;31m":"",
                             i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
@@ -515,8 +515,8 @@ static int content_key(struct _select_def *conf, int key)
             gettmpfilename(filename, "tmpl_question_mod");
             if ((fn=fopen(filename, "w"))!=NULL) {
                 int i;
-                fprintf(fn, "\033[33m修改模版选项\033[m\n");
-                fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+                fprintf(fn, "\033[45;33m修改选项内容\033[m\n");
+                fprintf(fn, "\033[44m序号 问题名称                                           回答长度\033[K\033[m\n");
                 for (i=0;i<ptemplate[t_now].tmpl->content_num;i++) {
                     fprintf(fn, "%s%4d %-50s %4d%s\n", (i==conf->pos-1)?"\033[4;31m":"",
                             i+1, ptemplate[t_now].cont[i].text, ptemplate[t_now].cont[i].length,
@@ -823,7 +823,7 @@ return SHOW_REFRESH;
             system(buf);
             unlink(oldfile);
             if ((fn=fopen(oldfile, "w"))!=NULL) {
-                fprintf(fn, "\033[33m修改模版正文\033[m\n");
+                fprintf(fn, "\033[45;33m修改模版正文\033[m\n");
                 if ((fnd=fopen(filediff, "r"))!=NULL) {
                     /* 跳过前2行 */
                     fgets(buf, 256, fnd);fgets(buf, 256, fnd);

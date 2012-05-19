@@ -3852,7 +3852,7 @@ int delete_range_base(
                 bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
-                    fprintf(fn, "\033[45m%s文章列表\033[K\033[m\n",
+                    fprintf(fn, "\033[45;33m%s文章列表\033[K\033[m\n",
                             (vmode&DELETE_RANGE_BASE_MODE_OPMASK)==DELETE_RANGE_BASE_MODE_RANGE?"常规区段删除":"区段删除拟删");
                     fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
                     for (i=0;i<count;i++) {
@@ -3967,7 +3967,7 @@ int delete_range_base(
                 bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
-                    fprintf(fn, "\033[45m强制区段删除文章列表\033[K\033[m\n");
+                    fprintf(fn, "\033[45;33m强制区段删除文章列表\033[K\033[m\n");
                     fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
                     for (i=0;i<count;i++) {
                         if (DRBP_TGET(i)) {
@@ -3997,7 +3997,7 @@ int delete_range_base(
                 bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
-                    fprintf(fn, "\033[45m区段标记拟删文章列表\033[K\033[m\n");
+                    fprintf(fn, "\033[45;33m区段标记拟删文章列表\033[K\033[m\n");
                     fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
                     for (i=0;i<count;i++) {
                         if (!DRBP_UNDEL(&src[i])) {
@@ -4027,7 +4027,7 @@ int delete_range_base(
                 bh=getbcache(videntity);
                 gettmpfilename(filename, "range_delete");
                 if ((fn=fopen(filename, "w"))!=NULL){
-                    fprintf(fn, "\033[45m区段清除拟删文章列表\033[K\033[m\n");
+                    fprintf(fn, "\033[45;33m区段清除拟删文章列表\033[K\033[m\n");
                     fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
                     for (i=0;i<count;i++) {
                         strncpy(date, ctime((time_t *)&src[i].posttime) + 4, 6);
@@ -4162,7 +4162,7 @@ int undelete_range_base(char* board, const char* src,int from,int to,int mode,st
 #ifdef BOARD_SECURITY_LOG
    fn = fopen(filename, "w");
    if (fn) {
-       fprintf(fn, "\033[45m%s区段恢复文章列表\033[m\n", mode==1?"常规":"强制");
+       fprintf(fn, "\033[45;33m%s区段恢复文章列表\033[m\n", mode==1?"常规":"强制");
        fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
    }
 #endif
