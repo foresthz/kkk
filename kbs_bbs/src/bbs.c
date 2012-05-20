@@ -1517,6 +1517,18 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 #endif /* HAVE_REPLY_COUNT */
     }
 
+#ifdef BOARD_SECURITY_LOG
+    if (isbm && (arg->mode <= DIR_MODE_ZHIDING)) {
+        int k;
+        move(t_lines - 1, 10);      
+        prints("<\033[31mQ\033[m>查看对本文的操作记录");
+        k = igetkey();              
+        if (toupper(k) == 'Q') {    
+            return view_bm_post_report(conf, fileinfo, extraarg);
+        } else
+            return FULLUPDATE;       
+    }
+#endif
     pressanykey();
     return FULLUPDATE;
 }
