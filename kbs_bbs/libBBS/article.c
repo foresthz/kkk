@@ -416,6 +416,19 @@ int do_del_post(struct userec *user,struct write_dir_arg *dirarg,struct filehead
     if (user != NULL && !(flag & ARG_BMFUNC_FLAG)) /* b1/b3 操作不再重复计算 bmlog, fancyrabbit Oct 12 2007 */
         bmlog(user->userid, board, 8, 1);
     newbbslog(BBSLOG_USER, "Del '%s' on '%s'", fh.title, board);        /* bbslog */
+#ifdef BOARD_SECURITY_LOG
+    /* 非同主题、非自删时记录 */
+    if (!(flag&ARG_BMFUNC_FLAG) && !isowner(user,&fh)) {
+        char buf[STRLEN], title[STRLEN];
+        if (strlen(fileinfo->title)>40) {
+            strnzhcpy(buf, fileinfo->title, 38);
+            strcat(buf, "..");
+        } else
+            strcpy(buf, fileinfo->title);
+        sprintf(title, "删除 <%s>", buf);
+        board_security_report(NULL, user, title, board, fileinfo);
+    }
+#endif
     return 0;
 }
 

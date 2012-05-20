@@ -6036,7 +6036,7 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
     if ((func_arg.fn = fopen(buf, "w"))!=NULL) {
         if (BMch==BM_IMPORT)
             fprintf(func_arg.fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", annpath);
-        fprintf(func_arg.fn, "\033[45m本主题文章列表\033[K\033[m\n");
+        fprintf(func_arg.fn, "\033[45;33m本主题文章列表\033[K\033[m\n");
         fprintf(func_arg.fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
     }
 #endif
