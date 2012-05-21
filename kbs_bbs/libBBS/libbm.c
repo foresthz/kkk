@@ -288,7 +288,11 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     fprintf(fn, "\033[33m封禁天数: \033[4;32m %d 天\033[m\n", day);
     fclose(fn);
     sprintf(title, "%s %s 在本版的发文权限", mode==0?"取消":"修改", uident);
+#ifdef RECORD_DENY_FILE
     board_security_report(postfile, operator, title, bh->filename, fh);
+#else
+    board_security_report(postfile, operator, title, bh->filename, NULL);
+#endif
 #endif
     unlink(postfile);
 
