@@ -6395,11 +6395,17 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {'K', (READ_KEY_FUNC)skip_post,NULL},
 
     {'d', (READ_KEY_FUNC)del_post,(void*)0},
+#ifdef NEWSMTH
+    {'D',(READ_KEY_FUNC)post_range_func,NULL},           /* 合并区段功能快捷键 */
+#else
     {'D',(READ_KEY_FUNC)delete_range,NULL},
+#endif
     {Ctrl('C'), (READ_KEY_FUNC)do_cross,NULL},
     {'Y', (READ_KEY_FUNC)UndeleteArticle,NULL},     /* Leeward 98.05.18 */
 #ifdef BATCHRECOVERY
+#ifndef NEWSMTH
 	{Ctrl('t'), (READ_KEY_FUNC)undelete_range,NULL},/* benogy@bupt  区段恢复 20080807 */
+#endif
 #endif
 
     {Ctrl('P'), (READ_KEY_FUNC)do_post,NULL},

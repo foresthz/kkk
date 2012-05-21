@@ -1464,6 +1464,29 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
     return FULLUPDATE;
 }
 
+#ifdef NEWSMTH
+int post_range_func(struct _select_def *conf,struct fileheader *fileinfo,void *varg)
+{
+    struct read_arg *rarg;
+
+    rarg=(struct read_arg*)conf->arg;
+    switch (rarg->mode) {
+        case DIR_MODE_NORMAL:
+        case DIR_MODE_DIGEST:
+        case DIR_MODE_MAIL:
+            delete_range(conf, fileinfo, varg);
+            break;
+        case DIR_MODE_DELETED:
+        case DIR_MODE_JUNK:
+            undelete_range(conf, fileinfo, varg);
+            break;
+        default:
+            return DONOTHING;
+    }
+    return FULLUPDATE;
+}
+#endif
+
 /* etnlegend, 2006.04.21, 区段删除界面更新 */
 
 struct delete_range_arg {
