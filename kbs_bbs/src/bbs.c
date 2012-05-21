@@ -1446,6 +1446,53 @@ int zsend_attach(int ent, struct fileheader *fileinfo, char *direct)
     return 0;
 }
 
+#ifdef BOARD_SECURITY_LOG
+struct post_report_arg {
+    char *file;
+    int id;
+    int count;
+};
+
+/* 生成文章对应的操作记录索引，使用apply_record回调 */
+int make_post_report(struct fileheader *fh, int idx, struct post_report_arg *pa){
+    if (fh->o_id == pa->id) {
+        append_record(pa->file, fh, sizeof(struct fileheader));
+        pa->count++;
+        return 1;
+    }
+    return 0;
+}
+
+int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+static struct key_command read_post_report[] = { /*阅读状态，键定义 */
+    {'r', (READ_KEY_FUNC)read_post,NULL},
+    {'\0', NULL},
+};
+
+int view_post_security_report(struct _select_def* conf, struct fileheader* fileinfo, void* extraarg){
+    char index_s[STRLEN], index_d[STRLEN];
+    struct stat st;
+    struct post_report_arg pa;
+
+    setbdir(DIR_MODE_BOARD, index_s, currboard->filename);
+    if (!dashf(index_s) || stat(index_s, &st)==-1 || st.st_size==0)
+        return prompt_return("本文无操作记录", 1, 1);
+    sprintf(index_d, "%s.%d[%d]", index_s, fileinfo->id, getpid());
+
+    pa.file = index_d;
+    pa.id = fileinfo->id;
+    pa.count = 0;
+
+    /* 这里可以用逆序查找，不过结果也是逆序，所以.. */
+    apply_record(index_s, (APPLY_FUNC_ARG)make_post_report, sizeof(struct fileheader), &pa, 0, 0);
+    if (pa.count<=0)
+        return prompt_return("本文无操作记录", 1, 1);
+    new_i_read(DIR_MODE_BOARD, index_d, readtitle, (READ_ENT_FUNC)readdoent, read_post_report, sizeof(struct fileheader));
+    unlink(index_d);
+    return FULLUPDATE;
+}
+#endif
+
 int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char slink[256];
@@ -1524,7 +1571,7 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         prints("<\033[31mQ\033[m>查看对本文的操作记录");
         k = igetkey();              
         if (toupper(k) == 'Q') {    
-            return view_bm_post_report(conf, fileinfo, extraarg);
+            return view_post_security_report(conf, fileinfo, extraarg);
         } else
             return FULLUPDATE;       
     }
