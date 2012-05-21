@@ -20,6 +20,10 @@ void load_board_banner(const char * board);
         if (ch=='\r'||ch=='\n') break;\
     }while(1)
 
+/*jiangjun*/
+#define WAIT_ANYKEY do{\
+        igetkey();break;\
+}while(1)
 
 /*screen.c*/
 void do_naws(int ln, int col);

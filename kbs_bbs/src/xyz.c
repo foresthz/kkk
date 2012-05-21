@@ -2288,3 +2288,46 @@ int set_rcmdbrd()
     fclose(fp);
     return FULLUPDATE;
 }
+
+/*
+ * int prompt_return(char *buf, int mode, int anykey)
+ * by jiangjun, 2007-10-17
+ * mode:
+ *      0: successful operation, prompt to return, green color
+ *      1: operation with warning or cancel, prompt to continue, cyan color
+ *      2: operation with error, prompt to return, yellow color
+ * anykey:
+ *      0: press enter to return
+ *      1: press any key to return
+ * return value:
+ *      FULLUPDATE
+ */
+int prompt_return(char *buf, int mode, int anykey)
+{
+    int color;
+    char colorstr[STRLEN];
+    move(t_lines - 1, 0);
+    clrtoeol();
+
+    switch (mode) {
+        case 0:
+            color = 32;
+            break;
+        case 1:
+            color = 36;
+            break;
+        case 2:
+            color = 33;
+            break;
+        default:
+            color = 37;
+            break;
+    }
+    sprintf(colorstr, "\033[1;%d;45m", color);
+    prints("%s\t%s, 按 <%s> 键继续...\033[K\033[m", colorstr, buf, anykey?"任意":"ENTER");
+    if (anykey)
+        WAIT_ANYKEY;
+    else
+        WAIT_RETURN;
+    return FULLUPDATE;
+}

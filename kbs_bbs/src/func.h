@@ -255,6 +255,10 @@ extern "C"
     void trimstr(char*);
     void securityreport(char *str, struct userec *lookupuser, char fdata[9][STRLEN], session_t *session);
     int remove_blank_ctrlchar(const char *src, char *des, bool head, bool end, bool cc);
+
+    /* xyz.c */
+    int prompt_return(char *buf, int mode, int anykey);
+
     /* libbm.c added by jiangjun */
     int get_textfile_string(const char *file, char **ptr, char *result[], int maxcount);
     int get_deny_reason(const char *board, char denyreason[][STRLEN], int max);
