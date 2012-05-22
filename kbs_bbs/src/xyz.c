@@ -2022,7 +2022,7 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
     else {
         struct fileheader *ofh=NULL, *tfh=NULL;
         int t;
-        if (conf->pos < arg->filecount) {
+        if (conf->pos <= arg->filecount) {
             ofh = fh;
             if ((t=is_top(fh, currboard->filename))) {
                 tfh = &(brdshm->bstatus[arg->bid-1].topfh[t-1]);
@@ -2104,7 +2104,7 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
                         count++;
                     }
                 }
-                if (count) {
+                if (count && (changed&0x2)) {
                     fprintf(fn, "\033[33m受影响      : ");
                     if (changed & 0x1)
                         fprintf(fn, "\033[32m文章原文\033[m ");
