@@ -487,6 +487,7 @@ int a_Import(path, key, fileinfo, nomsg, direct, ent)
 char *path, *key;
 struct fileheader *fileinfo;
 int nomsg; /* fancyrabbit Oct 12 2007, nomsg == true 从不出现提示改为(不出现提示 && 不计 bmlog) */
+           /* jiangjun, 20120522, nomsg == true 时，版主b4操作, 不进行board_security_report */
 char *direct;                   /* Leeward 98.04.15 */
 int ent;
 {
@@ -560,6 +561,25 @@ int ent;
              */
             if (ret==0 && !nomsg) /* b4 操作不再重复计算 bmlog, 注意不要误伤, fancyrabbit Oct 12 2007 */
                 bmlog(getCurrentUser()->userid, currboard->filename, 12, 1);
+#ifdef BOARD_SECURITY_LOG
+            if (ret==0 && !nomsg) { /* 版主b4操作不进行board_security_report */
+                char filename[STRLEN], tmp[STRLEN], title[STRLEN];
+                FILE *fn;
+                gettmpfilename(filename, "import_post");
+                if ((fn=fopen(filename, "w"))!=NULL) {
+                    fprintf(fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", pm.path);
+                    fclose(fn);
+                }
+                if (strlen(fileinfo->title)>40) {
+                    strnzhcpy(tmp, fileinfo->title, 38);
+                    strcat(tmp, "..");
+                } else
+                    strcpy(tmp, fileinfo->title);
+                sprintf(title, "I收录 <%s>", tmp);
+                board_security_report(filename, getCurrentUser(), title, currboard->filename, fileinfo);
+                unlink(filename);
+            }
+#endif
         } else {
             if (!nomsg) {
                 sprintf(buf, " 收入精华区失败，可能有其他版主在处理同一目录，按 Enter 继续 ");
@@ -770,6 +790,20 @@ int mode;
             }
         }
         bmlog(getCurrentUser()->userid,currboard->filename,(mode==ADDMAIL?12:13),1);
+#ifdef BOARD_SECURITY_LOG
+        char filename[STRLEN], rtitle[STRLEN];
+        FILE *fn;
+        gettmpfilename(filename, "ann_add");
+        if ((fn=fopen(filename, "w"))!=NULL) {
+            fprintf(fn, "\033[33m%s标题: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", title);
+            fprintf(fn, "\033[33m%s名称: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", fname);
+            fprintf(fn, "\033[33m添加路径: \033[4;32m%s\033[m\n", pm->path);
+            fclose(fn);
+        }
+        sprintf(rtitle, "添加精华区%s <%s>", mode==ADDGROUP?"目录":"文件", title);
+        board_security_report(filename, getCurrentUser(), rtitle, currboard->filename, NULL);
+        unlink(filename);
+#endif
     }
 }
 
@@ -1169,14 +1203,39 @@ void a_delete(MENU *pm)
         }
         S_ISLNK(st.st_mode)?unlink(path):(S_ISDIR(st.st_mode)?my_f_rm(path):my_unlink(path));
     }
+#ifdef BOARD_SECURITY_LOG
+    char anntitle[STRLEN], *p;
+    strncpy(anntitle, M_ITEM(pm,pm->now)->title, 39);
+    anntitle[38] = '\0';
+    p = anntitle + strlen(anntitle) - 1;
+    for (; p >= anntitle; p--) {
+        if (*p == ' ')
+            *p = 0;
+        else
+            break;
+    };
+#endif
     a_delitem(pm,pm->now);
     if (a_savenames(pm)) {
         a_loadnames(pm,getSession());
         move(t_lines-1,0);
         prints("\033[1;37m%s\033[0;33m<Any>\033[m","整理精华区失败...");
         igetkey();
-    } else
+    } else {
         bmlog(getCurrentUser()->userid,currboard->filename,13,1);
+#ifdef BOARD_SECURITY_LOG
+        char filename[STRLEN], title[STRLEN];
+        FILE *fn;
+        gettmpfilename(filename, "ann_del");
+        if ((fn=fopen(filename, "w"))!=NULL) {
+            fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path);
+            fclose(fn);
+        }
+        sprintf(title, "删除精华区%s <%s>", S_ISLNK(st.st_mode)?"链接":(S_ISDIR(st.st_mode)?"目录":"文件"), anntitle);
+        board_security_report(filename, getCurrentUser(), title, currboard->filename, NULL);
+        unlink(filename);
+#endif
+    }
     pm->page=9999;
     return;
 }
