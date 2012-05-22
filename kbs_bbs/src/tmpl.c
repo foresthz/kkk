@@ -108,6 +108,36 @@ static int deepcopy(struct a_template *to,   const char *to_board,
             return -3;
         }
     }
+#ifdef BOARD_SECURITY_LOG
+    char filename[STRLEN], filepath[STRLEN], buf[STRLEN];
+    int i;
+    FILE *fn;
+    gettmpfilename(filename, "tmpl_copy");
+    if ((fn=fopen(filename, "w"))!=NULL) {
+        fprintf(fn, "\033[33m模版复制于 \033[32m%s\033[33m 版\033[m\n", from_board);
+        fprintf(fn, "\033[33m模版标题: \033[32m%s\033[m\n", to->tmpl->title_tmpl);
+        fprintf(fn, "\033[33m模版内容: \033[m\n");
+        if (to->tmpl->filename[0]) {
+            setbfile(filepath, to_board, to->tmpl->filename);
+            if (dashf(filepath)) {
+                FILE *fo;
+                if ((fo=fopen(filepath, "r"))!=NULL) {
+                    while (fgets(buf, STRLEN, fo))
+                        fputs(buf, fn);
+                    fclose(fo);
+                }
+            }
+        }
+        fprintf(fn, "\033[33m模版选项: \033[m\n");
+        fprintf(fn, "\033[45m序号 问题名称                                           回答长度\033[K\033[m\n");
+        for (i=0;i<to->tmpl->content_num;i++)
+            fprintf(fn, "%4d %-50s %4d\n", i+1, to->cont[i].text, to->cont[i].length);
+        fclose(fn);
+    }
+    sprintf(buf, "复制模版 <%s>", to->tmpl->title);
+    board_security_report(filename, getCurrentUser(), buf, to_board, NULL);
+    unlink(filename);
+#endif
 
     return 0;
 }
@@ -864,6 +894,20 @@ return SHOW_REFRESH;
 
             tmpl_save();
 
+#ifdef BOARD_SECURITY_LOG
+            char buf[STRLEN*2], filename[STRLEN];
+            FILE *fn;
+            gettmpfilename(filename, "tmpl_bm_only");
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                fprintf(fn, "\033[33m设定模版版主专用属性\033[m\n");
+                fprintf(fn, "\033[33m版主专用: \033[31m%s\033[m\033[m\n", ptemplate[conf->pos-1].tmpl->flag&TMPL_BM_FLAG?"是":"否");
+                fprintf(fn, "\033[33m模版序号: \033[32m%d\033[m\n", conf->pos);
+                fclose(fn);
+            }
+            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
+            unlink(filename);
+#endif
             return SHOW_REFRESH;
         }
         case 'i' : {
