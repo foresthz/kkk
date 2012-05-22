@@ -4617,6 +4617,10 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
         if (!chk_currBM(currBM, getCurrentUser()))
             return DONOTHING;
+#ifdef BOARD_SECURITY_LOG
+    if (arg->mode == DIR_MODE_BOARD)
+        return DONOTHING;
+#endif
     sprintf(filepath, "tmp/bm.%s", getCurrentUser()->userid);
     append = false;
     if (dashf(filepath)) {
