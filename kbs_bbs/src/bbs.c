@@ -1095,6 +1095,11 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 #endif
         ;
 
+#ifdef BOARD_SECURITY_LOG
+    if (arg->mode == DIR_MODE_BOARD)  /* 版面安全记录区不显示任何标记, 当然本身也没有标记, 主要防止未读标记 */
+        type = ' ';
+    else
+#endif
     type = get_article_flag(ent, getCurrentUser(), currboard->filename, manager, NULL, getSession());
     if (manager && (ent->accessed[0] & FILE_IMPORTED)) {        /* 文件已经被收入精华区 */
         if (type == ' ') {
