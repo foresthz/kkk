@@ -450,8 +450,7 @@ MENU *pm;
            "\033[31m\033[44m[功能键] \033[33m 说明 h │ 离开 q,← │ 移动游标 k,↑,j,↓ │ 读取资料 Rtn,→         \033[m");
 }
 
-int a_chkbmfrmpath(path)
-char *path;
+int a_chkbmfrmpath(char *path, char *board)
 {
     int objectbid , pathnum;
     char *pathslice , *pathdelim;
@@ -476,6 +475,8 @@ char *path;
     objectbid = getbnum_safe(pathslice, getSession(), 1);
     if (!objectbid) return 0; //不可见版面 ? - atppp 20051118
     objectboard = getboard(objectbid);
+    if (board)
+        strcpy(board, objectboard->filename);
     if (chk_currBM(objectboard->BM, getCurrentUser()))
         return 1;
     else
@@ -528,7 +529,7 @@ int ent;
         strncpy(newpath,pm.path, MAXPATH);
         newpath[MAXPATH - 1] = '\0';
         if (!HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
-            if (!a_chkbmfrmpath(newpath)) {
+            if (!a_chkbmfrmpath(newpath, NULL)) {
                 sprintf(buf, " a.o... 你已经不能再收录到这里了... ... ");
                 a_prompt(-1, buf, ans);
                 return 3;
@@ -791,18 +792,23 @@ int mode;
         }
         bmlog(getCurrentUser()->userid,currboard->filename,(mode==ADDMAIL?12:13),1);
 #ifdef BOARD_SECURITY_LOG
-        char filename[STRLEN], rtitle[STRLEN];
+        char filename[STRLEN], boardname[STRLEN], buf[MAXPATH], rtitle[STRLEN];
         FILE *fn;
         gettmpfilename(filename, "ann_add");
-        if ((fn=fopen(filename, "w"))!=NULL) {
-            fprintf(fn, "\033[33m%s标题: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", title);
-            fprintf(fn, "\033[33m%s名称: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", fname);
-            fprintf(fn, "\033[33m添加路径: \033[4;32m%s\033[m\n", pm->path);
-            fclose(fn);
+        boardname[0] = '\0';
+        strcpy(buf, pm->path);
+        a_chkbmfrmpath(buf, boardname);
+        if (boardname[0]) { /* 将记录添加至对应的版面 */
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                fprintf(fn, "\033[33m%s标题: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", title);
+                fprintf(fn, "\033[33m%s名称: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", fname);
+                fprintf(fn, "\033[33m添加路径: \033[4;32m%s\033[m\n", pm->path);
+                fclose(fn);
+            }
+            sprintf(rtitle, "添加精华区%s <%s>", mode==ADDGROUP?"目录":"文件", title);
+            board_security_report(filename, getCurrentUser(), rtitle, boardname, NULL);
+            unlink(filename);
         }
-        sprintf(rtitle, "添加精华区%s <%s>", mode==ADDGROUP?"目录":"文件", title);
-        board_security_report(filename, getCurrentUser(), rtitle, currboard->filename, NULL);
-        unlink(filename);
 #endif
     }
 }
@@ -1224,16 +1230,21 @@ void a_delete(MENU *pm)
     } else {
         bmlog(getCurrentUser()->userid,currboard->filename,13,1);
 #ifdef BOARD_SECURITY_LOG
-        char filename[STRLEN], title[STRLEN];
+        char filename[STRLEN], board[STRLEN], buf[MAXPATH], title[STRLEN];
         FILE *fn;
         gettmpfilename(filename, "ann_del");
-        if ((fn=fopen(filename, "w"))!=NULL) {
-            fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path);
-            fclose(fn);
+        board[0] = '\0';
+        strcpy(buf, pm->path);
+        a_chkbmfrmpath(buf, board);
+        if (board[0]) { /* 将记录添加至对应的版面 */
+            if ((fn=fopen(filename, "w"))!=NULL) {
+                fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path);
+                fclose(fn);
+            }
+            sprintf(title, "删除精华区%s <%s>", S_ISLNK(st.st_mode)?"链接":(S_ISDIR(st.st_mode)?"目录":"文件"), anntitle);
+            board_security_report(filename, getCurrentUser(), title, board, NULL);
+            unlink(filename);
         }
-        sprintf(title, "删除精华区%s <%s>", S_ISLNK(st.st_mode)?"链接":(S_ISDIR(st.st_mode)?"目录":"文件"), anntitle);
-        board_security_report(filename, getCurrentUser(), title, currboard->filename, NULL);
-        unlink(filename);
 #endif
     }
     pm->page=9999;

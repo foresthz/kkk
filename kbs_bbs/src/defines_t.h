@@ -264,7 +264,7 @@ void keep_fail_post();
 
 /* Announce.c */
 void a_prompt(int bot, char *pmt, char *buf);
-int a_chkbmfrmpath(char *path);
+int a_chkbmfrmpath(char *path, char *board);
 int a_menusearch(char *path, char *key, int level);
 int a_Import(char *path, char *key, struct fileheader *fileinfo, int nomsg, char *direct, int ent);     /* Leeward 98.04.15 */
 int set_import_path(char* path);
