@@ -1000,6 +1000,37 @@ void a_copypaste(MENU *pm,int mode)
         if (ret)
             ACP_ANY_RETURN("剪切文件过程中发生错误...");
     }
+#ifdef BOARD_SECURITY_LOG
+    char fname[STRLEN], bname[STRLEN], buf[MAXPATH], rtitle[STRLEN];
+    FILE *fn;
+    gettmpfilename(fname, "ann_copy_cut_paste");
+    bname[0] = '\0';
+    strcpy(buf, pm->path);
+    a_chkbmfrmpath(buf, bname);
+    if (bname[0]) { /* 将记录添加至对应的版面 */
+        if ((fn=fopen(fname, "w"))!=NULL) {
+            title[38] = '\0';
+            p = title + strlen(title) - 1;
+            for (; p >= title; p--) {
+                if (*p == ' ')
+                    *p = 0;
+                else
+                    break;
+            }
+            fprintf(fn, "\033[33m%s标题: \033[4;32m%s\033[m\n", S_ISDIR(st.st_mode)?"目录":"文件", title);
+            fprintf(fn, "\033[33m%s名称: \033[4;32m%s\033[m\n", S_ISDIR(st.st_mode)?"目录":"文件", filename);
+            if (type==PASTE_COPY)
+                if ((p=strrchr(path, '/')))
+                    *p='\0';
+            fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path);
+            fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path);
+            fclose(fn);
+        }
+        sprintf(rtitle, "%s精华区%s <%s>", type==PASTE_COPY?"复制":"移动", S_ISDIR(st.st_mode)?"目录":"文件", title);
+        board_security_report(fname, getCurrentUser(), rtitle, bname, NULL);
+        unlink(fname);
+    }
+#endif
     pm->page=9999;
 #undef ACP_ANY_RETURN
     return;
@@ -1052,7 +1083,7 @@ void a_range_copypaste(MENU *pm,int mode)
         ACP_ANY_RETURN("使用区段粘贴命令前应先使用区段剪切或区段复制命令...");
 
     /* 粘贴开始 */
-#define ACP_FGETS(len) if(!fgets(genbuf,((len)+1),fp)||!genbuf[0]||genbuf[0]=='\r'||genbuf[0]=='\n'){type=PASTE_ERROR;break;}
+#define ACP_FGETS(len) if(!fgets(genbuf,((len)+1),fp)||!genbuf[0]||genbuf[0]=='\r'||genbuf[0]=='\n'){break;}
 #define ACP_DUMPS(dst,src,len) do{snprintf((dst),(len),"%s",(src));if((p=strpbrk((dst),"\r\n"))){*p=0;}}while(0)
 #define ACP_ANY_BREAK(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));igetkey();pm->page=9999;break;}
 #define ACP_ANY_CONTINUE(msg) {prints("\033[1;37m%s\033[0;33m<Any>\033[m",(msg));ch=igetkey();pm->page=9999;continue;}
@@ -1094,6 +1125,20 @@ void a_range_copypaste(MENU *pm,int mode)
     }
     i = 0;
     int ch = 0;
+#ifdef BOARD_SECURITY_LOG
+    char fname[STRLEN], bname[STRLEN], rtitle[STRLEN], buf[MAXPATH];
+    FILE *fn=NULL;
+    strcpy(buf, pm->path);
+    a_chkbmfrmpath(buf, bname);
+    if (bname[0]) { /* 将记录添加至对应的版面 */
+        gettmpfilename(fname, "ann_range_copy_cut_paste");
+        fn = fopen(fname, "w");
+        if (fn) {
+            fprintf(fn, "\033[45;33m精华区区段%s档案列表\033[K\033[m\n", type==PASTE_COPY?"复制":"移动");
+            fprintf(fn, "\033[44m序号 [类别] 档案标题                               档案名称\033[K\033[m\n");
+        }
+    }
+#endif
     do {
         if (toupper(ch)=='Q')
             break;
@@ -1105,7 +1150,6 @@ void a_range_copypaste(MENU *pm,int mode)
         ACP_DUMPS(path,genbuf,PATHLEN);
         ACP_FGETS(21);
         if (!isdigit(genbuf[0])) {
-            type=PASTE_ERROR;
             break;
         }
         ap=atol(genbuf);
@@ -1170,6 +1214,19 @@ void a_range_copypaste(MENU *pm,int mode)
                 ACP_ANY_BREAK("剪切文件过程中发生错误...");
             }
         }
+#ifdef BOARD_SECURITY_LOG
+        if (fn) {
+            title[38] = '\0';
+            p = title + strlen(title) - 1;
+            for (; p >= title; p--) {
+                if (*p == ' ')
+                    *p = 0;
+                else
+                    break;
+            }
+            fprintf(fn, "%4d [%s] %-38s %-s\n", i+1, S_ISDIR(st.st_mode)?"目录":"\033[36m文件\033[m", title, filename);
+        }
+#endif
         i++;
     } while(i<count);
     fclose(fp);
@@ -1181,8 +1238,28 @@ void a_range_copypaste(MENU *pm,int mode)
     if (i) {
         move(t_lines-1, 0);clrtoeol();
         snprintf(genbuf, STRLEN, "完成%d篇文章的区段%s操作", i, (type==PASTE_COPY)?"复制":"剪切");
+#ifdef BOARD_SECURITY_LOG
+        if (fn) {
+            fprintf(fn, "\n");
+            if (type==PASTE_COPY)
+                if ((p=strrchr(path, '/')))
+                    *p='\0';
+            fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path);
+            fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path);
+            fclose(fn);
+            sprintf(rtitle, "区段%s精华区档案", (type==PASTE_COPY)?"复制":"剪切");
+            board_security_report(fname, getCurrentUser(), rtitle, bname, NULL);
+            unlink(fname);
+        }
+#endif
         ACP_ANY_RETURN(genbuf);
     }
+#ifdef BOARD_SECURITY_LOG
+    if (fn) {
+        fclose(fn);
+        unlink(fname);
+    }
+#endif
 #undef AC_ANY_RETURN
 #undef AC_ANY_BREAK
 #undef AC_ANY_CONTINUE
@@ -1219,7 +1296,7 @@ void a_delete(MENU *pm)
             *p = 0;
         else
             break;
-    };
+    }
 #endif
     a_delitem(pm,pm->now);
     if (a_savenames(pm)) {
