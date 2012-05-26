@@ -29,10 +29,6 @@ int getPos(int mode,char* direct,struct boardheader* bh)
     ptr=read_pos_head;
     if (mode==DIR_MODE_MAIL||mode==DIR_MODE_REFER||mode==DIR_MODE_TOP10)
         key=direct;
-#ifdef BOARD_SECURITY_LOG
-    else if (mode==DIR_MODE_BOARD)
-        key=direct;
-#endif
     else if (mode==DIR_MODE_FRIEND)
         key=NULL;
     else
@@ -60,10 +56,6 @@ void savePos(int mode,char* direct,int pos,struct boardheader* bh)
     ptr=read_pos_head;
     if (mode==DIR_MODE_MAIL||mode==DIR_MODE_REFER||mode==DIR_MODE_TOP10)
         key=direct;
-#ifdef BOARD_SECURITY_LOG
-    else if (mode==DIR_MODE_BOARD)
-        key=direct;
-#endif
     else if (mode==DIR_MODE_FRIEND)
         key=NULL;
     else
@@ -583,19 +575,6 @@ static int read_prekey(struct _select_def *conf, int *command)
                         break;
                     savePos(DIR_MODE_NORMAL,NULL,ent,arg->board);
                     break;
-#ifdef BOARD_SECURITY_LOG
-                case DIR_MODE_BOARD:
-                    if (!(conf->pos>0))
-                        break;
-                    currfh=(const struct fileheader*)(arg->data+(conf->pos-conf->page_pos)*arg->ssize);
-                    if (!(currfh->o_id>0))
-                        break;
-                    ent=get_ent_from_id(DIR_MODE_NORMAL,currfh->o_id,arg->board->filename);
-                    if (!(ent>0))
-                        break;
-                    savePos(DIR_MODE_NORMAL,NULL,ent,arg->board);
-                    break;
-#endif
                 default:
                     break;
             }
