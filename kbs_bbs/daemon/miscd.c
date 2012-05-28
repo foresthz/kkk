@@ -152,7 +152,7 @@ int killanonydir(char *board)
     for(i=0;i<num;i++){
         setbfile(buf1, board, files[i].filename);
         sprintf(buf, files[i].filename);
-        buf[0]='D';
+        POSTFILE_BASENAME(buf)[0]='D';
         setbfile(buf2, board, buf);
         if(!dashf(buf1) && !dashf(buf2)){
             if(delete_record(genbuf1, sizeof(struct fileheader), i+1, (RECORD_FUNC_ARG) cmpname, files[i].filename)!=0){
