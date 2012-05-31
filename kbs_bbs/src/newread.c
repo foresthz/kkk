@@ -1480,7 +1480,7 @@ void save_article_pos()
     sethomefile(filepath, getCurrentUser()->userid, ".savedartpos");
     if ((fd=open(filepath, O_CREAT|O_RDWR, 0664)) != NULL) {
        while (ptr != NULL) {
-            if (ptr->mode == DIR_MODE_NORMAL && (bid=getbid(ptr->key, NULL))!=0) {
+            if (ptr->mode == DIR_MODE_NORMAL && ptr->key && (bid=getbid(ptr->key, NULL))!=0) {
                 setbdir(DIR_MODE_NORMAL, buf, ptr->key);
                 if (get_record(buf, &tmp, sizeof(struct fileheader), ptr->pos)==0) {
                     safewrite(fd, &bid, sizeof(int));
