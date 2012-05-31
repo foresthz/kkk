@@ -4318,7 +4318,7 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         FILE *fn;
         char path[STRLEN], title[STRLEN];
         gettmpfilename(path, "edit_title");
-        if ((fn = fopen(path, "w"))!=NULL) {
+        if (!isowner(getCurrentUser(), fileinfo) && (fn = fopen(path, "w"))!=NULL) {
             if (strlen(fileinfo->title)>40) {
                 strnzhcpy(buf, fileinfo->title, 38);
                 strcat(buf, "..");
