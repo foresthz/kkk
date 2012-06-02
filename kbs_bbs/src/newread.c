@@ -1478,7 +1478,7 @@ void save_article_pos()
 
     ptr = read_pos_head;
     sethomefile(filepath, getCurrentUser()->userid, ".savedartpos");
-    if ((fd=open(filepath, O_CREAT|O_RDWR, 0664)) != NULL) {
+    if ((fd=open(filepath, O_CREAT|O_RDWR|O_TRUNC, 0664)) != NULL) {
        while (ptr != NULL) {
             if (ptr->mode == DIR_MODE_NORMAL && ptr->key && (bid=getbid(ptr->key, NULL))!=0) {
                 setbdir(DIR_MODE_NORMAL, buf, ptr->key);
@@ -1514,7 +1514,7 @@ void load_article_pos()
             savePos(DIR_MODE_NORMAL, NULL, pos?pos:savedpos[i][2], bh);
         }
         close(fd);
-        unlink(filepath);
+        //unlink(filepath); 不删除记录文件，否则双登或非正常掉线就over了
     }
 }
 #endif
