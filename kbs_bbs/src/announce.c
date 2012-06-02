@@ -470,6 +470,8 @@ int a_chkbmfrmpath(char *path, char *board)
     strtok_r(path , pathdelim , &savept);
     while (pathnum < 3) {
         pathslice = strtok_r(NULL , pathdelim , &savept);
+        if (pathslice==NULL)
+            return 0;
         pathnum ++ ;
     }
     objectbid = getbnum_safe(pathslice, getSession(), 1);
@@ -1001,13 +1003,16 @@ void a_copypaste(MENU *pm,int mode)
             ACP_ANY_RETURN("剪切文件过程中发生错误...");
     }
 #ifdef BOARD_SECURITY_LOG
-    char fname[STRLEN], bname[STRLEN], buf[MAXPATH], rtitle[STRLEN];
+    char fname[STRLEN], bname_s[STRLEN], bname_d[STRLEN], buf[MAXPATH], rtitle[STRLEN];
     FILE *fn;
     gettmpfilename(fname, "ann_copy_cut_paste");
-    bname[0] = '\0';
+    bname_s[0] = '\0';
+    bname_d[0] = '\0';
+    strcpy(buf, path);
+    a_chkbmfrmpath(buf, bname_s);
     strcpy(buf, pm->path);
-    a_chkbmfrmpath(buf, bname);
-    if (bname[0]) { /* 将记录添加至对应的版面 */
+    a_chkbmfrmpath(buf, bname_d);
+    if ((type==PASTE_CUT && bname_s[0]) || bname_d[0]) { /* 将记录添加至对应的版面 */
         if ((fn=fopen(fname, "w"))!=NULL) {
             title[38] = '\0';
             p = title + strlen(title) - 1;
@@ -1027,7 +1032,15 @@ void a_copypaste(MENU *pm,int mode)
             fclose(fn);
         }
         sprintf(rtitle, "%s精华区%s <%s>", type==PASTE_COPY?"复制":"移动", S_ISDIR(st.st_mode)?"目录":"文件", title);
-        board_security_report(fname, getCurrentUser(), rtitle, bname, NULL);
+        if (type==PASTE_CUT) {
+            if (bname_s[0]) {
+                board_security_report(fname, getCurrentUser(), rtitle, bname_s, NULL);
+                if (bname_d[0] && strcmp(bname_s, bname_d))
+                    board_security_report(fname, getCurrentUser(), rtitle, bname_d, NULL);
+            } else
+                board_security_report(fname, getCurrentUser(), rtitle, bname_d, NULL);
+        } else
+            board_security_report(fname, getCurrentUser(), rtitle, bname_d, NULL);
         unlink(fname);
     }
 #endif
@@ -1126,17 +1139,13 @@ void a_range_copypaste(MENU *pm,int mode)
     i = 0;
     int ch = 0;
 #ifdef BOARD_SECURITY_LOG
-    char fname[STRLEN], bname[STRLEN], rtitle[STRLEN], buf[MAXPATH];
+    char fname[STRLEN], bname_s[STRLEN], bname_d[STRLEN], rtitle[STRLEN], buf[MAXPATH];
     FILE *fn=NULL;
-    strcpy(buf, pm->path);
-    a_chkbmfrmpath(buf, bname);
-    if (bname[0]) { /* 将记录添加至对应的版面 */
-        gettmpfilename(fname, "ann_range_copy_cut_paste");
-        fn = fopen(fname, "w");
-        if (fn) {
-            fprintf(fn, "\033[45;33m精华区区段%s档案列表\033[K\033[m\n", type==PASTE_COPY?"复制":"移动");
-            fprintf(fn, "\033[44m序号 [类别] 档案标题                               档案名称\033[K\033[m\n");
-        }
+    gettmpfilename(fname, "ann_range_copy_cut_paste");
+    fn = fopen(fname, "w");
+    if (fn) {
+        fprintf(fn, "\033[45;33m精华区区段%s档案列表\033[K\033[m\n", type==PASTE_COPY?"复制":"移动");
+        fprintf(fn, "\033[44m序号 [类别] 档案标题                               档案名称\033[K\033[m\n");
     }
 #endif
     do {
@@ -1240,15 +1249,32 @@ void a_range_copypaste(MENU *pm,int mode)
         snprintf(genbuf, STRLEN, "完成%d篇文章的区段%s操作", i, (type==PASTE_COPY)?"复制":"剪切");
 #ifdef BOARD_SECURITY_LOG
         if (fn) {
-            fprintf(fn, "\n");
-            if (type==PASTE_COPY)
-                if ((p=strrchr(path, '/')))
-                    *p='\0';
-            fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path);
-            fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path);
-            fclose(fn);
-            sprintf(rtitle, "区段%s精华区档案", (type==PASTE_COPY)?"复制":"剪切");
-            board_security_report(fname, getCurrentUser(), rtitle, bname, NULL);
+            bname_s[0] = '\0';
+            bname_d[0] = '\0';
+            strcpy(buf, path);
+            a_chkbmfrmpath(buf, bname_s);
+            strcpy(buf, pm->path);
+            a_chkbmfrmpath(buf, bname_d);
+            if ((type==PASTE_CUT && bname_s[0]) || bname_d[0]) { /* 将记录添加至对应的版面 */
+                fprintf(fn, "\n");
+                if (type==PASTE_COPY)
+                    if ((p=strrchr(path, '/')))
+                        *p='\0';
+                fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path);
+                fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path);
+                fclose(fn);
+                sprintf(rtitle, "区段%s精华区档案", (type==PASTE_COPY)?"复制":"剪切");
+                if (type==PASTE_CUT) {
+                    if (bname_s[0]) {
+                        board_security_report(fname, getCurrentUser(), rtitle, bname_s, NULL);
+                        if (bname_d[0] && strcmp(bname_s, bname_d))
+                            board_security_report(fname, getCurrentUser(), rtitle, bname_d, NULL);
+                    } else
+                        board_security_report(fname, getCurrentUser(), rtitle, bname_d, NULL);
+                } else
+                    board_security_report(fname, getCurrentUser(), rtitle, bname_d, NULL);
+            } else
+                fclose(fn);
             unlink(fname);
         }
 #endif
