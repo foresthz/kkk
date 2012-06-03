@@ -560,7 +560,7 @@ int remove_em_flags(char *ptr, int size)
     e = NULL;
     do {
         if ((p=memmem(ptr, size, "[", 1))!=NULL) {
-            if ((q=memmem(p, size, "]", 1))!=NULL && (em_len=q-p-1)>0) {
+            if ((q=memmem(p, size-(p-ptr), "]", 1))!=NULL && (em_len=q-p-1)>0) {
                 type = is_em_flag(p+1, em_len, tag);
                 if (type>0) {
                     if (tag[0]=='\0') { /* 是单个表情符号, 向前挪动, 并从']'的下一个继续搜索 */
