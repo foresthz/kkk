@@ -1425,6 +1425,7 @@ int allnum, pagenum;
             sprintf(buf, "结束投票 <%s>", currvote.title);
             board_security_report(sugname, getCurrentUser(), buf, currboard->filename, NULL);
             unlink(sugname);
+            sug = NULL;
 #endif
             mk_result(allnum + 1);
             sprintf(buf, "提早结束投票 %s", currvote.title);
@@ -1473,6 +1474,7 @@ int allnum, pagenum;
             sprintf(buf, "关闭投票 <%s>", currvote.title);
             board_security_report(sugname, getCurrentUser(), buf, currboard->filename, NULL);
             unlink(sugname);
+            sug = NULL;
 #endif
             sprintf(buf, "强制关闭投票 %s", currvote.title);
             /* securityreport(buf, NULL, NULL, getSession()); */
