@@ -1252,9 +1252,12 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
     /* fancyrabbit May 28 2007 这个破玩意 U 上置底吧 ...*/
 #ifdef SMTH
     if (!strcmp(title, "请版面尽快产生一名或多名版主") && mode == 2) {
+        struct BoardStatus *bs;
         postfile.accessed[0] |= FILE_MARKED;
         postfile.accessed[1] |= FILE_READ;
         set_posttime(&postfile);
+        bs = getbstatus(getbid(toboard->filename, NULL));
+        postfile.id = bs->nowid+1;
         add_top(&postfile, toboard -> filename, 0);
     }
     if (strstr(title, "通过") && strstr(title, "治版方针")) {
@@ -1262,7 +1265,10 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
         set_posttime(&postfile);
         sprintf(buf4, "审核通过%s版治版方针", toboard->filename);
         if (!strcmp(title, buf4) && mode==2) {
+            struct BoardStatus *bs;
             postfile.accessed[1] |= FILE_READ;
+            bs = getbstatus(getbid(toboard->filename, NULL));
+            postfile.id = bs->nowid+1;
             add_top(&postfile, toboard->filename, 0);
         }
     }
