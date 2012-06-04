@@ -1257,7 +1257,7 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
         postfile.accessed[1] |= FILE_READ;
         set_posttime(&postfile);
         bs = getbstatus(getbid(toboard->filename, NULL));
-        postfile.id = bs->nowid+1;
+        postfile.id = postfile.groupid = postfile.reid = bs->nowid+1;
         add_top(&postfile, toboard -> filename, 0);
     }
     if (strstr(title, "通过") && strstr(title, "治版方针")) {
@@ -1268,7 +1268,7 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
             struct BoardStatus *bs;
             postfile.accessed[1] |= FILE_READ;
             bs = getbstatus(getbid(toboard->filename, NULL));
-            postfile.id = bs->nowid+1;
+            postfile.id = postfile.groupid = postfile.reid = bs->nowid+1;
             add_top(&postfile, toboard->filename, 0);
         }
     }
