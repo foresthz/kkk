@@ -1241,6 +1241,7 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
                             1, 0, 0);
                     if (strlen(searchstr) > 0) {
                         int i = curr_line;
+                        char *p;
                         while (1) {
                             if (ch == '/')
                                 i++;
@@ -1251,6 +1252,7 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
                                 break;
                             if (l.currty == LINE_ATTACHMENT || l.currty == LINE_ATTACHLINK || l.currty == LINE_ATTACHALLLINK)
                                 continue;
+                            /*
                             memcpy(buf, l.curr,
                                    (l.currlen >=
                                     256) ? 255 : l.currlen);
@@ -1258,6 +1260,9 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
                                 l.currlen] = 0;
                             if (strcasestr(buf, searchstr)
                                     != NULL) {
+                            */
+                            /* 由于l.curr实际是文章某行开头起始位置指针，故直接从l.curr开始搜索，当p与之距离小于l.currlen时表明在该行 */
+                            if ((p=strcasestr(l.curr, searchstr))!=NULL && (p-l.curr)<l.currlen) {
                                 change = i - curr_line;
                                 break;
                             }
