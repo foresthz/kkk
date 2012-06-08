@@ -23,6 +23,7 @@ static void *memfind(const void *in_block,     /* 数据块 */
     const unsigned char *match_ptr = NULL;
     const unsigned char *block = (unsigned char *) in_block,    /* Concrete pointer to block data */
                                  *pattern = (unsigned char *) in_pattern;    /* Concrete pointer to search value */
+    unsigned char c1=0, c2=0, *zh_flag;     /* 汉字半字标记 */
 
     if (block == NULL || pattern == NULL || shift == NULL)
         return (NULL);
@@ -33,6 +34,14 @@ static void *memfind(const void *in_block,     /* 数据块 */
 
     if (pattern_size == 0)      /* 空串匹配第一个 */
         return ((void *) block);
+
+    /* 对in_block中的汉字进行分析 */
+    zh_flag = (unsigned char *)malloc(block_size * sizeof(unsigned char));
+    for (byte_nbr = 0; byte_nbr < block_size; byte_nbr++) {
+        c1 = (block[byte_nbr] & 0x80) & (c1 ^ 0x80);
+        zh_flag[byte_nbr] = (c2&&!c1)?1:0;
+        c2 = c1;
+    }
 
     /* 如果没有初始化，构造移位表*/
     if (!init || !*init) {
@@ -48,6 +57,8 @@ static void *memfind(const void *in_block,     /* 数据块 */
     /*开始搜索数据块，每次前进移位表中的数量*/
     limit = block_size - pattern_size + 1;
     for (byte_nbr = 0; byte_nbr < limit; byte_nbr += shift[block[byte_nbr + pattern_size]]) {
+        if (zh_flag[byte_nbr])
+            byte_nbr++;
         if (block[byte_nbr] == *pattern) {
             /*
              * 如果第一个字节匹配，那么继续匹配剩下的
@@ -56,11 +67,14 @@ static void *memfind(const void *in_block,     /* 数据块 */
             match_size = 1;
 
             do {
-                if (match_size == pattern_size)
+                if (match_size == pattern_size) {
+                    free(zh_flag);
                     return (void *)(block + byte_nbr);
+                }
             } while (*match_ptr++ == pattern[match_size++]);
         }
     }
+    free(zh_flag);
     return NULL;
 }
 
@@ -79,6 +93,7 @@ static void *txtfind(const void *in_block,     /* 数据块 */
     const unsigned char *match_ptr = NULL;
     const unsigned char *block = (unsigned char *) in_block,    /* Concrete pointer to block data */
                                  *pattern = (unsigned char *) in_pattern;    /* Concrete pointer to search value */
+    unsigned char c1=0, c2=0, *zh_flag;     /* 汉字半字标记 */
 
     if (block == NULL || pattern == NULL || shift == NULL)
         return (NULL);
@@ -89,6 +104,14 @@ static void *txtfind(const void *in_block,     /* 数据块 */
 
     if (pattern_size == 0)      /* 空串匹配第一个 */
         return ((void *) block);
+
+    /* 对in_block中的汉字进行分析 */
+    zh_flag = (unsigned char *)malloc(block_size * sizeof(unsigned char));
+    for (byte_nbr = 0; byte_nbr < block_size; byte_nbr++) {
+        c1 = (block[byte_nbr] & 0x80) & (c1 ^ 0x80);
+        zh_flag[byte_nbr] = (c2&&!c1)?1:0;
+        c2 = c1;
+    }
 
     /* 如果没有初始化，构造移位表*/
     if (!init || !*init) {
@@ -104,6 +127,8 @@ static void *txtfind(const void *in_block,     /* 数据块 */
     /*开始搜索数据块，每次前进移位表中的数量*/
     limit = block_size - pattern_size + 1;
     for (byte_nbr = 0; byte_nbr < limit; byte_nbr += shift[tolower(block[byte_nbr + pattern_size])]) {
+        if (zh_flag[byte_nbr])
+            byte_nbr++;
         if (tolower(block[byte_nbr]) == tolower(*pattern)) {
             /*
              * 如果第一个字节匹配，那么继续匹配剩下的
@@ -112,11 +137,14 @@ static void *txtfind(const void *in_block,     /* 数据块 */
             match_size = 1;
 
             do {
-                if (match_size == pattern_size)
+                if (match_size == pattern_size) {
+                    free(zh_flag);
                     return (void *)(block + byte_nbr);
+                }
             } while (tolower(*match_ptr++) == tolower(pattern[match_size++]));
         }
     }
+    free(zh_flag);
     return NULL;
 }
 
