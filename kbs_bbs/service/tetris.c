@@ -449,7 +449,7 @@ int win_loadrec()
         topT[n]=0;
         topS[n]=0;
     }
-    sprintf(file, "tetris.rec.%s", level==NORMAL?"normal":"hard");
+    sprintf(file, "tetris.rec.%s", difficulty==NORMAL?"normal":"hard");
     fp=fopen(file,"r");
     if (fp==NULL) {win_saverec();return -1;}
     for (n=0;n<=19;n++)
@@ -463,7 +463,7 @@ int win_saverec()
     char file[STRLEN];
     FILE *fp;
     int n;
-    sprintf(file, "tetris.rec.%s", level==NORMAL?"normal":"hard");
+    sprintf(file, "tetris.rec.%s", difficulty==NORMAL?"normal":"hard");
     fp=fopen(file,"w");
     for (n=0;n<=19;n++) {
         fprintf(fp,"%s %d %d\n",topID[n],topT[n],topS[n]);
