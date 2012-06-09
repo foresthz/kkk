@@ -2,6 +2,13 @@
 #include "bbs.h"
 #include <sys/times.h>
 
+#define KTYPE  15
+#define KDIR   4
+#define KBLOCK 5
+
+#define NORMAL 7
+#define HARD   15
+
 static int on=-1;
 int a[21][12]={
     {8,0,0,0,0,0,0,0,0,0,0,8},
@@ -28,20 +35,29 @@ int a[21][12]={
 };
 
 unsigned char userid[30]="unknown.";
-int dx[7][4][4], dy[7][4][4];
-int d[7][4][4]={
-    {{0,1,4,5}, {0,1,4,5}, {0,1,4,5}, {0,1,4,5}},
-    {{4,5,6,7}, {1,5,9,13}, {4,5,6,7}, {1,5,9,13}},
-    {{0,1,5,6}, {1,4,5,8}, {0,1,5,6}, {1,4,5,8}},
-    {{1,2,4,5}, {0,4,5,9}, {1,2,4,5}, {0,4,5,9}},
-    {{0,1,2,4}, {0,1,5,9}, {2,4,5,6}, {0,4,8,9}},
-    {{0,1,2,6}, {1,5,8,9}, {0,4,5,6}, {0,1,4,8}},
-    {{0,1,2,5}, {1,4,5,9}, {1,4,5,6}, {0,4,5,8}}
+int dx[KTYPE][KDIR][KBLOCK], dy[KTYPE][KDIR][KBLOCK];
+int d[KTYPE][KDIR][KBLOCK]={
+    {{0,1,4,5,0}, {0,1,4,5,0}, {0,1,4,5,0}, {0,1,4,5,0}},
+    {{4,5,6,7,4}, {1,5,9,13,1}, {4,5,6,7,4}, {1,5,9,13,1}},
+    {{0,1,5,6,0}, {1,4,5,8,1}, {0,1,5,6,0}, {1,4,5,8,1}},
+    {{1,2,4,5,1}, {0,4,5,9,0}, {1,2,4,5,1}, {0,4,5,9,0}},
+    {{0,1,2,4,0}, {0,1,5,9,0}, {2,4,5,6,2}, {0,4,8,9,0}},
+    {{0,1,2,6,0}, {1,5,8,9,1}, {0,4,5,6,0}, {0,1,4,8,0}},
+    {{0,1,2,5,0}, {1,4,5,9,1}, {1,4,5,6,1}, {0,4,5,8,0}},
+    {{1,1,1,1,1}, {1,1,1,1,1}, {1,1,1,1,1}, {1,1,1,1,1}},
+    {{1,2,1,2,1}, {1,5,1,5,1}, {1,2,1,2,1}, {1,5,1,5,1}},
+    {{1,2,6,1,2}, {2,5,6,2,6}, {1,5,6,1,5}, {1,2,5,1,2}},
+    {{4,5,6,4,5}, {1,5,9,1,5}, {4,5,6,4,5}, {1,5,9,1,5}},
+    {{0,1,2,4,6}, {1,2,6,9,10}, {0,2,4,5,6}, {0,1,4,8,9}},
+    {{1,4,5,6,9}, {1,4,5,6,9}, {1,4,5,6,9}, {1,4,5,6,9}},
+    {{1,2,5,8,9}, {0,4,5,6,10}, {1,2,5,8,9}, {0,4,5,6,10}},
+    {{0,1,5,9,10}, {2,4,5,6,8}, {0,1,5,9,10}, {2,4,5,6,8}}
 };
 
 int k,n,y,x,e;
 int newk=0;
 int lines=0;
+int difficulty=NORMAL;
 int delay, level, score;
 char topID[20][20];
 int topT[20],topS[20];
@@ -157,8 +173,9 @@ int color(int c)
 
     if (c==lastc) return -1;
     lastc=c;
-    if (c==4) c=12;
-    sprintf(tmp,"\033[%d;%dm",c/8,c%8+30);
+    //if (c==4) c=12;
+    /* 默认都是高亮吧 */
+    sprintf(tmp,"\033[1;%dm",c%8+30);
     prints(tmp);
     return 0;
 }
@@ -205,7 +222,7 @@ int sh2()
 int sh(int y, int x, int k, int n, int c)
 {
     if (n==-1) return -1;
-    for (e=0;e<=3;e++) {
+    for (e=0;e<KBLOCK;e++) {
         move(y+dy[k][n][e],2*(x+dx[k][n][e]));
         color(c);
         if (c)prints("■");else prints("  ");
@@ -251,9 +268,9 @@ int quit(void)
 
 int init_data(void)
 {
-    for (k=0;k<=6;k++)
-        for (n=0;n<=3;n++)
-            for (e=0;e<=3;e++) {
+    for (k=0;k<KTYPE;k++)
+        for (n=0;n<KDIR;n++)
+            for (e=0;e<KBLOCK;e++) {
                 dx[k][n][e]=d[k][n][e]%4;
                 dy[k][n][e]=d[k][n][e]/4;
             }
@@ -262,7 +279,7 @@ int init_data(void)
             a[y][x]=0;
         }
     srand(time(0));
-    newk=rand()%7;
+    newk=rand()%difficulty;
     level=0;
     delay=200;
     lines=0;
@@ -272,7 +289,7 @@ int init_data(void)
 
 int crash2(int x, int y, int k, int n)
 {
-    for (e=0;e<=3;e++)
+    for (e=0;e<KBLOCK;e++)
         if (a[y+dy[k][n][e]][x+dx[k][n][e]])return 1;
     return 0;
 }
@@ -289,11 +306,12 @@ int start(void)
         first=1;
         while (1) {
             k=newk;
-            newk=rand()%7;
+            newk=rand()%difficulty;
             n=0;
             color(0);
             move(0,25);prints("                ");
             move(1,25);prints("                ");
+            move(2,25);prints("                ");
             sh(0,14,newk,0,newk+1);
             n=0;
             x=3;y=0;
@@ -315,9 +333,9 @@ int start(void)
                 }
                 if (c==KEY_LEFT||c=='a'||c=='A') if (!crash2(x-1,y,k,n)) {x--;sh2();}
                 if (c==KEY_RIGHT||c=='s'||c=='S') if (!crash2(x+1,y,k,n)) {x++;sh2();}
-                if (c=='b'||c=='B'||c=='\n'||c=='\r') if (!crash2(x,y,k,(n+1)%4)) {n=(n+1)%4;sh2();}
-                if (c=='h'||c=='H'||c==KEY_UP) if (!crash2(x,y,k,(n+3)%4)) {n=(n+3)%4;sh2();}
-                if (c=='J'||c=='j') if (!crash2(x,y,k,(n+2)%4)) {n=(n+2)%4;sh2();}
+                if (c=='b'||c=='B'||c=='\n'||c=='\r') if (!crash2(x,y,k,(n+1)%KDIR)) {n=(n+1)%KDIR;sh2();}
+                if (c=='h'||c=='H'||c==KEY_UP) if (!crash2(x,y,k,(n+3)%KDIR)) {n=(n+3)%KDIR;sh2();}
+                if (c=='J'||c=='j') if (!crash2(x,y,k,(n+2)%KDIR)) {n=(n+2)%KDIR;sh2();}
                 if (c==' ') {while (!crash2(x,y+1,k,n))y++;sh2();down();break;}
                 if (times(&faint)-t>delay||c==KEY_DOWN||c=='z'||c=='Z') {
                     t=times(&faint);
@@ -332,7 +350,7 @@ int start(void)
 
 int down(void)
 {
-    for (e=0;e<=3;e++)
+    for (e=0;e<KBLOCK;e++)
         a[y+dy[k][n][e]][x+dx[k][n][e]]=k+1;
     checklines();
     on=-1;
@@ -373,6 +391,21 @@ int checklines(void)
     return 0;
 }
 
+void select_difficulty()
+{
+    int ch;
+    while(1){
+        move(15, 0);
+        prints("选择游戏难度: %s", (difficulty==NORMAL)?"[\033[32m简单\033[m] [困难]":"[简单] [\033[32m困难\033[m]");
+        ch = igetkey();
+        if (ch==KEY_LEFT || ch==KEY_RIGHT || ch==KEY_TAB)
+            difficulty = (difficulty==NORMAL) ? HARD : NORMAL;
+        else if (ch=='\r')
+            break;
+    }
+    return;
+}
+
 int intr(void)
 {
     clear();
@@ -385,8 +418,9 @@ int intr(void)
     prints("快降: ' ', 暂停: <\033[1;32mESC\033[m>.\r\n");
     prints("退出: '\033[1;32m^C\033[m', '\033[1;32m^D\033[m'.\r\n\r\n");
     prints("每消 \033[1;33m30\033[m 行升一级. \r\n");
-    prints("\n\n\033[1;31m注意:不支持在ssh下进行游戏,只支持telnet\n");
-    pressanykey();
+    //prints("\n\n\033[1;31m注意:不支持在ssh下进行游戏,只支持telnet\n");
+    //pressanykey();
+    select_difficulty();
     clear();
     return 0;
 }
@@ -407,6 +441,7 @@ int count()
 
 int win_loadrec()
 {
+    char file[STRLEN];
     FILE *fp;
     int n;
     for (n=0;n<=19;n++) {
@@ -414,7 +449,8 @@ int win_loadrec()
         topT[n]=0;
         topS[n]=0;
     }
-    fp=fopen("tetris.rec","r");
+    sprintf(file, "tetris.rec.%s", level==NORMAL?"normal":"hard");
+    fp=fopen(file,"r");
     if (fp==NULL) {win_saverec();return -1;}
     for (n=0;n<=19;n++)
         fscanf(fp,"%s %d %d\n",topID[n],&topT[n],&topS[n]);
@@ -424,9 +460,11 @@ int win_loadrec()
 
 int win_saverec()
 {
+    char file[STRLEN];
     FILE *fp;
     int n;
-    fp=fopen("tetris.rec","w");
+    sprintf(file, "tetris.rec.%s", level==NORMAL?"normal":"hard");
+    fp=fopen(file,"w");
     for (n=0;n<=19;n++) {
         fprintf(fp,"%s %d %d\n",topID[n],topT[n],topS[n]);
     }
@@ -441,7 +479,7 @@ int win_showrec()
 
     win_loadrec();
     clear();
-    prints("\033[44;37m                         -       TETRIS 排行榜-                                 \r\n\033[m");
+    prints("\033[44;37m                         - TETRIS 排行榜 (%s) -                                 \r\n\033[m", difficulty==NORMAL?"简单":"困难");
     prints("\033[41m No.          ID        LINES                         Score                      \033[m\n\r");
     for (n=0;n<=19;n++) {
         sprintf(tmp, "\033[1;37m%3d\033[32m%13s\033[0;37m%12d\033[m%29d\n\r",n+1,topID[n],topT[n]
