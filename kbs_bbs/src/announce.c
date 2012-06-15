@@ -570,7 +570,7 @@ int ent;
                 FILE *fn;
                 gettmpfilename(filename, "import_post");
                 if ((fn=fopen(filename, "w"))!=NULL) {
-                    fprintf(fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", pm.path+10);
+                    fprintf(fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", pm.path+17);
                     fclose(fn);
                 }
                 if (strlen(fileinfo->title)>40) {
@@ -804,7 +804,7 @@ int mode;
             if ((fn=fopen(filename, "w"))!=NULL) {
                 fprintf(fn, "\033[33m%s标题: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", title);
                 fprintf(fn, "\033[33m%s名称: \033[4;32m%s\033[m\n", mode==ADDGROUP?"目录":"文件", fname);
-                fprintf(fn, "\033[33m添加路径: \033[4;32m%s\033[m\n", pm->path+10);
+                fprintf(fn, "\033[33m添加路径: \033[4;32m%s\033[m\n", pm->path+17);
                 fclose(fn);
             }
             sprintf(rtitle, "添加精华区%s <%s>", mode==ADDGROUP?"目录":"文件", title);
@@ -1027,8 +1027,8 @@ void a_copypaste(MENU *pm,int mode)
             if (type==PASTE_COPY)
                 if ((p=strrchr(path, '/')))
                     *p='\0';
-            fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path+10);
-            fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path+10);
+            fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path+17);
+            fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path+17);
             fclose(fn);
         }
         sprintf(rtitle, "%s精华区%s <%s>", type==PASTE_COPY?"复制":"移动", S_ISDIR(st.st_mode)?"目录":"文件", title);
@@ -1260,8 +1260,8 @@ void a_range_copypaste(MENU *pm,int mode)
                 if (type==PASTE_COPY)
                     if ((p=strrchr(path, '/')))
                         *p='\0';
-                fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path+10);
-                fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path+10);
+                fprintf(fn, "\033[33m原始路径: \033[4;32m%s/\033[m\n", path+17);
+                fprintf(fn, "\033[33m目标路径: \033[4;32m%s/\033[m\n", pm->path+17);
                 fclose(fn);
                 sprintf(rtitle, "区段%s精华区档案", (type==PASTE_COPY)?"复制":"剪切");
                 if (type==PASTE_CUT) {
@@ -1341,7 +1341,7 @@ void a_delete(MENU *pm)
         a_chkbmfrmpath(buf, board);
         if (board[0]) { /* 将记录添加至对应的版面 */
             if ((fn=fopen(filename, "w"))!=NULL) {
-                fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path+10);
+                fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path+17);
                 fclose(fn);
             }
             sprintf(title, "删除精华区%s <%s>", S_ISLNK(st.st_mode)?"链接":(S_ISDIR(st.st_mode)?"目录":"文件"), anntitle);
@@ -1392,10 +1392,13 @@ MENU *pm;
                 if (board[0]) { /* 将记录添加至对应的版面 */
                     if ((fn=fopen(filename, "w"))!=NULL) {
                         fprintf(fn, "\033[33m档案名称: \033[31m%s\033[m -> \033[32m%s\033[m\n", originname, fname);
-                        fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", pm->path+10);
+                        fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", pm->path+17);
                         fclose(fn);
                     }
-                    sprintf(title, "修改精华区%s名称 <%s>", dashf(fpath)?"文件":"目录", M_ITEM(pm,pm->now)->title);
+                    strncpy(buf, M_ITEM(pm,pm->now)->title, 39);
+                    buf[38] = '\0';
+                    remove_blank_ctrlchar(buf, buf, false, true, true);
+                    sprintf(title, "修改精华区%s名称 <%s>", dashf(fpath)?"文件":"目录", buf);
                     board_security_report(filename, getCurrentUser(), title, board, NULL);
                     unlink(filename);
                 }
@@ -1705,7 +1708,7 @@ void a_manager(MENU *pm,int ch)
                             if (board[0]) { /* 将记录添加至对应的版面 */
                                 if ((fn=fopen(filename, "w"))!=NULL) {
                                     fprintf(fn, "\033[33m原始标题: \033[4;32m%s\033[m\n", unchanged_T);
-                                    fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", fpath+10);
+                                    fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", fpath+17);
                                     fclose(fn);
                                 }
                                 sprintf(title, "修改精华区%s标题 <%s>", dashf(fpath)?"文件":"目录", changed_T);
@@ -1918,7 +1921,7 @@ static void ann_get_current_url(char* buf,int buf_len,char *ext, int len,void* a
     ann_get_board(m->path, board, sizeof(board));
     if (board[0] =='\0' || (bid=getbnum_safe(board,getSession(), 1))==0) {
         snprintf(buf,buf_len-9,"http://%s/%s?path=%s/%s",
-                 get_my_webdomain(domainflag), phpname, m->path+10, M_ITEM(m,m->now)->fname);
+                 get_my_webdomain(domainflag), phpname, m->path+17, M_ITEM(m,m->now)->fname);
         return;
     }
 
