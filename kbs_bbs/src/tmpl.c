@@ -781,12 +781,12 @@ static int tmpl_key(struct _select_def *conf, int key)
             FILE *fn;
             gettmpfilename(filename, "tmpl_name_mod");
             if ((fn=fopen(filename, "w"))!=NULL) {
-                fprintf(fn, "\033[33m修改模版名称\033[m\n");
+                fprintf(fn, "\033[45;33m修改模版名称\033[m\n");
                 fprintf(fn, "\033[33m模版名称: \033[31m%s\033[m  ->  \033[32m%s\033[m\n", ptemplate[conf->pos-1].tmpl->title, newtitle);
                 fprintf(fn, "\033[33m模版序号: \033[32m%d\033[m\n", conf->pos);
                 fclose(fn);
             }
-            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            sprintf(buf, "修改模版 <%s>", ptemplate[conf->pos-1].tmpl->title);
             board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
             unlink(filename);
 #endif
@@ -871,7 +871,7 @@ return SHOW_REFRESH;
                 fclose(fn);
             }
             unlink(filediff);
-            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            sprintf(buf, "修改模版 <%s>", ptemplate[conf->pos-1].tmpl->title);
             board_security_report(oldfile, getCurrentUser(), buf, currboard->filename, NULL);
             unlink(oldfile);
 #endif
@@ -899,12 +899,12 @@ return SHOW_REFRESH;
             FILE *fn;
             gettmpfilename(filename, "tmpl_bm_only");
             if ((fn=fopen(filename, "w"))!=NULL) {
-                fprintf(fn, "\033[33m设定模版版主专用属性\033[m\n");
+                fprintf(fn, "\033[45;33m设定模版版主专用属性\033[m\n");
                 fprintf(fn, "\033[33m版主专用: \033[31m%s\033[m\033[m\n", ptemplate[conf->pos-1].tmpl->flag&TMPL_BM_FLAG?"是":"否");
                 fprintf(fn, "\033[33m模版序号: \033[32m%d\033[m\n", conf->pos);
                 fclose(fn);
             }
-            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            sprintf(buf, "修改模版 <%s>", ptemplate[conf->pos-1].tmpl->title);
             board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
             unlink(filename);
 #endif
@@ -924,12 +924,12 @@ return SHOW_REFRESH;
             FILE *fn;
             gettmpfilename(filename, "tmpl_title_mod");
             if ((fn=fopen(filename, "w"))!=NULL) {
-                fprintf(fn, "\033[33m修改模版标题\033[m\n");
+                fprintf(fn, "\033[45;33m修改模版标题\033[m\n");
                 fprintf(fn, "\033[33m模版标题: \033[31m%s\033[m  ->  \033[32m%s\033[m\n", ptemplate[conf->pos-1].tmpl->title_tmpl, newtitle);
                 fprintf(fn, "\033[33m模版序号: \033[32m%d\033[m\n", conf->pos);
                 fclose(fn);
             }
-            sprintf(buf, "修改模版 <%s>", ptemplate[t_now].tmpl->title);
+            sprintf(buf, "修改模版 <%s>", ptemplate[conf->pos-1].tmpl->title);
             board_security_report(filename, getCurrentUser(), buf, currboard->filename, NULL);
             unlink(filename);
 #endif
