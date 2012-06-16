@@ -9,6 +9,10 @@
 #define NORMAL 7
 #define HARD   15
 
+#define LEFT   1
+#define RIGHT  2
+#define DOWN   3
+
 static int on=-1;
 int a[21][12]={
     {8,0,0,0,0,0,0,0,0,0,0,8},
@@ -183,26 +187,27 @@ int color(int c)
 int clear2()
 {
     clear();
-    move(3,0);
-    prints("                            \033[1;33m┌─┐     \n");
-    prints("                            │Ｔ│     \n");
-    prints("                            └─┘     \n");
-    prints("                            \033[1;34m┌─┐     \n");
-    prints("                            │Ｅ│     \n");
-    prints("                            └─┘     \n");
-    prints("                            \033[1;33m┌─┐     \n");
-    prints("                            │Ｔ│     \n");
-    prints("                            └─┘     \n");
-    prints("                            \033[1;35m┌─┐     \n");
-    prints("                            │Ｒ│     \n");
-    prints("                            └─┘     \n");
-    prints("                            \033[1;31m┌─┐     \n");
-    prints("                            │Ｉ│     \n");
-    prints("                            └─┘     \n");
-    prints("                            \033[1;32m┌─┐     \n");
-    prints("                            │Ｓ│     \n");
-    prints("                            └─┘\033[m     \n");
+    move(2,0);
+    prints("                                      \033[1;33m┌─┐     \n");
+    prints("                                      │Ｔ│     \n");
+    prints("                                      └─┘     \n");
+    prints("                                      \033[1;34m┌─┐     \n");
+    prints("                                      │Ｅ│     \n");
+    prints("                                      └─┘     \n");
+    prints("                                      \033[1;33m┌─┐     \n");
+    prints("                                      │Ｔ│     \n");
+    prints("                                      └─┘     \n");
+    prints("                                      \033[1;35m┌─┐     \n");
+    prints("                                      │Ｒ│     \n");
+    prints("                                      └─┘     \n");
+    prints("                                      \033[1;31m┌─┐     \n");
+    prints("                                      │Ｉ│     \n");
+    prints("                                      └─┘     \n");
+    prints("                                      \033[1;32m┌─┐     \n");
+    prints("                                      │Ｓ│     \n");
+    prints("                                      └─┘\033[m     \n");
 
+    move(21,0);
     prints("\033[1;33m祝你玩的愉快! \033[m按 '\033[1;32mCtrl+C\033[m'退出.");
     return 0;
 }
@@ -222,21 +227,48 @@ int sh2()
 int sh(int y, int x, int k, int n, int c)
 {
     if (n==-1) return -1;
-    for (e=0;e<KBLOCK;e++) {
-        move(y+dy[k][n][e],2*(x+dx[k][n][e]));
+    if (k==7&&c==0) {
+        move(y+dy[7][0][0],2*(x+dx[7][0][0]));
+        c=a[y+dy[7][0][0]][x+dx[7][0][0]];
         color(c);
         if (c)prints("■");else prints("  ");
+    } else {
+        for (e=0;e<KBLOCK;e++) {
+            move(y+dy[k][n][e],2*(x+dx[k][n][e]));
+            color(c);
+            if (c)prints("■");else prints("  ");
+        }
     }
     move(0,0);
     return 0;
 }
 
-int show0()
+int show0(int init)
 {
     int ytmp,xtmp;
-    for (ytmp=0;ytmp<=20;ytmp++) {
-        move(ytmp,0);
-        for (xtmp=0;xtmp<=11;xtmp++) {
+    if (init) {
+        for (ytmp=0;ytmp<=20;ytmp++) {
+            move(ytmp, 0);
+            prints("\033[1;30m■");
+            move(ytmp, 22);
+            prints("\033[1;30m■");
+        }
+        for (xtmp=1;xtmp<=10;xtmp++) {
+            move(20, 2*xtmp);
+            prints("\033[1;30m■");
+        }
+        move(0,26);
+        prints("\033[1;33m下一个\033[m");
+        move(7,26);
+        prints("\033[1;33m得分\033[m");
+        move(10,26);
+        prints("\033[1;33m行数\033[m");
+        move(13,26);
+        prints("\033[1;33m级别\033[m");
+    }
+    for (ytmp=0;ytmp<20;ytmp++) {
+        move(ytmp,2);
+        for (xtmp=1;xtmp<=10;xtmp++) {
             color(a[ytmp][xtmp]);
             if (a[ytmp][xtmp])
                 prints("■");
@@ -287,8 +319,21 @@ int init_data(void)
     return 0;
 }
 
-int crash2(int x, int y, int k, int n)
+int crash2(int x, int y, int k, int n, int dir)
 {
+    if (dir==LEFT)
+        x--;
+    else if (dir==RIGHT)
+        x++;
+    else if (dir==DOWN) {
+        y++;
+        if (k==7) {
+            for(;y<20;y++)
+                if (a[y+dy[7][0][0]][x+dx[7][0][0]]==0)
+                    return 0;
+            return 1;
+        }
+    }
     for (e=0;e<KBLOCK;e++)
         if (a[y+dy[k][n][e]][x+dx[k][n][e]])return 1;
     return 0;
@@ -296,28 +341,37 @@ int crash2(int x, int y, int k, int n)
 
 int start(void)
 {
-    int c,t,first;
+    int c,t,first,newn;
     struct tms faint;
     win_showrec();
     while (1) {
         init_data();
         clear2();
-        show0();
+        show0(1);
         first=1;
+        newn=rand()%KDIR;
         while (1) {
             k=newk;
             newk=rand()%difficulty;
-            n=0;
+            n=newn;
+            newn=rand()%KDIR;
             color(0);
-            move(0,25);prints("                ");
-            move(1,25);prints("                ");
-            move(2,25);prints("                ");
-            sh(0,14,newk,0,newk+1);
-            n=0;
+            move(2,25);prints("            ");
+            move(3,25);prints("            ");
+            move(4,25);prints("            ");
+            move(5,25);prints("            ");
+            sh(2,14,newk,newn,newk+1);
+            //n=0;
+            move(8,28);
+            prints("\033[1;32m%8d\033[m", score);
+            move(11,28);
+            prints("\033[1;32m%8d\033[m", lines);
+            move(14,28);
+            prints("\033[1;32m%8d\033[m", level);
             x=3;y=0;
             sh2();
             if (first) {pressanykey();first=0;}
-            if (crash2(x,y,k,n)) {
+            if (crash2(x,y,k,n,0)) {
                 win_checkrec(score,lines);
                 break;
             }
@@ -331,15 +385,15 @@ int start(void)
                     win_checkrec(score,lines);
                     return 0;
                 }
-                if (c==KEY_LEFT||c=='a'||c=='A') if (!crash2(x-1,y,k,n)) {x--;sh2();}
-                if (c==KEY_RIGHT||c=='s'||c=='S') if (!crash2(x+1,y,k,n)) {x++;sh2();}
-                if (c=='b'||c=='B'||c=='\n'||c=='\r') if (!crash2(x,y,k,(n+1)%KDIR)) {n=(n+1)%KDIR;sh2();}
-                if (c=='h'||c=='H'||c==KEY_UP) if (!crash2(x,y,k,(n+3)%KDIR)) {n=(n+3)%KDIR;sh2();}
-                if (c=='J'||c=='j') if (!crash2(x,y,k,(n+2)%KDIR)) {n=(n+2)%KDIR;sh2();}
-                if (c==' ') {while (!crash2(x,y+1,k,n))y++;sh2();down();break;}
+                if (c==KEY_LEFT||c=='a'||c=='A') if (!crash2(x,y,k,n,LEFT)) {x--;sh2();}
+                if (c==KEY_RIGHT||c=='s'||c=='S') if (!crash2(x,y,k,n,RIGHT)) {x++;sh2();}
+                if (c=='b'||c=='B'||c=='\n'||c=='\r') if (!crash2(x,y,k,(n+1)%KDIR,0)) {n=(n+1)%KDIR;sh2();}
+                if (c=='h'||c=='H'||c==KEY_UP) if (!crash2(x,y,k,(n+3)%KDIR,0)) {n=(n+3)%KDIR;sh2();}
+                if (c=='J'||c=='j') if (!crash2(x,y,k,(n+2)%KDIR,0)) {n=(n+2)%KDIR;sh2();}
+                if (c==' ') {while (!crash2(x,y,k,n,DOWN))y++;sh2();down();break;}
                 if (times(&faint)-t>delay||c==KEY_DOWN||c=='z'||c=='Z') {
                     t=times(&faint);
-                    if (crash2(x,y+1,k,n)) {down();break;}
+                    if (crash2(x,y,k,n,DOWN)) {down();break;}
                     else {y++;sh2();}
                 }
             }
@@ -368,25 +422,25 @@ int checklines(void)
             if (a[y1][x1]==0)break;
         if (x1<=10) continue;
         s++;
-        move(23,0);
-        prints("\033[33mLines =\033[32m%3d", lines+1);
-        if (lines==0) prints("                         ");
+        //move(23,0);
+        //prints("\033[33mLines =\033[32m%3d", lines+1);
+        //if (lines==0) prints("                         ");
         for (y2=y1;y2>=1;y2--)
             for (x1=1;x1<=10;x1++)
                 a[y2][x1]=a[y2-1][x1];
         for (x1=1;x1<=10;x1++)
             a[0][x1]=0;
         if ((++lines)%30==0)
-            {delay*=.8; level++; bell();move(23,35);prints("\033[33mLevel =\033[32m%3d", level);}
+            {delay*=.8; level++; bell();/*move(23,35);prints("\033[33mLevel =\033[32m%3d", level);*/}
     }
     if (s==1) score+=10;
     else if (s==2) score+=30;
     else if (s==3) score+=50;
     else if (s==4) score+=100;
     if (s) {
-        move(23,15);
-        prints("\033[33mScore = \033[32m%5d",score);
-        show0();
+        //move(23,15);
+        //prints("\033[33mScore = \033[32m%5d",score);
+        show0(0);
     }
     return 0;
 }
