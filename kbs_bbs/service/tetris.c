@@ -259,12 +259,18 @@ int show0(int init)
         }
         move(0,26);
         prints("\033[1;33m下一个\033[m");
+        move(8,28);
+        prints("\033[1;32m%8d\033[m", score);
         move(7,26);
         prints("\033[1;33m得分\033[m");
+        move(11,28);
+        prints("\033[1;32m%8d\033[m", lines);
         move(10,26);
         prints("\033[1;33m行数\033[m");
         move(13,26);
         prints("\033[1;33m级别\033[m");
+        move(14,28);
+        prints("\033[1;32m%8d\033[m", level);
     }
     for (ytmp=0;ytmp<20;ytmp++) {
         move(ytmp,2);
@@ -362,12 +368,6 @@ int start(void)
             move(5,25);prints("            ");
             sh(2,14,newk,newn,newk+1);
             //n=0;
-            move(8,28);
-            prints("\033[1;32m%8d\033[m", score);
-            move(11,28);
-            prints("\033[1;32m%8d\033[m", lines);
-            move(14,28);
-            prints("\033[1;32m%8d\033[m", level);
             x=3;y=0;
             sh2();
             if (first) {pressanykey();first=0;}
@@ -431,13 +431,17 @@ int checklines(void)
         for (x1=1;x1<=10;x1++)
             a[0][x1]=0;
         if ((++lines)%30==0)
-            {delay*=.8; level++; bell();/*move(23,35);prints("\033[33mLevel =\033[32m%3d", level);*/}
+            {delay*=.8; level++; bell();move(14,28);prints("\033[1;32m%8d\033[m", level);}
     }
     if (s==1) score+=10;
     else if (s==2) score+=30;
     else if (s==3) score+=50;
     else if (s==4) score+=100;
     if (s) {
+        move(8,28);
+        prints("\033[1;32m%8d\033[m", score);
+        move(11,28);
+        prints("\033[1;32m%8d\033[m", lines);
         //move(23,15);
         //prints("\033[33mScore = \033[32m%5d",score);
         show0(0);
