@@ -65,6 +65,10 @@ int Goodbye(void);
 void RemoveAppendedSpace();     /* Leeward 98.02.13 */
 extern time_t login_start_time;
 
+#ifdef SAVE_POS
+extern time_t pos_save_time;
+#endif
+
 extern struct screenline *big_picture;
 extern struct userec *user_data;
 extern int b_vote(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
@@ -5413,7 +5417,7 @@ int Goodbye(void)                       /*离站 选单 */
 #endif
 #ifdef SAVE_POS
         /* 保存本次的版面光标位置 */
-        if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW))
+        if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW) && pos_save_time)
             save_article_pos();
 #endif
         fp = fopen("friendbook", "r");  /*搜索系统 寻人名单 */

@@ -27,6 +27,10 @@
 
 extern int temp_numposts;
 
+#ifdef SAVE_POS
+extern time_t pos_save_time;
+#endif
+
 char outbuffer[OBUFSIZE + 1];
 char *outbuf = outbuffer + 1;
 int obufsize = 0;
@@ -389,6 +393,15 @@ igetagain:
                     inremsg = false;
                 }
             }
+#ifdef SAVE_POS
+        if (getCurrentUser() && !DEFINE(getCurrentUser(), DEF_FIRSTNEW)) {
+            if (pos_save_time && time(0)-pos_save_time>IDLE_TIMEOUT) {
+                save_article_pos();
+                while (time(0)-pos_save_time>IDLE_TIMEOUT)
+                    pos_save_time+=IDLE_TIMEOUT;
+            }
+        }
+#endif
         if (kicked) return KEY_TIMEOUT;
 #ifdef SSHBBS
         sr = ssh_select(hifd, &readfds, NULL, NULL, &to);
@@ -474,6 +487,15 @@ igetagain:
                         }
                         if (sr<0&&saveerrno==EINTR)continue;
                     }
+#ifdef SAVE_POS
+                if (getCurrentUser() && !DEFINE(getCurrentUser(), DEF_FIRSTNEW)) {
+                    if (pos_save_time && time(0)-pos_save_time>IDLE_TIMEOUT) {
+                        save_article_pos();
+                        while (time(0)-pos_save_time>IDLE_TIMEOUT)
+                            pos_save_time+=IDLE_TIMEOUT;
+                    }
+                }
+#endif
                 if (sr == 0 && alarm_timeout) {
                     i_timeout = 0;
                     i_timeoutusec=0;
