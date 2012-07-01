@@ -887,6 +887,23 @@ int x_userdefine(void)
     if (newlevel == lookupuser->userdefine[0])
         prints("参数没有修改...\n");
     else {
+#ifdef SAVE_POS
+        /* 当DEF_FIRSTNEW变化时，处理文章位置记录功能 */
+        if ((newlevel^lookupuser->userdefine[0]) & DEF_FIRSTNEW) {
+            char saveposfile[STRLEN];
+            extern time_t pos_save_time;
+            sethomefile(saveposfile, getCurrentUser()->userid, ".savedartpos");
+            if (!(newlevel&DEF_FIRSTNEW)) {
+                if ((askyn("是否启用\"保存版面光标位置\"功能", 0))==1) {
+                    save_article_pos();
+                    pos_save_time=time(0);
+                }
+            } else {
+                unlink(saveposfile);
+                pos_save_time=0;
+            }
+        }
+#endif
         lookupuser->userdefine[0] = newlevel;
         getCurrentUser()->userdefine[0] = newlevel;
         if (((convcode) && (newlevel & DEF_USEGB))      /* KCN,99.09.05 */

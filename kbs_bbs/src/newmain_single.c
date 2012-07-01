@@ -1379,21 +1379,9 @@ void user_login()
     if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW)) {
         char saveposfile[STRLEN];
         sethomefile(saveposfile, getCurrentUser()->userid, ".savedartpos");
-        clear();
-        move(3, 0);
-        prints("提示: 当个人参数设定 \"\033[32mN. 阅读文章游标停于第一篇未读  OFF\033[m\" 时，\n"
-               "      可使用 \"\033[33m保存版面光标位置\033[m\" 功能");
-        move(t_lines-1, 0);
         if (dashf(saveposfile)) {
-            if ((askyn("是否启用\"保存版面光标位置\"功能并载入保存的版面光标位置", 1))==1) {
-                pos_save_time = time(0);
-                load_article_pos();
-            } else {
-                unlink(saveposfile);
-            }
-        } else {
-            if ((askyn("是否启用\"保存版面光标位置\"功能", 0))==1)
-                pos_save_time = time(0);
+            load_article_pos();
+            pos_save_time = time(0);
         }
     }
 #endif
