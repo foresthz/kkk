@@ -1327,6 +1327,7 @@ int a_edits_new(void){
                         char oldfilename[STRLEN];
                         gettmpfilename(oldfilename, "system_file_old", getpid());
                         f_cp(genbuf, oldfilename, 0);
+                        modify_user_mode(EDITSFILE);
                         if (vedit(genbuf, false, NULL, NULL, 0)!=-1) {
                             move(t_lines - 2, 0);
                             prints("%s ¸üÐÂ¹ý...", explain_file[pos-1]);
