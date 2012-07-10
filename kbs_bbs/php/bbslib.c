@@ -473,8 +473,14 @@ int www_user_login(struct userec *user, int useridx, int kick_multi, char *fromh
         t = user->lastlogin;
         if (abs(t - time(0)) < 5)
             return 5;
+#ifdef NEWSMTH
+        if (!(HAS_PERM(user, PERM_SYSOP) && (HAS_PERM(user, PERM_CHATCLOAK) || HAS_PERM(user, PERM_CLOAK)) && (user->flags & CLOAK_FLAG))) {
+#endif
         user->lastlogin = time(0);
         user->numlogins++;
+#ifdef NEWSMTH
+        }
+#endif
         strncpy(user->lasthost, fromhost, IPLEN);
         user->lasthost[IPLEN - 1] = '\0';       /* add by binxun ,fix the bug */
         read_userdata(user->userid, &ud);
