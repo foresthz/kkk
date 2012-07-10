@@ -657,6 +657,9 @@ int www_user_logoff(struct userec *user, int useridx, struct user_info *puinfo, 
     }
 #endif
     time_t stay = www_sync_stay(user, puinfo);
+#ifdef NEWSMTH
+    if (!(puinfo->invisible == true && HAS_PERM(user, PERM_SYSOP) && user->exittime > user->lastlogin))
+#endif
     user->exittime = time(0);
     if (strcmp(user->userid, "guest")) {
         newbbslog(BBSLOG_USIES, "EXIT: Stay:%3ld (%s)[%d %d](www)", stay / 60, user->username, getSession()->utmpent, useridx);
