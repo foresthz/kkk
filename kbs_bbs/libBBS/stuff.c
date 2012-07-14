@@ -3574,3 +3574,38 @@ void load_title_key(int init, int bid, const char *board)
     }
 }
 #endif
+
+#ifdef NEWSMTH //积分变化信件通知
+int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, unsigned int om, unsigned int nm, char *r)
+{
+    char mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
+    time_t now;
+    int ds, dm;
+    FILE *fn;
+
+    ds = ns - os;
+    dm = nm - om;
+    if (ds==0 && dm==0)
+        return 1;
+    now = time(0);
+    gettmpfilename(mailfile, "score_change_mail");
+    if ((fn=fopen(mailfile, "w"))!=NULL) {
+        fprintf(fn, "寄信人: deliver\n");
+        fprintf(fn, "标  题: [系统] 用户积分变化通知\n");
+        fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
+        fprintf(fn, "来  源: %s\n\n", NAME_BBS_ENGLISH);
+        fprintf(fn, "[用户积分变化情况]\n\n");
+        if (ds)
+            fprintf(fn, "  用户普通积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", os, ns, (ds>0)?"\033[31m↑":"\033[36m↓", abs(ds));
+        if (dm)
+            fprintf(fn, "  用户管理积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", om, nm, (dm>0)?"\033[31m↑":"\033[36m↓", abs(dm));
+        if (r && r[0])
+            fprintf(fn, "\n\n[原因]: \033[32m%s\033[m\n", r);
+        fclose(fn);
+        sprintf(title, "[系统] 用户积分变化通知");
+        mail_file("deliver", mailfile, user->userid, title, BBSPOST_MOVE, NULL);
+        unlink(mailfile);
+    }
+    return 0;
+}
+#endif

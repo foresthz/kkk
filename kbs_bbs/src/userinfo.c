@@ -1193,6 +1193,10 @@ int modify_userinfo(int uid,int mode)
     int i,j,k,loop,pos,mail;
     unsigned int access,change,verify,level;
     time_t current;
+#ifdef NEWSMTH /* 积分调整原因 */
+    char reason[40];
+    reason[0] = 0;
+#endif
     switch (mode) {
         case 0:
             access=MU_ACCESS_USER;
@@ -1972,6 +1976,12 @@ int modify_userinfo(int uid,int mode)
             unlink(name);
         }
     }
+#ifdef NEWSMTH  //积分变化信件通知, jiangjun, 20120708
+    if (change & (1 << MOD_SCORE)) {
+        getdata(t_lines-2, 2, "\033[1;32m输入积分调整原因（Enter忽略）: \033[m", reason, 38, DOECHO, NULL, true);
+        score_change_mail(&vuser, ouser.score_user, vuser.score_user, ouser.score_manager, vuser.score_manager, reason);
+    }
+#endif
     if ((change & (1 << MOD_USERLEVEL)) && (ouser.userlevel & PERM_BASIC) && !(vuser.userlevel & PERM_BASIC))
         while (kick_user_utmp(uid, NULL, 0) == 10)
             continue;
@@ -1985,8 +1995,14 @@ int modify_userinfo(int uid,int mode)
             write_header(fp,getCurrentUser(),0,"syssecurity",buf,0,0,getSession());
             fprintf(fp,"\033[1;37m[用户 <uid=\033[1;31m%d\033[1;37m> 数据修改明细]\033[m\n\n",uid);
             for (j=0; j<(MU_ITEM-1); j++) {
-                if (change&(1<<j))
-                    fprintf(fp," \033[1;33m[%-8.8s]: \033[0;33m%s\033[m\n%-13.13s\033[1;32m%s\033[m\n\n",prefix[j],omenu[j],"",menu[j]);
+                if (change&(1<<j)) {
+                    fprintf(fp," \033[1;33m[%-8.8s]: \033[0;33m%s\033[m\n%-13.13s\033[1;32m%s\033[m\n",prefix[j],omenu[j],"",menu[j]);
+#ifdef NEWSMTH /* 积分调整原因 */
+                    if (change&(1<<MOD_SCORE)&&reason[0])
+                        fprintf(fp, "             \033[1;31m积分调整原因: %s\033[m\n", reason);
+#endif
+                    fprintf(fp, "\n");
+                }
             }
             fclose(fp);
             post_file(getCurrentUser(),"",name,"syssecurity",buf,0,-1,getSession());
