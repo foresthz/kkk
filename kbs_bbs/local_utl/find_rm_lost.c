@@ -40,7 +40,11 @@ int
 ispostfilename(char *file)
 {
     if (strncmp(file, "M.", 2) && strncmp(file, "G.", 2)
-            &&strncmp(file, "D.", 2) && strncmp(file, "J.", 2) && strncmp(file, "Z.", 2) && strncmp(file, "Y.", 2))
+            &&strncmp(file, "D.", 2) && strncmp(file, "J.", 2) && strncmp(file, "Z.", 2) && strncmp(file, "Y.", 2)
+#ifdef BOARD_SECURITY_LOG
+            &&strncmp(file, "B.", 2)
+#endif
+            )
         return 0;
     if (!isdigit(file[3]))
         return 0;
@@ -237,6 +241,12 @@ find_rm_lost(struct boardheader *bhp,void* arg)
     if (dashf(buf))
         if (useindexfile(buf) < 0)
             return -1;
+#ifdef BOARD_SECURITY_LOG
+    sprintf(buf, "boards/%s/.BRDLOG", bhp->filename);
+    if (dashf(buf))
+        if (useindexfile(buf) < 0)
+            return -1;
+#endif
 
     tpl_num = orig_tmpl_init(bhp->filename, 1, &tpl);
     if (tpl_num > 0) {
