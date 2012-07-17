@@ -41,6 +41,7 @@ ispostfilename(char *file)
 {
     if (strncmp(file, "M.", 2) && strncmp(file, "G.", 2)
             &&strncmp(file, "D.", 2) && strncmp(file, "J.", 2) && strncmp(file, "Z.", 2) && strncmp(file, "Y.", 2)
+            &&strncmp(file, "E.", 2)
 #ifdef BOARD_SECURITY_LOG
             &&strncmp(file, "B.", 2)
 #endif
