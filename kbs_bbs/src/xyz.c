@@ -580,6 +580,10 @@ int Xdeljunk(void)
     unlink(buf);
     sprintf(buf, "boards/%s/.JUNK", board);
     unlink(buf);
+#ifdef BOARD_SECURITY_LOG
+    sprintf(buf, "boards/%s/.BMLOG", board);
+    unlink(buf);
+#endif
     sprintf(buf, "%s Çå¿Õ %s °æÃæÀ¬»øÏä", getCurrentUser()->userid, board);
     securityreport(buf, NULL, NULL, getSession());
     clear();
