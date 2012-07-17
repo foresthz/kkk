@@ -2496,7 +2496,7 @@ int board_log_mode(struct _select_def* conf,struct fileheader *fileinfo,void* ex
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
 
-    if (!chk_currBM(currboard->BM, getCurrentUser())) {
+    if (!check_board_delete_read_perm(getCurrentUser(),currboard,1))
         return FULLUPDATE;
     }
 
