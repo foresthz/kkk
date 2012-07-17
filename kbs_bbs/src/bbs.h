@@ -479,7 +479,7 @@ enum BBS_DIR_MODE {
     DIR_MODE_WEB_THREAD = 10,       /* .WEBTHREAD */
     DIR_MODE_ZHIDING    = 11,       /* .DINGDIR */
 #ifdef BOARD_SECURITY_LOG
-    DIR_MODE_BOARD      = 12,       /* .BMLOG, 版面安全记录 */
+    DIR_MODE_BOARD      = 12,       /* .BRDLOG, 版面安全记录 */
 #endif
     DIR_MODE_MAIL ,                 /* 邮件模式 */
     DIR_MODE_FRIEND,                /* 好友名单 */
