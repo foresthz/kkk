@@ -633,7 +633,7 @@ static void feval(struct super_filter_expression *ret, char * s, int l, int r, s
             ret->fn = NULL;
             ret->data.value = NULL;
             tt=time(0);
-            gmtime_r(&tt, &t);
+            localtime_r(&tt, &t);
             t.tm_sec=0;
             t.tm_min=0;
             t.tm_hour=0;
