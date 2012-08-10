@@ -678,7 +678,7 @@ PHP_FUNCTION(bbs_user_life)
 		
 	level=uvaluetochar(desc, user);
 	ZVAL_LONG(z_level, level);
-	ZVAL_STRING(z_desc, desc);
+	ZVAL_STRING(z_desc, desc, 1);
 	
 	RETURN_TRUE;
 #else
