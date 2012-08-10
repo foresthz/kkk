@@ -650,3 +650,38 @@ PHP_FUNCTION(bbs_user_protectID)
     RETURN_LONG(-7777);
 #endif
 }
+
+PHP_FUNCTION(bbs_user_life) 
+{
+#ifdef NEWSMTH
+    char *userid;
+    int userid_len;
+	zval *z_level, *z_desc;
+	int level;
+	char desc[8];
+	
+	struct userec *user;
+	
+    if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "szz", &userid, &userid_len, &z_level, &z_desc)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (!PZVAL_IS_REF(z_level)||!PZVAL_IS_REF(z_desc)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_FALSE;
+    }
+
+    if (userid_len>IDLEN)
+        RETURN_FALSE;
+
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+		
+	level=uvaluetochar(desc, user);
+	ZVAL_LONG(z_level, level);
+	ZVAL_STRING(z_desc, desc);
+	
+	RETURN_TRUE;
+#else
+    RETURN_FALSE;
+#endif
+}

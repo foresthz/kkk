@@ -28,6 +28,8 @@ PHP_FUNCTION(bbs_user_level_char);
 PHP_FUNCTION(bbs_user_touch_lastlogin);
 PHP_FUNCTION(bbs_user_protectID);
 
+PHP_FUNCTION(bbs_user_life);
+
 #define PHP_BBS_USER_EXPORT_FUNCTIONS \
     PHP_FE(bbs_getuser, NULL) \
     PHP_FE(bbs_checkpasswd, NULL) \
@@ -47,7 +49,7 @@ PHP_FUNCTION(bbs_user_protectID);
     PHP_FE(bbs_compute_user_value, NULL) \
     PHP_FE(bbs_user_level_char, NULL) \
     PHP_FE(bbs_user_touch_lastlogin, NULL) \
-    PHP_FE(bbs_user_protectID, NULL)
-     
+    PHP_FE(bbs_user_protectID, NULL) \
+    PHP_FE(bbs_user_life, NULL)
 
 #endif //PHP_BBS_USER_H
