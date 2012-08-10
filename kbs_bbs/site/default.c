@@ -203,6 +203,14 @@ int uleveltochar(char *buf, struct userec *lookupuser)
 }
 #endif
 
+#ifdef USE_DEFAULT_VALUECHAR
+int uvaluetochar(char *buf, struct userec *urec)
+{
+	strcpy(buf, "”√ªß");
+	return 1;
+}
+#endif
+
 #ifdef USE_DEFAULT_MODE
 
 #include "modes.h"

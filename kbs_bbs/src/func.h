@@ -180,6 +180,7 @@ extern "C"
     int countexp(struct userec *udata);
     int countperf(struct userec *udata);
     int compute_user_value(const struct userec *urec);
+	int uvaluetochar(char *buf, struct userec *urec);
     void *attach_shm(char *shmstr, int defaultkey, int shmsize, int *iscreate);
     void *attach_shm1(char *shmstr, int defaultkey, int shmsize, int *iscreate, int readonly, void *shmaddr);
     void    remove_shm(char *shmstr, int defaultkey, int shmsize);
