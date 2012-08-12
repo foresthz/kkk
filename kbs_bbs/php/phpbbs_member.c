@@ -13,13 +13,13 @@ void bbs_make_board_member_config_array(zval *array, struct board_member_config 
     add_assoc_long(array, "board_marks", config->board_marks);
     add_assoc_long(array, "board_digests", config->board_digests);
 }
-void bbs_make_board_member_config_array(zval *array, struct board_member *member) {
+void bbs_make_board_member_array(zval *array, struct board_member *member) {
     add_assoc_string(array, "board", member->board, 1);
     add_assoc_string(array, "user", member->user, 1);
-    add_assoc_long(array, "time", meber->time);
-	add_assoc_long(array, "status", meber->status);
+    add_assoc_long(array, "time", member->time);
+	add_assoc_long(array, "status", member->status);
 	add_assoc_string(array, "manager", member->manager, 1);
-    add_assoc_long(array, "flag", meber->flag);
+    add_assoc_long(array, "flag", member->flag);
 }
 
 /**
@@ -46,7 +46,7 @@ PHP_FUNCTION(bbs_load_board_member_config)
 	if (array_init(array) != SUCCESS)
 	    RETURN_FALSE;
 		
-	bbs_make_board_member_config_array(array, config);
+	bbs_make_board_member_config_array(array, &config);
 	
 	RETURN_TRUE;
 }
@@ -100,9 +100,9 @@ PHP_FUNCTION(bbs_save_board_member_config)
 	config.board_posts=(board_posts>0)?board_posts:0;
 	config.board_origins=(board_origins>0)?board_origins:0;
 	config.board_marks=(board_marks>0)?board_marks:0;
-	config.board_digests=(board_degists>0)?board_degists:0;
+	config.board_digests=(board_digests>0)?board_digests:0;
 	
-	if (save_board_member_config(name, config)<0)
+	if (save_board_member_config(name, &config)<0)
 	    RETURN_FALSE;
 	RETURN_TRUE;
 }

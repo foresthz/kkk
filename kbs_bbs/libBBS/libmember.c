@@ -172,7 +172,7 @@ int join_board_member(const char *name) {
 	member.manager[0]=0;
 	member.flag=0;
 	
-	sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%u), %d, \"\", %u);", member.board, member.user, member.time, member.status, member.flag);
+	sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%s), %d, \"\", %u);", member.board, member.user, member.time, member.status, member.flag);
 	if (mysql_real_query(&s, sql, strlen(sql))) {
         mysql_report_error(&s);
         mysql_close(&s);
@@ -330,7 +330,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     return member->status;
 }
 
-int load_board_members(const char *board, struct board_members *member, int start, int num) {
+int load_board_members(const char *board, struct board_member *member, int start, int num) {
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -384,7 +384,7 @@ int load_board_members(const char *board, struct board_members *member, int star
     return i;
 }
 
-int load_member_boards(const char *user_id, struct board_members *member, int start, int num) {
+int load_member_boards(const char *user_id, struct board_member *member, int start, int num) {
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
