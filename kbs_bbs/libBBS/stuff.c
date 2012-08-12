@@ -364,6 +364,10 @@ char* setbdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
             type=0;
             prefix=DIGEST_DIR;
             break;
+		case DIR_MODE_DIGEST_AUTHOR:
+		    type=1;
+			prefix=".DIGEST_AUTHOR";
+			break;
         case DIR_MODE_THREAD:
             type=0;
             prefix=THREAD_DIR;
@@ -372,6 +376,10 @@ char* setbdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
             type=0;
             prefix=".MARK";
             break;
+		case DIR_MODE_MARK_AUTHOR:
+            type=1;
+            prefix=".MARK_AUTHOR";
+            break;			
         case DIR_MODE_DELETED:
             type=0;
             prefix=".DELETED";
@@ -384,6 +392,10 @@ char* setbdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
             type=0;
             prefix=".ORIGIN";
             break;
+		case DIR_MODE_ORIGIN_AUTHOR:
+            type=1;
+			prefix=".ORIGIN_AUTHOR";
+            break;		
         case DIR_MODE_AUTHOR:
             type=1;
             prefix=".AUTHOR";
