@@ -56,7 +56,7 @@ int save_board_member_config(const char *name, struct board_member_config *confi
         return -3;
 		
 	setbfile(path, board->filename, BOARD_MEMBER_CONFIG);
-	if ((fd = open(path, O_WRONLY, 0644)) < 0)
+	if ((fd = open(path, O_WRONLY | O_CREAT, 0644)) < 0)
         return -4;
     write(fd, config, sizeof(struct board_member_config));
     close(fd);
