@@ -158,7 +158,7 @@ int join_board_member(const char *name) {
 	
 	mysql_init(&s);
 	if (!my_connect_mysql(&s)) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -22;
     }
 	
@@ -172,9 +172,9 @@ int join_board_member(const char *name) {
 	member.manager[0]=0;
 	member.flag=0;
 	
-	sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%s), %d, \"\", %u);", member.board, member.user, member.time, member.status, member.flag);
+	sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%u), %d, \"\", %u);", member.board, member.user, member.time, member.status, member.flag);
 	if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -23;
     }
@@ -223,7 +223,7 @@ int approve_board_member(const char *name, const char *user_id) {
 	sprintf(sql,"UPDATE `board_user` SET `time`=FROM_UNIXTIME(%u), `status`=%d, `manager`=\"%s\" WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", time(0), BOARD_MEMBER_STATUS_NORMAL, my_manager_id, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -5;
     }
@@ -271,7 +271,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
 	sprintf(sql,"DELETE FROM `board_user` WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -4;
     }
@@ -296,7 +296,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 	
 	mysql_init(&s);
 	if (!my_connect_mysql(&s)) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -3;
     }
 	
@@ -308,7 +308,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 	sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `flag` FROM `board_user` WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", my_name, my_user_id);
     
 	if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -4;
     }
@@ -344,7 +344,7 @@ int load_board_members(const char *board, struct board_member *member, int start
 	
 	mysql_init(&s);
 	if (!my_connect_mysql(&s)) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -2;
     }
 	
@@ -356,7 +356,7 @@ int load_board_members(const char *board, struct board_member *member, int start
     strcat(sql, qtmp);
     
 	if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -3;
     }
@@ -398,7 +398,7 @@ int load_member_boards(const char *user_id, struct board_member *member, int sta
 	
 	mysql_init(&s);
 	if (!my_connect_mysql(&s)) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -2;
     }
 	
@@ -410,7 +410,7 @@ int load_member_boards(const char *user_id, struct board_member *member, int sta
     strcat(sql, qtmp);
     
 	if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -3;
     }
@@ -453,14 +453,14 @@ int get_board_members(const char *board) {
     mysql_init(&s);
 
     if (! my_connect_mysql(&s)) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -2;
     }
 
     sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `board`=\"%s\"", my_board);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -3;
     }
@@ -492,14 +492,14 @@ int get_member_boards(const char *user_id) {
     mysql_init(&s);
 
     if (! my_connect_mysql(&s)) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -2;
     }
 
     sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `user`=\"%s\"", my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
-        mysql_report_error(&s);
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -3;
     }

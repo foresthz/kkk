@@ -107,9 +107,18 @@ PHP_FUNCTION(bbs_save_board_member_config)
 	RETURN_TRUE;
 }
 
+/**
+  * bbs_join_board_member(string board_name);
+  */
 PHP_FUNCTION(bbs_join_board_member)
 {
-    RETURN_FALSE;
+    char *name;
+	int name_len;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	RETURN_LONG(join_board_member(name));	
 }
 
 PHP_FUNCTION(bbs_leave_board_member)
