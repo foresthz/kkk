@@ -581,7 +581,7 @@ struct board_member_config {
 	int board_origins;
 	int board_marks;
 	int board_digests;
-}
+};
 struct board_member {
     char board[STRLEN];
 	char user[IDLEN+2];
@@ -589,7 +589,7 @@ struct board_member {
 	int status;
 	char manager[IDLEN+2];
 	unsigned int flag;
-}
+};
 #endif
 
 #define ACTIVATIONLEN   15
