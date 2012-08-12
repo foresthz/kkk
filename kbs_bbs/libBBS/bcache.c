@@ -659,7 +659,8 @@ int board_regenspecial(const char *board, int mode, char *index)
         return -1;      /* lock error*/
     }
     /* 开始互斥过程*/
-    if ((mode == DIR_MODE_ORIGIN && !setboardorigin(board, -1)) || (mode == DIR_MODE_MARK && !setboardmark(board, -1))) {
+    if (((mode == DIR_MODE_ORIGIN||mode == DIR_MODE_ORIGIN_AUTHOR) && !setboardorigin(board, -1)) 
+	   || ((mode == DIR_MODE_MARK||mode == DIR_MODE_MARK_AUTHOR) && !setboardmark(board, -1))) {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
@@ -698,7 +699,11 @@ int board_regenspecial(const char *board, int mode, char *index)
         if (((mode == DIR_MODE_ORIGIN) && (ptr1->id == ptr1->groupid))
                 || ((mode == DIR_MODE_MARK) && (ptr1->accessed[0] & FILE_MARKED))
                 || ((mode == DIR_MODE_AUTHOR) && !strcasecmp(ptr1->owner, index))
-                || ((mode == DIR_MODE_TITLE)  && bm_strcasestr_rp(ptr1->title, index, bm_search, &init))) {
+                || ((mode == DIR_MODE_TITLE)  && bm_strcasestr_rp(ptr1->title, index, bm_search, &init))
+				|| ((mode == DIR_MODE_ORIGIN_AUTHOR) && (ptr1->id == ptr1->groupid) && !strcasecmp(ptr1->owner, index))
+				|| ((mode == DIR_MODE_MARK_AUTHOR) && (ptr1->accessed[0] & FILE_MARKED) && !strcasecmp(ptr1->owner, index))
+				|| ((mode == DIR_MODE_DIGEST_AUTHOR) && (ptr1->accessed[0] & FILE_DIGEST) && !strcasecmp(ptr1->owner, index)) // maybe sth. wrong?, windinsn
+			) {
             write(fd, ptr1, size);
             count++;
         }

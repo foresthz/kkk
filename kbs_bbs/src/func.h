@@ -834,6 +834,21 @@ while(0)
     int refer_truncate(char *path);
 #endif /* ENABLE_REFER */
 
+/* board member, windinsn, Aug 11, 2012 */
+#ifdef ENABLE_BOARD_MEMBER
+	int load_board_member_config(const char *name, struct board_member_config *config);
+	int save_board_member_config(const char *name, struct board_member_config *config);
+	int join_board_member(const char *name);
+	int leave_board_member(const char *name);
+	int approve_board_member(const char *name, const char *user_id);
+	int remove_board_member(const char *name, const char *user_id);
+	int get_board_member(const char *name, const char *user_id, struct board_member *member);
+	int load_board_members(const char *board, struct board_member *members, int start, int num);
+	int load_member_boards(const char *user_id, struct board_member *members, int start, int num);
+	int get_board_members(const char *board);
+	int get_member_boards(const char *user_id);
+#endif /* ENABLE_BOARD_MEMBER */
+
 #ifdef TITLEKEYWORD
     int get_title_key(const char *board, char titlekey[][8], int max);
     int save_title_key(const char *board, char titlekey[][8], int count);

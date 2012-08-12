@@ -275,6 +275,16 @@ extern long ti;
 #define BADLOGINFILE    "logins.bad"
 #define USERDATA        ".userdata"
 
+/* board member configure. added by windinsn, Aug 11, 2012 */
+#ifdef ENABLE_BOARD_MEMBER
+#define BOARD_MEMBER_CONFIG   ".MEMBER"
+#define BOARD_MEMBER_STATUS_NONE      0
+#define BOARD_MEMBER_STATUS_CANDIDATE 1
+#define BOARD_MEMBER_STATUS_NORMAL    2
+#define MEMBER_BOARD_MAX_DEFAULT 300
+#define MEMBER_USER_MAX_DEFAULT  3
+#endif
+
 #define QUIT            0x666       /* Return value to abort recursive functions */
 #define COUNT           0x2         /* count record */
 
@@ -481,6 +491,10 @@ enum BBS_DIR_MODE {
 #ifdef BOARD_SECURITY_LOG
     DIR_MODE_BOARD      = 12,       /* .BRDLOG, 版面安全记录 */
 #endif
+    DIR_MODE_ORIGIN_AUTHOR = 13,    /* .ORIGIN.userid */
+	DIR_MODE_MARK_AUTHOR   = 14,    /* .MARK.userid */
+	DIR_MODE_DIGEST_AUTHOR = 15,    /* .DIGEST.userid */
+	/* 以上三个为驻版用户申请、版面勋章申请使用, windinsn, 2012.08.12 */
     DIR_MODE_MAIL ,                 /* 邮件模式 */
     DIR_MODE_FRIEND,                /* 好友名单 */
     DIR_MODE_TOP10,                 /* 十大模式 */

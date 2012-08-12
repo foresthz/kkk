@@ -566,6 +566,32 @@ struct protect_id_passwd {
 };
 #endif
 
+/* board member configure. added by windinsn, Aug 11, 2012 */
+#ifdef ENABLE_BOARD_MEMBER
+struct board_member_config {
+    int approve;
+	int max_members;
+	
+	int logins;
+	int posts;
+	int score;
+	int level;
+	
+	int board_posts;
+	int board_origins;
+	int board_marks;
+	int board_digests;
+}
+struct board_member {
+    char board[STRLEN];
+	char user[IDLEN+2];
+	time_t time;
+	int status;
+	char manager[IDLEN+2];
+	unsigned int flag;
+}
+#endif
+
 #define ACTIVATIONLEN   15
 struct activation_info {
     int activated;

@@ -89,6 +89,9 @@ static unsigned char fifth_arg_force_ref_00011[] = { 5, BYREF_NONE, BYREF_NONE, 
 #ifdef HAVE_WFORUM
 #include "phpbbs_wforum.h"
 #endif
+#ifdef ENABLE_BOARD_MEMBER
+#include "phpbbs_member.h"
+#endif
 
 
 static char old_pwd[1024];
@@ -127,6 +130,9 @@ static zend_function_entry kbs_bbs_functions[] = {
     PHP_BBS_WFORUM_EXPORT_FUNCTIONS
 #endif
 
+#ifdef ENABLE_BOARD_MEMBER
+    PHP_BBS_MEMBER_EXPORT_FUNCTIONS
+#endif
     PHP_FE(bbs_get_webdomain, NULL)
     PHP_FE(bbs_ext_initialized, NULL)
     PHP_FE(bbs_init_ext, NULL)
