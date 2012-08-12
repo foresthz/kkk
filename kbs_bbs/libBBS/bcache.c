@@ -659,8 +659,8 @@ int board_regenspecial(const char *board, int mode, char *index)
         return -1;      /* lock error*/
     }
     /* 开始互斥过程*/
-    if (((mode == DIR_MODE_ORIGIN||mode == DIR_MODE_ORIGIN_AUTHOR) && !setboardorigin(board, -1)) 
-	   || ((mode == DIR_MODE_MARK||mode == DIR_MODE_MARK_AUTHOR) && !setboardmark(board, -1))) {
+    if (((mode == DIR_MODE_ORIGIN/*||mode == DIR_MODE_ORIGIN_AUTHOR*/) && !setboardorigin(board, -1)) 
+	   || ((mode == DIR_MODE_MARK/*||mode == DIR_MODE_MARK_AUTHOR*/) && !setboardmark(board, -1))) {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
