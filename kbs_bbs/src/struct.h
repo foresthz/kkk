@@ -588,6 +588,7 @@ struct board_member {
 	time_t time;
 	int status;
 	char manager[IDLEN+2];
+	unsigned int score;
 	unsigned int flag;
 };
 #endif

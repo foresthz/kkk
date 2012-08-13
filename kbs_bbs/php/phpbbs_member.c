@@ -19,6 +19,7 @@ void bbs_make_board_member_array(zval *array, struct board_member *member) {
     add_assoc_long(array, "time", member->time);
 	add_assoc_long(array, "status", member->status);
 	add_assoc_string(array, "manager", member->manager, 1);
+	add_assoc_long(array, "score", member->score);
     add_assoc_long(array, "flag", member->flag);
 }
 
