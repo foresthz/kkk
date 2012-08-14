@@ -832,6 +832,9 @@ while(0)
     int refer_get_new(struct userec *user, char *filename); 
     int refer_read_all(char *path);
     int refer_truncate(char *path);
+#ifdef ENABLE_BOARD_MEMBER
+	int send_refer_msg_to_board(struct boardheader *to_board, const struct *board, struct fileheader *fh, char *tmpfile);
+#endif /* ENABLE_BOARD_MEMBER */	
 #endif /* ENABLE_REFER */
 
 /* board member, windinsn, Aug 11, 2012 */
