@@ -264,6 +264,12 @@ int delete_board_member_record(const char *name, const char *user_id) {
 	if (0==strcmp(user_id, "guest"))
         return -3;	
 	
+	mysql_init(&s);
+	if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -4;
+    }
+	
 	my_name[0]=0;
 	my_user_id[0]=0;
 	mysql_escape_string(my_name, name, strlen(name));
@@ -274,7 +280,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -4;
+        return -5;
     }
 
     mysql_close(&s);
@@ -292,13 +298,15 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 	
 	if (!user_id[0])
 	    return -1;
+	if (0==strcmp(user_id, "guest"))
+		return -2;
 	if (!name[0])
-        return -2;	
+        return -3;	
 	
 	mysql_init(&s);
 	if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -3;
+        return -4;
     }
 	
 	my_name[0]=0;
@@ -311,7 +319,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 	if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -4;
+        return -5;
     }
     res = mysql_store_result(&s);
     row = mysql_fetch_row(res);
@@ -561,6 +569,39 @@ int get_member_boards(const char *user_id) {
     mysql_close(&s);
     return i;
 }
+
+int load_board_member_request(const char *name, struct board_member_config *mine) {
+	struct boardheader *board;
 	
+	if (0==strcmp(getSession()->currentuser->userid, "guest"))
+        return -1;
+    	
+	board=getbcache(name);
+	if (0==board)
+        return -2;
+    if (board->flag&BOARD_GROUP)
+        return -3;
+	if (!haspostperm(getSession()->currentuser, board->filename))
+	    return -4;
+		
+	mine->logins=getSession()->currentuser->numlogins;
+	mine->posts=getSession()->currentuser->numposts;
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+	mine->score=getSession()->currentuser->score_user;
+	
+	char buf[8];
+	mine->level=uvaluetochar(buf, getSession()->currentuser);
+#else
+	mine->score=0;
+	mine->level=0;
+#endif	
+	mine->board_posts=board_regenspecial(board->filename, DIR_MODE_AUTHOR, getSession()->currentuser->userid);
+	mine->board_origins=board_regenspecial(board->filename, DIR_MODE_ORIGIN_AUTHOR, getSession()->currentuser->userid);
+	mine->board_marks=board_regenspecial(board->filename, DIR_MODE_MARK_AUTHOR, getSession()->currentuser->userid);
+	mine->board_digests=board_regenspecial(board->filename, DIR_MODE_DIGEST_AUTHOR, getSession()->currentuser->userid);
+	
+	return 0;
+}	
+
 #endif
 #endif 

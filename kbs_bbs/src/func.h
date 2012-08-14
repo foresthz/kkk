@@ -847,6 +847,7 @@ while(0)
 	int load_member_boards(const char *user_id, struct board_member *members, int sort, int start, int num);
 	int get_board_members(const char *board);
 	int get_member_boards(const char *user_id);
+	int load_board_member_request(const char *name, struct board_member_config *mine);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD
