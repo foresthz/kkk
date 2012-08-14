@@ -78,8 +78,9 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
             }
         } 
 #ifdef ENABLE_BOARD_MEMBER
-		else if (*p == '@' && ((p>ptr && !isalnum(p[-1])) && p[1]=='#' && isalpha(p[2]))) { /* 找到 @#, 并对前后进行判断，这个是驻版提醒 windinsn, 2012.8.14 */
-			for (q=p+3,r=p+2,len=2;isalnum(*q);q++) 
+	/* windinsn, 2012.8.14 */
+		else if (*p == '@' && ((p>ptr && !isalnum(p[-1])) && p[1]=='#' && (isalpha(p[2])||p[2]=='.'||p[2]=='_'))) { /* 找到 @#, 并对前后进行判断，这个是驻版提醒 windinsn, 2012.8.14 */
+			for (q=p+3,r=p+2,len=2;isalnum(*q)||q[0]=='.'||q[0]=='_';q++) 
 				len++;
 			p += len;
 			ptrlen -= len;
@@ -87,6 +88,7 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 				continue;
 			strncpy(board, r, len-1);
 			board[len-1]='\0';
+			bbslog("3system", "query %s", board);
 			if ((bid=getbid(board, NULL))==0)
 				continue;
 			for (i=0;i<b_count;i++)
