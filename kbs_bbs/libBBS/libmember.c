@@ -332,7 +332,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     return member->status;
 }
 
-int load_board_members(const char *board, struct board_member *member, int start, int num) {
+int load_board_members(const char *board, struct board_member *member, int sort, int start, int num) {
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -353,8 +353,29 @@ int load_board_members(const char *board, struct board_member *member, int start
 	my_board[0]=0;
 	mysql_escape_string(my_board, board, strlen(board));
 	
-	sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `board`=\"%s\" ", my_board);
-	snprintf(qtmp, 99, " ORDER BY `time` LIMIT %d,%d", start, num);
+	sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `board`=\"%s\" ORDER BY ", my_board);
+	switch(sort) {
+		case BOARD_MEMBER_SORT_TIME_DESC:
+			strcpy(qtmp, " `time` DESC ");
+			break;
+		case BOARD_MEMBER_SORT_ID_ASC:
+			strcpy(qtmp, " `user` ASC ");
+			break;
+		case BOARD_MEMBER_SORT_ID_DESC:
+			strcpy(qtmp, " `user` DESC ");
+			break;
+		case BOARD_MEMBER_SORT_SCORE_DESC:
+			strcpy(qtmp, " `score` DESC ");
+			break;
+		case BOARD_MEMBER_SORT_SCORE_ASC:
+			strcpy(qtmp, " `score` ASC ");
+			break;
+		case BOARD_MEMBER_SORT_TIME_ASC:
+		default:
+			strcpy(qtmp, " `time` ASC ");
+	}
+	strcat(sql, qtmp);
+	snprintf(qtmp, 99, " LIMIT %d,%d", start, num);
     strcat(sql, qtmp);
     
 	if (mysql_real_query(&s, sql, strlen(sql))) {
@@ -387,7 +408,7 @@ int load_board_members(const char *board, struct board_member *member, int start
     return i;
 }
 
-int load_member_boards(const char *user_id, struct board_member *member, int start, int num) {
+int load_member_boards(const char *user_id, struct board_member *member, int sort, int start, int num) {
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -408,9 +429,30 @@ int load_member_boards(const char *user_id, struct board_member *member, int sta
 	my_user_id[0]=0;
 	mysql_escape_string(my_user_id, user_id, strlen(user_id));
 	
-	sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `user`=\"%s\" ", my_user_id);
-	snprintf(qtmp, 99, " ORDER BY `time` LIMIT %d,%d", start, num);
-    strcat(sql, qtmp);
+	sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `user`=\"%s\" ORDER BY ", my_user_id);
+	switch(sort) {
+		case MEMBER_BOARD_SORT_TIME_DESC:
+			strcpy(qtmp, " `time` DESC ");
+			break;
+		case MEMBER_BOARD_SORT_BOARD_ASC:
+			strcpy(qtmp, " `board` ASC ");
+			break;
+		case MEMBER_BOARD_SORT_BOARD_DESC:
+			strcpy(qtmp, " `board` DESC ");
+			break;
+		case MEMBER_BOARD_SORT_SCORE_DESC:
+			strcpy(qtmp, " `score` DESC ");
+			break;
+		case MEMBER_BOARD_SORT_SCORE_ASC:
+			strcpy(qtmp, " `score` ASC ");
+			break;
+		case MEMBER_BOARD_SORT_TIME_ASC:
+		default:
+			strcpy(qtmp, " `time` ASC ");
+	}
+	strcat(sql, qtmp);
+	snprintf(qtmp, 99, " LIMIT %d,%d", start, num);
+	strcat(sql, qtmp);
     
 	if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));

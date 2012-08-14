@@ -355,4 +355,10 @@ void main_bbs(int convit, char *argv);
 /* calltime.c */
 time_t calc_calltime(int mode);
 
+/* member.c */
+#ifdef ENABLE_BOARD_MEMBER
+int b_member_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+int t_board_members(void);
+#endif
+
 #endif /* _DEFINES_T_H_ */

@@ -843,8 +843,8 @@ while(0)
 	int approve_board_member(const char *name, const char *user_id);
 	int remove_board_member(const char *name, const char *user_id);
 	int get_board_member(const char *name, const char *user_id, struct board_member *member);
-	int load_board_members(const char *board, struct board_member *members, int start, int num);
-	int load_member_boards(const char *user_id, struct board_member *members, int start, int num);
+	int load_board_members(const char *board, struct board_member *members, int sort, int start, int num);
+	int load_member_boards(const char *user_id, struct board_member *members, int sort, int start, int num);
 	int get_board_members(const char *board);
 	int get_member_boards(const char *user_id);
 #endif /* ENABLE_BOARD_MEMBER */

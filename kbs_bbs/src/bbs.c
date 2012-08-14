@@ -1609,8 +1609,8 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         prints("  innflag=%c%c,  owner=%s\n", fileinfo->innflag[0], fileinfo->innflag[1], fileinfo->owner);
         prints("  eff_size=%d,  attachment=%d,  posttime=%s", fileinfo->eff_size, fileinfo->attachment, ctime((time_t *)&fileinfo->posttime));
 #if defined(NEWSMTH) && !defined(SECONDSITE)
-        if (fileinfo->edittime)
-            prints("  edittime=%s", ctime(&fileinfo->edittime));
+        //if (fileinfo->edittime)
+        //    prints("  edittime=%s", ctime(&fileinfo->edittime));
 #endif
         prints("  title=%s\n", fileinfo->title);
 #ifdef HAVE_REPLY_COUNT
@@ -6561,6 +6561,10 @@ static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {Ctrl('X'), (READ_KEY_FUNC)thread_read,(void*)SR_READX},
 #endif
 
+#ifdef ENABLE_BOARD_MEMBER
+    {Ctrl('K'), (READ_KEY_FUNC)b_member_list, NULL},
+#endif
+
     {Ctrl('U'), (READ_KEY_FUNC)author_read,(void*)SR_READ},
     {Ctrl('H'), (READ_KEY_FUNC)author_read,(void*)SR_READX},
     /*----------------------------------------*/
@@ -7652,3 +7656,10 @@ static int select_sec_top(int secid, int pos)
     } while (1);
 }
 #endif /* READ_SEC_TOP */
+
+#ifdef ENABLE_BOARD_MEMBER
+int b_member_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg) {
+    t_board_members();
+    return FULLUPDATE;
+}
+#endif
