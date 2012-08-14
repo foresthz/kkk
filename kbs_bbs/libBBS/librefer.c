@@ -88,7 +88,7 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 				continue;
 			strncpy(board, r, len-1);
 			board[len-1]='\0';
-			bbslog("3system", "query %s", board);
+			
 			if ((bid=getbid(board, NULL))==0)
 				continue;
 			for (i=0;i<b_count;i++)
