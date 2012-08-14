@@ -298,6 +298,7 @@ extern long ti;
 #define MEMBER_BOARD_SORT_SCORE_DESC	4
 #define MEMBER_BOARD_SORT_SCORE_ASC	5
 #define BOARD_MEMBER_SORT_TYPES		6
+#define BOARD_MEMBER_LOG_BOARD	"member.log"
 #endif
 
 #define QUIT            0x666       /* Return value to abort recursive functions */
