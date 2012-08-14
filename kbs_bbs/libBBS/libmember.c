@@ -5,28 +5,28 @@
 #include <mysql.h>
 
 int board_member_log(struct board_member *member, char *title, char *log) {
-	char path[STRLEN], buf[STRLEN];
-	FILE *handle;
-	
-	gettmpfilename(path, "board.member.log");
-	if ((handle = fopen(path, "w")) != NULL) { 
-		if (NULL!=member)
-			fprintf(handle, "操作者: %s\n\n用户: %s\n版面:%s\n\n", getSession()->currentuser->userid, member->user, member->board);
-		
-		fprintf(handle, "记录: \n%s\n\n", log);
-		fprintf(handle, "以下是个人资料");
-		getuinfo(handle, getSession()->currentuser);
-		fclose(handle);
-		
-		if (NULL!=member)
-			sprintf(buf, "%s@%s#%s", member->user, member->board, title);
-		else
-			strncpy(buf, title, sizeof(buf));
-		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());
-		unlink(path);
-	}
-	
-	return 0;
+    char path[STRLEN], buf[STRLEN];
+    FILE *handle;
+    
+    gettmpfilename(path, "board.member.log");
+    if ((handle = fopen(path, "w")) != NULL) { 
+        if (NULL!=member)
+            fprintf(handle, "操作者: %s\n\n用户: %s\n版面:%s\n\n", getSession()->currentuser->userid, member->user, member->board);
+        
+        fprintf(handle, "记录: \n%s\n\n", log);
+        fprintf(handle, "以下是个人资料");
+        getuinfo(handle, getSession()->currentuser);
+        fclose(handle);
+        
+        if (NULL!=member)
+            sprintf(buf, "%s@%s#%s", member->user, member->board, title);
+        else
+            strncpy(buf, title, sizeof(buf));
+        post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());
+        unlink(path);
+    }
+    
+    return 0;
 }
 
 int load_board_member_config(const char *name, struct board_member_config *config) {
@@ -69,11 +69,11 @@ int load_board_member_config(const char *name, struct board_member_config *confi
 
 int save_board_member_config(const char *name, struct board_member_config *config) {
     const struct boardheader *board;
-	struct board_member_config old;
+    struct board_member_config old;
     char path[PATHLEN];
-	char log[1024];
-	char buf[STRLEN];
-	char title[STRLEN];
+    char log[1024];
+    char buf[STRLEN];
+    char title[STRLEN];
     int fd;
     
     board=getbcache(name);
@@ -84,41 +84,41 @@ int save_board_member_config(const char *name, struct board_member_config *confi
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
        
-		load_board_member_config(board->filename, &old);
+        load_board_member_config(board->filename, &old);
     setbfile(path, board->filename, BOARD_MEMBER_CONFIG);
     if ((fd = open(path, O_WRONLY | O_CREAT, 0644)) < 0)
         return -4;
     write(fd, config, sizeof(struct board_member_config));
     close(fd);
-	
-	sprintf(title, "更改驻板设置@%s", board->filename);
-	sprintf(log, "版面: %s\n用户: %s\n\n",
-		board->filename,
-		getSession()->currentuser->userid
-	);
-	
-	sprintf(buf, "审    批: %s -> %s%s\033[m\n", (old.approve>0)?"是":"否", (old.approve==config->approve)?"":"\033[1;31m", (config->approve>0)?"是":"否");
-	strcat(log, buf);
-	sprintf(buf, "最大用户: %d -> %s%d\033[m\n", old.max_members , (old.max_members==config->max_members)?"":"\033[1;31m", config->max_members);
-	strcat(log, buf);
-	sprintf(buf, "登 录 数: %d -> %s%d\033[m\n", old.logins , (old.logins==config->logins)?"":"\033[1;31m", config->logins);
-	strcat(log, buf);
-	sprintf(buf, "发 文 数: %d -> %s%d\033[m\n", old.posts , (old.posts==config->posts)?"":"\033[1;31m", config->posts);
-	strcat(log, buf);
-	sprintf(buf, "用户积分: %d -> %s%d\033[m\n", old.score , (old.score==config->score)?"":"\033[1;31m", config->score);
-	strcat(log, buf);
-	sprintf(buf, "用户等级: %d -> %s%d\033[m\n", old.level , (old.level==config->level)?"":"\033[1;31m", config->level);
-	strcat(log, buf);
-	sprintf(buf, "版面发文: %d -> %s%d\033[m\n", old.board_posts , (old.board_posts==config->board_posts)?"":"\033[1;31m", config->board_posts);
-	strcat(log, buf);
-	sprintf(buf, "版面原创: %d -> %s%d\033[m\n", old.board_origins , (old.board_origins==config->board_origins)?"":"\033[1;31m", config->board_origins);
-	strcat(log, buf);
-	sprintf(buf, "版面 M文: %d -> %s%d\033[m\n", old.board_marks , (old.board_marks==config->board_marks)?"":"\033[1;31m", config->board_marks);
-	strcat(log, buf);
-	sprintf(buf, "版面 G文: %d -> %s%d\033[m\n", old.board_digests , (old.board_digests==config->board_digests)?"":"\033[1;31m", config->board_digests);
-	strcat(log, buf);
-	
-	board_member_log(NULL, title, log);
+    
+    sprintf(title, "更改驻板设置@%s", board->filename);
+    sprintf(log, "版面: %s\n用户: %s\n\n",
+        board->filename,
+        getSession()->currentuser->userid
+    );
+    
+    sprintf(buf, "审    批: %s -> %s%s\033[m\n", (old.approve>0)?"是":"否", (old.approve==config->approve)?"":"\033[1;31m", (config->approve>0)?"是":"否");
+    strcat(log, buf);
+    sprintf(buf, "最大用户: %d -> %s%d\033[m\n", old.max_members , (old.max_members==config->max_members)?"":"\033[1;31m", config->max_members);
+    strcat(log, buf);
+    sprintf(buf, "登 录 数: %d -> %s%d\033[m\n", old.logins , (old.logins==config->logins)?"":"\033[1;31m", config->logins);
+    strcat(log, buf);
+    sprintf(buf, "发 文 数: %d -> %s%d\033[m\n", old.posts , (old.posts==config->posts)?"":"\033[1;31m", config->posts);
+    strcat(log, buf);
+    sprintf(buf, "用户积分: %d -> %s%d\033[m\n", old.score , (old.score==config->score)?"":"\033[1;31m", config->score);
+    strcat(log, buf);
+    sprintf(buf, "用户等级: %d -> %s%d\033[m\n", old.level , (old.level==config->level)?"":"\033[1;31m", config->level);
+    strcat(log, buf);
+    sprintf(buf, "版面发文: %d -> %s%d\033[m\n", old.board_posts , (old.board_posts==config->board_posts)?"":"\033[1;31m", config->board_posts);
+    strcat(log, buf);
+    sprintf(buf, "版面原创: %d -> %s%d\033[m\n", old.board_origins , (old.board_origins==config->board_origins)?"":"\033[1;31m", config->board_origins);
+    strcat(log, buf);
+    sprintf(buf, "版面 M文: %d -> %s%d\033[m\n", old.board_marks , (old.board_marks==config->board_marks)?"":"\033[1;31m", config->board_marks);
+    strcat(log, buf);
+    sprintf(buf, "版面 G文: %d -> %s%d\033[m\n", old.board_digests , (old.board_digests==config->board_digests)?"":"\033[1;31m", config->board_digests);
+    strcat(log, buf);
+    
+    board_member_log(NULL, title, log);
     return 0;
 }
 /**
@@ -152,7 +152,7 @@ int join_board_member(const char *name) {
     char buf[STRLEN];
     MYSQL s;
     char sql[300];
-	char log[1024];
+    char log[1024];
     
     if (0==strcmp(getSession()->currentuser->userid, "guest"))
         return -1;
@@ -178,37 +178,37 @@ int join_board_member(const char *name) {
     if (load_board_member_config(board->filename, &config)<0)
         return -9;
     
-	sprintf(log, "%s 在版面 %s 的详细信息\n\n", getSession()->currentuser->userid, board->filename);
-	num=getSession()->currentuser->numlogins;
+    sprintf(log, "%s 在版面 %s 的详细信息\n\n", getSession()->currentuser->userid, board->filename);
+    num=getSession()->currentuser->numlogins;
     if (config.logins>0 && num<config.logins)
         return -10;
-	sprintf(buf, "登录数: %d / %d\n", num, config.logins);	
-	strcat(log, buf);
-	
-	num=getSession()->currentuser->numposts;
+    sprintf(buf, "登录数: %d / %d\n", num, config.logins);    
+    strcat(log, buf);
+    
+    num=getSession()->currentuser->numposts;
     if (config.posts>0 && num<config.posts)
         return -11;
-	sprintf(buf, "发文数: %d / %d\n", num, config.posts);	
-	strcat(log, buf);
-	
+    sprintf(buf, "发文数: %d / %d\n", num, config.posts);    
+    strcat(log, buf);
+    
 #if defined(NEWSMTH) && !defined(SECONDSITE)
     level=uvaluetochar(buf, getSession()->currentuser);  
-		num=getSession()->currentuser->score_user;
+        num=getSession()->currentuser->score_user;
     if (config.score>0 && num<config.score)
         return -12;
-	sprintf(buf, "用户积分: %d / %d\n", num, config.score);	
-	strcat(log, buf);
-	
+    sprintf(buf, "用户积分: %d / %d\n", num, config.score);    
+    strcat(log, buf);
+    
     if (config.level>0 && level<config.level) 
         return -13;   
-	sprintf(buf, "用户等级: %d / %d\n", level, config.level);	
-	strcat(log, buf);
-	
+    sprintf(buf, "用户等级: %d / %d\n", level, config.level);    
+    strcat(log, buf);
+    
     user_max=(level>MEMBER_USER_MAX_DEFAULT)?level:MEMBER_USER_MAX_DEFAULT;
 #else
     user_max=MEMBER_USER_MAX_DEFAULT;        
 #endif    
-	count=0;
+    count=0;
     if (config.max_members>0) {
         count=get_board_members(board->filename);
         if (count<0)
@@ -216,43 +216,43 @@ int join_board_member(const char *name) {
         if (count>=config.max_members)
             return -19;
     }
-	sprintf(buf, "版面用户数: %d / %d\n", count, config.max_members);	
-	strcat(log, buf);
-	
+    sprintf(buf, "版面用户数: %d / %d\n", count, config.max_members);    
+    strcat(log, buf);
+    
     count=get_member_boards(getSession()->currentuser->userid);
     if (count<0)
         return -20;
     if (count>=user_max)
         return -21;
-    sprintf(buf, "用户版面数: %d / %d\n", count, user_max);	
-	strcat(log, buf);
-	
-	num=board_regenspecial(board->filename, DIR_MODE_AUTHOR, getSession()->currentuser->userid);
+    sprintf(buf, "用户版面数: %d / %d\n", count, user_max);    
+    strcat(log, buf);
+    
+    num=board_regenspecial(board->filename, DIR_MODE_AUTHOR, getSession()->currentuser->userid);
     if (config.board_posts>0 && num<config.board_posts) 
         return -14;   
-	sprintf(buf, "版面发文数: %d / %d\n", num, config.board_posts);	
-	strcat(log, buf);
-	
-	num=board_regenspecial(board->filename, DIR_MODE_ORIGIN_AUTHOR, getSession()->currentuser->userid);
+    sprintf(buf, "版面发文数: %d / %d\n", num, config.board_posts);    
+    strcat(log, buf);
+    
+    num=board_regenspecial(board->filename, DIR_MODE_ORIGIN_AUTHOR, getSession()->currentuser->userid);
     if (config.board_origins>0 && num<config.board_origins) 
         return -15;
-	sprintf(buf, "版面原创数: %d / %d\n", num, config.board_origins);	
-	strcat(log, buf);
-	
-	num=board_regenspecial(board->filename, DIR_MODE_MARK_AUTHOR, getSession()->currentuser->userid);
+    sprintf(buf, "版面原创数: %d / %d\n", num, config.board_origins);    
+    strcat(log, buf);
+    
+    num=board_regenspecial(board->filename, DIR_MODE_MARK_AUTHOR, getSession()->currentuser->userid);
     if (config.board_marks>0 && num<config.board_marks) 
         return -16;
-	sprintf(buf, "版面M文数: %d / %d\n", num, config.board_marks);	
-	strcat(log, buf);
-	
-	num=board_regenspecial(board->filename, DIR_MODE_DIGEST_AUTHOR, getSession()->currentuser->userid);
+    sprintf(buf, "版面M文数: %d / %d\n", num, config.board_marks);    
+    strcat(log, buf);
+    
+    num=board_regenspecial(board->filename, DIR_MODE_DIGEST_AUTHOR, getSession()->currentuser->userid);
     if (config.board_digests>0 && num<config.board_digests) 
         return -17;
-	sprintf(buf, "版面G文数: %d / %d\n", num, config.board_digests);	
-	strcat(log, buf);
-	
+    sprintf(buf, "版面G文数: %d / %d\n", num, config.board_digests);    
+    strcat(log, buf);
+    
     status=(config.approve>0)?BOARD_MEMBER_STATUS_CANDIDATE:BOARD_MEMBER_STATUS_NORMAL;
-	sprintf(buf, "\n是否需要审批: %s\n", (config.approve>0)?"是":"否");
+    sprintf(buf, "\n是否需要审批: %s\n", (config.approve>0)?"是":"否");
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -283,8 +283,8 @@ int join_board_member(const char *name) {
         // 向版主发信
         // TODO
     }
-	
-	board_member_log(&member, "加入驻板", log);
+    
+    board_member_log(&member, "加入驻板", log);
     return status;
 }
 
@@ -336,8 +336,8 @@ int approve_board_member(const char *name, const char *user_id) {
     }
 
     mysql_close(&s);
-	board_member_log(&member, "通过驻板申请", "通过驻版申请");
-	
+    board_member_log(&member, "通过驻板申请", "通过驻版申请");
+    
     return 0;
 }
 
@@ -363,7 +363,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
     char sql[200];
     char my_name[STRLEN];
     char my_user_id[STRLEN];
-	struct board_member member;
+    struct board_member member;
     
     if (!name[0])
         return -1;
@@ -392,11 +392,11 @@ int delete_board_member_record(const char *name, const char *user_id) {
     }
 
     mysql_close(&s);
-	
-	strcpy(member.user, user_id);
-	strcpy(member.board, name);
-	board_member_log(&member, "退出驻板", "退出驻板");
-	
+    
+    strcpy(member.user, user_id);
+    strcpy(member.board, name);
+    board_member_log(&member, "退出驻板", "退出驻板");
+    
     return 0;
 }
 
