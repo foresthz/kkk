@@ -1609,8 +1609,8 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         prints("  innflag=%c%c,  owner=%s\n", fileinfo->innflag[0], fileinfo->innflag[1], fileinfo->owner);
         prints("  eff_size=%d,  attachment=%d,  posttime=%s", fileinfo->eff_size, fileinfo->attachment, ctime((time_t *)&fileinfo->posttime));
 #if defined(NEWSMTH) && !defined(SECONDSITE)
-        //if (fileinfo->edittime)
-        //    prints("  edittime=%s", ctime(&fileinfo->edittime));
+        if (fileinfo->edittime)
+            prints("  edittime=%s", ctime(&fileinfo->edittime));
 #endif
         prints("  title=%s\n", fileinfo->title);
 #ifdef HAVE_REPLY_COUNT
