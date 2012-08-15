@@ -392,7 +392,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     res = mysql_store_result(&s);
     row = mysql_fetch_row(res);
     
-    if (NULL==member) {
+    if (NULL!=member) {
         member->status=BOARD_MEMBER_STATUS_NONE;
         
         if (row != NULL) {
@@ -740,7 +740,7 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     mysql_escape_string(my_user_id, member.user, strlen(member.user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
     
-    sprintf(sql,"UPDATE `board_user` SET `time`=FROM_UNIXTIME(%u), `status`=%d, `manager`=\"%s\" WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", member.time, status, my_manager_id, my_name, my_user_id);
+    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `status`=%d, `manager`=\"%s\" WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", status, my_manager_id, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
