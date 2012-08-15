@@ -322,9 +322,9 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
 	
     if (!getCurrentUser())
         return 0;
-	if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(to_board->BM,getSession()->currentuser))
+	if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(to_board->BM,getSession()->currentuser)&&!is_board_member_manager(to_board->filename, getSession()->currentuser->userid, NULL)) 
 		return 0;
-		
+	
 	total=get_board_members(to_board->filename);
 	if (total<0)
 		return -1;
@@ -336,7 +336,7 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
 	num=load_board_members(to_board->filename, b_members, BOARD_MEMBER_SORT_DEFAULT, 0, total);
 	
 	for (i=0;i<num;i++) {
-		if (b_members[i].status != BOARD_MEMBER_STATUS_NORMAL)
+		if (b_members[i].status != BOARD_MEMBER_STATUS_NORMAL && b_members[i].status != BOARD_MEMBER_STATUS_MANAGER)
 			continue;
 		if(getuser(b_members[i].user, &lookupuser)) {
 			send_refer_msg_to(lookupuser, board, fh, tmpfile);

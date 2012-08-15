@@ -170,7 +170,7 @@ int join_board_member(const char *name) {
         return -5;
     if (status == BOARD_MEMBER_STATUS_NORMAL)
         return -6;
-    if (status == BOARD_MEMBER_STATUS_CANDIDATE)
+    if (status == BOARD_MEMBER_STATUS_CANDIDATE || status == BOARD_MEMBER_STATUS_MANAGER)
         return -7;
     if (status != BOARD_MEMBER_STATUS_NONE)
         return -8;
@@ -702,7 +702,7 @@ int is_board_member(const char *name, const char *user_id, struct board_member *
 }
 
 int is_board_member_manager(const char *name, const char *user_id, struct board_member *member) {
-    return (get_board_member(name, user_id, NULL)==BOARD_MEMBER_STATUS_MANAGER)?1:0;
+    return (get_board_member(name, user_id, member)==BOARD_MEMBER_STATUS_MANAGER)?1:0;
 }
     
 int set_board_member_status(const char *name, const char *user_id, int status) {
