@@ -320,6 +320,8 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
 	struct board_member *b_members = NULL;
 	struct userec *lookupuser;
 	
+    if (!getCurrentUser())
+        return 0;
 	if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(to_board->BM,getSession()->currentuser))
 		return 0;
 		
