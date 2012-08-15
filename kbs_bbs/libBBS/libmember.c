@@ -19,7 +19,7 @@ int board_member_log(struct board_member *member, char *title, char *log) {
         fclose(handle);
         
         if (NULL!=member)
-            sprintf(buf, "%s@%s#%s", member->user, member->board, title);
+            sprintf(buf, "%s#%s#%s", member->user, member->board, title);
         else
             strncpy(buf, title, sizeof(buf));
         post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());
@@ -91,7 +91,7 @@ int save_board_member_config(const char *name, struct board_member_config *confi
     write(fd, config, sizeof(struct board_member_config));
     close(fd);
     
-    sprintf(title, "更改驻板设置@%s", board->filename);
+    sprintf(title, "更改驻版设置@%s", board->filename);
     sprintf(log, "版面: %s\n用户: %s\n\n",
         board->filename,
         getSession()->currentuser->userid
@@ -123,11 +123,11 @@ int save_board_member_config(const char *name, struct board_member_config *confi
 }
 /**
   * 用户申请成为某版的驻版用户
-  * -1: guest不允许驻板
+  * -1: guest不允许驻版
   * -2,-3: 版面错误
   * -4: 无版面权限
-  * -6: 已经是该板的驻板用户
-  * -7: 驻板申请已提交、等待审批中
+  * -6: 已经是该版的驻版用户
+  * -7: 驻版申请已提交、等待审批中
   * -10: 登录数未达到要求
   * -11: 发文数未达到要求
   * -12: 积分未达到要求
@@ -284,7 +284,7 @@ int join_board_member(const char *name) {
         // TODO
     }
     
-    board_member_log(&member, "加入驻板", log);
+    board_member_log(&member, "加入驻版", log);
     return status;
 }
 
@@ -293,52 +293,7 @@ int leave_board_member(const char *name) {
 }
 
 int approve_board_member(const char *name, const char *user_id) {
-    struct boardheader *board;
-    struct board_member member;
-    int status;
-    MYSQL s;
-    char sql[200];
-    char my_name[STRLEN];
-    char my_user_id[STRLEN];
-    char my_manager_id[STRLEN];
-    
-    board=getbcache(name);
-    if (0==board)
-        return -1;
-    if (board->flag&BOARD_GROUP)
-        return -2;    
-    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
-        return -3;
-        
-    status=get_board_member(board->filename, user_id, &member);    
-    if (status!=BOARD_MEMBER_STATUS_CANDIDATE)
-        return -4;
-    
-    mysql_init(&s);
-    if (!my_connect_mysql(&s)) {
-        bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -5;
-    }
-    
-    my_name[0]=0;
-    my_user_id[0]=0;
-    my_manager_id[0]=0;
-    mysql_escape_string(my_name, board->filename, strlen(board->filename));
-    mysql_escape_string(my_user_id, member.user, strlen(member.user));
-    mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
-    
-    sprintf(sql,"UPDATE `board_user` SET `time`=FROM_UNIXTIME(%u), `status`=%d, `manager`=\"%s\" WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", time(0), BOARD_MEMBER_STATUS_NORMAL, my_manager_id, my_name, my_user_id);
-
-    if (mysql_real_query(&s, sql, strlen(sql))) {
-        bbslog("3system", "mysql error: %s", mysql_error(&s));
-        mysql_close(&s);
-        return -6;
-    }
-
-    mysql_close(&s);
-    board_member_log(&member, "通过驻板申请", "通过驻版申请");
-    
-    return 0;
+    return set_board_member_status(name, user_id, BOARD_MEMBER_STATUS_NORMAL);
 }
 
 int remove_board_member(const char *name, const char *user_id) {
@@ -395,7 +350,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
     
     strcpy(member.user, user_id);
     strcpy(member.board, name);
-    board_member_log(&member, "退出驻板", "退出驻板");
+    board_member_log(&member, "退出驻版", "退出驻版");
     
     return 0;
 }
@@ -407,6 +362,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     char sql[300];
     char my_name[STRLEN];
     char my_user_id[STRLEN];
+    int status;
     
     if (!user_id[0])
         return -1;
@@ -435,21 +391,32 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     }
     res = mysql_store_result(&s);
     row = mysql_fetch_row(res);
-    member->status=BOARD_MEMBER_STATUS_NONE;
     
-    if (row != NULL) {
-        strncpy(member->board, row[0], 32);
-        strncpy(member->user, row[1], IDLEN+1);
-        member->time=atol(row[2]);
-        member->status=atol(row[3]);
-        strncpy(member->manager, row[4], IDLEN+1);
-        member->score=atol(row[5]);
-        member->flag=atol(row[6]);
+    if (NULL==member) {
+        member->status=BOARD_MEMBER_STATUS_NONE;
+        
+        if (row != NULL) {
+            strncpy(member->board, row[0], 32);
+            strncpy(member->user, row[1], IDLEN+1);
+            member->time=atol(row[2]);
+            member->status=atol(row[3]);
+            strncpy(member->manager, row[4], IDLEN+1);
+            member->score=atol(row[5]);
+            member->flag=atol(row[6]);
+        }
+        
+        status=member->status;
+    } else {
+        status=BOARD_MEMBER_STATUS_NONE;
+        
+        if (row != NULL) {
+            status=atol(row[3]);
+        }
     }
     mysql_free_result(res);
 
     mysql_close(&s);
-    return member->status;
+    return status;
 }
 
 int load_board_members(const char *board, struct board_member *member, int sort, int start, int num) {
@@ -490,6 +457,12 @@ int load_board_members(const char *board, struct board_member *member, int sort,
         case BOARD_MEMBER_SORT_SCORE_ASC:
             strcpy(qtmp, " `score` ASC ");
             break;
+        case BOARD_MEMBER_SORT_STATUS_ASC:
+            strcpy(qtmp, " `status` ASC ");
+            break;
+        case BOARD_MEMBER_SORT_STATUS_DESC:
+            strcpy(qtmp, " `status` DESC ");
+            break;        
         case BOARD_MEMBER_SORT_TIME_ASC:
         default:
             strcpy(qtmp, " `time` ASC ");
@@ -565,6 +538,12 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
             break;
         case MEMBER_BOARD_SORT_SCORE_ASC:
             strcpy(qtmp, " `score` ASC ");
+            break;
+        case MEMBER_BOARD_SORT_STATUS_ASC:
+            strcpy(qtmp, " `status` ASC ");
+            break;
+        case MEMBER_BOARD_SORT_STATUS_DESC:
+            strcpy(qtmp, " `status` DESC ");
             break;
         case MEMBER_BOARD_SORT_TIME_ASC:
         default:
@@ -715,5 +694,65 @@ int load_board_member_request(const char *name, struct board_member_config *mine
     return 0;
 }    
 
+int is_board_member(const char *name, const char *user_id, struct board_member *member) {
+    int status;
+    
+    status=get_board_member(name, user_id, NULL);
+    return (status==BOARD_MEMBER_STATUS_NORMAL||status==BOARD_MEMBER_STATUS_MANAGER)?1:0;
+}
+
+int is_board_member_manager(const char *name, const char *user_id, struct board_member *member) {
+    return (get_board_member(name, user_id, NULL)==BOARD_MEMBER_STATUS_MANAGER)?1:0;
+}
+    
+int set_board_member_status(const char *name, const char *user_id, int status) {
+    struct boardheader *board;
+    struct board_member member;
+    int old;
+    MYSQL s;
+    char sql[200], buf[1024];
+    char my_name[STRLEN];
+    char my_user_id[STRLEN];
+    char my_manager_id[STRLEN];
+    
+    board=getbcache(name);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;    
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
+        return -3;
+        
+    old=get_board_member(board->filename, user_id, &member);    
+    if (old==status)
+        return 0;
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -5;
+    }
+    
+    my_name[0]=0;
+    my_user_id[0]=0;
+    my_manager_id[0]=0;
+    mysql_escape_string(my_name, board->filename, strlen(board->filename));
+    mysql_escape_string(my_user_id, member.user, strlen(member.user));
+    mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
+    
+    sprintf(sql,"UPDATE `board_user` SET `time`=FROM_UNIXTIME(%u), `status`=%d, `manager`=\"%s\" WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", member.time, status, my_manager_id, my_name, my_user_id);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -6;
+    }
+
+    mysql_close(&s);
+    sprintf(buf, "原状态: %d\n新状态: %d", old, status);
+    board_member_log(&member, "设置驻版状态", buf);
+    
+    return 0;
+}    
 #endif
 #endif 

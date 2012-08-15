@@ -851,6 +851,9 @@ while(0)
 	int get_board_members(const char *board);
 	int get_member_boards(const char *user_id);
 	int load_board_member_request(const char *name, struct board_member_config *mine);
+	int is_board_member(const char *name, const char *user_id, struct board_member *member);
+	int is_board_member_manager(const char *name, const char *user_id, struct board_member *member);
+	int set_board_member_status(const char *name, const char *user_id, int status);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD
