@@ -1076,13 +1076,17 @@ void load_user_title()
 {
     FILE* titlefile;
     char errbuf[STRLEN];
+    char buf[STRLEN];
     bzero(uidshm->user_title,sizeof(uidshm->user_title));
     if ((titlefile = fopen(USER_TITLE_FILE, "r")) == NULL) {
         bbslog("3system", "Can't open " USER_TITLE_FILE " file %s", strerror_r(errno, errbuf, STRLEN));
     } else {
         int i;
         for (i=0;i<255;i++) {
-            fgets(uidshm->user_title[i],USER_TITLE_LEN,titlefile);
+            fgets(buf, STRLEN, titlefile);
+            buf[USER_TITLE_LEN-1]=0;
+            strnzhcpy(uidshm->user_title[i], buf, USER_TITLE_LEN);
+            //fgets(uidshm->user_title[i],USER_TITLE_LEN,titlefile);
 
             if ((uidshm->user_title[i][0]!=0)&&(uidshm->user_title[i][strlen(uidshm->user_title[i])-1]=='\n'))
                 uidshm->user_title[i][strlen(uidshm->user_title[i])-1]=0;
