@@ -468,7 +468,7 @@ static int b_member_key(struct _select_def *conf, int key) {
                 del=BOARD_MEMBER_STATUS_MANAGER;
             } else if (b_members[conf->pos-conf->page_pos].status == BOARD_MEMBER_STATUS_MANAGER) {
                 sprintf(buf, "您要将%s设置为\033[1;32m普通驻版用户\033[m吗? (Y/N) [N]", b_members[conf->pos-conf->page_pos].user);
-                del=BOARD_MEMBER_STATUS_MANAGER;
+                del=BOARD_MEMBER_STATUS_NORMAL;
             } else 
                 return SHOW_CONTINUE;    
             
