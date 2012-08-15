@@ -697,7 +697,7 @@ int load_board_member_request(const char *name, struct board_member_config *mine
 int is_board_member(const char *name, const char *user_id, struct board_member *member) {
     int status;
     
-    status=get_board_member(name, user_id, NULL);
+    status=get_board_member(name, user_id, member);
     return (status==BOARD_MEMBER_STATUS_NORMAL||status==BOARD_MEMBER_STATUS_MANAGER)?1:0;
 }
 
