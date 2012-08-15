@@ -478,9 +478,9 @@ static int b_member_key(struct _select_def *conf, int key) {
             getdata(t_lines-1, 0, buf, ans, 3, DOECHO, NULL, true);
             if (ans[0] != 'y' && ans[0]!='Y') 
                 return SHOW_REFRESH;
-            else if (set_board_member_status(currboard->filename, )>=0) {
+            else if (set_board_member_status(currboard->filename, b_members[conf->pos-conf->page_pos].user, del)>=0) {
                 board_member_is_joined=0;
-                conf->item_count = get_board_members(currboard->filename, b_members[conf->pos-conf->page_pos].user, del);
+                conf->item_count = get_board_members(currboard->filename);
                 b_member_title(conf);
                 return SHOW_DIRCHANGE;
             } else
