@@ -458,7 +458,7 @@ void select_difficulty()
         ch = igetkey();
         if (ch==KEY_LEFT || ch==KEY_RIGHT || ch==KEY_TAB)
             difficulty = (difficulty==NORMAL) ? HARD : NORMAL;
-        else if (ch=='\r')
+        else if (ch=='\r'||ch=='\n')
             break;
     }
     return;
