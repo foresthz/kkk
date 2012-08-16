@@ -14,8 +14,8 @@ int board_member_log(struct board_member *member, char *title, char *log) {
             fprintf(handle, "操作者: %s\n\n用户: %s\n版面:%s\n\n", getSession()->currentuser->userid, member->user, member->board);
         
         fprintf(handle, "记录: \n%s\n\n", log);
-        fprintf(handle, "以下是个人资料");
-        getuinfo(handle, getSession()->currentuser);
+        //fprintf(handle, "以下是个人资料");
+        //getuinfo(handle, getSession()->currentuser);
         fclose(handle);
         
         if (NULL!=member)
