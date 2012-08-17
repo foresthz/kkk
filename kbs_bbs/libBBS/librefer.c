@@ -24,7 +24,7 @@
 #define MAX_REFER_INCEPTS 1024
 int refer_incepts[MAX_REFER_INCEPTS];
 
-int set_refer_file_from_mode(char *buf, const int mode) 
+int set_refer_file_from_mode(char *buf, const int mode)
 {
     switch (mode) {
         case REFER_MODE_AT:
@@ -36,7 +36,7 @@ int set_refer_file_from_mode(char *buf, const int mode)
         default:
             return -1;
     }
-    
+
     return 0;
 }
 
@@ -50,11 +50,11 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
     int i, len, count, uid;
     char userid[IDLEN+2];
 #ifdef ENABLE_BOARD_MEMBER
-	int bid, b_count;
-	char board[STRLEN+2];
-	
-	b_count=0;
-#endif	
+    int bid, b_count;
+    char board[STRLEN+2];
+
+    b_count=0;
+#endif
     p = ptr;
     count = 0;
     while (*p!='\0' && ptrlen>0 && count<MAX_REFER) {
@@ -76,31 +76,31 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
                 id[count] = uid;
                 count++;
             }
-        } 
+        }
 #ifdef ENABLE_BOARD_MEMBER
-	/* windinsn, 2012.8.14 */
-		else if (*p == '@' && ((p>ptr && !isalnum(p[-1])) && p[1]=='#' && (isalpha(p[2])||p[2]=='.'||p[2]=='_'))) { /* 找到 @#, 并对前后进行判断，这个是驻版提醒 windinsn, 2012.8.14 */
-			for (q=p+3,r=p+2,len=2;isalnum(*q)||q[0]=='.'||q[0]=='_';q++) 
-				len++;
-			p += len;
-			ptrlen -= len;
-			if (len>STRLEN)
-				continue;
-			strncpy(board, r, len-1);
-			board[len-1]='\0';
-			
-			if ((bid=getbid(board, NULL))==0)
-				continue;
-			for (i=0;i<b_count;i++)
-				if (boards[i]==bid)
-					break;
-			if (i==b_count) {
-				boards[b_count]=bid;
-				b_count++;
-			}
-		}
-#endif		
-		else if (p==ptr && (strncmp(p, "发信人: ", 8)==0 || strncmp(p, "寄信人: ", 8)==0)) { /* 首行"发信人""寄信人"不匹配，避免昵称 */
+    /* windinsn, 2012.8.14 */
+        else if (*p == '@' && ((p>ptr && !isalnum(p[-1])) && p[1]=='#' && (isalpha(p[2])||p[2]=='.'||p[2]=='_'))) { /* 找到 @#, 并对前后进行判断，这个是驻版提醒 windinsn, 2012.8.14 */
+            for (q=p+3,r=p+2,len=2;isalnum(*q)||q[0]=='.'||q[0]=='_';q++)
+                len++;
+            p += len;
+            ptrlen -= len;
+            if (len>STRLEN)
+                continue;
+            strncpy(board, r, len-1);
+            board[len-1]='\0';
+
+            if ((bid=getbid(board, NULL))==0)
+                continue;
+            for (i=0;i<b_count;i++)
+                if (boards[i]==bid)
+                    break;
+            if (i==b_count) {
+                boards[b_count]=bid;
+                b_count++;
+            }
+        }
+#endif
+        else if (p==ptr && (strncmp(p, "发信人: ", 8)==0 || strncmp(p, "寄信人: ", 8)==0)) { /* 首行"发信人""寄信人"不匹配，避免昵称 */
             if ((q = strstr(p, "\n"))!=NULL) {
                 p = q + 1;
                 ptrlen -= (q - p + 1);
@@ -133,7 +133,7 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 
 int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile) {
     char *ptr,*cur_ptr;
-    off_t ptrlen, mmap_ptrlen;    
+    off_t ptrlen, mmap_ptrlen;
     //char c='\0', last_c;
     //int in_at=false;
     //char id[IDLEN+1];
@@ -141,18 +141,18 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     struct userec *user;
     const struct boardheader *board;
     int users[MAX_REFER];
-#ifdef ENABLE_BOARD_MEMBER	
-	int boards[MAX_BOARD_REFER];
-	struct boardheader *to_board;
-#endif	
+#ifdef ENABLE_BOARD_MEMBER
+    int boards[MAX_BOARD_REFER];
+    struct boardheader *to_board;
+#endif
     int times=0;
     //int sent=false;
     int i;//,uid;
-	
-	bzero(boards, MAX_BOARD_REFER * sizeof(int));
-    for (i=0;i<MAX_REFER_INCEPTS;i++) 
-		refer_incepts[i]=0;
-	
+
+    bzero(boards, MAX_BOARD_REFER * sizeof(int));
+    for (i=0;i<MAX_REFER_INCEPTS;i++)
+        refer_incepts[i]=0;
+
     board=getbcache(boardname);
     if (0==board)
         return -1;
@@ -164,21 +164,21 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     ptrlen=mmap_ptrlen;
     cur_ptr=ptr;
 #ifdef ENABLE_BOARD_MEMBER
-	times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users, boards);
-#else	
+    times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users, boards);
+#else
     times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users);
 #endif
     for (i=0;i<times;i++) {
         user = getuserbynum(users[i]);
         send_refer_msg_to(user, board, fh, tmpfile);
     }
-	for (i=0;i<MAX_BOARD_REFER;i++) {
-		if (boards[i]<=0)
-			break;
-		to_board=getboard(boards[i]);
-		if (NULL!=to_board)
-			send_refer_msg_to_board(to_board, board, fh, tmpfile);
-	}
+    for (i=0;i<MAX_BOARD_REFER;i++) {
+        if (boards[i]<=0)
+            break;
+        to_board=getboard(boards[i]);
+        if (NULL!=to_board)
+            send_refer_msg_to_board(to_board, board, fh, tmpfile);
+    }
     /*
     while(ptrlen>0) {
         last_c=c;
@@ -208,9 +208,9 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
             }
         } else if (!isalnum(last_c)&&c=='@') {
             in_at=true;
-            id[0]='\0'; 
+            id[0]='\0';
             id_pos=0;
-        } 
+        }
 
         if (c=='\0') break;
         ptrlen--;
@@ -262,8 +262,8 @@ int send_refer_reply_to(struct userec *user, const struct boardheader *board, st
 }
 int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
     int i, uid;
-	
-	if (0==strcmp(user->userid, "guest"))
+
+    if (0==strcmp(user->userid, "guest"))
         return -1;
     if (!DEFINE(user, DEF_REFER))
         return -2;
@@ -274,32 +274,32 @@ int send_refer_msg_to(struct userec *user, const struct boardheader *board, stru
     if (0!=check_mail_perm(getSession()->currentuser, user))
         return -5;
 
-	uid=getuser(user->userid, NULL);
-	for (i=0;i<MAX_REFER_INCEPTS;i++) {
-		if (refer_incepts[i]<=0)
-			break;
-		if (refer_incepts[i]==uid)
-			return 0;
-	}
-	
-	if (i>=MAX_REFER_INCEPTS)
-		return -7;
-	refer_incepts[i]=uid;
-		
+    uid=getuser(user->userid, NULL);
+    for (i=0;i<MAX_REFER_INCEPTS;i++) {
+        if (refer_incepts[i]<=0)
+            break;
+        if (refer_incepts[i]==uid)
+            return 0;
+    }
+
+    if (i>=MAX_REFER_INCEPTS)
+        return -7;
+    refer_incepts[i]=uid;
+
     if(0==strncasecmp(user->userid, "sysop", 5)) {
         mail_file(getSession()->currentuser->userid, tmpfile, user->userid, fh->title, 0, fh);
         newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
         return 0;
     }
 
-    char buf[255];  
+    char buf[255];
     struct refer refer;
 
     memset(&refer, 0, sizeof(refer));
 
     strncpy(refer.board, board->filename, STRLEN);
     strncpy(refer.user, fh->owner, IDLEN);
-    strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);  
+    strnzhcpy(refer.title, fh->title, ARTICLE_TITLE_LEN);
     refer.id=fh->id;
     refer.groupid=fh->groupid;
     refer.reid=fh->reid;
@@ -310,42 +310,42 @@ int send_refer_msg_to(struct userec *user, const struct boardheader *board, stru
     if (-1==append_record(buf, &refer, sizeof(refer)))
         return -6;
 
-    setmailcheck(user->userid);    
+    setmailcheck(user->userid);
     newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
 
     return 0;
 }
 #ifdef ENABLE_BOARD_MEMBER
 int send_refer_msg_to_board(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
-	int total, i, num;
-	struct board_member *b_members = NULL;
-	struct userec *lookupuser;
-	
+    int total, i, num;
+    struct board_member *b_members = NULL;
+    struct userec *lookupuser;
+
     if (!getCurrentUser())
         return 0;
-	if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(to_board->BM,getSession()->currentuser)&&!is_board_member_manager(to_board->filename, getSession()->currentuser->userid, NULL)) 
-		return 0;
-	
-	total=get_board_members(to_board->filename);
-	if (total<0)
-		return -1;
-	if (total==0)
-		return 0;
-	
-	b_members=(struct board_member *) malloc(sizeof(struct board_member) * total);
-	bzero(b_members, sizeof(struct board_member) * total);
-	num=load_board_members(to_board->filename, b_members, BOARD_MEMBER_SORT_DEFAULT, 0, total);
-	
-	for (i=0;i<num;i++) {
-		if (b_members[i].status != BOARD_MEMBER_STATUS_NORMAL && b_members[i].status != BOARD_MEMBER_STATUS_MANAGER)
-			continue;
-		if(getuser(b_members[i].user, &lookupuser)) {
-			send_refer_msg_to(lookupuser, board, fh, tmpfile);
-		}
-	}
-	
-	free(b_members);
-	return 0;
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(to_board->BM,getSession()->currentuser)&&!is_board_member_manager(to_board->filename, getSession()->currentuser->userid, NULL))
+        return 0;
+
+    total=get_board_members(to_board->filename);
+    if (total<0)
+        return -1;
+    if (total==0)
+        return 0;
+
+    b_members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+    bzero(b_members, sizeof(struct board_member) * total);
+    num=load_board_members(to_board->filename, b_members, BOARD_MEMBER_SORT_DEFAULT, 0, total);
+
+    for (i=0;i<num;i++) {
+        if (b_members[i].status != BOARD_MEMBER_STATUS_NORMAL && b_members[i].status != BOARD_MEMBER_STATUS_MANAGER)
+            continue;
+        if(getuser(b_members[i].user, &lookupuser)) {
+            send_refer_msg_to(lookupuser, board, fh, tmpfile);
+        }
+    }
+
+    free(b_members);
+    return 0;
 }
 #endif /* ENABLE_BOARD_MEMBER */
 int refer_remove(char *dir, int ent, struct refer *refer) {
@@ -360,7 +360,7 @@ int refer_remove(char *dir, int ent, struct refer *refer) {
         return 0;
     }
 
-    return 1; 
+    return 1;
 }
 int refer_cmp(struct refer *r1, struct refer *r2) {
     if (strncasecmp(r1->board, r2->board, STRLEN)==0&&r1->id==r2->id)
@@ -406,7 +406,7 @@ int refer_get_new(struct userec *user, char *filename) {
 
     size=sizeof(refer);
     total_num=st.st_size/size;
-    if (total_num<=0) 
+    if (total_num<=0)
         return 0;
 
     if ((fd=open(buf, O_RDONLY))<0)
@@ -423,7 +423,7 @@ int refer_get_new(struct userec *user, char *filename) {
         read(fd, &ch, 1);
         if (!(ch&FILE_READ)) new_num++;
         lseek(fd, -1, SEEK_CUR);
-    }    
+    }
 
     close(fd);
     return new_num;
@@ -453,7 +453,7 @@ int refer_read_all(char *buf) {
     while (i<total) {
         if ((i++)>0)
             lseek(fd, size, SEEK_CUR);
-        
+
         read(fd, &ch, 1);
         if (!(ch&FILE_READ)) {
             ch |= FILE_READ;
@@ -464,7 +464,7 @@ int refer_read_all(char *buf) {
     }
 
     close(fd);
-    
+
     return 0;
 }
 int refer_truncate(char *buf) {
