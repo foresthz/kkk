@@ -149,7 +149,8 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     //int sent=false;
     int i;//,uid;
 	
-	for (i=0;i<MAX_REFER_INCEPTS;i++) 
+	bzero(boards, MAX_BOARD_REFER * sizeof(int));
+    for (i=0;i<MAX_REFER_INCEPTS;i++) 
 		refer_incepts[i]=0;
 	
     board=getbcache(boardname);
