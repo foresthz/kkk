@@ -271,7 +271,7 @@ int join_board_member(const char *name) {
     member.score=0;
     member.flag=0;
     
-    sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%u), %d, \"\", %u, %u);", member.board, member.user, member.time, member.status, member.score, member.flag);
+    sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%lu), %d, \"\", %u, %u);", member.board, member.user, member.time, member.status, member.score, member.flag);
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
