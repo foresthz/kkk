@@ -116,7 +116,7 @@ static inline int m_verb(void)
 /* 处理信件发送 */
 static inline int m_send(struct userec *user,void *arg)
 {
-    if (m_check_perm(user)) {
+    if (strcmp(user->userid, "guest") && m_check_perm(user)) {
         mail_file(name,path,user->userid,title,m_check_mode(),NULL);
         m_verb();
         count++;
