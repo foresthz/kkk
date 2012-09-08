@@ -1194,7 +1194,7 @@ int modify_userinfo(int uid,int mode)
     unsigned int access,change,verify,level;
     time_t current;
 #ifdef NEWSMTH /* 积分调整原因 */
-    char reason[40];
+    char reason[STRLEN];
     reason[0] = 0;
 #endif
     switch (mode) {
@@ -1700,7 +1700,7 @@ int modify_userinfo(int uid,int mode)
 #ifdef NEWSMTH
                     /* 设定积分修改原因 */
                     if (ouser.score_user!=nuser.score_user || ouser.score_manager!=nuser.score_manager)
-                        MU_GET(MU_CURR_ROW,MU_MSG(Y,"输入积分调整原因（Enter忽略）: "), reason, 39);
+                        MU_GET(MU_CURR_ROW,MU_MSG(Y,"输入积分调整原因（Enter忽略）: "), reason, STRLEN-1);
 #endif /* NEWSMTH */
 #ifdef SECONDSITE
                     snprintf(buf,MU_LENGTH,"用户: %d  管理: %d",nuser.score_user,nuser.score_manager);
