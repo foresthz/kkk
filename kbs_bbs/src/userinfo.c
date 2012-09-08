@@ -1697,6 +1697,11 @@ int modify_userinfo(int uid,int mode)
                     }
                     /*snprintf(buf,MU_LENGTH,((nuser.score_user>publicshm->us_sample[1])?"%d <RANKING %.2lf%%>":
                         "%d <RANKING %.1lf%%>"),nuser.score_user,(100*us_ranking(nuser.score_user)));*/
+#ifdef NEWSMTH
+                    /* 设定积分修改原因 */
+                    if (ouser.score_user!=nuser.score_user || ouser.score_manager!=nuser.score_manager)
+                        MU_GET(MU_CURR_ROW,MU_MSG(Y,"输入积分调整原因（Enter忽略）: "), reason, 39);
+#endif /* NEWSMTH */
 #ifdef SECONDSITE
                     snprintf(buf,MU_LENGTH,"用户: %d  管理: %d",nuser.score_user,nuser.score_manager);
 #elif defined(NEWSMTH)
@@ -1978,7 +1983,7 @@ int modify_userinfo(int uid,int mode)
     }
 #ifdef NEWSMTH  //积分变化信件通知, jiangjun, 20120708
     if (change & (1 << MOD_SCORE)) {
-        getdata(t_lines-2, 2, "\033[1;32m输入积分调整原因（Enter忽略）: \033[m", reason, 38, DOECHO, NULL, true);
+        //getdata(t_lines-2, 2, "\033[1;32m输入积分调整原因（Enter忽略）: \033[m", reason, 39, DOECHO, NULL, true);
         score_change_mail(&vuser, ouser.score_user, vuser.score_user, ouser.score_manager, vuser.score_manager, reason);
     }
 #endif
@@ -1999,7 +2004,7 @@ int modify_userinfo(int uid,int mode)
                     fprintf(fp," \033[1;33m[%-8.8s]: \033[0;33m%s\033[m\n%-13.13s\033[1;32m%s\033[m\n",prefix[j],omenu[j],"",menu[j]);
 #ifdef NEWSMTH /* 积分调整原因 */
                     if (change&(1<<MOD_SCORE)&&reason[0])
-                        fprintf(fp, "             \033[1;31m积分调整原因: %s\033[m\n", reason);
+                        fprintf(fp, "%-13.13s\033[1;31m积分调整原因: %s\033[m\n", "", reason);
 #endif
                     fprintf(fp, "\n");
                 }
