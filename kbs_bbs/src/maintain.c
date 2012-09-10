@@ -814,6 +814,11 @@ int modify_board(int bid)
         "[O]版面积分  :","[P]强制模板  :",
         "[Q][退出]    :"
     };
+#ifdef NEWSMTH
+    int os;
+    char reason[STRLEN];
+    reason[0] = '\0';
+#endif
     change=0; loop=1;
     /*选择讨论区*/
     clear();
@@ -827,6 +832,9 @@ int modify_board(int bid)
         return -1;
     }
     memcpy(&bh,bhptr,sizeof(struct boardheader));
+#ifdef NEWSMTH
+    os = bh.score;
+#endif
     sprintf(buf,"\033[1;33m讨论区序号: %-4.4d\033[m",bid);
     move(0,40); prints(buf);
     if (bh.clubnum) {
@@ -1668,6 +1676,10 @@ int modify_board(int bid)
                 if (newbh.score!=bh.score) {
                     sprintf(menustr[23],"%-15s\033[1;32m%d\033[m",menuldr[23],newbh.score);
                     change|=(1<<23);
+#ifdef NEWSMTH
+                    /* 设定积分变更原因 */
+                    getdata(18, 2, "\033[1;32m输入积分调整原因（Enter忽略）: \033[m", reason, STRLEN-1, DOECHO, NULL, true);
+#endif
                 } else {
                     sprintf(menustr[23],"%s",orig[23]);
                     change&=~(1<<23);
@@ -1753,6 +1765,10 @@ int modify_board(int bid)
     }
     error|=edit_group(&bh,&newbh);
     set_board(bid,&newbh,&bh);
+#ifdef NEWSMTH
+    if (change&(1<<23))
+        board_score_change_record(&newbh, reason, os, newbh.score, 0);
+#endif
     /*生成安全审核和日志*/
     sprintf(src,"tmp/edit_board_log_%ld_%d",time(NULL),(int)getpid());
     if (!(fp=fopen(src,"w"))) {
@@ -1763,8 +1779,15 @@ int modify_board(int bid)
         write_header(fp,getCurrentUser(),0,"syssecurity",buf,0,0,getSession());
         fprintf(fp,"\033[1;33m[讨论区 <id=%d> 属性修改明细]\033[m\n\n",bid);
         for (i=0; i<MB_ITEMS-1; i++) {
-            if (change&(1<<i))
-                fprintf(fp,"  %s\n  \033[1;32m%s\033[m\n\n",orig[i],menustr[i]);
+            if (change&(1<<i)) {
+                fprintf(fp,"  %s\n  \033[1;32m%s\033[m\n",orig[i],menustr[i]);
+#ifdef NEWSMTH
+                /* 积分变更原因 */
+                if (i==23 && reason[0])
+                    fprintf(fp, "  \033[1;31m积分调整原因 : %s\033[m\n", reason);
+#endif
+                fprintf(fp, "\n");
+            }
         }
         fclose(fp);
         post_file(getCurrentUser(),"",src,"syssecurity",buf,0,-1,getSession());

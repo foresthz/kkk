@@ -3587,7 +3587,10 @@ void load_title_key(int init, int bid, const char *board)
 }
 #endif
 
-#ifdef NEWSMTH //积分变化信件通知
+#ifdef NEWSMTH
+/*
+ * 积分变更信件通知
+ */
 int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, unsigned int om, unsigned int nm, char *r)
 {
     char mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
@@ -3603,10 +3606,10 @@ int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, uns
     gettmpfilename(mailfile, "score_change_mail");
     if ((fn=fopen(mailfile, "w"))!=NULL) {
         fprintf(fn, "寄信人: deliver\n");
-        fprintf(fn, "标  题: [系统] 用户积分变化通知\n");
+        fprintf(fn, "标  题: [系统] 用户积分变更通知\n");
         fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
         fprintf(fn, "来  源: %s\n\n", NAME_BBS_ENGLISH);
-        fprintf(fn, "[用户积分变化情况]\n\n");
+        fprintf(fn, "[用户积分变更情况]\n\n");
         if (ds)
             fprintf(fn, "  用户普通积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", os, ns, (ds>0)?"\033[31m↑":"\033[36m↓", abs(ds));
         if (dm)
@@ -3614,10 +3617,49 @@ int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, uns
         if (r && r[0])
             fprintf(fn, "\n\n[原因]: \033[32m%s\033[m\n", r);
         fclose(fn);
-        sprintf(title, "[系统] 用户积分变化通知");
+        sprintf(title, "[系统] 用户积分变更通知");
         mail_file("deliver", mailfile, user->userid, title, BBSPOST_MOVE, NULL);
         unlink(mailfile);
     }
+    return 0;
+}
+
+/*
+ * 版面积分变更记录
+ * mode: 0直接修改版面积分
+ *       1用户捐献积分
+ */ 
+int board_score_change_record(struct boardheader *bh, char *desc, int os, int ns, int mode)
+{       
+    unsigned char accessed[2];
+    char postfile[STRLEN], title[STRLEN];
+    FILE *fn;
+    int ds;
+
+    ds = ns - os;
+    accessed[0] = 0;
+    accessed[1] = 0;
+    accessed[0] |= FILE_MARKED;
+    gettmpfilename(postfile, "board_score_change");
+    fn = fopen(postfile, "w");
+    fprintf(fn, "[版面积分变更情况]\n\n");
+    fprintf(fn, "  版面积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", os, ns, (ds>0)?"\033[31m↑":"\033[36m↓", abs(ds));
+    if (desc && desc[0])
+        fprintf(fn, "\n\n[原因]: \033[32m%s\033[m\n", desc);
+    fclose(fn);
+    /* 发到积分变更版面 */
+    post_file_alt(postfile, getCurrentUser(), "版面积分变更记录", bh->filename, NULL, 0x05, accessed);
+    if (mode) {
+        /* 发到ScoreService版 */
+        if (normal_board(bh->filename))
+            post_file_alt(postfile, getCurrentUser(), desc, "ScoreService", NULL, 0x05, accessed);
+        /* 发到ScoreClub版 */
+        accessed[0] = 0;
+        accessed[1] = 0;
+        sprintf(title, "捐献 %s版积分变更记录", bh->filename);
+        post_file_alt(postfile, NULL, title, "ScoreClub", NULL, 0x05, accessed);
+    }
+    unlink(postfile);
     return 0;
 }
 #endif
