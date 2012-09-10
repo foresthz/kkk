@@ -3628,9 +3628,9 @@ int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, uns
  * 版面积分变更记录
  * mode: 0直接修改版面积分
  *       1用户捐献积分
- */ 
+ */
 int board_score_change_record(struct boardheader *bh, char *desc, int os, int ns, int mode)
-{       
+{
     unsigned char accessed[2];
     char postfile[STRLEN], title[STRLEN];
     FILE *fn;
