@@ -39,7 +39,7 @@ void bbs_make_article_array(zval * array, struct fileheader *fh, char *flags, si
 }
 
 
-void make_article_flag_array(char flags[5], struct fileheader *ent, struct userec *user, struct boardheader *bh, int is_bm)
+void make_article_flag_array(char flags[5], struct fileheader *ent, struct userec *user, const struct boardheader *bh, int is_bm)
 {
     flags[0] = get_article_flag(ent, user, bh, is_bm, &(flags[4]), getSession());
     if (is_bm && (ent->accessed[0] & FILE_IMPORTED))

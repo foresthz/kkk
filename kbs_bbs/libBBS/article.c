@@ -1472,8 +1472,7 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
 {
     char buf[256];
     int fd, err = 0, nowid = 0;
-	char to_board[STRLEN];
-
+	
 #ifdef FILTER
     char oldpath[50], newpath[50];
     int filtered;
