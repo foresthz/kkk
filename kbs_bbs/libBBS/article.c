@@ -3056,7 +3056,7 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
         if (flag & FILE_CENSOR_FLAG) {
             ret = pass_filter(originFh, board, session);
 
-            if (!ret && !strcmp(board->filename, FILTER_BOARD)) {
+            if (!ret && (!strcmp(board->filename, FILTER_BOARD)||board->flag&BOARD_CENSOR_FILTER)) {
                 char ans[STRLEN];
                 snprintf(ans, STRLEN, "¡¼%s¡½´¦Àí: %s", session->currentuser->userid, fileinfo->title);
                 strnzhcpy(originFh->title, ans, ARTICLE_TITLE_LEN);
