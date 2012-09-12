@@ -2807,6 +2807,12 @@ static int pass_filter(struct fileheader *fileinfo, const struct boardheader *bo
 				
 			if (to_censor)
 				fileinfo->accessed[1] |= FILE_CENSOR;	
+#ifdef ENABLE_REFER
+			else {
+				send_refer_msg(boardname, &newfh, NULL, newpath);
+			}
+#endif
+			
         }
     }
     return 0;
