@@ -92,6 +92,9 @@
 				case -10:
 					html_error_quit("系统错误");
 					break;
+                case -11:
+                    html_error_quit("很抱歉，本版为审核版面，若需要更改内容请删除原文重新发表。");
+                    break;
 				default:
 					html_error_quit("系统错误，请联系管理员");
 			}
