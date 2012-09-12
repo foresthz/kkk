@@ -550,6 +550,10 @@ PHP_FUNCTION(bbs_postarticle)
         RETURN_LONG(-9);
     } else if (retvalue == -2) {
         RETURN_LONG(-10);
+    } else if (retvalue == -3) {
+        RETURN_LONG(-22);
+    } else if (retvalue == -4) {
+        RETURN_LONG(-23);
     } else {
         RETURN_LONG(retvalue);
     }
