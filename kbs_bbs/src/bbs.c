@@ -878,7 +878,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
 
 /* 先审后发 windinsn, Sep 13, 2012 */
 #ifdef NEWSMTH
-	} else if (ret == -3 || ret == -4) { 
+	else if (ret == -3 || ret == -4) { 
         clear();
         move(3, 0);
 		if (ret == -3)
@@ -4061,7 +4061,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 	if (returnvalue == -3 || returnvalue == -4) {
         clear();
         move(3, 0);
-        if (ret == -3)
+        if (returnvalue == -3)
 		prints("\n\n        版面设置发生错误。\n\n"
                "        本版的版面审核设定出错，\n"
                "        无法发布文章。\n\n"

@@ -1472,6 +1472,7 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
 {
     char buf[256];
     int fd, err = 0, nowid = 0;
+	char to_board[STRLEN];
 
 #ifdef FILTER
     char oldpath[50], newpath[50];
@@ -1559,8 +1560,7 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
 			fh->o_groupid = re->groupid;
 			fh->o_reid = re->id;
 		}
-		boardname[0]='\0';
-		strcpy(boardname, filter_bh->filename);
+		boardname=filter_bh->filename;
 		filtered=2;
 	}
 #endif /* NEWSMTH */
