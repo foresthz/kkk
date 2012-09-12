@@ -352,6 +352,7 @@ extern long ti;
 #endif
 #ifdef NEWSMTH
 #define BOARD_CENSOR        0x10000
+#define BOARD_CENSOR_FILTER 0x20000
 #endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 
