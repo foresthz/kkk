@@ -350,6 +350,9 @@ extern long ti;
 #ifdef FORCE_TEMPLATE
 #define BOARD_TMP_POST		0x8000	/* 强制模板发文 */ /*Alex@bupt add on July 9th, 2010*/
 #endif
+#ifdef NEWSMTH
+#define BOARD_CENSOR        0x10000
+#endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 
 #define ZAPPED              0x1     /* For boards...tells if board is Zapped */
