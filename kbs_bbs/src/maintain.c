@@ -794,7 +794,11 @@ int m_editbrd(void)
 }
 int modify_board(int bid)
 {
+#ifdef NEWSMTH
+#define MB_ITEMS 28
+#else
 #define MB_ITEMS 26
+#endif
     FILE *fp;
     struct _select_item sel[MB_ITEMS+1];
     struct _select_def conf;
@@ -812,7 +816,13 @@ int modify_board(int bid)
         "[G]不可回复  :","[H]读限制Club:","[I]写限制Club:","[J]隐藏Club  :","[K]精华区位置:",
         "[L]权限限制  :","[M]身份限制  :","[N]积分限制  :",
         "[O]版面积分  :","[P]强制模板  :",
-        "[Q][退出]    :"
+#ifdef NEWSMTH		
+		"[Q]先审后发  :","[R]待审版面  :",
+		"[S][退出]    :"
+#else
+		"[Q][退出]    :"
+#endif
+        
     };
 #ifdef NEWSMTH
     int os;
@@ -860,9 +870,19 @@ int modify_board(int bid)
         } else if (i==24) {
             sel[i].x=42;
             sel[i].y=18;
-        } else if (i==MB_ITEMS-1) {
-            sel[i].x=2;
+		}
+#ifdef NEWSMTH
+		else if (i==25) {
+			sel[i].x=2;
             sel[i].y=19;
+		} else if (i==26) {
+			sel[i].x=42;
+            sel[i].y=19;
+        }
+#endif		
+		else if (i==MB_ITEMS-1) {
+            sel[i].x=2;
+            sel[i].y=20;
         } else {
             sel[i].x=2;
             sel[i].y=i-4;
@@ -976,8 +996,23 @@ int modify_board(int bid)
 #else
     sprintf(menustr[24],"%-15s%s",menuldr[24],"无效选项");
 #endif
+
+    /* 先审后发 */
+#ifdef NEWSMTH
+	/* 需要先审后发的版面 */
+	sel[25].hotkey='Q';
+	sprintf(menustr[25],"%-15s%s",menuldr[25],(bh.flag&BOARD_CENSOR)?"是":"否");
+	/* 待审文章版面 */
+	sel[26].hotkey='R';
+	sprintf(menustr[26],"%-15s%s",menuldr[26],(bh.flag&BOARD_CENSOR_FILTER)?"是":"否");
+#endif	
     /*退出*/
+#ifdef NEWSMTH
+	sel[MB_ITEMS-1].hotkey='S';
+#else	
     sel[MB_ITEMS-1].hotkey='Q';
+#endif
+
     sprintf(menustr[MB_ITEMS-1],"%-15s%s",menuldr[MB_ITEMS-1],change?"\033[1;31m已修改\033[m":"未修改");
     sel[MB_ITEMS].x=-1; sel[MB_ITEMS].y=-1; sel[MB_ITEMS].type=0; sel[MB_ITEMS].hotkey=-1; sel[MB_ITEMS].data=NULL;
     /*备份*/
@@ -1700,6 +1735,39 @@ int modify_board(int bid)
                 }
 #endif
                 break;
+			/* 先审后发设定 */
+#ifdef NEWSMTH
+			/* 先审后发版面 */
+			case 25:
+				if (newbh.flag&BOARD_CENSOR_FILTER) {
+					// 不能同为待审和审核版面
+				} else {
+					newbh.flag^=BOARD_CENSOR;
+					if ((bh.flag&BOARD_CENSOR)^(newbh.flag&BOARD_CENSOR)) {
+						sprintf(menustr[25],"%-15s\033[1;32m%s\033[m",menuldr[25],(newbh.flag&BOARD_CENSOR)?"是":"否");
+						change|=(1<<25);
+					} else {
+						sprintf(menustr[25],"%s",orig[25]);
+						change&=~(1<<25);
+					}
+				}
+				break;
+			/* 待审文章版面 */
+			case 26:
+				if (newbh.flag&BOARD_CENSOR) {
+					// 不能同为待审和审核版面
+				} else {
+					newbh.flag^=BOARD_CENSOR_FILTER;
+					if ((bh.flag&BOARD_CENSOR_FILTER)^(newbh.flag&BOARD_CENSOR_FILTER)) {
+						sprintf(menustr[26],"%-15s\033[1;32m%s\033[m",menuldr[26],(newbh.flag&BOARD_CENSOR_FILTER)?"是":"否");
+						change|=(1<<26);
+					} else {
+						sprintf(menustr[26],"%s",orig[26]);
+						change&=~(1<<26);
+					}
+				}
+				break;
+#endif
                 /*退出*/
             case MB_ITEMS-1:
                 if (change) {
