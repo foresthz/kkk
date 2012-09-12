@@ -400,12 +400,21 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
 
     if (arg->mode==DIR_MODE_SELF)
         return DONOTHING;
+		
 #ifdef FILTER
+
 #ifdef SMTH
     if (!strcmp(currboard->filename,"NewsClub")&&haspostperm(getCurrentUser(), currboard->filename))
         isbm=true;
-#endif
-#endif
+#endif /* SMTH */
+
+/* 先审后发  windinsn, Sep 13, 2012 */
+#ifdef NEWSMTH
+	if (currboard->flag&BOARD_CENSOR_FILTER&&haspostperm(getCurrentUser(), currboard->filename))
+		isbm=true;
+#endif /* NEWSMTH */
+
+#endif /* FILTER */
 
     if (!isbm
 #ifdef OPEN_NOREPLY
@@ -866,6 +875,28 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         return FULLUPDATE;
     }
 #endif
+
+/* 先审后发 windinsn, Sep 13, 2012 */
+#ifdef NEWSMTH
+	} else if (ret == -3 || ret == -4) { 
+        clear();
+        move(3, 0);
+		if (ret == -3)
+		prints("\n\n        版面设置发生错误。\n\n"
+               "        本版的版面审核设定出错，\n"
+               "        无法发布文章。\n\n"
+               "        请到 sysop 版反映或致信 SYSOP 咨询。");
+		else
+        prints("\n\n        本版为审核版面，所有文章需经审核方可发表。\n\n"
+               "        根据《帐号管理办法》，被过滤的文章视同公开发表。请耐心等待\n"
+               "    管理人员的审核，不要多次尝试发表此文章。\n\n"
+               "        如有疑问，请致信 SYSOP 咨询。");
+        pressreturn();
+        if (need_unlink)
+            unlink(name);
+        return FULLUPDATE;
+    }
+#endif
     if (need_unlink)
         unlink(name);
     move(3,0); clrtoeol();
@@ -1104,7 +1135,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         type = ' ';
     else
 #endif
-    type = get_article_flag(ent, getCurrentUser(), currboard->filename, manager, NULL, getSession());
+    type = get_article_flag(ent, getCurrentUser(), currboard, manager, NULL, getSession());
     if (manager && (ent->accessed[0] & FILE_IMPORTED)) {        /* 文件已经被收入精华区 */
         if (type == ' ') {
             strcpy(typeprefix ,"\x1b[42m");
@@ -4024,7 +4055,29 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         pressreturn();
         return FULLUPDATE;
     }
-#endif
+
+/* 先审后发版面 windinsn, Sep 13, 2012 */
+#ifdef NEWSMTH
+	if (returnvalue == -3 || returnvalue == -4) {
+        clear();
+        move(3, 0);
+        if (ret == -3)
+		prints("\n\n        版面设置发生错误。\n\n"
+               "        本版的版面审核设定出错，\n"
+               "        无法发布文章。\n\n"
+               "        请到 sysop 版反映或致信 SYSOP 咨询。");
+		else
+        prints("\n\n        本版为审核版面，所有文章需经审核方可发表。\n\n"
+               "        根据《帐号管理办法》，被过滤的文章视同公开发表。请耐心等待\n"
+               "    管理人员的审核，不要多次尝试发表此文章。\n\n"
+               "        如有疑问，请致信 SYSOP 咨询。");
+        pressreturn();
+        return FULLUPDATE;
+    }
+#endif /* NEWSMTH */
+	
+#endif /* FILTER */
+
     switch (cmdmode) {
         case 2:
             ret=title_mode(conf,NULL,NULL);
@@ -4050,6 +4103,18 @@ int edit_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     bool dobmlog=false;
     struct read_arg* arg=(struct read_arg*) conf->arg;
     int ret, edit_top=0;
+
+#ifdef NEWSMTH
+	/* 简单粗暴解决先审后发版面更改标题的问题 windinsn, Sep 13,2012 */
+	if (currboard->flag&BOARD_CENSOR) {
+		move(3, 0);
+		clrtobot();
+		prints("\n\n     很抱歉，本版为审核版面，若需要更改内容请删除原文重新发表。\n");
+		pressreturn();
+		clear();
+		return FULLUPDATE;
+	}
+#endif /* NEWSMTH */
 
     ret = deny_modify_article(currboard, fileinfo, arg->mode, getSession());
     if (ret) {
@@ -4171,6 +4236,18 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     int fd, ret, edit_top=0;
     long attachpos;
 
+#ifdef NEWSMTH
+	/* 简单粗暴解决先审后发版面更改标题的问题 windinsn, Sep 13,2012 */
+	if (currboard->flag&BOARD_CENSOR) {
+		move(3, 0);
+		clrtobot();
+		prints("\n\n     很抱歉，本版为审核版面，若需要更改标题请删除原文重新发表。\n");
+		pressreturn();
+		clear();
+		return FULLUPDATE;
+	}
+#endif /* NEWSMTH */
+	
     ret = deny_modify_article(currboard, fileinfo, arg->mode, getSession());
     if (ret) {
         switch (ret) {
@@ -4208,7 +4285,8 @@ int edit_title(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
             pressreturn();
             return PARTUPDATE;
         }
-#endif
+
+#endif /* FILTER */
         strcpy(tmp2, fileinfo->title);  /* Do a backup */
         process_control_chars(buf,NULL);
         strnzhcpy(fileinfo->title, buf, ARTICLE_TITLE_LEN);
@@ -6771,7 +6849,7 @@ static char* read_top_ent(char *buf,int num,struct fileheader *fh,struct filehea
     int titlelen = 0;
     struct read_arg * arg=(struct read_arg*)conf->arg;
 
-    type=get_article_flag(fh,getCurrentUser(),currboard->filename,0,NULL,getSession());
+    type=get_article_flag(fh,getCurrentUser(),currboard,0,NULL,getSession());
     if ((ftime=get_posttime(fh))>740000000)
         snprintf(date,7,"%s",ctime(&ftime)+4);
     else
@@ -7005,6 +7083,19 @@ static int read_top_edit_title(struct _select_def *conf,struct fileheader *fh,vo
     struct read_arg *arg=(struct read_arg*)(conf->arg);
     char buf[STRLEN],path[PATHLEN];
     int change,index;
+
+#ifdef NEWSMTH
+/* 简单粗暴解决先审后发版面的问题 , windinsn, Sep 13,2012 */
+	if (currboard->flag&BOARD_CENSOR) {
+		move(3, 0);
+		clrtobot();
+		prints("\n\n     很抱歉，本版为审核版面，若需要更改标题请删除原文重新发表。\n");
+		pressreturn();
+		clear();
+		return FULLUPDATE;
+	}
+#endif	/* NEWSMTH */
+	
     switch (deny_modify_article(currboard,fh,arg->mode,getSession())) {
         case 0:
             break;

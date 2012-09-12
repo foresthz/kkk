@@ -1196,6 +1196,9 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
     char filepath[STRLEN];
     char buf4[STRLEN], whopost[IDLEN], save_title[STRLEN];
     int aborted, local_article;
+#ifdef NEWSMTH
+	int ret;
+#endif	
 
     memset(&postfile, 0, sizeof(postfile));
 
@@ -1273,8 +1276,15 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
         }
     }
 #endif /* SMTH */
+
+#ifdef NEWSMTH
+	ret = after_post(user, &postfile, toboard->filename, NULL, !(Anony), session);
+	if (ret==-2||ret==-3||ret==-4)
+		return ret;
+#else
     if (after_post(user, &postfile, toboard->filename, NULL, !(Anony), session) == -2)
         return -2;
+#endif
     return postfile.id;
 }
 
@@ -1453,6 +1463,8 @@ int post_file_alt(const char *filename, struct userec *user, const char *title, 
  * 返回值：
  * -1: 系统错误
  * -2: 被过滤了
+ * -3: 先审后发版面设置出错
+ * -4: 先审后发版面
  * >0: 新发出去文章的 ID
  *
  */
@@ -1465,6 +1477,15 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
     char oldpath[50], newpath[50];
     int filtered;
 #endif
+
+/* 先审后发策略 , windinsn, Sep 13, 2012 */
+/* 先过Filter， 通过后再过版面审核 */
+#ifdef NEWSMTH
+	int filter_bid=0;
+	char filter_boardname[STRLEN];
+	const struct boardheader *filter_bh=NULL;
+#endif /* NEWSMTH */
+
     const struct boardheader *bh = NULL;
     int bid;
 
@@ -1472,6 +1493,18 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
         memmove(fh->title, fh->title + 4, ARTICLE_TITLE_LEN);
     }
     bid = getbid(boardname, &bh);
+
+/* 先审后发策略, windinsn, Sep 13,2012 */
+#ifdef NEWSMTH
+	if (bh && bh->flag&BOARD_CENSOR) {
+		sprintf(filter_boardname, "%sFilter", bh->filename);
+		filter_bid=getbid(filter_boardname, &filter_bh);
+		
+		if (filter_bid<=0 || !filter_bh || !(filter_bh->flag&BOARD_CENSOR_FILTER))
+			return -3;
+	}
+#endif /* NEWSMTH */
+	
 #ifdef FILTER
     setbfile(oldpath, boardname, fh->filename);
     filtered = 0;
@@ -1485,7 +1518,8 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
                 f_mv(oldpath, newpath);
                 fh->o_bid = bid;
                 //strncpy(fh->o_board, boardname, STRLEN - BM_LEN);
-                nowid = get_nextid_bid(bid);
+				nowid = get_nextid_bid(bid);
+					
                 fh->o_id = nowid;
                 if (re == NULL) {
                     fh->o_groupid = fh->o_id;
@@ -1500,13 +1534,37 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
                     snprintf(newtitle, ARTICLE_TITLE_LEN, "[请等候审核]%s", fh->title);
                     mail_file(session->currentuser->userid, newpath, session->currentuser->userid, newtitle, 0, fh);
                 }
-#endif
+#endif /* ZIXIA */
                 boardname = FILTER_BOARD;
                 filtered = 1;
             };
         }
     }
-#endif
+#endif /* FILTER */
+
+/* 先审核后版面, windinsn, Sep 13, 2012 */
+#ifdef NEWSMTH
+	if (!filtered && bh && bh->flag&BOARD_CENSOR && strcmp(fh->owner, DELIVER)) {
+		setbfile(oldpath, bh->filename, fh->filename);
+		setbfile(newpath, filter_bh->filename, fh->filename);
+		f_mv(oldpath, newpath);
+		
+		fh->o_bid=bid;
+		nowid=get_nextid_bid(bid);
+		fh->o_id=nowid;
+		if (re == NULL) {
+			fh->o_groupid = fh->o_id;
+			fh->o_reid = fh->o_id;
+		} else {
+			fh->o_groupid = re->groupid;
+			fh->o_reid = re->id;
+		}
+		boardname[0]='\0';
+		strcpy(boardname, filter_bh->filename);
+		filtered=2;
+	}
+#endif /* NEWSMTH */
+
     setbfile(buf, boardname, DOT_DIR);
 
     if ((fd = open(buf, O_WRONLY | O_CREAT, 0664)) == -1) {
@@ -1542,13 +1600,17 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
     updatelastpost(boardname);
 
 #ifdef FILTER
-    if (filtered)
+    if (filtered==1)
         sprintf(buf, "posted '%s' on '%s' filtered", fh->title, getboard(fh->o_bid)->filename);
+#ifdef NEWSMTH
+	else if (filtered==2)
+		sprintf(buf, "posted '%s' on '%s' wait for censor", fh->title, getboard(fh->o_bid)->filename);
+#endif /* NEWSMTH */
     else {
-#endif
+#endif /* FILTER */
 #ifdef HAVE_BRC_CONTROL
         brc_add_read(fh->id, bid, session);
-#endif
+#endif /* HAVE_BRC_CONTROL */
 
         /*
          * 回文寄到原作者信箱, stiger
@@ -1643,8 +1705,12 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
     if (user != NULL)
         bmlog(user->userid, boardname, 2, 1);
 #ifdef FILTER
-    if (filtered)
+    if (filtered==1)
         return -2;
+#ifdef NEWSMTH
+	else if (filtered==2)
+		return -4;
+#endif
     else
 #endif
         return nowid;
@@ -2096,7 +2162,7 @@ int Search_Bin(struct fileheader *ptr, int key, int start, int end)
 }
 
 /* *common_flag 返回普通用户可见的标记(不带未读标记) */
-char get_article_flag(struct fileheader *ent, struct userec *user, const char *boardname, int is_bm, char *common_flag, session_t* session)
+char get_article_flag(struct fileheader *ent, struct userec *user, const struct boardheader *board, int is_bm, char *common_flag, session_t* session)
 {
     char unread_mark = (DEFINE(user, DEF_UNREADMARK) ? UNREAD_SIGN : 'N');
     char type, common_type = ' ';
@@ -2198,11 +2264,16 @@ char get_article_flag(struct fileheader *ent, struct userec *user, const char *b
 #ifdef FILTER
 #ifdef NEWSMTH
     } else if ((ent->accessed[1] & FILE_CENSOR)
-               && ((!strcmp(boardname, FILTER_BOARD) && is_bm)
-                   || (!strcmp(boardname, "NewsClub") && (haspostperm(user, "NewsClub") || HAS_PERM(user, PERM_OBOARDS))))) {
+               && 
+			   (
+					  (!strcmp(board->filename, FILTER_BOARD) && is_bm)
+                   || (!strcmp(board->filename, "NewsClub") && (haspostperm(user, "NewsClub") || HAS_PERM(user, PERM_OBOARDS)))
+				   || (board->flag&BOARD_CENSOR_FILTER && (haspostperm(user, board->filename) || HAS_PERM(user, PERM_OBOARDS)))   
+				)
+				) {
         type = '@';
 #else
-    } else if (is_bm && (ent->accessed[1] & FILE_CENSOR) && !strcmp(boardname, FILTER_BOARD)) {
+    } else if (is_bm && (ent->accessed[1] & FILE_CENSOR) && !strcmp(board->filename, FILTER_BOARD)) {
         type = '@';
 #endif
 #endif
@@ -2653,8 +2724,14 @@ static int dele_digest(char *dname, const char *boardname)
 #ifdef FILTER
 static int pass_filter(struct fileheader *fileinfo, const struct boardheader *board, session_t* session)
 {
-#ifdef SMTH
-    if ((!strcmp(board->filename, FILTER_BOARD)) || (!strcmp(board->filename, "NewsClub")))
+	int bid;
+	const struct boardheader *bh=NULL;
+	char boardname[STRLEN];
+	int to_censor=0;
+#ifdef NEWSMTH
+	const struct boardheader *filter_bh=NULL;
+
+    if ((!strcmp(board->filename, FILTER_BOARD)) || (board->flag&BOARD_CENSOR_FILTER))
 #else
     if (!strcmp(board->filename, FILTER_BOARD))
 #endif
@@ -2666,26 +2743,50 @@ static int pass_filter(struct fileheader *fileinfo, const struct boardheader *bo
             struct fileheader newfh;
             int nowid;
             int filedes;
-
-            fileinfo->accessed[1] |= FILE_CENSOR;
+			
+			bid=fileinfo->o_bid;
+			bh=getboard(bid);
+			
+			if (!bh)
+				return -1;
+#ifdef NEWSMTH
+			if (!strcmp(board->filename, FILTER_BOARD) && bh->flag&BOARD_CENSOR) {
+				/* 若来源是先审后发的版面，经过Filter审核后进入版面编审环节 windinsn, Sep 13, 2012 */
+				sprintf(boardname, "%sFilter", bh->filename);
+				bid=getbid(boardname, &filter_bh);
+		
+				if (bid<=0 || !filter_bh || !(filter_bh->flag&BOARD_CENSOR_FILTER))
+					return -1;
+				boardname[0]='\0';
+				strcpy(boardname, filter_bh->filename);
+				
+				to_censor=1;
+			} else
+#endif
+			strcpy(boardname, bh->filename);
+			
+			if (!to_censor)
+				fileinfo->accessed[1] |= FILE_CENSOR;
+				
             setbfile(oldpath, board->filename, fileinfo->filename);
-            setbfile(newpath, getboard(fileinfo->o_bid)->filename, fileinfo->filename);
+            setbfile(newpath, boardname, fileinfo->filename);
             f_cp(oldpath, newpath, 0);
 
-            setbfile(dirpath, getboard(fileinfo->o_bid)->filename, DOT_DIR);
+            setbfile(dirpath, boardname, DOT_DIR);
             if ((filedes = open(dirpath, O_WRONLY | O_CREAT, 0664)) == -1) {
                 return -1;
             }
             newfh = *fileinfo;
             writew_lock(filedes, 0, SEEK_SET, 0);
-            nowid = get_nextid_bid(fileinfo->o_bid);
+            nowid = get_nextid_bid(bid);
             newfh.id = nowid;
-            if (fileinfo->o_id == fileinfo->o_groupid)
+            if (fileinfo->o_id == fileinfo->o_groupid || to_censor)
                 newfh.groupid = newfh.reid = newfh.id;
             else {
                 newfh.groupid = fileinfo->o_groupid;
                 newfh.reid = fileinfo->o_reid;
             }
+			
             lseek(filedes, 0, SEEK_END);
             if (safewrite(filedes, &newfh, sizeof(fileheader)) == -1) {
                 bbslog("user", "apprec write err! %s", newfh.filename);
@@ -2693,17 +2794,20 @@ static int pass_filter(struct fileheader *fileinfo, const struct boardheader *bo
             un_lock(filedes, 0, SEEK_SET, 0);
             close(filedes);
 
-            updatelastpost(getboard(fileinfo->o_bid)->filename);
+            updatelastpost(boardname);
 #if 0 /* 这个看起来是错误的 - atppp 20051228 */
 #ifdef HAVE_BRC_CONTROL
             brc_add_read(newfh.id, session);
 #endif
 #endif
             if (newfh.id == newfh.groupid)
-                setboardorigin(getboard(fileinfo->o_bid)->filename, 1);
-            setboardtitle(getboard(fileinfo->o_bid)->filename, 1);
+                setboardorigin(boardname, 1);
+            setboardtitle(boardname, 1);
             if (newfh.accessed[0] & FILE_MARKED)
-                setboardmark(getboard(fileinfo->o_bid)->filename, 1);
+                setboardmark(boardname, 1);
+				
+			if (to_censor)
+				fileinfo->accessed[1] |= FILE_CENSOR;	
         }
     }
     return 0;

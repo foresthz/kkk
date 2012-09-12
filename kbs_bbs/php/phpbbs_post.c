@@ -741,6 +741,7 @@ PHP_FUNCTION(bbs_updatearticle)
  *        -8: 当前模式不能编辑标题
  *        -9: 标题过长或为空
  *        -10:system error
+ *		  -11: 先审后发版面不允许修改文章 , added by windinsn, sep 13,2012 
  */
 
 PHP_FUNCTION(bbs_updatearticle2)
@@ -782,6 +783,10 @@ PHP_FUNCTION(bbs_updatearticle2)
         RETURN_LONG(-1); //版面名称错误
     if (brd->flag&BOARD_GROUP)
         RETURN_LONG(-1); //二级目录版
+#ifdef NEWSMTH
+	if (brd->flag&BOARD_CENSOR)
+		RETURN_LONG(-11); /* 先审后发版面不允许修改文章 , added by windinsn, sep 13,2012, 很粗暴，但是我已经很困了...就这样吧!  */
+#endif
 
     if (mode != DIR_MODE_ZHIDING)
         mode = DIR_MODE_NORMAL;

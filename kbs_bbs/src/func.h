@@ -584,7 +584,7 @@ while(0)
      * @return flag character of the article
      * @author flyriver
      */
-    char get_article_flag(struct fileheader *ent, struct userec *user, const char *boardname, int is_bm, char *common_flag,  session_t* session);
+    char get_article_flag(struct fileheader *ent, struct userec *user, const struct boardheader *board, int is_bm, char *common_flag,  session_t* session);
     time_t get_posttime(const struct fileheader *fileinfo);
     void set_posttime(struct fileheader *fileinfo);
     char* checkattach(char *buf, long size,long *len,char** attachptr);

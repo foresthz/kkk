@@ -534,11 +534,11 @@ PHP_FUNCTION(bbs_searchtitle)
                 MAKE_STD_ZVAL(columns[j]);
                 zend_hash_update(Z_ARRVAL_P(element), thread_col_names[j], strlen(thread_col_names[j]) + 1, (void *) &columns[j] , sizeof(zval *), NULL);
             }
-            make_article_flag_array(flags, &(resultList[i]->origin), getCurrentUser(), bh->filename, is_bm);
+            make_article_flag_array(flags, &(resultList[i]->origin), getCurrentUser(), bh, is_bm);
             array_init(columns[0]);
             bbs_make_article_array(columns[0], &(resultList[i]->origin), flags, sizeof(flags));
 
-            make_article_flag_array(flags, &(resultList[i]->lastreply), getCurrentUser(), bh->filename, is_bm);
+            make_article_flag_array(flags, &(resultList[i]->lastreply), getCurrentUser(), bh, is_bm);
             array_init(columns[1]);
             bbs_make_article_array(columns[1], &(resultList[i]->lastreply), flags, sizeof(flags));
             ZVAL_LONG(columns[2],resultList[i]->articlecount);
@@ -684,11 +684,11 @@ PHP_FUNCTION(bbs_getthreads)
                 MAKE_STD_ZVAL(columns[j]);
                 zend_hash_update(Z_ARRVAL_P(element), thread_col_names[j], strlen(thread_col_names[j]) + 1, (void *) &columns[j] , sizeof(zval *), NULL);
             }
-            make_article_flag_array(flags, &(ptr1[i].origin), getCurrentUser(), bp->filename, is_bm);
+            make_article_flag_array(flags, &(ptr1[i].origin), getCurrentUser(), bp, is_bm);
             array_init(columns[0]);
             bbs_make_article_array(columns[0], &(ptr1[i].origin), flags, sizeof(flags));
 
-            make_article_flag_array(flags, &(ptr1[i].lastreply), getCurrentUser(), bp->filename, is_bm);
+            make_article_flag_array(flags, &(ptr1[i].lastreply), getCurrentUser(), bp, is_bm);
             array_init(columns[1]);
             bbs_make_article_array(columns[1], &(ptr1[i].lastreply), flags, sizeof(flags));
             ZVAL_LONG(columns[2],ptr1[i].articlecount);
