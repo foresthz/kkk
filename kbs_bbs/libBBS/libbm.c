@@ -172,7 +172,7 @@ time_t get_denied_time(const char *buf)
  *      1:ÐÞ¸Ä
  */
 #ifdef RECORD_DENY_FILE
-int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode, const struct fileheader *fh)
+int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode, const struct fileheader *fh, int filtermode)
 #else
 int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode)
 #endif
@@ -243,13 +243,19 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 #endif
 #ifdef RECORD_DENY_FILE
     if (fh) {
-        char filebuf[STRLEN], filestr[256];
+        char bname[STRLEN], filebuf[STRLEN], filestr[256];
         FILE *fn, *fn2;
         int size;
         
         fn = fopen(postfile, "r+");
         fseek(fn, 0, SEEK_END);
-        setbfile(filebuf, bh->filename, fh->filename);
+        if (filtermode==0)
+            sprintf(bname, "%s", bh->filename);
+        else if (filtermode==1)
+            sprintf(bname, "%s", "Filter");
+        else
+            sprintf(bname, "%sFilter", bh->filename);
+        setbfile(filebuf, bname, fh->filename);
         if (!dashf(filebuf)) {
             int i;
             char prefix[4]="MDJ", *p, ch;

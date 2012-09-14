@@ -215,7 +215,7 @@ int set_denymsg(const char *boardname, char *denymsg)
 
 #ifdef RECORD_DENY_FILE
 /* 记录封禁原文，jiangjun， 20120321 */
-int addtodeny(const struct boardheader *bh, char *uident, const struct fileheader *fh)
+int addtodeny(const struct boardheader *bh, char *uident, const struct fileheader *fh, int filtermode)
 #else
 int addtodeny(const struct boardheader *bh, char *uident)
 #endif
@@ -511,7 +511,7 @@ int addtodeny(const struct boardheader *bh, char *uident)
 #endif
         /* 使用封禁模版功能 */
 #ifdef RECORD_DENY_FILE
-        if (deny_announce(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,fh)<0 ||
+        if (deny_announce(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,fh, filtermode)<0 ||
             deny_mailuser(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
@@ -722,7 +722,7 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                             WAIT_RETURN;
                         }
 #ifdef RECORD_DENY_FILE
-                        if (deny_announce(uident,bh,newmsg,day,getCurrentUser(),time(0),1,NULL)<0 ||
+                        if (deny_announce(uident,bh,newmsg,day,getCurrentUser(),time(0),1,NULL,0)<0 ||
                             deny_mailuser(uident,bh,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
@@ -769,6 +769,7 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     int find;                   /*Haohmaru.99.12.09 */
     char *lptr;
     time_t ldenytime;
+    int filtermode;
 
     /*   static page=0; *//*
      * * Haohmaru.12.18
@@ -781,19 +782,25 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 
 #ifdef FILTER
 #ifdef NEWSMTH
-	if (!strcmp(currboard->filename, FILTER_BOARD)||currboard->flag&BOARD_CENSOR_FILTER) {
+    if (!strcmp(currboard->filename, FILTER_BOARD)||currboard->flag&BOARD_CENSOR_FILTER) {
 #else /* NEWSMTH */
     if (!strcmp(currboard->filename, FILTER_BOARD)) {
 #endif /* NEWSMTH */
-		if (fileinfo==NULL || fileinfo->o_bid <= 0) {
-			return DONOTHING;
-		}
-		if (!(bh=getboard(fileinfo->o_bid)) || !chk_currBM(bh->BM, getCurrentUser())) {
-			return DONOTHING;
-		}
-	} else {
-		bh=currboard;
-	}
+        if (fileinfo==NULL || fileinfo->o_bid <= 0) {
+            return DONOTHING;
+        }
+        if (!(bh=getboard(fileinfo->o_bid)) || !chk_currBM(bh->BM, getCurrentUser())) {
+            return DONOTHING;
+        }
+#ifdef NEWSMTH
+        filtermode = (strcmp(currboard->filename, FILTER_BOARD)==0)?1:2;
+#else
+        filtermode = 1;
+#endif
+    } else {
+        bh=currboard;
+        filtermode = 0;
+    }
 #else /* FILTER */
 	bh=currboard;
 #endif /* FILTER */			
@@ -880,7 +887,7 @@ Here:
 
             if (*uident != '\0') {
 #ifdef RECORD_DENY_FILE
-                addtodeny(bh, uident, (denyfile)?fileinfo:NULL);
+                addtodeny(bh, uident, (denyfile)?fileinfo:NULL, filtermode);
 #else
                 addtodeny(bh, uident);
 #endif

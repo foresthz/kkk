@@ -402,7 +402,7 @@ PHP_FUNCTION(bbs_denyadd)
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
 #ifdef RECORD_DENY_FILE
-        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,(fh.id)?&fh:NULL);
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,(fh.id)?&fh:NULL,0);
 #else
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0);
 #endif
@@ -568,7 +568,7 @@ PHP_FUNCTION(bbs_denymod)
     setbfile(path, board, "deny_users");
     if (replace_from_file_by_id(path, userid, buf)>=0) {
 #ifdef RECORD_DENY_FILE
-        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1,NULL);
+        deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1,NULL,0);
 #else
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1);
 #endif
