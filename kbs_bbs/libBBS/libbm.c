@@ -272,7 +272,10 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         if ((fn2=fopen(filebuf, "r"))==NULL) {
             fprintf(fn, "\033[1;31;45m系统问题, 无法显示全文, 请联系技术站务. \033[K\033[m\n");
         } else {
-            fprintf(fn, "\033[1;33;45m以下是被封文章全文:\033[K\033[m\n");
+            fprintf(fn, "\033[1;33;45m以下是被封文章全文");
+            if (filtermode)
+                fprintf(fn, "(来源于\033[32m%s\033[33m过滤区)", filtermode==1?"系统":bh->filename);
+            fprintf(fn, ":\033[K\033[m\n");
             while ((size=-attach_fgets(filestr,256,fn2))) {
                 if (size<0)
                     fprintf(fn,"%s",filestr);
