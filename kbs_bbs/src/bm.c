@@ -34,7 +34,7 @@
 extern int ingetdata;
 int modify_denytime(time_t *denytime, int *autofree);
 
-int listdeny(int page)
+int listdeny(const struct boardheader *bh, int page)
 {                               /* Haohmaru.12.18.98.为那些变态得封人超过一屏的版主而写 */
     FILE *fp;
     int x = 0, y = 3, cnt = 0, max = 0, len;
@@ -42,10 +42,13 @@ int listdeny(int page)
     char u_buf[STRLEN * 2], line[STRLEN * 2], *nick;
 
     clear();
-    prints("设定无法 Post 的名单\n");
+
+	prints("设定 \033[1;32m%s\033[m版 无法 Post 的名单\n", bh->filename);
+	setbfile(genbuf, bh->filename, "deny_users");
+    
     move(y, x);
     CreateNameList();
-    setbfile(genbuf, currboard->filename, "deny_users");
+    
     if ((fp = fopen(genbuf, "r")) == NULL) {
         prints("(none)\n");
         return 0;
@@ -200,26 +203,26 @@ int select_deny_reason(char reason[][STRLEN], char *denymsg, int count)
     }
 }
 
-int set_denymsg(char *denymsg)
+int set_denymsg(char *boardname, char *denymsg)
 {
     int count;
     char reason[MAXDENYREASON][STRLEN];
 
-    count = get_deny_reason(currboard->filename, reason, MAXCUSTOMREASON);
+    count = get_deny_reason(boardname, reason, MAXCUSTOMREASON);
     count += get_deny_reason(NULL, &(reason[count]), MAXDENYREASON-count);
     return select_deny_reason(reason, denymsg, count);
 }
 
 #ifdef RECORD_DENY_FILE
 /* 记录封禁原文，jiangjun， 20120321 */
-int addtodeny(char *uident, const struct fileheader *fh)
+int addtodeny(const boardheader *bh, char *uident, const struct fileheader *fh)
 #else
-int addtodeny(char *uident)
+int addtodeny(const boardheader *bh, char *uident)
 #endif
 {                               /* 添加 禁止POST用户 */
     char /*buf2[50], */strtosave[256], date[STRLEN] = "0";
     //int maxdeny;
-
+	
     /*
      * Haohmaru.99.4.1.auto notify
      */
@@ -236,8 +239,8 @@ int addtodeny(char *uident)
 
     now = time(0);
     strncpy(date, ctime(&now) + 4, 7);
-    setbfile(genbuf, currboard->filename, "deny_users");
-    if (seek_in_file(genbuf, uident, NULL) || !strcmp(currboard->filename, "denypost"))
+    setbfile(genbuf, bh->filename, "deny_users");
+    if (seek_in_file(genbuf, uident, NULL) || !strcmp(bh->filename, "denypost"))
         return -1;
     /*
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
@@ -248,16 +251,16 @@ int addtodeny(char *uident)
 
     *denymsg = 0;
     move(2, 0);
-    prints("增加 \033[31m%s\033[m 至 \033[33m%s\033[m 版封禁名单", uident, currboard->filename);
+    prints("增加 \033[31m%s\033[m 至 \033[33m%s\033[m 版封禁名单", uident, bh->filename);
     /* 选择封禁理由new */
-    if (set_denymsg(denymsg)==0)
+    if (set_denymsg(bh->filename, denymsg)==0)
         return 0;
     /*
     {
         int count;
         char reason[MAXDENYREASON][STRLEN];
 
-        count = get_deny_reason(currboard->filename, reason, MAXCUSTOMREASON);
+        count = get_deny_reason(bh->filename, reason, MAXCUSTOMREASON);
         count += get_deny_reason(NULL, &(reason[count]), MAXDENYREASON-count);
         if ((select_deny_reason(reason, denymsg, count))==0)
             return 0;
@@ -418,7 +421,7 @@ int addtodeny(char *uident)
         memcpy(&saveuser, getCurrentUser(), sizeof(struct userec));
         saveptr = getCurrentUser();
         getCurrentUser() = &saveuser;
-        sprintf(buffer, "%s被取消在%s版的发文权限", uident, currboard->filename);
+        sprintf(buffer, "%s被取消在%s版的发文权限", uident, bh->filename);
 
         if ((HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) && !chk_BM_instr(currBM, getCurrentUser()->userid)) {
             strcpy(getCurrentUser()->userid, "SYSOP");
@@ -429,7 +432,7 @@ int addtodeny(char *uident)
             fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime(&now));
             fprintf(fn, "来  源: %s\n", NAME_BBS_ENGLISH);
             fprintf(fn, "\n");
-            fprintf(fn, "由于您在 \x1b[4m%s\x1b[m 版 \x1b[4m%s\x1b[m，我很遗憾地通知您， \n", currboard->filename, denymsg);
+            fprintf(fn, "由于您在 \x1b[4m%s\x1b[m 版 \x1b[4m%s\x1b[m，我很遗憾地通知您， \n", bh->filename, denymsg);
             if (denyday)
                 fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", denyday);
             else
@@ -450,7 +453,7 @@ int addtodeny(char *uident)
             fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime(&now));
             fprintf(fn, "来  源: %s \n", SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
             fprintf(fn, "\n");
-            fprintf(fn, "由于您在 \x1b[4m%s\x1b[m 版 \x1b[4m%s\x1b[m，我很遗憾地通知您， \n", currboard->filename, denymsg);
+            fprintf(fn, "由于您在 \x1b[4m%s\x1b[m 版 \x1b[4m%s\x1b[m，我很遗憾地通知您， \n", bh->filename, denymsg);
             if (denyday)
                 fprintf(fn, DENY_DESC_AUTOFREE " \x1b[4m%d\x1b[m 天", denyday);
             else
@@ -471,7 +474,7 @@ int addtodeny(char *uident)
         mail_file(getCurrentUser()->userid, filename, uident, buffer, 0, NULL);
 #endif
         fn = fopen(filename, "w+");
-        fprintf(fn, "由于 \x1b[4m%s\x1b[m 在 \x1b[4m%s\x1b[m 版的 \x1b[4m%s\x1b[m 行为，\n", uident, currboard->filename, denymsg);
+        fprintf(fn, "由于 \x1b[4m%s\x1b[m 在 \x1b[4m%s\x1b[m 版的 \x1b[4m%s\x1b[m 行为，\n", uident, bh->filename, denymsg);
         if (denyday)
             fprintf(fn, DENY_BOARD_AUTOFREE " \x1b[4m%d\x1b[m 天。\n", denyday);
         else
@@ -487,9 +490,9 @@ int addtodeny(char *uident)
         fprintf(fn, "                              %s\n", ctime(&now));
         fclose(fn);
 #ifdef NEWSMTH
-        post_file(getCurrentUser(), "", filename, currboard->filename, buffer, 0, 1, getSession());
+        post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 1, getSession());
 #else
-        post_file(getCurrentUser(), "", filename, currboard->filename, buffer, 0, 2, getSession());
+        post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 2, getSession());
 #endif
         /*
          * unlink(filename);
@@ -500,27 +503,27 @@ int addtodeny(char *uident)
         getuser(uident, &lookupuser);
 
         if (PERM_BOARDS & lookupuser->userlevel)
-            sprintf(buffer, "%s 封某版" NAME_BM " %s 在 %s", getCurrentUser()->userid, uident, currboard->filename);
+            sprintf(buffer, "%s 封某版" NAME_BM " %s 在 %s", getCurrentUser()->userid, uident, bh->filename);
         else
-            sprintf(buffer, "%s 封 %s 在 %s", getCurrentUser()->userid, uident, currboard->filename);
+            sprintf(buffer, "%s 封 %s 在 %s", getCurrentUser()->userid, uident, bh->filename);
         post_file(getCurrentUser(), "", filename, "denypost", buffer, 0, -1, getSession());
         unlink(filename);
 #endif
         /* 使用封禁模版功能 */
 #ifdef RECORD_DENY_FILE
-        if (deny_announce(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,fh)<0 ||
-            deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
+        if (deny_announce(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,fh)<0 ||
+            deny_mailuser(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
         }
 #else
-        if (deny_announce(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
-            deny_mailuser(uident,currboard,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
+        if (deny_announce(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
+            deny_mailuser(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
         }
 #endif
-        bmlog(getCurrentUser()->userid, currboard->filename, 10, 1);
+        bmlog(getCurrentUser()->userid, bh->filename, 10, 1);
     }
     return 0;
 }
@@ -603,7 +606,7 @@ int modify_denytime(time_t *denytime, int *autofree)
 }
 
 /* 修改已封禁的id */
-int modify_user_deny(char *uident, char *denystr)
+int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
 {
 #define MOD_DENY_REASON 0x001
 #define MOD_DENY_TIME   0x002
@@ -672,7 +675,7 @@ int modify_user_deny(char *uident, char *denystr)
                     prints("%s确定解封？[N]", (denytime>time(0))?"该用户封禁时限未到，":"");
                     ch = igetkey();
                     if (toupper(ch)=='Y') {
-                        if (deldeny(getCurrentUser(), currboard->filename, (char *)uident, 0, 1, getSession())<0) {
+                        if (deldeny(getCurrentUser(), bh->filename, (char *)uident, 0, 1, getSession())<0) {
                             move(15, 0);
                             prints("\033[31m解封时发生错误 <Enter>");
                             WAIT_RETURN;
@@ -712,21 +715,21 @@ int modify_user_deny(char *uident, char *denystr)
                         else
                             sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum",
                                     uident, newmsg, getCurrentUser()->userid, tm_time->tm_mon+1, tm_time->tm_mday, newtime);
-                        setbfile(filename, currboard->filename, "deny_users");
+                        setbfile(filename, bh->filename, "deny_users");
                         if (replace_from_file_by_id(filename, uident, savestr)<0) {
                             move(13, 0);
                             prints("\033[31m修改封禁时发生错误 <Enter>");
                             WAIT_RETURN;
                         }
 #ifdef RECORD_DENY_FILE
-                        if (deny_announce(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,NULL)<0 ||
-                            deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
+                        if (deny_announce(uident,bh,newmsg,day,getCurrentUser(),time(0),1,NULL)<0 ||
+                            deny_mailuser(uident,bh,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }
 #else
-                        if (deny_announce(uident,currboard,newmsg,day,getCurrentUser(),time(0),1)<0 ||
-                            deny_mailuser(uident,currboard,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
+                        if (deny_announce(uident,bh,newmsg,day,getCurrentUser(),time(0),1)<0 ||
+                            deny_mailuser(uident,bh,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }
@@ -754,7 +757,9 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     int page = 0;
     char ans[10];
     int count;
-
+	
+	const struct boardheader *bh;
+	
     /*
      * Haohmaru.99.4.1.auto notify
      */
@@ -774,6 +779,25 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             return DONOTHING;
         }
 
+#ifdef FILTER
+#ifdef NEWSMTH
+	if (!strcmp(currboard->filename, FILTER_BOARD)||currboard->flag&BOARD_CENSOR_FILTER) {
+#else /* NEWSMTH */
+    if (!strcmp(currboard->filename, FILTER_BOARD)) {
+#endif /* NEWSMTH */
+		if (fileinfo==NULL || fileinfo->o_bid <= 0) {
+			return DONOTHING;
+		}
+		if (!(bh=getboard(fileinfo->o_bid)) || !chk_currBM(bh->BM, getCurrentUser())) {
+			return DONOTHING;
+		}
+	} else {
+		bh=currboard;
+	}
+#else /* FILTER */
+	bh=currboard;
+#endif /* FILTER */			
+		
     while (1) {
         char querybuf[0xff];
         char LtNing[24];
@@ -782,8 +806,9 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 
 Here:
         clear();
-        count = listdeny(0);
-        if (count > 0 && count < 20)    /*Haohmaru.12.18,看下一屏 */
+		
+		count = listdeny(bh, 0);
+		if (count > 0 && count < 20)    /*Haohmaru.12.18,看下一屏 */
             snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (M)调整 or (E)离开 [E]: ", LtNing);
         else if (count >= 20)
             snprintf(querybuf, 0xff, "%s(A)增加 (D)删除 (M)调整 (N)后面第N屏 or (E)离开 [E]: ", LtNing);
@@ -841,9 +866,9 @@ Here:
                 goto Here;
             }
             /* fancyrabbit Dec 4 2007, 不准封进不去的 ... */
-            if (!check_read_perm(denyuser, currboard)
+            if (!check_read_perm(denyuser, bh)
 #ifdef COMMEND_ARTICLE
-                    && strcmp(currboard -> filename, COMMEND_ARTICLE)
+                    && strcmp(bh -> filename, COMMEND_ARTICLE)
 #endif
                ) {
                 move(3, 0);
@@ -855,9 +880,9 @@ Here:
 
             if (*uident != '\0') {
 #ifdef RECORD_DENY_FILE
-                addtodeny(uident, (denyfile)?fileinfo:NULL);
+                addtodeny(bh, uident, (denyfile)?fileinfo:NULL);
 #else
-                addtodeny(uident);
+                addtodeny(bh, uident);
 #endif
             }
         } else if ((*ans == 'M') && count) {
@@ -865,7 +890,7 @@ Here:
             move(1, 0);
             namecomplete("修改本版无法POST的使用者: ", uident);
             find = 0;
-            setbfile(genbuf, currboard->filename, "deny_users");
+            setbfile(genbuf, bh->filename, "deny_users");
             if ((fp = fopen(genbuf, "r")) == NULL) {
                 prints("(none)\n");
                 return 0;
@@ -891,7 +916,7 @@ Here:
                 pressreturn();
                 goto Here;
             }
-            modify_user_deny(uident, genbuf);
+            modify_user_deny(bh, uident, genbuf);
         } else if ((*ans == 'D') && count) {
             int len;
 
@@ -899,7 +924,7 @@ Here:
             sprintf(genbuf, "删除无法 POST 的使用者: ");
             getdata(1, 0, genbuf, uident, 13, DOECHO, NULL, true);
             find = 0;           /*Haohmaru.99.12.09.原来的代码如果被封者已自杀就删不掉了 */
-            setbfile(genbuf, currboard->filename, "deny_users");
+            setbfile(genbuf, bh->filename, "deny_users");
             if ((fp = fopen(genbuf, "r")) == NULL) {
                 prints("(none)\n");
                 return 0;
@@ -948,7 +973,7 @@ Here:
             move(1, 0);
             clrtoeol();
             if (uident[0] != '\0') {
-                if (deldeny(getCurrentUser(), currboard->filename, uident, 0, (ldenytime > now) ? 1 : 0, getSession())) {
+                if (deldeny(getCurrentUser(), bh->filename, uident, 0, (ldenytime > now) ? 1 : 0, getSession())) {
                 }
             }
         } else if (count > 20 && isdigit(ans[0])) {
@@ -958,7 +983,7 @@ Here:
                 page = atoi(ans);
             if (page < 0)
                 break;          /*不会封人超过10屏吧?那可是200人啊!  会的！ */
-            listdeny(page);
+            listdeny(bh, page);
             pressanykey();
         } else
             break;
