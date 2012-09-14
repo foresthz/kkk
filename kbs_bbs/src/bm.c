@@ -203,7 +203,7 @@ int select_deny_reason(char reason[][STRLEN], char *denymsg, int count)
     }
 }
 
-int set_denymsg(char *boardname, char *denymsg)
+int set_denymsg(const char *boardname, char *denymsg)
 {
     int count;
     char reason[MAXDENYREASON][STRLEN];
@@ -215,9 +215,9 @@ int set_denymsg(char *boardname, char *denymsg)
 
 #ifdef RECORD_DENY_FILE
 /* 记录封禁原文，jiangjun， 20120321 */
-int addtodeny(const boardheader *bh, char *uident, const struct fileheader *fh)
+int addtodeny(const struct boardheader *bh, char *uident, const struct fileheader *fh)
 #else
-int addtodeny(const boardheader *bh, char *uident)
+int addtodeny(const struct boardheader *bh, char *uident)
 #endif
 {                               /* 添加 禁止POST用户 */
     char /*buf2[50], */strtosave[256], date[STRLEN] = "0";
@@ -683,7 +683,7 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                         return 0;
                     }
                 } else if (i==2) { /* 修改封禁理由 */
-                    set_denymsg(newmsg);
+                    set_denymsg(bh->filename, newmsg);
                     if (strcmp(denymsg, newmsg))
                         flag |= MOD_DENY_REASON;
                     else
