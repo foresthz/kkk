@@ -481,8 +481,33 @@ int a_chkbmfrmpath(char *path, char *board)
         strcpy(board, objectboard->filename);
     if (chk_currBM(objectboard->BM, getCurrentUser()))
         return 1;
-    else
-        return 0;
+#ifdef MEMBER_MANAGER
+#ifdef ENABLE_BOARD_MEMBER
+	static time_t last_time=0;
+	static int last_bid=0;
+	static int is_key_member=-1;
+	
+	time_t current_time;
+	current_time=time(NULL);
+	
+	if (current_time-last_time > 36000 || last_bid != objectbid)
+		is_key_member=-1;
+	
+	if (-1 != is_key_member)
+		return is_key_member;
+		
+	last_bid=objectbid;
+	last_time=current_time;
+	
+	is_key_member=is_board_member_manager(objectboard->filename, getCurrentUser()->userid, NULL);
+	
+	if (is_key_member)
+		return 1;
+		
+#endif /* ENABLE_BOARD_MEMBER */
+#endif /* MEMBER_MANAGER */
+       
+	return 0;
 }
 
 /* added by netty to handle post saving into (0)Announce */
