@@ -160,6 +160,47 @@ int check_stuffmode()
         return false;
 }
 
+#ifdef MEMBER_MANAGER
+int check_key_member()
+{
+#ifdef ENABLE_BOARD_MEMBER
+	static time_t last_time=0;
+	static int last_bid=0;
+	static int is_key_member=-1;
+	int bid;
+	time_t now;
+	
+	if (NULL==currboard)
+		return 0;
+	
+	now=time(NULL);
+	bid=getbid(currboard->filename, NULL);
+	
+	if (now-last_time > 36000 || bid != last_bid)
+		is_key_member=-1;
+	
+	if (-1 != is_key_member)
+		return is_key_member;
+	
+	last_bid=bid;
+	last_time=now;
+	
+	return (is_key_member=is_board_member_manager(currboard->filename, getCurrentUser()->userid, NULL));
+#else
+	return 0;
+#endif /* ENABLE_BOARD_MEMBER */
+}
+
+int is_bm_or_key_member()
+{
+	if (chk_currBM(currboard->BM, getCurrentUser()))
+		return 1;
+	if (check_key_member())
+		return 1;
+	return 0;
+}
+#endif /* MEMBER_MANAGER */
+
 /*Add by SmallPig*/
 int shownotepad(void)           /* 显示 notepad */
 {
@@ -359,7 +400,11 @@ int top_noreply(struct _select_def* conf, struct fileheader *fileinfo)
 int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long flag)
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
+#ifdef MEMBER_MANAGER
+	bool	isbm=is_bm_or_key_member();
+#else	
     bool    isbm=chk_currBM(currboard->BM, getCurrentUser());
+#endif
     struct write_dir_arg dirarg;
     struct fileheader data;
     int ret;
@@ -1129,6 +1174,11 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         chk_currBM(currBM, getCurrentUser())
 #endif
         ;
+
+#ifdef MEMBER_MANAGER
+	if (!manager) 
+	manager=is_bm_or_key_member();
+#endif /* MEMBER_MANAGER */
 
 #ifdef BOARD_SECURITY_LOG
     if (arg->mode == DIR_MODE_BOARD)  /* 版面安全记录区不显示任何标记, 当然本身也没有标记, 主要防止未读标记 */
@@ -4747,7 +4797,11 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 
     struct read_arg* arg=(struct read_arg*)conf->arg;
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
-        if (!chk_currBM(currBM, getCurrentUser()))
+#ifdef MEMBER_MANAGER
+		if (!is_bm_or_key_member())
+#else	
+		if (!chk_currBM(currBM, getCurrentUser()))
+#endif	
             return DONOTHING;
 #ifdef BOARD_SECURITY_LOG
     if (arg->mode == DIR_MODE_BOARD)
@@ -4795,7 +4849,11 @@ int Semi_save(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     bool append;
     struct read_arg* arg=(struct read_arg*)conf->arg;
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
-        if (!chk_currBM(currBM, getCurrentUser()))
+#ifdef MEMBER_MANAGER
+		if (!is_bm_or_key_member())
+#else	
+		if (!chk_currBM(currBM, getCurrentUser()))
+#endif	
             return DONOTHING;
     sprintf(filepath, "tmp/bm.%s", getCurrentUser()->userid);
     append = false;
@@ -4842,7 +4900,11 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
         return DONOTHING;
 #endif
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
-        if (!chk_currBM(currBM, getCurrentUser())
+#ifdef MEMBER_MANAGER
+		if (!is_bm_or_key_member()
+#else	
+		if (!chk_currBM(currBM, getCurrentUser())
+#endif	
 #ifdef FB2KPC
                 && !haspc(getCurrentUser()->userid)
 #endif
