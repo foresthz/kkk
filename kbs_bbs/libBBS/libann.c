@@ -171,16 +171,6 @@ int ann_traverse_check(char *path, struct userec *user)
     bool has_perm_boards = false, sysop_only = false;
     char *bmstr;
     int bms_level = 0;
-	
-#ifdef MEMBER_MANAGER
-#ifdef ENABLE_BOARD_MEMBER
-	static time_t last_time=0;
-	static int last_bid=0;
-	static int is_key_member=-1;
-	int current_bid;
-	time_t current_time;
-#endif
-#endif	
 
     /* path parameter can not have leading '/' character */
     if (path[0] == '/')
@@ -202,28 +192,6 @@ int ann_traverse_check(char *path, struct userec *user)
         /* 如果是本版版主 则获得版主权限 TODO */
         if (chk_currBM(bh->BM, user))
             has_perm_boards = true;
-#ifdef MEMBER_MANAGER
-#ifdef ENABLE_BOARD_MEMBER
-		else {
-			if (NULL!=bh && (current_bid=getbid(bh->filename, NULL))) {
-				current_time=time(NULL);
-					
-				if (current_time-last_time>36000 || current_bid != last_bid)
-					is_key_member=-1;
-				
-				if (-1==is_key_member) {
-					last_bid=current_bid;
-					last_time=current_time;
-					
-					is_key_member=is_board_member_manager(bh->filename, user->userid, NULL);
-				}
-				
-				if (1==is_key_member)
-					has_perm_boards = true;
-			}
-		}
-#endif /* MEMBER_MANAGER */
-#endif /* ENABLE_BOARD_MEMBER */			
     }
 
     /* 如果是站务 则获得版主权限 */
