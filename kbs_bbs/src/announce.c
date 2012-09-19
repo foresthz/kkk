@@ -648,7 +648,11 @@ int level;
         return 0;
 
     sprintf(bname,"0Announce/groups/%s",fhdr->ann_path);
-    a_menu("", bname, (HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) ? PERM_BOARDS : 0, 0, NULL);
+	
+	if (HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
+		level = PERM_BOARDS;
+		
+    a_menu("", bname, level, 0, NULL);
     return 1;
 }
 

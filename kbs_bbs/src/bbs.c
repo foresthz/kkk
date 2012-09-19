@@ -4980,7 +4980,14 @@ int show_sec_b_note(struct _select_def* conf,struct fileheader *fileinfo,void* e
 
 int into_announce(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
-    if (a_menusearch("0Announce", currboard->filename, (HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) ? PERM_BOARDS : 0))
+	int level;
+	
+	level=HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) ? PERM_BOARDS : 0;
+#ifdef MEMBER_MANAGER
+	if (!level && is_bm_or_key_member())
+		level=PERM_BOARDS;
+#endif    
+	if (a_menusearch("0Announce", currboard->filename, level)
         return FULLUPDATE;
     return DONOTHING;
 }
