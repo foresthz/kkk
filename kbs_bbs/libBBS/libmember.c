@@ -4,6 +4,15 @@
 #ifdef ENABLE_BOARD_MEMBER
 #include <mysql.h>
 
+
+#ifndef MAX_MEMBER_BOARD_ARTICLES
+#define MAX_MEMBER_BOARD_ARTICLES 1000
+#endif
+
+#ifndef MIN_MEMBER_BOARD_ARTICLE_STAT
+#define MIN_MEMBER_BOARD_ARTICLE_STAT 7200
+#endif
+
 int board_member_log(struct board_member *member, char *title, char *log) {
     char path[STRLEN], buf[STRLEN];
     FILE *handle;
@@ -25,6 +34,48 @@ int board_member_log(struct board_member *member, char *title, char *log) {
         post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());
         unlink(path);
     }
+    
+    return 0;
+}
+
+int delete_board_member_record(const char *name, const char *user_id) {
+    MYSQL s;
+    char sql[200];
+    char my_name[STRLEN];
+    char my_user_id[STRLEN];
+    struct board_member member;
+    
+    if (!name[0])
+        return -1;
+    if (!user_id[0])
+        return -2;
+    if (0==strcmp(user_id, "guest"))
+        return -3;    
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -4;
+    }
+    
+    my_name[0]=0;
+    my_user_id[0]=0;
+    mysql_escape_string(my_name, name, strlen(name));
+    mysql_escape_string(my_user_id, user_id, strlen(user_id));
+    
+    sprintf(sql,"DELETE FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", my_name, my_user_id);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -5;
+    }
+
+    mysql_close(&s);
+    
+    strcpy(member.user, user_id);
+    strcpy(member.board, name);
+    board_member_log(&member, "ÍË³ö×¤°æ", "ÍË³ö×¤°æ");
     
     return 0;
 }
@@ -145,7 +196,7 @@ int save_board_member_config(const char *name, struct board_member_config *confi
   * windinsn, 2012.8.12
   */
 int join_board_member(const char *name) {
-    struct boardheader *board;
+    const struct boardheader *board;
     struct board_member member;
     struct board_member_config config;
     int status, user_max, level, count, num;
@@ -297,7 +348,7 @@ int approve_board_member(const char *name, const char *user_id) {
 }
 
 int remove_board_member(const char *name, const char *user_id) {
-    struct boardheader *board;
+    const struct boardheader *board;
     int ret;
     
     board=getbcache(name);
@@ -309,48 +360,6 @@ int remove_board_member(const char *name, const char *user_id) {
     ret=delete_board_member_record(board->filename, user_id);
     if (ret<0)
         return ret-2;
-    
-    return 0;
-}
-
-int delete_board_member_record(const char *name, const char *user_id) {
-    MYSQL s;
-    char sql[200];
-    char my_name[STRLEN];
-    char my_user_id[STRLEN];
-    struct board_member member;
-    
-    if (!name[0])
-        return -1;
-    if (!user_id[0])
-        return -2;
-    if (0==strcmp(user_id, "guest"))
-        return -3;    
-    
-    mysql_init(&s);
-    if (!my_connect_mysql(&s)) {
-        bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -4;
-    }
-    
-    my_name[0]=0;
-    my_user_id[0]=0;
-    mysql_escape_string(my_name, name, strlen(name));
-    mysql_escape_string(my_user_id, user_id, strlen(user_id));
-    
-    sprintf(sql,"DELETE FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", my_name, my_user_id);
-
-    if (mysql_real_query(&s, sql, strlen(sql))) {
-        bbslog("3system", "mysql error: %s", mysql_error(&s));
-        mysql_close(&s);
-        return -5;
-    }
-
-    mysql_close(&s);
-    
-    strcpy(member.user, user_id);
-    strcpy(member.board, name);
-    board_member_log(&member, "ÍË³ö×¤°æ", "ÍË³ö×¤°æ");
     
     return 0;
 }
@@ -432,7 +441,7 @@ int load_board_members(const char *board, struct board_member *member, int sort,
     
     if (!board[0])
         return -1;
-	if (!getbid(board, &bh))
+	if (!getbid(board, &bh)||bh->flag&BOARD_GROUP)
 		return -1;
     
     mysql_init(&s);
@@ -516,8 +525,7 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
     char qtmp[100];
     char my_user_id[STRLEN];
     int i;
-	struct boardheader *board;
-	const struct userec *user;
+    struct userec *user;
     
     if (!user_id[0])
         return -1;
@@ -574,7 +582,8 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
 
     i=0;
     while (row != NULL) {
-		if (!getbid(row[0], &board)||!check_read_perm(user,board)) {
+    		const struct boardheader *board;
+		if (!getbid(row[0], &board)||board->flag&BOARD_GROUP||!check_read_perm(user,board)) {
 			delete_board_member_record(row[0], row[1]);
 		} else {
 			i++;
@@ -676,7 +685,7 @@ int get_member_boards(const char *user_id) {
 }
 
 int load_board_member_request(const char *name, struct board_member_config *mine) {
-    struct boardheader *board;
+    const struct boardheader *board;
     
     if (0==strcmp(getSession()->currentuser->userid, "guest"))
         return -1;
@@ -720,7 +729,7 @@ int is_board_member_manager(const char *name, const char *user_id, struct board_
 }
     
 int set_board_member_status(const char *name, const char *user_id, int status) {
-    struct boardheader *board;
+    const struct boardheader *board;
     struct board_member member;
     int old;
     MYSQL s;
@@ -768,5 +777,132 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     
     return 0;
 }    
+
+int member_board_article_cmp(const void *a, const void *b) {
+	return get_posttime((fileheader *)&a) - get_posttime((fileheader *)&b);
+}
+
+int load_member_board_articles(char *path, const struct userec *user) {
+	int total, i, j, offset, bid;
+	struct board_member *members;
+	struct fileheader *posts;
+	int post_size, post_total, post_read;
+	char dir[PATHLEN];
+	int board_total, board_offset, board_num;
+	int fd;
+	struct stat st;
+	struct member_board_article article;
+	struct boardheader *bh;
+	
+	if (stat(path, &st) >= 0) {
+		if (st.st_mtime < (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
+			return (st.st_size / sizeof(struct member_board_article));
+		
+		unlink(path);	
+	}
+	
+	total=get_member_boards(user->userid);
+	if (total<0)
+		return -1;
+	if (total==0)
+		return -2;
+	
+	members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+	bzero(members, sizeof(struct board_member) * total);
+	total=load_member_boards(user->userid, members, 0, 0, total);
+	if (total <= 0) {
+		free(members);
+		members=NULL;
+		return -3;
+	}
+	
+	offset=10;
+	while (total>offset) 
+		offset *= 10;
+	
+	post_size=sizeof(struct fileheader);
+	posts=(struct fileheader *) malloc(post_size*(MAX_MEMBER_BOARD_ARTICLES*total));
+	bzero(posts, post_size * (MAX_MEMBER_BOARD_ARTICLES*total));
+	
+	post_total=0;
+	for (i=0; i<total;i++) {
+		bid=getbid(members[i].board, NULL);
+		if (!bid) continue;
+		
+		setbdir(DIR_MODE_NORMAL,dir,members[i].board);
+		board_total=get_num_records(dir, post_size);
+		if (board_total > MAX_MEMBER_BOARD_ARTICLES) {
+			board_offset=board_total-MAX_MEMBER_BOARD_ARTICLES+1;
+			board_num=MAX_MEMBER_BOARD_ARTICLES;
+		} else {
+			board_offset=1;
+			board_num=board_total;
+		}
+		post_read=get_records(dir, posts+post_size*post_total, post_size, board_offset, board_num);
+		if (post_read>0) {
+			for (j=post_total;j<post_total+post_read;j++) {
+				posts[j].o_id=posts[j].id*offset+i;
+				posts[j].o_reid=posts[j].reid*offset+i;
+				posts[j].o_groupid=posts[j].groupid*offset+i;
+				posts[j].o_bid=bid;
+			}
+			post_total += post_read;
+		}
+	}
+	
+	if ((fd = open(path, O_WRONLY | O_CREAT, 0664))==-1) { 
+		free(members);
+		free(posts);
+		members=NULL;
+		posts=NULL;
+		return -4;
+	}
+	
+	writew_lock(fd, 0, SEEK_SET, 0);
+	lseek(fd, 0, SEEK_END);
+
+	i=0;
+	memset(&article, 0, sizeof(struct member_board_article));	
+	if (post_total > 0) {
+		qsort(posts, post_total, post_size, member_board_article_cmp);
+		
+		
+		while(i<MAX_MEMBER_BOARD_ARTICLES) {
+			if (!posts[i].o_bid) break;
+			bh=(struct boardheader *)getboard(posts[i].o_bid);
+			if (!bh) continue;
+			
+			strncpy(article.board, bh->filename, STRLEN);
+			strncpy(article.filename, posts[i].filename, FILENAME_LEN);
+			article.id=posts[i].id;
+			article.groupid=posts[i].groupid;
+			article.reid=posts[i].reid;
+			article.s_id=posts[i].o_id;
+			article.s_groupid=posts[i].o_groupid;
+			article.s_reid=posts[i].o_reid;
+			strncpy(article.owner, posts[i].owner, OWNER_LEN);
+			article.eff_size=posts[i].eff_size;
+			article.posttime=posts[i].posttime;
+			article.attachment=posts[i].attachment;
+			strncpy(article.title, posts[i].title, ARTICLE_TITLE_LEN);
+			article.accessed[0]=posts[i].accessed[0];
+			article.accessed[1]=posts[i].accessed[1];
+			//article.flag=posts[i].flag;
+			
+			safewrite(fd, &article, sizeof(struct member_board_article));
+			i++;
+		}
+	}
+
+	un_lock(fd, 0, SEEK_SET, 0);
+	close(fd);
+	
+	free(members);
+	free(posts);
+	members=NULL;
+	posts=NULL;
+	
+	return i;
+}
 #endif
 #endif 
