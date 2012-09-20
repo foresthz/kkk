@@ -338,7 +338,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
     mysql_escape_string(my_name, name, strlen(name));
     mysql_escape_string(my_user_id, user_id, strlen(user_id));
     
-    sprintf(sql,"DELETE FROM `board_user` WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", my_name, my_user_id);
+    sprintf(sql,"DELETE FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -382,7 +382,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     mysql_escape_string(my_name, name, strlen(name));
     mysql_escape_string(my_user_id, user_id, strlen(user_id));
     
-    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", my_name, my_user_id);
+    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", my_name, my_user_id);
     
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -427,9 +427,13 @@ int load_board_members(const char *board, struct board_member *member, int sort,
     char qtmp[100];
     char my_board[STRLEN];
     int i;
+	const struct boardheader *bh;
+	struct userec *user;
     
     if (!board[0])
         return -1;
+	if (!getbid(board, &bh))
+		return -1;
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -438,9 +442,9 @@ int load_board_members(const char *board, struct board_member *member, int sort,
     }
     
     my_board[0]=0;
-    mysql_escape_string(my_board, board, strlen(board));
+    mysql_escape_string(my_board, bh->filename, strlen(bh->filename));
     
-    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `board`=\"%s\" ORDER BY ", my_board);
+    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") ORDER BY ", my_board);
     switch(sort) {
         case BOARD_MEMBER_SORT_TIME_DESC:
             strcpy(qtmp, " `time` DESC ");
@@ -481,18 +485,21 @@ int load_board_members(const char *board, struct board_member *member, int sort,
 
     i=0;
     while (row != NULL) {
-        i++;
-        if (i>num)
-            break;
-            
-        strncpy(member[i-1].board, row[0], 32);
-        strncpy(member[i-1].user, row[1], IDLEN+1);
-        member[i-1].time=atol(row[2]);
-        member[i-1].status=atol(row[3]);
-        strncpy(member[i-1].manager, row[4], IDLEN+1);
-        member[i-1].score=atol(row[5]);
-        member[i-1].flag=atol(row[6]);
-        
+		if (!getuser(row[1], &user)||!check_read_perm(user,bh)) {
+			delete_board_member_record(row[0], row[1]);
+		} else {
+			i++;
+			if (i>num)
+				break;
+				
+			strncpy(member[i-1].board, bh->filename, 32);
+			strncpy(member[i-1].user, user->userid, IDLEN+1);
+			member[i-1].time=atol(row[2]);
+			member[i-1].status=atol(row[3]);
+			strncpy(member[i-1].manager, row[4], IDLEN+1);
+			member[i-1].score=atol(row[5]);
+			member[i-1].flag=atol(row[6]);
+        }
         row = mysql_fetch_row(res);
     }
     mysql_free_result(res);
@@ -509,9 +516,13 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
     char qtmp[100];
     char my_user_id[STRLEN];
     int i;
+	struct boardheader *board;
+	const struct userec *user;
     
     if (!user_id[0])
         return -1;
+	if (!getuser(user_id, &user))
+		return -1;
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -520,9 +531,9 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
     }
     
     my_user_id[0]=0;
-    mysql_escape_string(my_user_id, user_id, strlen(user_id));
+    mysql_escape_string(my_user_id, user->userid, strlen(user->userid));
     
-    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE `user`=\"%s\" ORDER BY ", my_user_id);
+    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE LOWER(`user`)=LOWER(\"%s\") ORDER BY ", my_user_id);
     switch(sort) {
         case MEMBER_BOARD_SORT_TIME_DESC:
             strcpy(qtmp, " `time` DESC ");
@@ -563,18 +574,21 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
 
     i=0;
     while (row != NULL) {
-        i++;
-        if (i>num)
-            break;
-            
-        strncpy(member[i-1].board, row[0], 32);
-        strncpy(member[i-1].user, row[1], IDLEN+1);
-        member[i-1].time=atol(row[2]);
-        member[i-1].status=atol(row[3]);
-        strncpy(member[i-1].manager, row[4], IDLEN+1);
-        member[i-1].score=atol(row[5]);
-        member[i-1].flag=atol(row[6]);
-        
+		if (!getbid(row[0], &board)||!check_read_perm(user,board)) {
+			delete_board_member_record(row[0], row[1]);
+		} else {
+			i++;
+			if (i>num)
+				break;
+				
+			strncpy(member[i-1].board, board->filename, 32);
+			strncpy(member[i-1].user, user->userid, IDLEN+1);
+			member[i-1].time=atol(row[2]);
+			member[i-1].status=atol(row[3]);
+			strncpy(member[i-1].manager, row[4], IDLEN+1);
+			member[i-1].score=atol(row[5]);
+			member[i-1].flag=atol(row[6]);
+        }
         row = mysql_fetch_row(res);
     }
     mysql_free_result(res);
@@ -602,7 +616,7 @@ int get_board_members(const char *board) {
         return -2;
     }
 
-    sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `board`=\"%s\"", my_board);
+    sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\")", my_board);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -641,7 +655,7 @@ int get_member_boards(const char *user_id) {
         return -2;
     }
 
-    sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `user`=\"%s\"", my_user_id);
+    sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE LOWER(`user`)=LOWER(\"%s\")", my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -740,7 +754,7 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     mysql_escape_string(my_user_id, member.user, strlen(member.user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
     
-    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `status`=%d, `manager`=\"%s\" WHERE `board`=\"%s\" AND `user`=\"%s\" LIMIT 1;", status, my_manager_id, my_name, my_user_id);
+    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `status`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", status, my_manager_id, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
