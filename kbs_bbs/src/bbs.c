@@ -3693,7 +3693,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 #endif
         modify_user_mode(POSTING);
     setbdir(DIR_MODE_NORMAL, direct, currboard->filename);
-    if (!((cmdmode==DIR_MODE_NORMAL)||(cmdmode==DIR_MODE_THREAD)||(cmdmode==DIR_MODE_MARK)||(cmdmode==DIR_MODE_TOP10)||(cmdmode==DIR_MODE_REFER))) {
+    if (!((cmdmode==DIR_MODE_NORMAL)||(cmdmode==DIR_MODE_THREAD)||(cmdmode==DIR_MODE_MARK)||(cmdmode==DIR_MODE_TOP10)||(cmdmode==DIR_MODE_REFER)||(cmdmode==DIR_MODE_MEMBER_ARTICLE))) {
         move(3,0);
         clrtobot();
         if ((cmdmode==DIR_MODE_DIGEST)

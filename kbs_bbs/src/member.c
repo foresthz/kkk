@@ -531,17 +531,59 @@ int t_board_members(void) {
     return 0;
 }
 
+void member_board_article_title(struct _select_def* conf) {
+    showtitle("驻版新文章列表", BBS_FULL_NAME);
+    update_endline();
+    move(1, 0);
+    prints("离开[←,e] 选择[↑,↓] 阅读[→,r] 版面[s] 删除[d] 标题[?,/] 作者[a,A] 寻版[\',\"]\033[m\n");
+    prints("\033[44m  编号   发布者       日期    讨论区名称   主题");
+    clrtoeol();
+    prints("\n");
+    resetcolor();
+}
+
+char *member_board_article_ent(char *buf, int num, struct member_board_article *ent, struct member_board_article *readfh, struct _select_def* conf) {
+    char *date;
+    char c1[8],c2[8];
+    int same=false, orig=0;
+
+    date=ctime(&ent->posttime)+4;
+    if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
+        strcpy(c1, "\033[1;33m");
+        strcpy(c2, "\033[1;36m");
+	} else {
+        strcpy(c1, "\033[33m");
+        strcpy(c2, "\033[36m");
+	}
+    if (readfh&&0==strncasecmp(ent->board, readfh->board, STRLEN-1)&&ent->groupid==readfh->groupid)
+        same=true;
+    if (strncmp(ent->title, "Re: ", 4))
+        orig=1;
+
+    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, " ", ent->owner, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
+
+    return buf;
+}
+
+struct key_command member_board_article_comms[]={
+    {'\n', NULL},
+};
+
 int t_member_board_articles(void) {
 	char path[PATHLEN];
+	int returnmode=CHANGEMODE;
 	
 	sethomefile(path, getCurrentUser()->userid, "member_board_articles");
-	
 	clear();
     if (load_member_board_articles(path, getCurrentUser())<0) {
         move(10, 10);
 		prints("加载驻版信息出错");
 		pressanykey();
         return 0;
+    }
+	
+	while(returnmode==CHANGEMODE) {
+        returnmode=new_i_read(DIR_MODE_MEMBER_ARTICLE, path, member_board_article_title, (READ_ENT_FUNC)member_board_article_ent, &member_board_article_comms[0], sizeof(struct member_board_article));
     }
 	
 	return 0;

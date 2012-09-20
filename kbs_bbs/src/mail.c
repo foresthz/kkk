@@ -4448,7 +4448,7 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
         strcpy(c1, "\033[33m");
         strcpy(c2, "\033[36m");
     }
-    if (readfh&&0==strncasecmp(ent->board, readfh->board, IDLEN+6)&&ent->groupid==readfh->groupid)
+    if (readfh&&0==strncasecmp(ent->board, readfh->board, STRLEN-1)&&ent->groupid==readfh->groupid)
         same=true;
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;

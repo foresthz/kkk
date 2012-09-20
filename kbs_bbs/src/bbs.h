@@ -525,6 +525,7 @@ enum BBS_DIR_MODE {
     DIR_MODE_TOP10,                 /* 十大模式 */
     DIR_MODE_SELF,                  /* 自删模式, .SELF.userid */
     DIR_MODE_REFER,                 /* @/回文提醒模式, added by windinsn, Jan 28,2012 */
+	DIR_MODE_MEMBER_ARTICLE,        /* 驻版阅读模式, added by windinsn, Sep 20, 2012 */
     DIR_MODE_UNKNOWN                /* 未知模式 */
 };
 
