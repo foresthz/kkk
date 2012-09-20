@@ -10,7 +10,7 @@
 #endif
 
 #ifndef MIN_MEMBER_BOARD_ARTICLE_STAT
-#define MIN_MEMBER_BOARD_ARTICLE_STAT 3600
+#define MIN_MEMBER_BOARD_ARTICLE_STAT 60
 #endif
 
 int board_member_log(struct board_member *member, char *title, char *log) {
@@ -933,7 +933,6 @@ int load_member_board_articles(char *path, const struct userec *user) {
 			strncpy(article.title, board_posts[i].title, ARTICLE_TITLE_LEN);
 			article.accessed[0]=board_posts[i].accessed[0];
 			article.accessed[1]=board_posts[i].accessed[1];
-		bbslog("3system", "load article: [%s]%s", bh->filename, article.title);	
 			safewrite(fd, &article, sizeof(struct member_board_article));
 			i++;
 		}
