@@ -10,7 +10,7 @@
 #endif
 
 #ifndef MIN_MEMBER_BOARD_ARTICLE_STAT
-#define MIN_MEMBER_BOARD_ARTICLE_STAT 7200
+#define MIN_MEMBER_BOARD_ARTICLE_STAT 3600
 #endif
 
 int board_member_log(struct board_member *member, char *title, char *log) {
@@ -778,14 +778,18 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     return 0;
 }    
 
-int member_board_article_cmp(const void *a, const void *b) {
-	return get_posttime((fileheader *)&a) - get_posttime((fileheader *)&b);
+typedef int member_board_article_cmp_func(const void *, const void *);
+
+int member_board_article_cmp(fileheader *a, fileheader *b) {
+	return a->posttime-b->posttime;
+//	return get_posttime(b) - get_posttime(a);
 }
 
 int load_member_board_articles(char *path, const struct userec *user) {
 	int total, i, j, offset, bid;
 	struct board_member *members;
 	struct fileheader *posts;
+	struct fileheader *board_posts;
 	int post_size, post_total, post_read;
 	char dir[PATHLEN];
 	int board_total, board_offset, board_num;
@@ -795,7 +799,7 @@ int load_member_board_articles(char *path, const struct userec *user) {
 	struct boardheader *bh;
 	
 	if (stat(path, &st) >= 0) {
-		if (st.st_mtime < (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
+		if (st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
 			return (st.st_size / sizeof(struct member_board_article));
 		
 		unlink(path);	
@@ -822,7 +826,8 @@ int load_member_board_articles(char *path, const struct userec *user) {
 	
 	post_size=sizeof(struct fileheader);
 	posts=(struct fileheader *) malloc(post_size*(MAX_MEMBER_BOARD_ARTICLES*total));
-	bzero(posts, post_size * (MAX_MEMBER_BOARD_ARTICLES*total));
+	board_posts=(struct fileheader *) malloc(post_size*MAX_MEMBER_BOARD_ARTICLES);
+	memset(posts, 0, post_size * (MAX_MEMBER_BOARD_ARTICLES*total));
 	
 	post_total=0;
 	for (i=0; i<total;i++) {
@@ -838,18 +843,33 @@ int load_member_board_articles(char *path, const struct userec *user) {
 			board_offset=1;
 			board_num=board_total;
 		}
-		post_read=get_records(dir, posts+post_size*post_total, post_size, board_offset, board_num);
+		memset(board_posts, 0, post_size * MAX_MEMBER_BOARD_ARTICLES);
+		post_read=get_records(dir, board_posts, post_size, board_offset, board_num);
 		if (post_read>0) {
-			for (j=post_total;j<post_total+post_read;j++) {
-				posts[j].o_id=posts[j].id*offset+i;
-				posts[j].o_reid=posts[j].reid*offset+i;
-				posts[j].o_groupid=posts[j].groupid*offset+i;
-				posts[j].o_bid=bid;
+			for (j=0;j<post_read;j++) {
+				strncpy(posts[j+post_total].filename, board_posts[j].filename, FILENAME_LEN);
+				posts[j+post_total].id=board_posts[j].id;
+				posts[j+post_total].groupid=board_posts[j].groupid;
+				posts[j+post_total].reid=board_posts[j].reid;
+				strncpy(posts[j+post_total].owner, board_posts[j].owner, OWNER_LEN);
+				posts[j+post_total].eff_size=board_posts[j].eff_size;
+				posts[j+post_total].posttime=board_posts[j].posttime;
+				posts[j+post_total].attachment=board_posts[j].attachment;
+				strncpy(posts[j+post_total].title, board_posts[j].title, ARTICLE_TITLE_LEN);
+				posts[j+post_total].accessed[0]=board_posts[j].accessed[0];
+				posts[j+post_total].accessed[1]=board_posts[j].accessed[1];
+				posts[j+post_total].o_id=board_posts[j].id*offset+i;
+				posts[j+post_total].o_reid=board_posts[j].reid*offset+i;
+				posts[j+post_total].o_groupid=board_posts[j].groupid*offset+i;
+				posts[j+post_total].o_bid=bid;
 			}
 			post_total += post_read;
 		}
 	}
 	
+	free(board_posts);
+	board_posts=NULL;
+
 	if ((fd = open(path, O_WRONLY | O_CREAT, 0664))==-1) { 
 		free(members);
 		free(posts);
@@ -862,36 +882,64 @@ int load_member_board_articles(char *path, const struct userec *user) {
 	lseek(fd, 0, SEEK_END);
 
 	i=0;
+	j=0;
 	memset(&article, 0, sizeof(struct member_board_article));	
 	if (post_total > 0) {
-		qsort(posts, post_total, post_size, member_board_article_cmp);
 		
+		board_posts=(struct fileheader *) malloc(post_size*post_total);
+		memset(board_posts, 0, post_size * post_total);
 		
-		while(i<MAX_MEMBER_BOARD_ARTICLES) {
+		while(j<post_total) {
 			if (!posts[i].o_bid) break;
-			bh=(struct boardheader *)getboard(posts[i].o_bid);
-			if (!bh) continue;
+			strncpy(board_posts[j].filename, posts[i].filename, FILENAME_LEN);
+                        board_posts[j].id=posts[i].id;
+                        board_posts[j].groupid=posts[i].groupid;
+                        board_posts[j].reid=posts[i].reid;
+                        strncpy(board_posts[j].owner, posts[i].owner, OWNER_LEN);
+                        board_posts[j].eff_size=posts[i].eff_size;
+                        board_posts[j].posttime=posts[i].posttime;
+                        board_posts[j].attachment=posts[i].attachment;
+                        strncpy(board_posts[j].title, posts[i].title, ARTICLE_TITLE_LEN);
+                        board_posts[j].accessed[0]=posts[i].accessed[0];
+                        board_posts[j].accessed[1]=posts[i].accessed[1];
+                        board_posts[j].o_id=posts[i].o_id;
+                        board_posts[j].o_reid=posts[i].o_reid;
+                        board_posts[j].o_groupid=posts[i].o_groupid;
+                        board_posts[j].o_bid=posts[i].o_bid;	
+			j++;
+			i++;
+		}
+
+		qsort(board_posts, post_total, post_size, (member_board_article_cmp_func *) member_board_article_cmp);
+
+		i=0;
+		while (i<post_total) {	
+			if (!board_posts[i].o_bid) break;
+			bh=(struct boardheader *)getboard(board_posts[i].o_bid);
+			if (!bh) { i++; continue; }
 			
 			strncpy(article.board, bh->filename, STRLEN);
-			strncpy(article.filename, posts[i].filename, FILENAME_LEN);
-			article.id=posts[i].id;
-			article.groupid=posts[i].groupid;
-			article.reid=posts[i].reid;
-			article.s_id=posts[i].o_id;
-			article.s_groupid=posts[i].o_groupid;
-			article.s_reid=posts[i].o_reid;
-			strncpy(article.owner, posts[i].owner, OWNER_LEN);
-			article.eff_size=posts[i].eff_size;
-			article.posttime=posts[i].posttime;
-			article.attachment=posts[i].attachment;
-			strncpy(article.title, posts[i].title, ARTICLE_TITLE_LEN);
-			article.accessed[0]=posts[i].accessed[0];
-			article.accessed[1]=posts[i].accessed[1];
-			//article.flag=posts[i].flag;
-			
+			strncpy(article.filename, board_posts[i].filename, FILENAME_LEN);
+			article.id=board_posts[i].id;
+			article.groupid=board_posts[i].groupid;
+			article.reid=board_posts[i].reid;
+			article.s_id=board_posts[i].o_id;
+			article.s_groupid=board_posts[i].o_groupid;
+			article.s_reid=board_posts[i].o_reid;
+			strncpy(article.owner, board_posts[i].owner, OWNER_LEN);
+			article.eff_size=board_posts[i].eff_size;
+			article.posttime=board_posts[i].posttime;
+			article.attachment=board_posts[i].attachment;
+			strncpy(article.title, board_posts[i].title, ARTICLE_TITLE_LEN);
+			article.accessed[0]=board_posts[i].accessed[0];
+			article.accessed[1]=board_posts[i].accessed[1];
+		bbslog("3system", "load article: [%s]%s", bh->filename, article.title);	
 			safewrite(fd, &article, sizeof(struct member_board_article));
 			i++;
 		}
+
+		free(board_posts);
+		board_posts=NULL;
 	}
 
 	un_lock(fd, 0, SEEK_SET, 0);
@@ -902,7 +950,7 @@ int load_member_board_articles(char *path, const struct userec *user) {
 	members=NULL;
 	posts=NULL;
 	
-	return i;
+	return j;
 }
 #endif
 #endif 

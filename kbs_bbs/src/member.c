@@ -1,4 +1,5 @@
 #include "bbs.h"
+#include "read.h"
 
 #ifdef ENABLE_BOARD_MEMBER
 struct board_member *b_members = NULL;
@@ -547,7 +548,7 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     char c1[8],c2[8];
     int same=false, orig=0;
 
-    date=ctime(&ent->posttime)+4;
+    date=ctime((time_t *)&ent->posttime)+4;
     if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
         strcpy(c1, "\033[1;33m");
         strcpy(c2, "\033[1;36m");
@@ -560,14 +561,21 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
 
-    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, " ", ent->owner, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
+    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, "*", ent->owner, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
 }
 
+int member_board_article_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
+	return DONOTHING;
+}
+
 struct key_command member_board_article_comms[]={
+    {'r', (READ_KEY_FUNC)member_board_article_read, NULL},
     {'\n', NULL},
 };
+
+
 
 int t_member_board_articles(void) {
 	char path[PATHLEN];
