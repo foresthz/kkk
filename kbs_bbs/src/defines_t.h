@@ -359,6 +359,7 @@ time_t calc_calltime(int mode);
 #ifdef ENABLE_BOARD_MEMBER
 int b_member_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 int t_board_members(void);
+int t_member_board_articles(void);
 #endif
 
 #endif /* _DEFINES_T_H_ */

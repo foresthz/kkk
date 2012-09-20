@@ -531,7 +531,21 @@ int t_board_members(void) {
     return 0;
 }
 
-
+int t_member_board_articles(void) {
+	char path[PATHLEN];
+	
+	sethomefile(path, getCurrentUser()->userid, "member_board_articles");
+	
+	clear();
+    if (load_member_board_articles(path, getCurrentUser())<0) {
+        move(10, 10);
+		prints("加载驻版信息出错");
+		pressanykey();
+        return 0;
+    }
+	
+	return 0;
+}
 
 #endif /* ENABLE_BOARD_MEMBER */
 

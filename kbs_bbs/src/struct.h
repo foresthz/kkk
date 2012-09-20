@@ -591,6 +591,19 @@ struct board_member {
 	unsigned int score;
 	unsigned int flag;
 };
+struct member_board_article {
+	char board[STRLEN];
+	char filename[FILENAME_LEN];
+	unsigned int id, groupid, reid;
+	unsigned int s_id, s_groupid, s_reid;
+	char owner[OWNER_LEN];
+	unsigned int eff_size;
+	int posttime;
+	unsigned int attachment;
+	char title[ARTICLE_TITLE_LEN];
+	unsigned char accessed[4];
+	unsigned int flag;
+};
 #endif
 
 #define ACTIVATIONLEN   15
