@@ -5567,6 +5567,11 @@ int Goodbye(void)                       /*离站 选单 */
         if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW) && pos_save_time)
             save_article_pos();
 #endif
+
+#ifdef NEWSMTH
+        /* 退出时释放board_enter_time */
+        free_board_enter_time();
+#endif
         fp = fopen("friendbook", "r");  /*搜索系统 寻人名单 */
         while (fp != NULL && fgets(buf, sizeof(buf), fp) != NULL) {
             char uid[14];
@@ -6801,7 +6806,11 @@ int Read()
 #ifdef NEW_HELP
     helpmode = oldhelpmode;
 #endif
+#ifdef NEWSMTH
+    newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", currboard->filename, time(0) - usetime, (just_entered_board(currboardent, usetime))?" n":"");
+#else
     newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", currboard->filename, time(0) - usetime);
+#endif
     bmlog(getCurrentUser()->userid, currboard->filename, 0, time(0) - usetime);
     bmlog(getCurrentUser()->userid, currboard->filename, 1, 1);
 
@@ -7455,7 +7464,11 @@ static int read_top(int index,int force)
         new_i_read(DIR_MODE_TOP10,top,read_top_title,(READ_ENT_FUNC)read_top_ent,read_top_comms,sizeof(struct fileheader));
         read_end=time(NULL);
         modify_user_mode(u_mode);
+#ifdef NEWSMTH
+        newbbslog(BBSLOG_BOARDUSAGE,"%-20s Stay: %5ld%s",currboard->filename,(read_end-read_begin),(just_entered_board(currboardent, read_begin))?" n":"");
+#else
         newbbslog(BBSLOG_BOARDUSAGE,"%-20s Stay: %5ld",currboard->filename,(read_end-read_begin));
+#endif
         bmlog(getCurrentUser()->userid,currboard->filename,0,(read_end-read_begin));
         bmlog(getCurrentUser()->userid,currboard->filename,1,1);
     }

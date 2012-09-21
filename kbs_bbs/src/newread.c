@@ -81,6 +81,53 @@ void savePos(int mode,char* direct,int pos,struct boardheader* bh)
     ptr->pos=pos;
 }
 
+#ifdef NEWSMTH
+/* 判断用户是否5分钟之内进入过该版 */
+#define ENTER_BOARD_INTERVAL 30
+struct _board_enter_time {
+    int bid;
+    time_t t;
+    struct _board_enter_time *next;
+} static *bet_head=NULL;
+
+int just_entered_board(int bid, time_t t)
+{
+    struct _board_enter_time *ptr;
+
+    ptr=bet_head;
+    while(ptr!=NULL) {
+        if (ptr->bid==bid) {
+            if (t-ptr->t>ENTER_BOARD_INTERVAL) {
+                ptr->t = t;
+                return 0;
+            } else
+                return 1;
+        }
+        ptr = ptr->next;
+    }
+
+    ptr = (struct _board_enter_time*)malloc(sizeof(struct _board_enter_time));
+    ptr->bid = bid;
+    ptr->t = t;
+    ptr->next = bet_head;
+    bet_head = ptr;
+
+    return 0;
+}
+
+void free_board_enter_time()
+{
+    struct _board_enter_time *ptr, *tmp;
+
+    ptr=bet_head;
+    while(ptr!=NULL){
+        tmp = ptr->next;
+        free(ptr);
+        ptr = tmp;
+    }
+}
+#endif
+
 static void read_setusermode(enum BBS_DIR_MODE cmdmode)
 {
     if (cmdmode==DIR_MODE_MAIL) {
