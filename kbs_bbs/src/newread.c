@@ -83,7 +83,7 @@ void savePos(int mode,char* direct,int pos,struct boardheader* bh)
 
 #ifdef NEWSMTH
 /* 判断用户是否5分钟之内进入过该版 */
-#define ENTER_BOARD_INTERVAL 30
+#define ENTER_BOARD_INTERVAL 300
 struct _board_enter_time {
     int bid;
     time_t t;
