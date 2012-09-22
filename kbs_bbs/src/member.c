@@ -547,8 +547,9 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     char *date;
     char c1[8],c2[8];
     int same=false, orig=0;
+	char type;
 	
-	
+	char unread_mark = (DEFINE(getCurrentUser(), DEF_UNREADMARK) ? UNREAD_SIGN : 'N');
     date=ctime((time_t *)&ent->posttime)+((ent->posttime/86400==time(NULL)/86400)?10:4);
     if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
         strcpy(c1, "\033[1;33m");
@@ -562,7 +563,39 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
 
-    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, "*", ent->owner, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
+#ifdef HAVE_BRC_CONTROL
+	brc_initial(getCurrentUser()->userid, ent->board, getSession());
+    type = brc_unread(ent->id, getSession()) ? unread_mark : ' ';
+#else
+    type = ' ';	
+#endif
+		
+	if ((ent->accessed[0] & FILE_DIGEST)) {
+        if (type == ' ')
+            type = 'g';
+        else
+            type = 'G';
+    }
+	
+	if (ent->accessed[0] & FILE_MARKED) {
+        switch (type) {
+            case ' ':
+                type = 'm';
+                break;
+            case UNREAD_SIGN:
+            case 'N':
+                type = 'M';
+                break;
+            case 'g':
+                type = 'b';
+                break;
+            case 'G':
+                type = 'B';
+                break;
+        }
+    }
+	
+    sprintf(buf, " %s%4d %c %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, type, ent->owner, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
 }
