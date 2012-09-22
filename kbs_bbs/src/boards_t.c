@@ -1839,8 +1839,6 @@ static int fav_key(struct _select_def *conf, int command)
 		case Ctrl('K'):
 			if (!strcmp(getCurrentUser()->userid, "guest") || !HAS_PERM(getCurrentUser(), PERM_BASIC)) 
 				return SHOW_CONTINUE;
-			if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
-				return SHOW_CONTINUE;
 			t_member_board_articles();
 			return SHOW_REFRESH;
 #endif			
