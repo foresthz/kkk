@@ -553,7 +553,28 @@ int t_board_members(void) {
 }
 
 void member_board_article_title(struct _select_def* conf) {
-    showtitle("[驻版阅读模式]", BBS_FULL_NAME);
+	char title[STRLEN];
+	int chkmailflag = 0;
+	
+	chkmailflag = chkmail();
+    if (chkmailflag == 2)       /*Haohmaru.99.4.4.对收信也加限制 */
+        strcpy(title, "[您的信箱超过容量,不能再收信!]");
+#ifdef ENABLE_REFER
+/* added by windinsn, Jan 28, 2012, 检查是否有 @或回复提醒 */
+     else if (chkmailflag==1)
+         strcpy(title, "[您有信件]");
+     else if (chkmailflag==3)
+         strcpy(title, "[您有@提醒]");
+     else if (chkmailflag==4)
+         strcpy(title, "[您有回复提醒]");
+#else
+    else if (chkmailflag)       /* 信件检查 */
+        strcpy(title, "[您有信件]");
+#endif /* ENABLE_REFER */
+    else
+        strcpy(title, BBS_FULL_NAME);
+	
+    showtitle("[驻版阅读模式]", title);
     update_endline();
     move(1, 0);
     prints("离开[←,e] 选择[↑,↓] 阅读[→,r] 版面[s] 删除[d] 标题[?,/] 作者[a,A] 寻版[\',\"]\033[m\n");
@@ -895,6 +916,7 @@ int member_board_article_clear_new_flag(struct _select_def* conf,struct member_b
 {
 #ifdef HAVE_BRC_CONTROL
 	struct board_member *members;
+	struct boardheader *board;
 	int total, i, bid;
 	
 	total=get_member_boards(getCurrentUser()->userid);
@@ -911,12 +933,19 @@ int member_board_article_clear_new_flag(struct _select_def* conf,struct member_b
 	}
 	
 	for (i=0;i<total;i++) {
-		bid=getbid(members[i].board, NULL);
-		if (bid) brc_clear(bid, getSession());
+		bid=getbid(members[i].board, &board);
+		if (bid) {
+			brc_initial(getCurrentUser()->userid, board->filename, getSession());
+			brc_clear(bid, getSession());
+		}
 	}
 	
 	free(members);
 	members=NULL;
+	
+	if (currboard) {
+        brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
+    }
 	
 	flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1);
 	return DIRCHANGED;
