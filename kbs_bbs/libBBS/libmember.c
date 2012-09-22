@@ -785,7 +785,32 @@ int member_board_article_cmp(fileheader *a, fileheader *b) {
 //	return get_posttime(b) - get_posttime(a);
 }
 
-int load_member_board_articles(char *path, const struct userec *user) {
+char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char *userid) {
+	const char *prefix;
+	
+	switch (mode) {
+		case DIR_MODE_DIGEST:
+			prefix="BMA_DIGEST";
+			break;
+		case DIR_MODE_THREAD:
+			prefix="BMA_THREAD";
+			break;
+		case DIR_MODE_MARK:
+			prefix="BMA_MARK";
+			break;
+		case DIR_MODE_WEB_THREAD:
+			prefix="BMA_THREAD";
+			break;
+		case DIR_MODE_NORMAL:
+		default:
+			prefix="BMA_DIR";
+	}
+	
+	sethomefile(buf, userid, prefix);
+	return buf;
+}
+
+int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user) {
 	int total, i, j, offset, bid;
 	struct board_member *members;
 	struct fileheader *posts;
@@ -797,6 +822,17 @@ int load_member_board_articles(char *path, const struct userec *user) {
 	struct stat st;
 	struct member_board_article article;
 	struct boardheader *bh;
+	
+	switch (mode) {
+		case DIR_MODE_NORMAL:
+		case DIR_MODE_DIGEST:
+		case DIR_MODE_THREAD:
+		case DIR_MODE_MARK:
+		case DIR_MODE_WEB_THREAD:
+			break;
+		default:
+			return -5;
+	}
 	
 	if (stat(path, &st) >= 0) {
 		if (st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
@@ -834,7 +870,7 @@ int load_member_board_articles(char *path, const struct userec *user) {
 		bid=getbid(members[i].board, NULL);
 		if (!bid) continue;
 		
-		setbdir(DIR_MODE_NORMAL,dir,members[i].board);
+		setbdir(mode,dir,members[i].board);
 		board_total=get_num_records(dir, post_size);
 		if (board_total > MAX_MEMBER_BOARD_ARTICLES) {
 			board_offset=board_total-MAX_MEMBER_BOARD_ARTICLES+1;
@@ -912,7 +948,11 @@ int load_member_board_articles(char *path, const struct userec *user) {
 
 		qsort(board_posts, post_total, post_size, (member_board_article_cmp_func *) member_board_article_cmp);
 
-		i=0;
+		if (post_total <= MAX_MEMBER_BOARD_ARTICLES)
+			i=0;
+		else
+			i=post_total-MAX_MEMBER_BOARD_ARTICLES;
+		
 		while (i<post_total) {	
 			if (!board_posts[i].o_bid) break;
 			bh=(struct boardheader *)getboard(board_posts[i].o_bid);

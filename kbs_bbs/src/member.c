@@ -533,7 +533,7 @@ int t_board_members(void) {
 }
 
 void member_board_article_title(struct _select_def* conf) {
-    showtitle("驻版新文章列表", BBS_FULL_NAME);
+    showtitle("[驻版阅读模式]", BBS_FULL_NAME);
     update_endline();
     move(1, 0);
     prints("离开[←,e] 选择[↑,↓] 阅读[→,r] 版面[s] 删除[d] 标题[?,/] 作者[a,A] 寻版[\',\"]\033[m\n");
@@ -556,7 +556,7 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
         strcpy(c1, "\033[33m");
         strcpy(c2, "\033[36m");
 	}
-    if (readfh&&0==strncasecmp(ent->board, readfh->board, STRLEN-1)&&ent->groupid==readfh->groupid)
+    if (readfh&&ent->s_groupid==readfh->s_groupid)
         same=true;
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
@@ -578,12 +578,13 @@ struct key_command member_board_article_comms[]={
 
 
 int t_member_board_articles(void) {
+	static int mode=DIR_MODE_NORMAL;
 	char path[PATHLEN];
 	int returnmode=CHANGEMODE;
 	
-	sethomefile(path, getCurrentUser()->userid, "member_board_articles");
+	set_member_board_article_dir(mode, path, getCurrentUser()->userid);
 	clear();
-    if (load_member_board_articles(path, getCurrentUser())<0) {
+    if (load_member_board_articles(path, mode, getCurrentUser())<0) {
         move(10, 10);
 		prints("加载驻版信息出错");
 		pressanykey();
