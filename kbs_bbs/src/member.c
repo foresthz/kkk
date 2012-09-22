@@ -2,6 +2,26 @@
 #include "read.h"
 
 #ifdef ENABLE_BOARD_MEMBER
+
+#define MEMBER_BOARD_ARTICLE_BOARD_HOT 1
+#define MEMBER_BOARD_ARTICLE_BOARD_NOTE 2
+
+#define MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO 1
+#define MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL 2
+#define MEMBER_BOARD_ARTICLE_ACTION_FORWARD 3
+#define MEMBER_BOARD_ARTICLE_ACTION_MAIL 4
+#define MEMBER_BOARD_ARTICLE_ACTION_POST 5
+#define MEMBER_BOARD_ARTICLE_ACTION_CROSS 6
+#define MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM 7
+#define MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND 8
+#define MEMBER_BOARD_ARTICLE_ACTION_ZSEND 9
+#define MEMBER_BOARD_ARTICLE_ACTION_BLOG 10
+#define MEMBER_BOARD_ARTICLE_ACTION_HELP 11
+#define MEMBER_BOARD_ARTICLE_ACTION_DENY 12
+#define MEMBER_BOARD_ARTICLE_ACTION_CLUB 13
+#define MEMBER_BOARD_ARTICLE_ACTION_MSG 14
+#define MEMBER_BOARD_ARTICLE_ACTION_INFO 15
+
 struct board_member *b_members = NULL;
 int board_member_sort=BOARD_MEMBER_SORT_DEFAULT;
 int board_member_is_manager, board_member_is_joined;
@@ -546,7 +566,7 @@ void member_board_article_title(struct _select_def* conf) {
 char *member_board_article_ent(char *buf, int num, struct member_board_article *ent, struct member_board_article *readfh, struct _select_def* conf) {
     char *date;
     char c1[8],c2[8];
-    int same=false, orig=0;
+    int same=false, same_board=false, orig=0;
 	char type;
 	
 	char unread_mark = (DEFINE(getCurrentUser(), DEF_UNREADMARK) ? UNREAD_SIGN : 'N');
@@ -560,6 +580,11 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
 	}
     if (readfh&&ent->s_groupid==readfh->s_groupid)
         same=true;
+	else if (readfh&&0==strncasecmp(ent->board, readfh->board, STRLEN-1)) {
+		same_board=true;
+	} else
+		same_board=false;
+		
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
 
@@ -595,7 +620,7 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
         }
     }
 	
-    sprintf(buf, " %s%4d %c %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, type, ent->owner, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
+    sprintf(buf, " %s%4d %c %-12.12s %6.6s  %s%-12.12s%s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, type, ent->owner, date, same_board?c2:"", ent->board, same_board?"\033[m":"", orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
 }
@@ -603,7 +628,7 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
 int member_board_article_read(struct _select_def* conf, struct member_board_article *article, void* extraarg) {
 	struct read_arg *arg;
 	struct boardheader *board;
-	char buf[STRLEN];
+	char buf[PATHLEN];
 	int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
 	fileheader_t post[1];
 	
@@ -795,13 +820,15 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
 	return ret;
 }
 
-int member_board_article_post(struct _select_def* conf, struct member_board_article *article, void* extraarg) {
-	struct boardheader *board;
+int member_board_article_board_info(struct _select_def* conf,struct member_board_article *article, int act)
+{
 	int save_currboardent, save_uinfo_currentboard;
+	struct boardheader *board;
+	char save_bm[BM_LEN];
+	char path[PATHLEN];
 	
 	if (article==NULL)
 		return DONOTHING;
-	
 	board=(struct boardheader *)getbcache(article->board);
 	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
@@ -812,18 +839,205 @@ int member_board_article_post(struct _select_def* conf, struct member_board_arti
 	
 	save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
+	memcpy(save_bm, currBM, BM_LEN - 1);
+	
+    currboardent=getbid(board->filename, NULL);
+    currboard=board;
+    uinfo.currentboard=currboardent;
+	memcpy(currBM, board->BM, BM_LEN - 1);
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(getCurrentUser()->userid, board->filename, getSession());
+#endif		
+	
+	switch (act) {
+		case MEMBER_BOARD_ARTICLE_BOARD_HOT:
+			read_hot_info(conf, NULL, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_BOARD_NOTE:
+			clear();
+			sprintf(path, "vote/%s/notes", currboard->filename);
+			if (dashf(path)) {
+				ansimore2(path, false, 0, 0);
+			} else if (dashf("vote/notes")) {
+				ansimore2("vote/notes", false, 0, 23);
+			} else {
+				move(3, 30);
+				prints("此讨论区尚无「备忘录」。");
+			}
+			pressanykey();
+			break;
+	}
+	
+	uinfo.currentboard=save_uinfo_currentboard;
+    currboardent=save_currboardent;
+    currboard=((struct boardheader*)getboard(save_currboardent));
+	memcpy(currBM, save_bm, BM_LEN - 1);
+#ifdef HAVE_BRC_CONTROL
+    if (currboard) {
+        brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
+    }
+#endif		
+	
+	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 0))
+		return DIRCHANGED;
+		
+	return FULLUPDATE;
+}
+
+int member_board_article_select(struct _select_def* conf,struct member_board_article *article,void* extraarg)
+{
+	Select();
+	
+	return DOQUIT;
+}
+
+int member_board_article_clear_new_flag(struct _select_def* conf,struct member_board_article *article,void* extraarg)
+{
+#ifdef HAVE_BRC_CONTROL
+	struct board_member *members;
+	int total, i, bid;
+	
+	total=get_member_boards(getCurrentUser()->userid);
+	if (total <= 0)
+		return DONOTHING;
+	
+	members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+	bzero(members, sizeof(struct board_member) * total);
+	total=load_member_boards(getCurrentUser()->userid, members, 0, 0, total);
+	if (total <= 0) {
+		free(members);
+		members=NULL;
+		return DONOTHING;
+	}
+	
+	for (i=0;i<total;i++) {
+		bid=getbid(members[i].board, NULL);
+		if (bid) brc_clear(bid, getSession());
+	}
+	
+	free(members);
+	members=NULL;
+	
+	flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1);
+	return DIRCHANGED;
+#else
+    return DONOTHING;
+#endif
+}
+
+int member_board_article_info(struct _select_def* conf,struct member_board_article *article, int act)
+{
+	struct boardheader *board;
+	fileheader_t post[1];
+	int fd, num, retnum, save_currboardent, save_uinfo_currentboard;;
+	char buf[STRLEN];
+	int flush;
+	char save_bm[BM_LEN];
+	
+	if (article==NULL)
+		return DONOTHING;
+	board=(struct boardheader *)getbcache(article->board);
+	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+        clear();
+        prints("指定版面不存在...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+	
+	setbdir(DIR_MODE_NORMAL, buf, board->filename);
+	if ((fd=open(buf, O_RDWR, 0644))<0) {
+        clear();
+        prints("无法打开版面文章列表...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+	
+	retnum=get_records_from_id(fd, article->id, post, 1, &num);
+	close(fd);
+	
+	if (0==retnum) {
+        clear();
+        prints("文章不存在，可能已被删除...");
+        pressreturn();
+        return FULLUPDATE;
+    }	
+
+	save_currboardent=currboardent;
+    save_uinfo_currentboard=uinfo.currentboard;
+	memcpy(save_bm, currBM, BM_LEN - 1);
 
     currboardent=getbid(board->filename, NULL);
     currboard=board;
     uinfo.currentboard=currboardent;
-
-	Post();
+	memcpy(currBM, board->BM, BM_LEN - 1);
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(getCurrentUser()->userid, board->filename, getSession());
+#endif	
+	
+	flush=0;
+	switch (act) {
+		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO:
+			read_showauthor(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL:
+			read_authorinfo(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_MAIL:
+			post_reply(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_FORWARD:
+			mail_forward(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_POST:
+			Post();
+			flush=1;
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_CROSS:
+			do_cross(conf, post, NULL);
+			flush=1;
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM:
+			read_showauthorBM(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND:
+			read_addauthorfriend(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_ZSEND:
+			read_zsend(conf, post, NULL);
+			break;
+#ifdef PERSONAL_CORP			
+		case MEMBER_BOARD_ARTICLE_ACTION_BLOG:
+			read_importpc(conf, post, NULL);
+			break;
+#endif
+		case MEMBER_BOARD_ARTICLE_ACTION_HELP:
+			mainreadhelp(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_DENY:
+			deny_user(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_CLUB:
+			clubmember(conf, post, NULL);
+			break;	
+		case MEMBER_BOARD_ARTICLE_ACTION_MSG:
+			read_sendmsgtoauthor(conf, post, NULL);
+			break;
+		case MEMBER_BOARD_ARTICLE_ACTION_INFO:
+			showinfo(conf, post, NULL);
+			break;
+	}
 
 	uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
-
-	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1))
+	memcpy(currBM, save_bm, BM_LEN - 1);
+#ifdef HAVE_BRC_CONTROL
+    if (currboard) {
+        brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
+    }
+#endif	
+	
+	if (flush && flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1))
 		return DIRCHANGED;
 		
 	return FULLUPDATE;
@@ -831,7 +1045,29 @@ int member_board_article_post(struct _select_def* conf, struct member_board_arti
 
 struct key_command member_board_article_comms[]={
     {'r', (READ_KEY_FUNC)member_board_article_read, NULL},
-	{Ctrl('P'), (READ_KEY_FUNC)member_board_article_post,NULL},
+	{Ctrl('P'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_POST},
+	{Ctrl('C'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_CROSS},
+	{'H', (READ_KEY_FUNC)member_board_article_board_info, (void *)MEMBER_BOARD_ARTICLE_BOARD_HOT},
+	{'s', (READ_KEY_FUNC)member_board_article_select,NULL},
+	{'v', (READ_KEY_FUNC)read_callfunc0, (void *)i_read_mail},
+	{'F', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_FORWARD},
+	{Ctrl('R'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_MAIL},
+	{'f', (READ_KEY_FUNC)member_board_article_clear_new_flag,NULL},
+	{Ctrl('A'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO},
+	{'~',(READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL},
+	{Ctrl('W'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM},
+	{Ctrl('O'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND},
+	{Ctrl('Y'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_ZSEND},
+#ifdef PERSONAL_CORP
+    {'y', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BLOG},
+#endif	
+	{'h', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_HELP},
+	{KEY_TAB, (READ_KEY_FUNC)member_board_article_board_info,(void *)MEMBER_BOARD_ARTICLE_BOARD_NOTE},
+	{Ctrl('D'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_DENY},
+    {Ctrl('E'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_CLUB},
+	{'z', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_MSG},
+	{'!', (READ_KEY_FUNC)read_callfunc0,(void *)Goodbye},
+	{Ctrl('Q'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_INFO},
     {'\n', NULL},
 };
 

@@ -3932,7 +3932,7 @@ char refer_title_bar[STRLEN];
 
 int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     int save_currboardent, save_uinfo_currentboard, fd, num, retnum, key, repeat, ret;
-    char buf[STRLEN];
+    char buf[PATHLEN];
     struct boardheader *board;
     fileheader_t article[1];
     struct read_arg *arg;
