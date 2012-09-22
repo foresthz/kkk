@@ -809,7 +809,7 @@ int t_member_board_articles(void) {
 	
 	set_member_board_article_dir(mode, path, getCurrentUser()->userid);
 	clear();
-    if (load_member_board_articles(path, mode, getCurrentUser())<0) {
+    if (load_member_board_articles(path, mode, getCurrentUser(), 0)<0) {
         move(10, 10);
 		prints("加载驻版信息出错");
 		pressanykey();

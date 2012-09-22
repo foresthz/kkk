@@ -810,7 +810,7 @@ char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char
 	return buf;
 }
 
-int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user) {
+int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user, int force) {
 	int total, i, j, offset, bid;
 	struct board_member *members;
 	struct fileheader *posts;
@@ -834,12 +834,8 @@ int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct 
 			return -5;
 	}
 	
-	if (stat(path, &st) >= 0) {
-		if (st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
-			return (st.st_size / sizeof(struct member_board_article));
-		
-		unlink(path);	
-	}
+	if (stat(path, &st) >= 0 && !force && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
+		return (st.st_size / sizeof(struct member_board_article));
 	
 	total=get_member_boards(user->userid);
 	if (total<0)
@@ -906,7 +902,7 @@ int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct 
 	free(board_posts);
 	board_posts=NULL;
 
-	if ((fd = open(path, O_WRONLY | O_CREAT, 0664))==-1) { 
+	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0664))==-1) { 
 		free(members);
 		free(posts);
 		members=NULL;
@@ -997,14 +993,10 @@ int flush_member_board_articles(int mode, const struct userec *user, int force) 
 	struct stat st;
 	
 	set_member_board_article_dir(mode, path, user->userid);
-	if (stat(path, &st) >= 0) {
-		if (force || st.st_mtime <= (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
-			unlink(path);
-		else
-			return 0;
-	}
+	if (stat(path, &st) >= 0 !force && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
+		return 0;
 	
-	load_member_board_articles(path, mode, user);
+	load_member_board_articles(path, mode, user, force);
 	return 1;
 }
 #endif

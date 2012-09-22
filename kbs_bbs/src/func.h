@@ -854,7 +854,7 @@ while(0)
 	int is_board_member(const char *name, const char *user_id, struct board_member *member);
 	int is_board_member_manager(const char *name, const char *user_id, struct board_member *member);
 	int set_board_member_status(const char *name, const char *user_id, int status);
-	int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user);
+	int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user, int force);
 	char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char *userid);
 	int flush_member_board_articles(int mode, const struct userec *user, int force);
 #endif /* ENABLE_BOARD_MEMBER */
