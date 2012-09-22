@@ -5551,6 +5551,15 @@ int Goodbye(void)                       /*离站 选单 */
     clear_refer_info(REFER_MODE_AT);
     clear_refer_info(REFER_MODE_REPLY);
 #endif
+
+#ifdef NEWSMTH
+    /* 退出时释放board_enter_time */
+    free_board_enter_time();
+#endif
+
+    /* 退出时释放read_pos */
+    freePos();
+
     if (num_user_logins(getCurrentUser()->userid) == 0 || !strcmp(getCurrentUser()->userid, "guest")) {   /*检查还有没有人在线上 */
         FILE *fp;
         char buf[STRLEN], *ptr;
@@ -5566,11 +5575,6 @@ int Goodbye(void)                       /*离站 选单 */
         /* 保存本次的版面光标位置 */
         if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW) && pos_save_time)
             save_article_pos();
-#endif
-
-#ifdef NEWSMTH
-        /* 退出时释放board_enter_time */
-        free_board_enter_time();
 #endif
         fp = fopen("friendbook", "r");  /*搜索系统 寻人名单 */
         while (fp != NULL && fgets(buf, sizeof(buf), fp) != NULL) {

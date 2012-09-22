@@ -81,6 +81,20 @@ void savePos(int mode,char* direct,int pos,struct boardheader* bh)
     ptr->pos=pos;
 }
 
+/* 防止内存泄漏 */
+void freePos()
+{
+    struct _read_pos *ptr, *tmp;
+
+    ptr = read_pos_head;
+    while(ptr!=NULL) {
+        tmp = ptr->next;
+        free(ptr->key);
+        free(ptr);
+        ptr = tmp;
+    }
+}
+
 #ifdef NEWSMTH
 /* 判断用户是否5分钟之内进入过该版 */
 #define ENTER_BOARD_INTERVAL 300
