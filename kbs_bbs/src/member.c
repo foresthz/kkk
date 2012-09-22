@@ -664,7 +664,7 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
                     WAIT_RETURN;
                 } else {
                     do_reply(conf, post);
-					ret=DIRCHANGED;
+					ret=NEWDIRECT;
 					force_update=1;
 				}
                 break;
@@ -756,7 +756,9 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
         return SELCHANGE;
     }
 	
-	flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), force_update);
+	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), force_update))
+		return NEWDIRECT;
+		
 	return ret;
 }
 
@@ -788,8 +790,8 @@ int member_board_article_post(struct _select_def* conf, struct member_board_arti
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
 
-	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1)>=0)
-		return DIRCHANGED;
+	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1))
+		return NEWDIRECT;
 		
 	return FULLUPDATE;
 }

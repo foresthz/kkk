@@ -997,10 +997,15 @@ int flush_member_board_articles(int mode, const struct userec *user, int force) 
 	struct stat st;
 	
 	set_member_board_article_dir(mode, path, user->userid);
-	if (force && stat(path, &st) >= 0) 
-		unlink(path);	
+	if (stat(path, &st) >= 0) {
+		if (force || st.st_mtime <= (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT))
+			unlink(path);
+		else
+			return 0;
+	}
 	
-	return load_member_board_articles(path, mode, user);
+	load_member_board_articles(path, mode, user);
+	return 1;
 }
 #endif
 #endif 
