@@ -993,7 +993,7 @@ int flush_member_board_articles(int mode, const struct userec *user, int force) 
 	struct stat st;
 	
 	set_member_board_article_dir(mode, path, user->userid);
-	if (stat(path, &st) >= 0 !force && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
+	if (!force && stat(path, &st) >= 0 && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
 		return 0;
 	
 	load_member_board_articles(path, mode, user, force);
