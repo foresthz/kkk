@@ -547,8 +547,9 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     char *date;
     char c1[8],c2[8];
     int same=false, orig=0;
-
-    date=ctime((time_t *)&ent->posttime)+4;
+	
+	
+    date=ctime((time_t *)&ent->posttime)+((ent->posttime/86400==time(NULL)/86400)?10:4);
     if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
         strcpy(c1, "\033[1;33m");
         strcpy(c2, "\033[1;36m");
@@ -566,16 +567,238 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     return buf;
 }
 
-int member_board_article_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
-	return DONOTHING;
+int member_board_article_read(struct _select_def* conf, struct member_board_article *article, void* extraarg) {
+	struct read_arg *arg;
+	struct boardheader *board;
+	char buf[STRLEN];
+	int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
+	fileheader_t post[1];
+	
+	if (article==NULL)
+		return DONOTHING;
+	
+	arg=(struct read_arg*)conf->arg;
+	board=(struct boardheader *)getbcache(article->board);
+	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+        clear();
+        prints("指定版面不存在...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+	
+	setbdir(DIR_MODE_NORMAL, buf, board->filename);
+	if ((fd=open(buf, O_RDWR, 0644))<0) {
+        clear();
+        prints("无法打开版面文章列表...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+	
+	retnum=get_records_from_id(fd, article->id, post, 1, &num);
+	close(fd);
+	
+	if (0==retnum) {
+        clear();
+        prints("文章不存在，可能已被删除...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+	
+	setbfile(buf, board->filename, post->filename);
+#ifdef NOREPLY
+    key=ansimore_withzmodem(buf, true, post->title); 
+#else
+    key=ansimore_withzmodem(buf, false, post->title); 
+#endif 	
+
+	save_currboardent=currboardent;
+    save_uinfo_currentboard=uinfo.currentboard;
+
+    currboardent=getbid(board->filename, NULL);
+    currboard=board;
+    uinfo.currentboard=currboardent;
+
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(getCurrentUser()->userid, board->filename, getSession());
+    brc_add_read(post->id, currboardent, getSession());
+#endif
+
+	if (arg->readdata==NULL)
+        arg->readdata=malloc(sizeof(struct member_board_article));
+    memcpy(arg->readdata, article, sizeof(struct member_board_article));
+
+    ret=FULLUPDATE;
+#ifndef NOREPLY
+	move(t_lines-1, 0);
+	prints("\033[44m\033[36m[通知模式] \033[32m[阅读文章]\033[33m 结束Q,| 上一篇 | 下一篇<空格>, | 同主题^x,p ");
+	clrtoeol();
+    resetcolor();
+	
+	if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("RrEexp", key)))
+        key=igetkey();
+	
+	repeat=0;
+	force_update=0;
+    do {
+        if (repeat)
+            key=igetkey();
+    
+        repeat=0;
+        switch(key) {
+            case KEY_LEFT:
+            case 'Q':
+            case 'q':
+            case KEY_REFRESH:
+                break;
+            case 'R':
+            case 'r':
+            case 'Y':
+            case 'y':
+                clear();
+                move(5,0);
+                if(board->flag&BOARD_NOREPLY) {
+                    prints("\t\t\033[1;33m%s\033[0;33m<Enter>\033[m","该版面已设置为不可回复文章...");
+                    WAIT_RETURN;
+                } else if (post->accessed[1]&FILE_READ && !HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
+                    prints("\t\t\033[1;33m%s\033[0;33m<Enter>\033[m","本文已设置为不可回复, 请勿试图讨论...");
+                    WAIT_RETURN;
+                } else {
+                    do_reply(conf, post);
+					ret=DIRCHANGED;
+					force_update=1;
+				}
+                break;
+            case Ctrl('R'):
+                post_reply(conf, post, NULL);
+                break; 
+            case Ctrl('A'):
+                clear();
+                read_showauthor(conf,post,NULL);
+                ret=READ_NEXT;
+                break;
+            case Ctrl('Z'):
+            case 'H':
+                r_lastmsg();
+                break;
+            case 'Z':
+            case 'z':
+                if (HAS_PERM(getCurrentUser(), PERM_PAGE)) {
+                    read_sendmsgtoauthor(conf, post, NULL);
+                    ret=READ_NEXT;
+                }
+                break;
+            case 'u':
+                clear();
+                modify_user_mode(QUERY);
+                t_query(NULL);
+                break;
+            case 'L':
+                if (uinfo.mode==LOOKMSGS)
+                    ret=DONOTHING;
+                else
+                    show_allmsgs();
+                break;
+            case 'o':
+            case 'O':
+                if (HAS_PERM(getCurrentUser(), PERM_BASIC)) {
+                    t_friends();
+                }
+                break;
+            case 'U':
+                ret=board_query();
+                break;
+            case Ctrl('O'):
+                clear();
+                read_addauthorfriend(conf, post, NULL);
+                ret=READ_NEXT;
+                break;
+            case '~':
+                ret=read_authorinfo(conf, post, NULL);
+                break;
+            case Ctrl('W'):
+                ret=read_showauthorBM(conf, post, NULL);
+                break;  
+            case KEY_RIGHT:
+            case KEY_DOWN:
+            case KEY_PGDN:
+                ret=READ_NEXT;
+                break;
+            case KEY_UP:
+                ret=READ_PREV;
+                break;
+            case 's':
+            case 'S':
+                savePos(DIR_MODE_NORMAL, NULL, num, board);
+                ReadBoard();
+                break;
+            case '!':
+                Goodbye();
+                break;
+        }
+	} while(repeat);
+#endif /* NOREPLY */
+	
+	uinfo.currentboard=save_uinfo_currentboard;
+    currboardent=save_currboardent;
+    currboard=((struct boardheader*)getboard(save_currboardent));
+	
+#ifdef HAVE_BRC_CONTROL
+    if (currboard) {
+        brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
+    }
+#endif
+
+	if (ret==FULLUPDATE&&arg->oldpos!=0) {
+        conf->new_pos=arg->oldpos;
+        arg->oldpos=0;
+        list_select_add_key(conf, KEY_REFRESH);
+        arg->readmode=READ_NORMAL;
+        return SELCHANGE;
+    }
+	
+	flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), force_update);
+	return ret;
+}
+
+int member_board_article_post(struct _select_def* conf, struct member_board_article *article, void* extraarg) {
+	struct boardheader *board;
+	int save_currboardent, save_uinfo_currentboard;
+	
+	if (article==NULL)
+		return DONOTHING;
+	
+	board=(struct boardheader *)getbcache(article->board);
+	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+        clear();
+        prints("指定版面不存在...");
+        pressreturn();
+        return FULLUPDATE;
+    }
+	
+	save_currboardent=currboardent;
+    save_uinfo_currentboard=uinfo.currentboard;
+
+    currboardent=getbid(board->filename, NULL);
+    currboard=board;
+    uinfo.currentboard=currboardent;
+
+	Post();
+
+	uinfo.currentboard=save_uinfo_currentboard;
+    currboardent=save_currboardent;
+    currboard=((struct boardheader*)getboard(save_currboardent));
+
+	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1)>=0)
+		return DIRCHANGED;
+		
+	return FULLUPDATE;
 }
 
 struct key_command member_board_article_comms[]={
     {'r', (READ_KEY_FUNC)member_board_article_read, NULL},
+	{Ctrl('P'), (READ_KEY_FUNC)member_board_article_post,NULL},
     {'\n', NULL},
 };
-
-
 
 int t_member_board_articles(void) {
 	static int mode=DIR_MODE_NORMAL;

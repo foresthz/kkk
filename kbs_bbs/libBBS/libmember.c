@@ -991,5 +991,16 @@ int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct 
 	
 	return j;
 }
+
+int flush_member_board_articles(int mode, const struct userec *user, int force) {
+	char path[PATHLEN];
+	struct stat st;
+	
+	set_member_board_article_dir(mode, path, user->userid);
+	if (force && stat(path, &st) >= 0) 
+		unlink(path);	
+	
+	return load_member_board_articles(path, mode, user);
+}
 #endif
 #endif 
