@@ -6803,9 +6803,21 @@ int Read()
     oldhelpmode = helpmode;
     helpmode = HELP_ARTICLE;
 #endif
-    while ((returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)) {
+    while (1/*(returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)*/) {
         returnmode=new_i_read(DIR_MODE_NORMAL, buf, readtitle, (READ_ENT_FUNC) readdoent, &read_comms[0], sizeof(struct fileheader));  /*½øÈë±¾°æ */
         setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
+        if ((returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)) {
+            if (lastboard!=currboard) {
+#ifdef NEWSMTH
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", lastboard->filename, time(0) - usetime, (just_entered_board(currboardent, usetime))?" n":"");
+#else
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", lastboard->filename, time(0) - usetime);
+#endif
+                usetime = time(0);
+            }
+            continue;
+        } else
+            break;
     }
 #ifdef NEW_HELP
     helpmode = oldhelpmode;
