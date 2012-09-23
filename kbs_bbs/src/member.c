@@ -738,8 +738,13 @@ static void  member_board_article_attach_link(char* buf,int buf_len,char *ext,in
     } else {
         if (zd) sprintf(ftype, "&ftype=%d", DIR_MODE_ZHIDING);
 
+#ifdef NEWSMTH
+		snprintf(buf,buf_len,"http://%s/nForum/article/%s/%d?s=%d",
+                get_my_webdomain(0),currboard->filename,fh->groupid,fh->id);
+#else				
         snprintf(buf,buf_len,"http://%s/bbscon.php?bid=%d&id=%d%s",
                  get_my_webdomain(0),currboardent,fh->id, ftype);
+#endif	
     }
 }
 
