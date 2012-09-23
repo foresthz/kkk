@@ -684,6 +684,7 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
 	char buf[PATHLEN];
 	int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
 	fileheader_t post[1];
+	struct board_attach_link_info bali;
 	
 	if (article==NULL)
 		return DONOTHING;
@@ -716,12 +717,17 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     }
 	
 	setbfile(buf, board->filename, post->filename);
+	bali.fh = post;
+    bali.num = num;
+    bali.ftype = bali_get_mode(arg->mode);
+    register_attach_link(board_attach_link, &bali);
 #ifdef NOREPLY
     key=ansimore_withzmodem(buf, true, post->title); 
 #else
     key=ansimore_withzmodem(buf, false, post->title); 
 #endif 	
-
+	register_attach_link(NULL,NULL);
+	
 	save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
 
