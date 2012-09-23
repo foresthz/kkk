@@ -259,6 +259,14 @@ int join_board_member(const char *name) {
 #else
     user_max=MEMBER_USER_MAX_DEFAULT;        
 #endif    
+
+	if (HAS_PERM(getCurrentUser(), PERM_SYSOP))
+		user_max += 6;
+	else if (HAS_PERM(getCurrentUser(), PERM_BMAMANGER))
+		user_max += 3;
+	else
+		;
+	
     count=0;
     if (config.max_members>0) {
         count=get_board_members(board->filename);
