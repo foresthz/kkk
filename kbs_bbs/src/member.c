@@ -1,5 +1,6 @@
 #include "bbs.h"
 #include "read.h"
+#include "md5.h"
 
 #ifdef ENABLE_BOARD_MEMBER
 
@@ -678,13 +679,77 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     return buf;
 }
 
+struct member_board_article_attach_link_info {
+    struct fileheader *fh;
+    int ftype;
+    int num;
+};
+static int inline member_board_article_bali_get_mode(int mode)
+{
+   return DIR_MODE_NORMAL;
+}
+static void  member_board_article_attach_link(char* buf,int buf_len,char *ext,int len,long attachpos,void* arg)
+{
+    struct member_board_article_attach_link_info *bali = (struct member_board_article_attach_link_info*) arg;
+    struct fileheader* fh=bali->fh;
+    char ftype[12];
+    int zd = (POSTFILE_BASENAME(fh->filename)[0] == 'Z');
+    ftype[0] = '\0';
+    if (attachpos!=-1) {
+        char ktype = 's';
+        //if (!public_board(currboard) || bali->ftype == DIR_MODE_DELETED || bali->ftype == DIR_MODE_JUNK) {
+        if (!check_read_perm(NULL, currboard) || bali->ftype == DIR_MODE_DELETED || bali->ftype == DIR_MODE_JUNK) {
+#ifndef DISABLE_INTERNAL_BOARD_PPMM_VIEWING
+            MD5_CTX md5;
+            char info[128], base64_info[128];
+            char *ptr = info;
+            uint32_t ii; uint16_t is;
+            char md5ret[17];
+            get_telnet_sessionid(info, getSession()->utmpent);
+            ptr = info + 9;
+            ii = ((int)time(NULL));         memcpy(ptr, &ii, 4); ptr += 4;       //timestamp
+            is = (uint16_t)currboardent;    memcpy(ptr, &is, 2), ptr += 2;  //bid
+            ii = (fh->id);                  memcpy(ptr, &ii, 4); ptr += 4;       //id
+            is = (uint16_t)(bali->ftype);   memcpy(ptr, &is, 2); ptr += 2;       //ftype
+            ii = bali->num;                 memcpy(ptr, &ii, 4); ptr += 4;       //num
+            ii = (attachpos);               memcpy(ptr, &ii, 4); ptr += 4;       //ap
+
+            MD5Init(&md5);
+            MD5Update(&md5, (unsigned char *) info, 29);
+            MD5Final((unsigned char*)md5ret, &md5);
+
+            memcpy(ptr, md5ret, 4);
+            memcpy(base64_info, info, 9);
+            to64frombits((unsigned char*)base64_info+9, (unsigned char*)info+9, 24);
+            snprintf(buf,buf_len,"http://%s/att.php?%s%s",
+                     get_my_webdomain(0),base64_info,ext);
+            return;
+#else
+            ktype = 'n';
+#endif
+        } else {
+            if (len > 51200) ktype = 'p';
+        }
+
+        if (zd) sprintf(ftype, ".%d.0", DIR_MODE_ZHIDING);
+
+        snprintf(buf,buf_len,"http://%s/att.php?%c.%d.%d%s.%ld%s",
+                 get_my_webdomain(1),ktype,currboardent,fh->id,ftype,attachpos,ext);
+    } else {
+        if (zd) sprintf(ftype, "&ftype=%d", DIR_MODE_ZHIDING);
+
+        snprintf(buf,buf_len,"http://%s/bbscon.php?bid=%d&id=%d%s",
+                 get_my_webdomain(0),currboardent,fh->id, ftype);
+    }
+}
+
 int member_board_article_read(struct _select_def* conf, struct member_board_article *article, void* extraarg) {
 	struct read_arg *arg;
 	struct boardheader *board;
 	char buf[PATHLEN];
 	int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
 	fileheader_t post[1];
-	struct board_attach_link_info bali;
+	struct member_board_article_attach_link_info bali;
 	
 	if (article==NULL)
 		return DONOTHING;
@@ -719,8 +784,8 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
 	setbfile(buf, board->filename, post->filename);
 	bali.fh = post;
     bali.num = num;
-    bali.ftype = bali_get_mode(arg->mode);
-    register_attach_link(board_attach_link, &bali);
+    bali.ftype = member_board_article_bali_get_mode(DIR_MODE_NORMAL);
+    register_attach_link(member_board_article_attach_link, &bali);
 #ifdef NOREPLY
     key=ansimore_withzmodem(buf, true, post->title); 
 #else
