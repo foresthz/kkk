@@ -780,6 +780,13 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
         pressreturn();
         return FULLUPDATE;
     }
+
+	save_currboardent=currboardent;
+    save_uinfo_currentboard=uinfo.currentboard;
+
+    currboardent=getbid(board->filename, NULL);
+    currboard=board;
+    uinfo.currentboard=currboardent;
 	
 	setbfile(buf, board->filename, post->filename);
 	bali.fh = post;
@@ -792,13 +799,6 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     key=ansimore_withzmodem(buf, false, post->title); 
 #endif 	
 	register_attach_link(NULL,NULL);
-	
-	save_currboardent=currboardent;
-    save_uinfo_currentboard=uinfo.currentboard;
-
-    currboardent=getbid(board->filename, NULL);
-    currboard=board;
-    uinfo.currentboard=currboardent;
 
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
