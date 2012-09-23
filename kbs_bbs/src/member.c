@@ -1497,12 +1497,17 @@ int t_member_board_articles(void) {
 	static int mode=DIR_MODE_NORMAL;
 	char path[PATHLEN];
 	int returnmode=CHANGEMODE;
+	int ret;
 	
 	set_member_board_article_dir(mode, path, getCurrentUser()->userid);
 	clear();
-    if (load_member_board_articles(path, mode, getCurrentUser(), 0)<0) {
+	ret=load_member_board_articles(path, mode, getCurrentUser(), 0);
+    if (ret<0) {
         move(10, 10);
-		prints("加载驻版信息出错");
+		if (-2==ret)
+			prints("您尚未加入任何版面,请进入版面后在Ctrl+K的驻版选单中添加");
+		else
+			prints("加载驻版信息出错");
 		pressanykey();
         return 0;
     }
