@@ -857,6 +857,7 @@ while(0)
 	int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user, int force);
 	char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char *userid);
 	int flush_member_board_articles(int mode, const struct userec *user, int force);
+	int get_user_max_member_boards(const struct userec *user);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD

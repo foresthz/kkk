@@ -342,7 +342,8 @@ static int b_member_join(struct _select_def *conf) {
     my_total=get_member_boards(getCurrentUser()->userid);    
     if (my_total<0)
         return -3;
-    my_max=(mine.level>MEMBER_USER_MAX_DEFAULT)?mine.level:MEMBER_USER_MAX_DEFAULT;
+		
+    my_max=get_user_max_member_boards(getCurrentUser());
     
     clear();
     move(0, 0);

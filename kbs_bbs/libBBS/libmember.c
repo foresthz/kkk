@@ -172,6 +172,29 @@ int save_board_member_config(const char *name, struct board_member_config *confi
     board_member_log(NULL, title, log);
     return 0;
 }
+
+int get_user_max_member_boards(const struct userec *user) 
+{
+	int level, user_max;
+	char buf[STRLEN];
+	
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+    level=uvaluetochar(buf, user);  
+    user_max=(level>MEMBER_USER_MAX_DEFAULT)?level:MEMBER_USER_MAX_DEFAULT;
+#else
+    user_max=MEMBER_USER_MAX_DEFAULT;        
+#endif    
+
+	if (HAS_PERM(user, PERM_SYSOP))
+		user_max += 6;
+	else if (HAS_PERM(user, PERM_BMAMANGER))
+		user_max += 3;
+	else
+		;
+		
+	return user_max;	
+}
+
 /**
   * 用户申请成为某版的驻版用户
   * -1: guest不允许驻版
@@ -254,20 +277,10 @@ int join_board_member(const char *name) {
         return -13;   
     sprintf(buf, "用户等级: %d / %d\n", level, config.level);    
     strcat(log, buf);
-    
-    user_max=(level>MEMBER_USER_MAX_DEFAULT)?level:MEMBER_USER_MAX_DEFAULT;
-#else
-    user_max=MEMBER_USER_MAX_DEFAULT;        
 #endif    
-
-	if (HAS_PERM(getCurrentUser(), PERM_SYSOP))
-		user_max += 6;
-	else if (HAS_PERM(getCurrentUser(), PERM_BMAMANGER))
-		user_max += 3;
-	else
-		;
-	
-    count=0;
+	user_max=get_user_max_member_boards(getCurrentUser());
+    
+	count=0;
     if (config.max_members>0) {
         count=get_board_members(board->filename);
         if (count<0)
