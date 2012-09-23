@@ -1177,7 +1177,6 @@ int member_board_article_thread_search(struct _select_def* conf, struct member_b
             nowFh=pFh+now-1;
             needmove=true;
             while (1) {
-                int ret;
                 /* “∆∂Ø÷∏’Î*/
                 if (needmove) {
                     if (down) {
