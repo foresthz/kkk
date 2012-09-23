@@ -589,7 +589,7 @@ void member_board_article_title(struct _select_def* conf) {
     showtitle("[驻版阅读模式]", title);
     update_endline();
     move(1, 0);
-    prints("离开[←,e] 选择[↑,↓] 阅读[→,r] 版面[s] 删除[d] 标题[?,/] 作者[a,A] 寻版[\',\"]\033[m\n");
+    prints("离开[←,e] 选择[↑,↓] 阅读[→,r] 版面[^s] 标题[?,/] 作者[a,A] 寻版[b,B] 帮助[h]\033[m\n");
     prints("\033[44m  编号   发布者       日期    讨论区名称   主题");
     clrtoeol();
     prints("\n");
@@ -960,6 +960,12 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
 		return DIRCHANGED;
 		
 	return ret;
+}
+
+int member_board_article_help(struct _select_def* conf,struct member_board_article *article, int act)
+{
+	show_help("help/memberboardarticlehelp");
+    return FULLUPDATE;
 }
 
 int member_board_article_board_info(struct _select_def* conf,struct member_board_article *article, int act)
@@ -1395,9 +1401,6 @@ int member_board_article_info(struct _select_def* conf,struct member_board_artic
 			read_importpc(conf, post, NULL);
 			break;
 #endif
-		case MEMBER_BOARD_ARTICLE_ACTION_HELP:
-			mainreadhelp(conf, post, NULL);
-			break;
 		case MEMBER_BOARD_ARTICLE_ACTION_DENY:
 			deny_user(conf, post, NULL);
 			break;
@@ -1468,7 +1471,7 @@ struct key_command member_board_article_comms[]={
 #ifdef PERSONAL_CORP
     {'y', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BLOG},
 #endif	
-	{'h', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_HELP},
+	{'h', (READ_KEY_FUNC)member_board_article_help,NULL},
 	{KEY_TAB, (READ_KEY_FUNC)member_board_article_board_info,(void *)MEMBER_BOARD_ARTICLE_BOARD_NOTE},
 	{Ctrl('D'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_DENY},
     {Ctrl('E'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_CLUB},
