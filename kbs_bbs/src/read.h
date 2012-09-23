@@ -166,6 +166,7 @@ int read_showauthorBM(struct _select_def* conf, struct fileheader* fh, void* ext
 
 int getPos(int mode,char* direct,struct boardheader* bh);
 void savePos(int mode,char* direct,int pos,struct boardheader* bh);
+void freePos();
 #ifdef NEWSMTH
 int just_entered_board(int bid, time_t t);
 void free_board_enter_time();

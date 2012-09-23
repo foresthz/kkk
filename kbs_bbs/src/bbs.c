@@ -6809,7 +6809,7 @@ int Read()
         if ((returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)) {
             if (lastboard!=currboard) {
 #ifdef NEWSMTH
-                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", lastboard->filename, time(0) - usetime, (just_entered_board(currboardent, usetime))?" n":"");
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", lastboard->filename, time(0) - usetime, (just_entered_board(getbid(lastboard->filename, NULL), usetime))?" n":"");
 #else
                 newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", lastboard->filename, time(0) - usetime);
 #endif
