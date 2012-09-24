@@ -528,4 +528,28 @@ PHP_FUNCTION(bbs_load_board_member_articles)
 	
 	RETURN_LONG(ret);
 }
+
+PHP_FUNCTION(bbs_get_board_member_articles)
+{
+	char path[PATHLEN];
+	struct stat st;
+	int ret;
+	
+	if (0==strcmp(getCurrentUser()->userid, "guest"))
+		RETURN_LONG(-1);
+	set_member_board_article_dir(DIR_MODE_NORMAL, path, getCurrentUser()->userid);	
+	ret=load_member_board_articles(path, DIR_MODE_NORMAL, getCurrentUser(), 0);
+	
+	if (-2==ret)
+		RETURN_LONG(-2);
+	if (ret<0)
+		RETURN_LONG(-3);
+	if (ret==0)
+		RETURN_LONG(0);
+	
+	if (stat(path, &st)<0)
+        RETURN_LONG(-4);
+    
+	RETURN_LONG(st.st_size/sizeof(struct member_board_article));
+}
 #endif // ENABLE_BOARD_MEMBER
