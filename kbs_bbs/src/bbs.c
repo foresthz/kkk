@@ -5557,6 +5557,11 @@ int Goodbye(void)                       /*离站 选单 */
     free_board_enter_time();
 #endif
 
+#ifdef SAVE_POS
+    /* 保存本次的版面光标位置 */
+    if (!strcmp(getCurrentUser()->userid, "guest") && !DEFINE(getCurrentUser(), DEF_FIRSTNEW) && pos_save_time)
+        save_article_pos();
+#endif
     /* 退出时释放read_pos */
     freePos();
 
@@ -5570,11 +5575,6 @@ int Goodbye(void)                       /*离站 选单 */
 #if !defined(FREE) && !defined(ZIXIA)
         else
             clear_msg(getCurrentUser()->userid);
-#endif
-#ifdef SAVE_POS
-        /* 保存本次的版面光标位置 */
-        if (!DEFINE(getCurrentUser(), DEF_FIRSTNEW) && pos_save_time)
-            save_article_pos();
 #endif
         fp = fopen("friendbook", "r");  /*搜索系统 寻人名单 */
         while (fp != NULL && fgets(buf, sizeof(buf), fp) != NULL) {
