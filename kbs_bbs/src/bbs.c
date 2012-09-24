@@ -6804,14 +6804,15 @@ int Read()
     helpmode = HELP_ARTICLE;
 #endif
     while (1/*(returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)*/) {
+        struct boardheader *p=currboard;
         returnmode=new_i_read(DIR_MODE_NORMAL, buf, readtitle, (READ_ENT_FUNC) readdoent, &read_comms[0], sizeof(struct fileheader));  /*½øÈë±¾°æ */
         setbdir(DIR_MODE_NORMAL, buf, currboard->filename);
         if ((returnmode==CHANGEMODE)&&!(currboard->flag&BOARD_GROUP)) {
-            if (lastboard!=currboard) {
+            if (p!=currboard) {
 #ifdef NEWSMTH
-                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", lastboard->filename, time(0) - usetime, (just_entered_board(getbid(lastboard->filename, NULL), usetime))?" n":"");
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld%s", p->filename, time(0) - usetime, (just_entered_board(getbid(p->filename, NULL), usetime))?" n":"");
 #else
-                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", lastboard->filename, time(0) - usetime);
+                newbbslog(BBSLOG_BOARDUSAGE, "%-20s Stay: %5ld", p->filename, time(0) - usetime);
 #endif
                 usetime = time(0);
             }
