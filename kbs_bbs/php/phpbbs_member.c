@@ -501,12 +501,15 @@ PHP_FUNCTION(bbs_load_board_member_articles)
 	
 	if (start<0)
 		start=0;
+	start = total-start-count;
+	if (start<0)
+		start=0;
 	if (count>total-start)
         count=total-start;
     if (count<=0)
         RETURN_LONG(0);
 	
-	start=total-count+1;
+	start++;
 	if (array_init(list)!=SUCCESS)
         RETURN_LONG(-5);
 	
