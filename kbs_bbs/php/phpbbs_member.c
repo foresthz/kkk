@@ -144,17 +144,81 @@ PHP_FUNCTION(bbs_get_board_member)
 
 PHP_FUNCTION(bbs_load_board_members)
 {
-    RETURN_FALSE;
+	char *name;
+	int name_len, sort, start, count, ret, i;
+	zval *list, *element;
+	const struct boardheader *board;
+	struct board_member *members = NULL;
+	
+	if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slllz", &name, &name_len, &sort, &start, &count, &list)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (!PZVAL_IS_REF(list)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-1);
+    }
+	
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-2);
+
+	if (start <= 0)
+		start=0;
+	if (count<=0)
+		RETURN_LONG(-3);
+	if (count>20)
+		count=20;
+		
+	members=emalloc(sizeof(struct board_member)*count);
+	if (NULL==members)
+		RETURN_LONG(-4);
+		
+	bzero(members, sizeof(struct board_member)*count);
+	ret=load_board_members(board->filename, members, sort, start, count);
+	
+	for (i=0;i<ret;i++) {
+		MAKE_STD_ZVAL(element);
+		array_init(element);
+		bbs_make_board_member_array(element, members+i)
+		zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
+	}
+	
+	efree(members);
+	
+	if (ret<0)
+		RETURN_LONG(-4);
+		
+	RETURN_LONG(ret);
 }
 
 PHP_FUNCTION(bbs_load_member_boards)
 {
+	
     RETURN_FALSE;
 }
 
 PHP_FUNCTION(bbs_get_board_members)
 {
-    RETURN_FALSE;
+	char *name;
+	int name_len, count;
+	const struct boardheader *board;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-2);
+		
+	count=get_board_members(board->filename);
+	if (count<0)
+		RETURN_LONG(-3);
+		
+    RETURN_LONG(count);
 }
 
 PHP_FUNCTION(bbs_get_member_boards)
