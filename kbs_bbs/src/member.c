@@ -810,6 +810,11 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
     brc_add_read(post->id, currboardent, getSession());
 #endif
+#ifdef ENABLE_REFER
+    /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
+    set_refer_info(currboardent, post->id, REFER_MODE_AT);
+    set_refer_info(currboardent, post->id, REFER_MODE_REPLY);
+#endif
 
 	if (arg->readdata==NULL)
         arg->readdata=malloc(sizeof(struct member_board_article));
