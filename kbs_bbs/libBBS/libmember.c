@@ -179,7 +179,7 @@ int get_user_max_member_boards(const struct userec *user)
 	char buf[STRLEN];
 	
 #if defined(NEWSMTH) && !defined(SECONDSITE)
-    level=uvaluetochar(buf, user);  
+    level=uvaluetochar(buf, (struct userec *)user);  
     user_max=(level>MEMBER_USER_MAX_DEFAULT)?level:MEMBER_USER_MAX_DEFAULT;
 #else
     user_max=MEMBER_USER_MAX_DEFAULT;        
@@ -423,8 +423,9 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     row = mysql_fetch_row(res);
     
     if (NULL!=member) {
-        member->status=BOARD_MEMBER_STATUS_NONE;
-        
+        bzero(member, sizeof(struct board_member));
+		member->status=BOARD_MEMBER_STATUS_NONE;
+		
         if (row != NULL) {
             strncpy(member->board, row[0], 32);
             strncpy(member->user, row[1], IDLEN+1);
@@ -606,6 +607,8 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
     		const struct boardheader *board;
 		if (!getbid(row[0], &board)||board->flag&BOARD_GROUP||!check_read_perm(user,board)) {
 			delete_board_member_record(row[0], row[1]);
+		} else if (!check_read_perm(getCurrentUser(),board)) {
+		
 		} else {
 			i++;
 			if (i>num)
@@ -718,7 +721,9 @@ int load_board_member_request(const char *name, struct board_member_config *mine
         return -3;
     if (!haspostperm(getSession()->currentuser, board->filename))
         return -4;
-        
+    
+	mine->approve=0;
+	mine->max_members=0;
     mine->logins=getSession()->currentuser->numlogins;
     mine->posts=getSession()->currentuser->numposts;
 #if defined(NEWSMTH) && !defined(SECONDSITE)
@@ -771,6 +776,16 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     if (old==status)
         return 0;
     
+	switch(status) {
+		case BOARD_MEMBER_STATUS_NONE:
+		case BOARD_MEMBER_STATUS_CANDIDATE:
+		case BOARD_MEMBER_STATUS_NORMAL:
+		case BOARD_MEMBER_STATUS_MANAGER:
+			break;
+		default:
+			return -7;
+	}
+	
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));

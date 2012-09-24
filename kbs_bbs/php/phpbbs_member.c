@@ -38,7 +38,7 @@ PHP_FUNCTION(bbs_load_board_member_config)
 
     if (!PZVAL_IS_REF(array)) {
         zend_error(E_WARNING, "Parameter wasn't passed by reference");
-        RETURN_LONG(-1);
+        RETURN_FALSE;
     }
 	
 	if (load_board_member_config(name, &config)<0)
@@ -124,28 +124,109 @@ PHP_FUNCTION(bbs_join_board_member)
 
 PHP_FUNCTION(bbs_leave_board_member)
 {
-    RETURN_FALSE;
+    char *name;
+	int name_len;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	RETURN_LONG(leave_board_member(name));	
 }
 
-PHP_FUNCTION(bbs_approve_board_member)
+PHP_FUNCTION(bbs_set_board_member_status)
 {
-    RETURN_FALSE;
+	char *name, *id;
+	int name_len, id_len;
+	long status;
+    const struct boardheader *board;
+	struct userec *user;
+	
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &name, &name_len, &id, &id_len, &status)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-2);
+
+	if (id_len>IDLEN)
+        RETURN_LONG(-3);
+		
+    if (!getuser(id, &user))
+        RETURN_LONG(-3);
+		
+	RETURN_LONG(set_board_member_status(board->filename, user->userid, status));	
 }
 
 PHP_FUNCTION(bbs_remove_board_member)
 {
-    RETURN_FALSE;
+    char *name, *id;
+	int name_len, id_len;
+	const struct boardheader *board;
+	struct userec *user;
+	
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &name, &name_len, &id, &id_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-2);
+
+	if (id_len>IDLEN)
+        RETURN_LONG(-3);
+		
+    if (!getuser(id, &user))
+        RETURN_LONG(-3);
+		
+	RETURN_LONG(remove_board_member(board->filename, user->userid));	
 }
 
 PHP_FUNCTION(bbs_get_board_member)
 {
-    RETURN_FALSE;
+    char *name, *id;
+	int name_len, id_len;
+	const struct boardheader *board;
+	struct userec *user;
+	struct board_member member;
+	zval *status;
+	int ret;
+	
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssz", &name, &name_len, &id, &id_len, &status)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (!PZVAL_IS_REF(status)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-1);
+    }
+	
+	if (id_len>IDLEN)
+        RETURN_LONG(-1);
+		
+    if (!getuser(id, &user))
+        RETURN_LONG(-1);
+	
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-2);
+		
+	if (!check_read_perm(user, board))
+		RETURN_LONG(-3);
+		
+	ret=get_board_member(board->filename, user->userid, &member);
+	if (ret<0)
+		RETURN_LONG(-4);
+		
+	bbs_make_board_member_array(status, &member);
+	RETURN_LONG(ret);
 }
 
 PHP_FUNCTION(bbs_load_board_members)
 {
 	char *name;
-	int name_len, sort, start, count, ret, i;
+	int name_len, ret, i;
+	long sort, start, count;
 	zval *list, *element;
 	const struct boardheader *board;
 	struct board_member *members = NULL;
@@ -168,8 +249,6 @@ PHP_FUNCTION(bbs_load_board_members)
 		start=0;
 	if (count<=0)
 		RETURN_LONG(-3);
-	if (count>20)
-		count=20;
 		
 	members=emalloc(sizeof(struct board_member)*count);
 	if (NULL==members)
@@ -181,7 +260,7 @@ PHP_FUNCTION(bbs_load_board_members)
 	for (i=0;i<ret;i++) {
 		MAKE_STD_ZVAL(element);
 		array_init(element);
-		bbs_make_board_member_array(element, members+i)
+		bbs_make_board_member_array(element, members+i);
 		zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
 	}
 	
@@ -195,8 +274,51 @@ PHP_FUNCTION(bbs_load_board_members)
 
 PHP_FUNCTION(bbs_load_member_boards)
 {
+	char *id;
+	int id_len, ret, i;
+	long sort, start, count;
+	zval *list, *element;
+	struct userec *user;
+	struct board_member *members = NULL;
 	
-    RETURN_FALSE;
+	if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slllz", &id, &id_len, &sort, &start, &count, &list)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (!PZVAL_IS_REF(list)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-1);
+    }
+	
+	if (id_len>IDLEN)
+        RETURN_LONG(-1);
+    if (!getuser(id, &user))
+        RETURN_LONG(-1);
+		
+	if (start <= 0)
+		start=0;
+	if (count<=0)
+		RETURN_LONG(-2);
+		
+	members=emalloc(sizeof(struct board_member)*count);
+	if (NULL==members)
+		RETURN_LONG(-3);
+		
+	bzero(members, sizeof(struct board_member)*count);
+	ret=load_member_boards(user->userid, members, sort, start, count);
+	
+	for (i=0;i<ret;i++) {
+		MAKE_STD_ZVAL(element);
+		array_init(element);
+		bbs_make_board_member_array(element, members+i);
+		zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
+	}
+	
+	efree(members);
+	
+	if (ret<0)
+		RETURN_LONG(-4);
+		
+	RETURN_LONG(ret);
 }
 
 PHP_FUNCTION(bbs_get_board_members)
@@ -223,7 +345,65 @@ PHP_FUNCTION(bbs_get_board_members)
 
 PHP_FUNCTION(bbs_get_member_boards)
 {
-    RETURN_FALSE;
+    char *id;
+	int id_len, count;
+	struct userec *user;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &id, &id_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (id_len>IDLEN)
+        RETURN_LONG(-1);
+    if (!getuser(id, &user))
+        RETURN_LONG(-1);
+		
+	count=get_member_boards(user->userid);
+	if (count<0)
+		RETURN_LONG(-2);
+		
+    RETURN_LONG(count);
 }
 
+PHP_FUNCTION(bbs_get_user_max_boards)
+{
+	char *id;
+	int id_len;
+	struct userec *user;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &id, &id_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (id_len>IDLEN)
+        RETURN_LONG(-1);
+    if (!getuser(id, &user))
+        RETURN_LONG(-1);
+		
+	RETURN_LONG(get_user_max_member_boards(user));
+}
+
+PHP_FUNCTION(bbs_load_board_member_request)
+{
+    char *name;
+	int name_len;
+	zval *array;
+	struct board_member_config config;
+
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &name, &name_len, &array)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+    if (!PZVAL_IS_REF(array)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_FALSE;
+    }
+	
+	if (load_board_member_request(name, &config)<0)
+	    RETURN_FALSE;
+	
+	if (array_init(array) != SUCCESS)
+	    RETURN_FALSE;
+		
+	bbs_make_board_member_config_array(array, &config);
+	
+	RETURN_TRUE;
+}
 #endif // ENABLE_BOARD_MEMBER
