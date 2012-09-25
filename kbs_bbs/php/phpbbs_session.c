@@ -267,7 +267,7 @@ PHP_FUNCTION(bbs_setonlineuser)
 }
 
 /* long bbs_check_ban_ip(string userid, string fromhost)
- *   return:  0 - ok,  1 - ban by global,  2 - ban by user defined
+ *   return:  0 - ok,  1 - ban by global,  2 - ban by user defined, 3 - NXUSER
  */
 PHP_FUNCTION(bbs_check_ban_ip)
 {
@@ -290,7 +290,7 @@ PHP_FUNCTION(bbs_check_ban_ip)
             }
         }
     } else {
-        RETURN_LONG(2);
+        RETURN_LONG(3);
     }
 
     RETURN_LONG(0);
