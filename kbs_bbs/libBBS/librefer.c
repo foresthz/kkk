@@ -148,8 +148,9 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     int times=0;
     //int sent=false;
     int i;//,uid;
-
+#ifdef ENABLE_BOARD_MEMBER
     bzero(boards, MAX_BOARD_REFER * sizeof(int));
+#endif
     for (i=0;i<MAX_REFER_INCEPTS;i++)
         refer_incepts[i]=0;
 
@@ -172,6 +173,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
         user = getuserbynum(users[i]);
         send_refer_msg_to(user, board, fh, tmpfile);
     }
+#ifdef ENABLE_BOARD_MEMBER
     for (i=0;i<MAX_BOARD_REFER;i++) {
         if (boards[i]<=0)
             break;
@@ -179,6 +181,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
         if (NULL!=to_board)
             send_refer_msg_to_board(to_board, board, fh, tmpfile);
     }
+#endif
     /*
     while(ptrlen>0) {
         last_c=c;
