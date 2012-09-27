@@ -64,6 +64,7 @@ static const CMD_LIST CMD[]={
     {"QueryClub",           query_club_rights,                      0},
     {"SearchIP",            search_ip,                              0},
     {"SearchTrace",         searchtrace,                            0},
+    {"ClearNickPlans",      clear_nick_plans,                       0},
     {"SelectBoard",         Select,                                 0},
     {"XBoardManager",       set_BM,                                 0},
     {"SetAlarm",            set_clock,                              0},

@@ -85,6 +85,7 @@ KBS_COMM_LISTS_FUNC_V(query_club_rights);
 KBS_COMM_LISTS_FUNC_V(ReadBoard);
 KBS_COMM_LISTS_FUNC_V(search_ip);
 KBS_COMM_LISTS_FUNC_V(searchtrace);
+KBS_COMM_LISTS_FUNC_V(clear_nick_plans);
 KBS_COMM_LISTS_FUNC_V(set_BM);
 KBS_COMM_LISTS_FUNC_V(set_clock);
 #ifndef SECONDSITE

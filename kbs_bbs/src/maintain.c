@@ -1983,6 +1983,58 @@ int searchtrace(void)
     return 0;
 }
 
+/**
+ * 由于贵站不杀用户了，因此加入此功能删除用户的昵称和说明档
+ * windinsn , sep 27, 2012
+ */
+int clear_nick_plans(void)
+{
+    struct userec *user;
+    char buf[255], ans[4];
+	
+    if (!check_systempasswd())
+        return -1;
+    
+	clear(); 
+	move(0,0); 
+	prints("\033[1;32m删除用户的昵称和说明档\033[m");
+    modify_user_mode(ADMIN);
+    move(1,0); 
+	usercomplete("查询用户: ",buf);
+    if (!buf[0]) {
+        move(2,0); 
+		prints("取消...");
+        WAIT_RETURN; 
+		clear();
+        return -1;
+    }
+    if (!getuser(buf,&user)) {
+        move(2,0); 
+		prints("非法用户...");
+        WAIT_RETURN; 
+		clear();
+        return -1;
+    }
+	
+	sprintf(buf,"您要删除用户 \033[1;32m%s\033[m 的昵称和说明档吗? (Y/N) [N]: ",user->userid);
+    move(2,0); 
+	clrtobot();
+    if (getdata(2,0,buf,ans,2,DOECHO,NULL,true)==-1) {
+        clear();
+        return -1;
+    }
+	if (ans[0]=='y'||ans[0]=='Y') {
+	    sethomefile(buf, user->userid, "plans");
+		my_unlink(buf);
+		snprintf(user->username,NAMELEN,"%s",user->userid);
+		update_username(user->username, NULL, user->userid);
+		
+		sprintf(buf, "清除用户 %s 的昵称和说明档", user->userid);
+		securityreport(buf,user,NULL, getSession());
+        newbbslog(BBSLOG_USER,"clear_nick_plans: %s",user->userid);
+	}
+	return 0;
+}
 
 void trace_state(flag, name, size)
 int flag, size;
