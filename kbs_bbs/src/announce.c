@@ -1698,15 +1698,13 @@ void a_manager(MENU *pm,int ch)
                                 break;
                         };
                     }
-#ifdef BOARD_SECURITY_LOG
                     char unchanged_T[STRLEN];
                     strcpy(unchanged_T, changed_T);
-#endif
                     a_prompt2(-2, "ÐÂ±êÌâ: ", changed_T);
                     /*
                      * modified by netty to properly handle title change,add bm by SmallPig
                      */
-                    if (*changed_T) {
+                    if (*changed_T && strcmp(unchanged_T, changed_T)) {
                         if (dashf(fpath)) {
                             sprintf(genbuf, "%-38.38s %s ", changed_T, getCurrentUser()->userid);
                             strcpy(item->title, genbuf);
