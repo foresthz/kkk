@@ -1361,13 +1361,28 @@ void a_delete(MENU *pm)
         igetkey();
     } else {
         bmlog(getCurrentUser()->userid,currboard->filename,13,1);
-#ifdef BOARD_SECURITY_LOG
         char filename[STRLEN], board[STRLEN], buf[MAXPATH], title[STRLEN];
         FILE *fn;
         gettmpfilename(filename, "ann_del");
         board[0] = '\0';
         strcpy(buf, pm->path);
         a_chkbmfrmpath(buf, board);
+        /* 精华区安全记录 */
+        if (!S_ISLNK(st.st_mode) && (fn=fopen(filename, "w"))!=NULL) {
+            fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path+10);
+            fclose(fn);
+            
+            if (board[0])
+                sprintf(buf, " %s 版", board);
+            else
+                sprintf(buf, "系统");
+            sprintf(title, "删除%s精华区%s <%s>", buf, S_ISDIR(st.st_mode)?"目录":"文件", anntitle);
+            ann_security_report(filename, getCurrentUser(), title);
+
+            unlink(filename);
+        }
+
+#ifdef BOARD_SECURITY_LOG
         if (board[0]) { /* 将记录添加至对应的版面 */
             if ((fn=fopen(filename, "w"))!=NULL) {
                 fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", path+17);

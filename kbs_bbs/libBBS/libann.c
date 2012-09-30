@@ -1222,3 +1222,42 @@ long a_append_attachment(char *fpath, char *attachpath)
     return attachpos;
 }
 
+/* 精华区安全记录，自动发文至AnnSecurity
+ * filename: 操作附加记录信息
+ * user: 操作用户
+ * title: 标题
+ * bname: 操作版面
+ * bname: 操作文件路径
+ */
+int ann_security_report(const char *filename, struct userec *user, const char *title)
+{
+    FILE *fn, *fin;
+    int size;
+    char fname[STRLEN], buf[READ_BUFFER_SIZE];
+
+    gettmpfilename(fname, "ann_security_report");
+    if ((fn=fopen(fname, "w"))!=NULL) {
+        fprintf(fn, "\033[36m精华区安全记录\033[m\n");
+        fprintf(fn, "\033[33m记录原因: \033[32m%s %s\033[m\n", user->userid, title);
+        fprintf(fn, "\033[33m用户来源: \033[32m%s\033[m\n", getSession()->fromhost);
+        if (filename != NULL) {
+            if (!(fin = fopen(filename, "r"))) {
+                fprintf(fn, "\n\033[45;31m系统错误，无法记录相关详细信息\033[K\033[m\n");
+            } else {
+                fprintf(fn, "\n\033[36m本次操作附加信息\033[m\n");
+                while (true) {
+                    size = fread(buf, 1, READ_BUFFER_SIZE, fin);
+                    if (size == 0)
+                        break;
+                    fwrite(buf, size, 1, fn);
+                }
+                fclose(fin);
+            }
+        }
+        fclose(fn);
+
+        post_file(user, "", fname, "annsecurity", title, 0, 2, getSession());
+    }
+
+    return 0;
+}
