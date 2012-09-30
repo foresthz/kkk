@@ -1421,7 +1421,7 @@ MENU *pm;
                 if (board[0]) { /* 将记录添加至对应的版面 */
                     if ((fn=fopen(filename, "w"))!=NULL) {
                         fprintf(fn, "\033[33m档案名称: \033[31m%s\033[m -> \033[32m%s\033[m\n", originname, fname);
-                        fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", pm->path+17);
+                        fprintf(fn, "\033[33m档案路径: \033[4;32m%s/%s\033[m\n", pm->path+17, fname);
                         fclose(fn);
                     }
                     strncpy(buf, M_ITEM(pm,pm->now)->title, 39);
@@ -1734,7 +1734,7 @@ void a_manager(MENU *pm,int ch)
                             a_chkbmfrmpath(buf, board);
                             if (board[0]) { /* 将记录添加至对应的版面 */
                                 if ((fn=fopen(filename, "w"))!=NULL) {
-                                    fprintf(fn, "\033[33m原始标题: \033[4;32m%s\033[m\n", unchanged_T);
+                                    fprintf(fn, "\033[33m档案标题: \033[31m%s\033[m -> \033[32m%s\033[m\n", unchanged_T, changed_T);
                                     fprintf(fn, "\033[33m档案路径: \033[4;32m%s\033[m\n", fpath+17);
                                     fclose(fn);
                                 }
