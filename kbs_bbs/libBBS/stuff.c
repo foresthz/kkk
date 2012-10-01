@@ -3306,6 +3306,35 @@ void securityreport(char *str, struct userec *lookupuser, char fdata[9][STRLEN],
     }
 }
 
+/* 新的安全记录函数，可传入附加的文件信息 */
+void new_security_report(const char *filename, struct userec *user, const char *title, session_t *session)
+{
+    FILE *fn, *fin;
+    char fname[STRLEN], buf[READ_BUFFER_SIZE];
+    int size;
+
+    gettmpfilename(fname, "new_security_report");
+    if ((fn=fopen(fname, "w"))!=NULL) {
+        fprintf(fn, "系统安全记录系统\n\033[32m原因：%s\033[m\n", title);
+        if (user) {
+            fprintf(fn, "以下是个人资料");
+            getuinfo(fn, user);
+        }
+        if (filename && (fin = fopen(filename, "r"))!=NULL) {
+            fprintf(fn, "\n\033[36m本次操作附加信息\033[m\n");
+            while (true) {
+                size = fread(buf, 1, READ_BUFFER_SIZE, fin);
+                if (size == 0)
+                    break;
+                fwrite(buf, size, 1, fn);
+            }
+            fclose(fin);
+        }
+        fclose(fn);
+        post_file(session->currentuser, "", fname, "syssecurity", title, 0, 2, session);
+    }
+}
+
 /* etnlegend, 2006.11.17, 获取动态链接库中的函数指针... */
 void* dl_function(const char *s_library,const char *s_function,void **p_handle)
 {

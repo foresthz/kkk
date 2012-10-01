@@ -2024,14 +2024,39 @@ int clear_nick_plans(void)
         return -1;
     }
 	if (ans[0]=='y'||ans[0]=='Y') {
+        FILE *fn;
+        char file[STRLEN];
+
 	    sethomefile(buf, user->userid, "plans");
+        gettmpfilename(file, "nick_plan_back");
+        if ((fn=fopen(file, "w"))!=NULL) {
+            fprintf(fn, "\033[33m用户原昵称: \033[31m%s\033[m\n", user->username);
+            if (dashf(buf)){
+                FILE *fin;
+                char buffer[READ_BUFFER_SIZE];
+                int size;
+                if ((fin=fopen(buf, "r"))!=NULL) {
+                    fprintf(fn, "\033[33m用户原说明档:\033[m\n");
+                    while (true) {
+                        size = fread(buffer, 1, READ_BUFFER_SIZE, fin);
+                        if (size == 0)
+                            break;
+                        fwrite(buffer, size, 1, fn);
+                    }
+                    fclose(fin);
+                }
+            }
+            fclose(fn);
+        }
 		my_unlink(buf);
 		snprintf(user->username,NAMELEN,"%s",user->userid);
 		update_username(user->username, NULL, user->userid);
 		
 		sprintf(buf, "清除用户 %s 的昵称和说明档", user->userid);
-		securityreport(buf,user,NULL, getSession());
+		//securityreport(buf,user,NULL, getSession());
+        new_security_report(file, user, buf, getSession());
         newbbslog(BBSLOG_USER,"clear_nick_plans: %s",user->userid);
+        prompt_return("操作完成", 0, 0);
 	}
 	return 0;
 }
