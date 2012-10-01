@@ -606,7 +606,7 @@ int board_security_report(const char *filename, struct userec *user, const char 
         fprintf(fout, "\033[33m文章标题: \033[4;32m%s\033[m\n", xfh->title);
         fprintf(fout, "\033[33m文章作者: \033[4;32m%s\033[m\n", xfh->owner);
         fprintf(fout, "\033[33m文章ID号: \033[4;32m%d\033[m\n", xfh->id);
-        fprintf(fout, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime((time_t *)&t));
+        fprintf(fout, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime(&t));
     }
     fclose(fout);
     fh.eff_size = get_effsize_attach(buf, &fh.attachment);

@@ -1233,6 +1233,7 @@ int ann_security_report(const char *filename, struct userec *user, const char *t
 {
     FILE *fn, *fin;
     int size;
+    unsigned char accessed[2];
     char fname[STRLEN], buf[READ_BUFFER_SIZE];
 
     gettmpfilename(fname, "ann_security_report");
@@ -1256,7 +1257,8 @@ int ann_security_report(const char *filename, struct userec *user, const char *t
         }
         fclose(fn);
 
-        post_file(user, "", fname, "annsecurity", title, 0, 2, getSession());
+        accessed[0]=accessed[1]=0;
+        post_file_alt(fname, user, title, "annsecurity", NULL, 0x04, accessed);
     }
 
     return 0;
