@@ -463,7 +463,7 @@ int main(void)
     /*生成今日数据*/
     system("killall -USR2 bbslogd");
     /* bbslogd完成比较慢，休息一会再去处理 */
-    sleep(1);
+    sleep(100);
     if ((fp = fopen(BBSHOME "/boardusage.log.0", "r")) == NULL) {
         printf("cann't open boardusage.log.0\n");
         return 1;
