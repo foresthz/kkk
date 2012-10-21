@@ -205,12 +205,11 @@ int dokillalldir()
 static char tmpbuf[255];
 static char genbuf1[255];
 
-#ifdef SECONDSITE
+#ifdef NEWSMTH
 #define SAVELIVE
 #endif
 
 int setuserid2(int num, const char *userid);        /* 设置user num的id为user id,userd使用 */
-#ifndef SAVELIVE
 
 int killauser(struct userec *theuser, void *data)
 {
@@ -226,7 +225,12 @@ int killauser(struct userec *theuser, void *data)
 
     a = compute_user_value(&copyuser);
 
-    if ((a <= 0)&&strcmp(copyuser.userid,"guest")) {
+#ifndef SAVELIVE
+    if ((a <= 0)&&strcmp(copyuser.userid,"guest"))
+#else
+    if (HAS_PERM(copyuser, PERM_SUICIDE) && (a <= 0))
+#endif
+    {
         newbbslog(BBSLOG_USIES, "kill user %s", copyuser.userid);
         a = searchuser(copyuser.userid);
         while (kick_user_utmp(a, NULL, SIGKILL) == 10)
@@ -248,14 +252,15 @@ int killauser(struct userec *theuser, void *data)
 
     return 0;
 }
-#endif
 int dokilluser()
 {
 #ifndef SAVELIVE
     newbbslog(BBSLOG_USIES, "Started kill users\n");
+#else
+    newbbslog(BBSLOG_USIES, "Started kill suicided users ... due to SAVE_LIFE is defined\n");
+#endif
     apply_users(killauser, NULL);
     newbbslog(BBSLOG_USIES, "kill users done\n");
-#endif
     return 0;
 }
 int updateauser(struct userec *user,void *arg){
