@@ -228,7 +228,7 @@ int killauser(struct userec *theuser, void *data)
 #ifndef SAVELIVE
     if ((a <= 0)&&strcmp(copyuser.userid,"guest"))
 #else
-    if (HAS_PERM(copyuser, PERM_SUICIDE) && (a <= 0))
+    if (HAS_PERM(&copyuser, PERM_SUICIDE) && (a <= 0))
 #endif
     {
         newbbslog(BBSLOG_USIES, "kill user %s", copyuser.userid);
