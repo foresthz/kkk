@@ -347,7 +347,7 @@ int crash2(int x, int y, int k, int n, int dir)
 
 int start(void)
 {
-    int c,t,first,newn;
+    int c,t,tn,first,newn;
     struct tms faint;
     win_showrec();
     while (1) {
@@ -391,7 +391,8 @@ int start(void)
                 if (c=='h'||c=='H'||c==KEY_UP) if (!crash2(x,y,k,(n+3)%KDIR,0)) {n=(n+3)%KDIR;sh2();}
                 if (c=='J'||c=='j') if (!crash2(x,y,k,(n+2)%KDIR,0)) {n=(n+2)%KDIR;sh2();}
                 if (c==' ') {while (!crash2(x,y,k,n,DOWN))y++;sh2();down();break;}
-                if (times(&faint)-t>delay||c==KEY_DOWN||c=='z'||c=='Z') {
+                tn = times(&faint);
+                if (tn-t>delay||c==KEY_DOWN||c=='z'||c=='Z') {
                     t=times(&faint);
                     if (crash2(x,y,k,n,DOWN)) {down();break;}
                     else {y++;sh2();}
