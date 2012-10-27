@@ -1080,15 +1080,35 @@ PHP_FUNCTION(bbs_threads_bmfunc)
         ret = count;
     } else if ((operate == 10) || (operate == 11)) /* make total */ {
         char title[STRLEN], *ptr, tmpf[PATHLEN];
+#ifdef BOARD_SECURITY_LOG
+        char buf[PATHLEN];
+        FILE *fp = NULL;
+#ifdef NEWSMTH
+        if (!goddelete) {
+#endif
+        buf = gettmpfilename(buf, "bm_func");
+        fp = fopen(buf, "w");
+#ifdef NEWSMTH
+        }
+#endif
+#endif
         for (i=0; i<ret; i++) {
             a_SeSave(NULL, bp->filename, &articles[i], i>0, NULL, 0, operate==11, getCurrentUser()->userid);
+#ifdef BOARD_SECURITY_LOG
+            if (fp) {
+                char date[8];
+                strncpy(date, ctime((time_t *)articles[i].posttime) + 4, 6);
+                date[6] = '\0';
+                fprintf(fp, "%8d %-12s %6s  %s%s\n", articles[i].id, articles[i].owner, date, articles[i].id==articles[i].groupid?"¡ñ ":"", articles[i].title);
+            }
+#endif
         }
         if (ret > 0) {
 #ifdef BOARD_SECURITY_LOG
-            char buf[PATHLEN];
 #ifdef NEWSMTH
             if (!goddelete) {
 #endif
+            fclose(fp);
             char tmp[STRLEN], logtitle[STRLEN];
             if (strncmp(articles[0].title, "Re: ", 4)==0)
                 strcpy(logtitle, articles[0].title+4);
@@ -1100,7 +1120,6 @@ PHP_FUNCTION(bbs_threads_bmfunc)
             } else
                 strcpy(tmp, logtitle);
             sprintf(logtitle, "%s <%s>", "ºÏ¼¯", tmp);
-            gettmpfilename(buf, "bm_func");
             board_security_report(buf, getCurrentUser(), logtitle, bp->filename, &articles[0]);
 #ifdef NEWSMTH
             }
