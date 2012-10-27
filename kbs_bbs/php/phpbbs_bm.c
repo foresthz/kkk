@@ -1012,10 +1012,19 @@ PHP_FUNCTION(bbs_threads_bmfunc)
     int ret, haveprev=0, i, fd, ent, count;
     struct fileheader *articles, fh;
 
+#ifdef NEWSMTH
+    int goddelete = 0;
+#endif
+
     if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(4 TSRMLS_CC, "llll", &bid, &gid, &start, &operate) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
-
+#ifdef NEWSMTH
+    if ((operate == 99)) {
+        operate = 10;
+        goddelete = 1;
+    }
+#endif
     if ((operate < 1) || (operate > 13)) {
         RETURN_LONG(-10);
     }
@@ -1069,13 +1078,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
         }
         close(fd);
         ret = count;
-    }
-#ifdef NEWSMTH
-    else if ((operate == 10) || (operate == 11) || (operate == 99)) /* make total */
-#else
-    else if ((operate == 10) || (operate == 11)) /* make total */
-#endif
-    {
+    } else if ((operate == 10) || (operate == 11)) /* make total */ {
         char title[STRLEN], *ptr, tmpf[PATHLEN];
         for (i=0; i<ret; i++) {
             a_SeSave(NULL, bp->filename, &articles[i], i>0, NULL, 0, operate==11, getCurrentUser()->userid);
@@ -1093,7 +1096,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
             accessed[0] = 0;
             accessed[1] = FILE_READ;
 #ifdef NEWSMTH
-            if (post_file_alt(tmpf, getCurrentUser(), title, (operate==99?"GodDelete":bp->filename), NULL, 0x04, accessed))
+            if (post_file_alt(tmpf, getCurrentUser(), title, (goddelete?"GodDelete":bp->filename), NULL, 0x04, accessed))
 #else
             if (post_file_alt(tmpf, getCurrentUser(), title, bp->filename, NULL, 0x04, accessed))
 #endif
