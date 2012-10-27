@@ -1086,7 +1086,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
 #ifdef NEWSMTH
         if (!goddelete) {
 #endif
-        buf = gettmpfilename(buf, "bm_func");
+        gettmpfilename(buf, "bm_func");
         fp = fopen(buf, "w");
 #ifdef NEWSMTH
         }
