@@ -1085,6 +1085,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
         }
         if (ret > 0) {
 #ifdef BOARD_SECURITY_LOG
+            char buf[PATHLEN];
 #ifdef NEWSMTH
             if (!goddelete) {
 #endif
