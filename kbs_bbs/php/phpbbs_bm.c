@@ -1097,7 +1097,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
 #ifdef BOARD_SECURITY_LOG
             if (fp) {
                 char date[8];
-                strncpy(date, ctime((time_t *)articles[i].posttime) + 4, 6);
+                strncpy(date, ctime((time_t *)&articles[i].posttime) + 4, 6);
                 date[6] = '\0';
                 fprintf(fp, "%8d %-12s %6s  %s%s\n", articles[i].id, articles[i].owner, date, articles[i].id==articles[i].groupid?"¡ñ ":"", articles[i].title);
             }
