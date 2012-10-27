@@ -1069,7 +1069,13 @@ PHP_FUNCTION(bbs_threads_bmfunc)
         }
         close(fd);
         ret = count;
-    } else if ((operate == 10) || (operate == 11)) { /* make total */
+    }
+#ifdef NEWSMTH
+    else if ((operate == 10) || (operate == 11) || (operate == 99)) /* make total */
+#else
+    else if ((operate == 10) || (operate == 11)) /* make total */
+#endif
+    {
         char title[STRLEN], *ptr, tmpf[PATHLEN];
         for (i=0; i<ret; i++) {
             a_SeSave(NULL, bp->filename, &articles[i], i>0, NULL, 0, operate==11, getCurrentUser()->userid);
@@ -1086,7 +1092,12 @@ PHP_FUNCTION(bbs_threads_bmfunc)
             sprintf(tmpf, "tmp/bm.%s", getCurrentUser()->userid);
             accessed[0] = 0;
             accessed[1] = FILE_READ;
-            if (post_file_alt(tmpf, getCurrentUser(), title, bp->filename, NULL, 0x04, accessed)) {
+#ifdef NEWSMTH
+            if (post_file_alt(tmpf, getCurrentUser(), title, (operate==99?"GodDelete":bp->filename), NULL, 0x04, accessed))
+#else
+            if (post_file_alt(tmpf, getCurrentUser(), title, bp->filename, NULL, 0x04, accessed))
+#endif
+            {
                 unlink(tmpf);
                 sprintf(tmpf, "tmp/se.%s", getCurrentUser()->userid);
                 unlink(tmpf);
