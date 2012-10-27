@@ -1084,6 +1084,27 @@ PHP_FUNCTION(bbs_threads_bmfunc)
             a_SeSave(NULL, bp->filename, &articles[i], i>0, NULL, 0, operate==11, getCurrentUser()->userid);
         }
         if (ret > 0) {
+#ifdef BOARD_SECURITY_LOG
+#ifdef NEWSMTH
+            if (!goddelete) {
+#endif
+            char tmp[STRLEN], logtitle[STRLEN];
+            if (strncmp(articles[0].title, "Re: ", 4)==0)
+                strcpy(logtitle, articles[0].title+4);
+            else
+                strcpy(logtitle, articles[0].title);
+            if (strlen(logtitle)>40) {
+                strnzhcpy(tmp, logtitle, 38);
+                strcat(tmp, "..");
+            } else
+                strcpy(tmp, logtitle);
+            sprintf(logtitle, "%s <%s>", "合集", tmp);
+            gettmpfilename(buf, "bm_func");
+            board_security_report(buf, getCurrentUser(), logtitle, bp->filename, &articles[0]);
+#ifdef NEWSMTH
+            }
+#endif
+#endif
             unsigned char accessed[2];
             strcpy(title, "[合集] ");
             if (strncmp(articles[0].title, "Re: ", 4) == 0)
