@@ -1108,7 +1108,8 @@ PHP_FUNCTION(bbs_threads_bmfunc)
 #ifdef NEWSMTH
             if (!goddelete) {
 #endif
-            fclose(fp);
+            if (fp)
+                fclose(fp);
             char tmp[STRLEN], logtitle[STRLEN];
             if (strncmp(articles[0].title, "Re: ", 4)==0)
                 strcpy(logtitle, articles[0].title+4);
