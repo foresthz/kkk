@@ -1032,9 +1032,15 @@ PHP_FUNCTION(bbs_threads_bmfunc)
     if (bp == NULL) {
         RETURN_LONG(-1);
     }
+#ifdef NEWSMTH
+    if (!goddelete) {
+#endif
     if (!is_BM(bp, getCurrentUser())) {
         RETURN_LONG(-2);
     }
+#ifdef NEWSMTH
+    }
+#endif
 
     articles = NULL;
     setbdir(DIR_MODE_NORMAL, dirpath, bp->filename);
