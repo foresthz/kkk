@@ -25,6 +25,8 @@
 	if(isset($_POST["operate"]))
 	{
 		$operate = $_POST["operate"];
+        if ($operate == 99)
+            html_error_quit("ÏµÍ³´íÎó");
 		$ret = bbs_threads_bmfunc($bid, $gid, $start, $operate);
 		if($ret >= 0)
 		{
