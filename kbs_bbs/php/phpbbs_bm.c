@@ -1144,7 +1144,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
             accessed[0] = 0;
             accessed[1] = FILE_READ;
 #ifdef NEWSMTH
-            if (post_file_alt(tmpf, getCurrentUser(), title, (goddelete?"GodDelete":bp->filename), NULL, 0x04, accessed))
+            if (post_file_alt(tmpf, getCurrentUser(), title, (goddelete?"GodDelete":bp->filename), (goddelete?bp->filename:NULL), 0x04, accessed))
 #else
             if (post_file_alt(tmpf, getCurrentUser(), title, bp->filename, NULL, 0x04, accessed))
 #endif
