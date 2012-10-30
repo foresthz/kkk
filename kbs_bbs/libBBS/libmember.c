@@ -14,51 +14,51 @@
 #endif
 
 char *get_bmp_name(char *name, int bmp) {
-	switch(bmp) {
-	    case BMP_DELETE:
-			strcpy(name, "删文");
-			break;
-		case BMP_DENY:
-			strcpy(name, "封禁");
-			break;
-		case BMP_SIGN:
-			strcpy(name, "标记");
-			break;
-		case BMP_ANNOUNCE:
-			strcpy(name, "精华区");
-			break;
-		case BMP_REFER:
-			strcpy(name, "驻版提醒");
-			break;
-		case BMP_JUNK:
-			strcpy(name, "查看删除区");
-			break;
-		case BMP_VOTE:
-			strcpy(name, "投票管理");
-			break;
-		case BMP_RECOMMEND:
-			strcpy(name, "置顶/不可RE/推荐");
-			break;
-		case BMP_RANGE:
-			strcpy(name, "区段操作");
-			break;
-		case BMP_NOTE:
-			strcpy(name, "备忘录/模板/版规/封禁理由/标题关键字");
-			break;
-		case BMP_THREAD:
-			strcpy(name, "主题操作");
-			break;
-		default:
-			strcpy(name, "未定义");
-	}
-	
-	return name;
+    switch(bmp) {
+        case BMP_DELETE:
+            strcpy(name, "删文");
+            break;
+        case BMP_DENY:
+            strcpy(name, "封禁");
+            break;
+        case BMP_SIGN:
+            strcpy(name, "标记");
+            break;
+        case BMP_ANNOUNCE:
+            strcpy(name, "精华区");
+            break;
+        case BMP_REFER:
+            strcpy(name, "驻版提醒");
+            break;
+        case BMP_JUNK:
+            strcpy(name, "查看删除区");
+            break;
+        case BMP_VOTE:
+            strcpy(name, "投票管理");
+            break;
+        case BMP_RECOMMEND:
+            strcpy(name, "置顶/不可RE/推荐");
+            break;
+        case BMP_RANGE:
+            strcpy(name, "区段操作");
+            break;
+        case BMP_NOTE:
+            strcpy(name, "备忘录/模板/版规/封禁理由/标题关键字");
+            break;
+        case BMP_THREAD:
+            strcpy(name, "主题操作");
+            break;
+        default:
+            strcpy(name, "未定义");
+    }
+    
+    return name;
 }
 
 int get_bmp_value(int index) {
-	if (index<0||index>=BMP_COUNT)
-		return 0;
-	return 1<<index;
+    if (index<0||index>=BMP_COUNT)
+        return 0;
+    return 1<<index;
 }
 
 int board_member_log(struct board_member *member, char *title, char *log) {
@@ -885,7 +885,7 @@ int set_board_member_flag(struct board_member *member) {
     
     member->status=BOARD_MEMBER_STATUS_NORMAL;
     for (i=0;i<BMP_COUNT;i++) {
-		flag=get_bmp_value(i);
+        flag=get_bmp_value(i);
         if (member->flag&flag) {
             member->status=BOARD_MEMBER_STATUS_MANAGER;
             break;
@@ -1039,8 +1039,8 @@ int set_board_member_manager_file(const struct boardheader *board) {
     
     if (load_board_member_managers(board, members)>0) {
         for (i=0; i<BMP_COUNT; i++) {
-			flag=get_bmp_value(i);
-			get_bmp_name(name, flag);
+            flag=get_bmp_value(i);
+            get_bmp_name(name, flag);
             fprintf(in, "\n具有 \033[1;31m%s\033[m 权限的用户\n", name);
             k=0;
             for (j=0; j<total; j++) {
