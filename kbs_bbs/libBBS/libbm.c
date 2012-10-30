@@ -180,6 +180,9 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     struct userec *lookupuser;
     char tmplfile[STRLEN], postfile[STRLEN], title[STRLEN], title1[STRLEN], timebuf[STRLEN];
     int sysop;
+#ifdef MEMBER_MANAGER
+	int core_member=0;
+#endif	
 
     gettmpfilename(postfile, "ann_deny.%d", getpid());
     sprintf(tmplfile, "etc/denypost_template");
@@ -187,8 +190,14 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     if ((HAS_PERM(operator, PERM_SYSOP) || HAS_PERM(operator, PERM_OBOARDS))
             && !chk_BM_instr(bh->BM, operator->userid))
         sysop = 1;
-    else
+    else {
         sysop = 0;
+#ifdef MEMBER_MANAGER
+		if (!HAS_PERM(operator, PERM_SYSOP)&&!chk_currBM(bh->BM, operator))
+			core_member=1;
+#endif		
+	}
+	
     getuser(uident, &lookupuser);
     if (mode==0) {
         sprintf(title, "%s被取消在%s版的发文权限", uident, bh->filename);
@@ -208,7 +217,11 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         sprintf(daystr, "%d", day);
         if (sysop)
             sprintf(opbuf, "%s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m",  NAME_BBS_CHINESE, operator->userid);
-        else
+#ifdef MEMBER_MANAGER
+		else if (core_member)
+			sprintf(opbuf, NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m", operator->userid);
+#endif
+		else
             sprintf(opbuf, NAME_BM ":\x1b[4m%s\x1b[m", operator->userid);
         if (write_formatted_file(tmplfile, postfile, "ssssss",
                     uident, bh->filename, reason, daystr, opbuf, ctime_r(&time, timebuf))<0)
@@ -230,14 +243,20 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 #endif 
         if (sysop) {
             fprintf(fn, "                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, operator->userid);
-        } else {
+        }
+#ifdef MEMBER_MANAGER
+		else if (core_member) {
+			fprintf(fn, "                              " NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m\n", operator->userid);
+		}
+#endif		
+		else {
             fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", operator->userid);
         }
         fprintf(fn, "                              %s\n", ctime_r(&time, timebuf));
         fclose(fn);
     }
 #ifdef NEWSMTH
-    post_file(operator, "", postfile, bh->filename, title, 0, 1, getSession());
+	post_file(operator, "", postfile, bh->filename, title, 0, core_member?2:1, getSession());
 #else
     post_file(operator, "", postfile, bh->filename, title, 0, 2, getSession());
 #endif
@@ -319,14 +338,24 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
     char tmplfile[STRLEN], mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
     int sysop;
 
+#ifdef MEMBER_MANAGER
+	int core_member=0;
+#endif
+	
     gettmpfilename(mailfile, "mail_deny.%d", getpid());
     sprintf(tmplfile, "etc/denymail_template");
 
     if ((HAS_PERM(operator, PERM_SYSOP) || HAS_PERM(operator, PERM_OBOARDS))
             && !chk_BM_instr(bh->BM, operator->userid))
         sysop = 1;
-    else
+    else {
         sysop = 0;
+#ifdef MEMBER_MANAGER
+		if (!HAS_PERM(operator, PERM_SYSOP)&&!chk_currBM(bh->BM, operator))
+			core_member=1;
+#endif	
+	}
+	
     getuser(uident, &lookupuser);
     if (mode==0) {
         sprintf(title, "%s被取消在%s版的发文权限", uident, bh->filename);
@@ -349,6 +378,11 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             sprintf(sender, "%s ", operator->userid);
             sprintf(sitename, "%s (%24.24s)", BBS_FULL_NAME, ctime_r(&time, timebuf));
             sprintf(opfrom, "%s", SHOW_USERIP(operator, getSession()->fromhost));
+#ifdef MEMBER_MANAGER
+			if (core_member)
+			sprintf(opbuf, NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m", operator->userid);
+			else
+#endif			
             sprintf(opbuf, NAME_BM ":\x1b[4m%s\x1b[m", operator->userid);
         }
         if (write_formatted_file(tmplfile, mailfile, "ssssssssss",
@@ -396,6 +430,11 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             GetDenyPic(fn, DENYPIC, ndenypic, dpcount);
 #endif 
             fprintf(fn, "\n");
+#ifdef MEMBER_MANAGER
+			if (core_member)
+			fprintf(fn, "                              " NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m\n", operator->userid);
+			else
+#endif				
             fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", operator->userid);
             fprintf(fn, "                              %s\n", ctime_r(&time, timebuf));
         }
@@ -403,7 +442,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
     }
     if (lookupuser)
 #ifdef NEWSMTH
-        mail_file(DELIVER, mailfile, uident, title, 0, NULL);
+        mail_file(core_member?operator->userid:DELIVER, mailfile, uident, title, 0, NULL);
 #else
         mail_file(operator->userid, mailfile, uident, title, 0, NULL);
 #endif
