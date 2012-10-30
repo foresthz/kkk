@@ -481,10 +481,10 @@ int load_board_members(const char *board, struct board_member *member, int sort,
             strcpy(qtmp, " `time` DESC ");
             break;
         case BOARD_MEMBER_SORT_ID_ASC:
-            strcpy(qtmp, " `user` ASC ");
+            strcpy(qtmp, " LOWER(`user`) ASC ");
             break;
         case BOARD_MEMBER_SORT_ID_DESC:
-            strcpy(qtmp, " `user` DESC ");
+            strcpy(qtmp, " LOWER(`user`) DESC ");
             break;
         case BOARD_MEMBER_SORT_SCORE_DESC:
             strcpy(qtmp, " `score` DESC ");
@@ -936,7 +936,7 @@ int load_board_member_managers(const struct boardheader *board, struct board_mem
     my_board[0]=0;
     mysql_escape_string(my_board, board->filename, strlen(board->filename));
     
-    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND `status`=%d ORDER BY `user`", my_board, BOARD_MEMBER_STATUS_MANAGER);
+    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND `status`=%d ORDER BY LOWER(`user`) ASC", my_board, BOARD_MEMBER_STATUS_MANAGER);
     
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -999,7 +999,7 @@ int set_board_member_manager_file(const struct boardheader *board) {
     }
     
     members=(struct board_member *) malloc(sizeof(struct board_member) * total);
-    bzero(b_members, sizeof(struct board_member) * total);
+    bzero(members, sizeof(struct board_member) * total);
     
     if (load_board_member_managers(board, members)>0) {
         for (i=0; i<BMP_COUNT; i++) {
@@ -1011,6 +1011,8 @@ int set_board_member_manager_file(const struct boardheader *board) {
                     fprintf(in, " %3d. \033[1;32m%s\033[m\n", k, members[j].user);
                 }
             }
+            if (k==0)
+            fprintf(in, "нч\n");
         }
     }
     
