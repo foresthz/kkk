@@ -839,12 +839,18 @@ int set_board_member_flag(struct board_member *member) {
         }
     }
     
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -1;
+    }
+    
     sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `status`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, member->status, my_manager_id, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -1;
+        return -2;
     }
 
     mysql_close(&s);
@@ -868,10 +874,16 @@ int set_board_member_score(struct board_member *member, int type, int score) {
     else
         sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=`score`%s%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", ((type>0)?"+":"-"),score, my_name, my_user_id);
 
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -1;
+    }
+    
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -1;
+        return -2;
     }
 
     mysql_close(&s);
