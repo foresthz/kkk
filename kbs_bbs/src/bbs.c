@@ -4520,7 +4520,13 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
             )
         return DONOTHING;
 
-    if (chk_currBM(currBM, getCurrentUser())) mode |= 0x1;
+#ifdef MEMBER_MANAGER
+	if (check_board_member_manager(&currmember, currboard, BMP_RECOMMEND))
+#else
+    if (chk_currBM(currBM, getCurrentUser())) 
+#endif
+		mode |= 0x1;
+		
 #if defined(OPEN_NOREPLY) || defined(COMMEND_ARTICLE)
     /*if(!strcmp(getCurrentUser()->userid, fileinfo->owner)) mode |= 0x4;*/
     if (isowner(getCurrentUser(), fileinfo)) mode |= 0x4;
