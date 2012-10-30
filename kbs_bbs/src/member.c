@@ -254,19 +254,19 @@ int b_member_set_flag_show(struct board_member *b_member, int old) {
     for (i=0;i<10;i++) {
         move(3+i, 0);
         clrtobot();
-		
-		n_set=(b_member->flag&b_member_flag_item[i])?1:0;
-		o_set=(old&b_member_flag_item[i])?1:0;
-		same=(n_set==o_set);
-		
+        
+        n_set=(b_member->flag&b_member_flag_item[i])?1:0;
+        o_set=(old&b_member_flag_item[i])?1:0;
+        same=(n_set==o_set);
+        
         if (!same) changed=1;
         
-		prints(" [%s] %s%s\033[m",
-		    n_set?"\033[1;32m*\033[m":" ",
-			same?"":"\033[1;31m",
-			b_member_flag_item_prefix[i]
-		);
-	}
+        prints(" [%s] %s%s\033[m",
+            n_set?"\033[1;32m*\033[m":" ",
+            same?"":"\033[1;31m",
+            b_member_flag_item_prefix[i]
+        );
+    }
     update_endline();
     return changed;
 }
@@ -298,7 +298,7 @@ int b_member_set_flag(struct board_member *b_member) {
                 if (!changed) {
                     b_member_set_msg("设定并未修改!");
                 } else {
-				    sprintf(buf, "您确定要修改用户 \033[1;33m%s\033[m 的核心驻版权限? (Y/N) [N]", b_member->user);
+                    sprintf(buf, "您确定要修改用户 \033[1;33m%s\033[m 的核心驻版权限? (Y/N) [N]", b_member->user);
                     move(t_lines-1,0);
                     clrtobot();
                     getdata(t_lines-1, 0, buf, ans2, 2, DOECHO, NULL, true);
@@ -307,8 +307,8 @@ int b_member_set_flag(struct board_member *b_member) {
                             b_member_set_msg("驻版权限修改失败");
                         else {
                             b_member_set_msg("驻版权限修改成功");
-							return 1;
-						}
+                            return 1;
+                        }
                     } else {
                         b_member_set_msg("设定并未修改!");
                     }
@@ -327,9 +327,9 @@ int b_member_set_flag(struct board_member *b_member) {
             case '7':
             case '8':
             case '9':
-			    move(t_lines-1,0);
+                move(t_lines-1,0);
                 clrtobot();
-				sprintf(buf, "是否给予 \033[1;33m%s\033[m 权限? (Y/N)", b_member_flag_item_prefix[ans[0]]);
+                sprintf(buf, "是否给予 \033[1;33m%s\033[m 权限? (Y/N)", b_member_flag_item_prefix[ans[0]]);
                 getdata(t_lines-1, 0, buf, ans2, 8, DOECHO, NULL, true);
                 
                 if (ans2[0]=='y'||ans2[0]=='Y')
@@ -341,7 +341,7 @@ int b_member_set_flag(struct board_member *b_member) {
                     
                 changed=b_member_set_flag_show(b_member, old);    
                 break;
-		}
+        }
     }
     
     return 0;
@@ -450,7 +450,7 @@ static int b_member_join(struct _select_def *conf) {
     my_total=get_member_boards(getCurrentUser()->userid);    
     if (my_total<0)
         return -3;
-		
+        
     my_max=get_user_max_member_boards(getCurrentUser());
     
     clear();
@@ -605,11 +605,11 @@ static int b_member_key(struct _select_def *conf, int key) {
         case 's':
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
-			
-            if (b_member_set_flag(b_members[conf->pos-conf->page_pos])>0)	
+            
+            if (b_member_set_flag(b_members[conf->pos-conf->page_pos])>0)    
                 return SHOW_DIRCHANGE;
             else
-                return SHOW_REFRESH;			
+                return SHOW_REFRESH;            
     }
     return SHOW_CONTINUE;
 }
@@ -660,10 +660,10 @@ int t_board_members(void) {
 }
 
 void member_board_article_title(struct _select_def* conf) {
-	char title[STRLEN];
-	int chkmailflag = 0;
-	
-	chkmailflag = chkmail();
+    char title[STRLEN];
+    int chkmailflag = 0;
+    
+    chkmailflag = chkmail();
     if (chkmailflag == 2)       /*Haohmaru.99.4.4.对收信也加限制 */
         strcpy(title, "[您的信箱超过容量,不能再收信!]");
 #ifdef ENABLE_REFER
@@ -680,7 +680,7 @@ void member_board_article_title(struct _select_def* conf) {
 #endif /* ENABLE_REFER */
     else
         strcpy(title, BBS_FULL_NAME);
-	
+    
     showtitle("[驻版阅读模式]", title);
     update_endline();
     move(1, 0);
@@ -695,43 +695,43 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     char *date;
     char c1[8],c2[8];
     int same=false, same_board=false, orig=0;
-	char type;
-	char attachch[20];
-	
-	char unread_mark = (DEFINE(getCurrentUser(), DEF_UNREADMARK) ? UNREAD_SIGN : 'N');
+    char type;
+    char attachch[20];
+    
+    char unread_mark = (DEFINE(getCurrentUser(), DEF_UNREADMARK) ? UNREAD_SIGN : 'N');
     date=ctime((time_t *)&ent->posttime)+((ent->posttime/86400==time(NULL)/86400)?10:4);
     if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR)) {
         strcpy(c1, "\033[1;33m");
         strcpy(c2, "\033[1;36m");
-	} else {
+    } else {
         strcpy(c1, "\033[33m");
         strcpy(c2, "\033[36m");
-	}
+    }
     if (readfh&&ent->s_groupid==readfh->s_groupid)
         same=true;
-	else if (readfh&&0==strncasecmp(ent->board, readfh->board, STRLEN-1)) {
-		same_board=true;
-	} else
-		same_board=false;
-		
+    else if (readfh&&0==strncasecmp(ent->board, readfh->board, STRLEN-1)) {
+        same_board=true;
+    } else
+        same_board=false;
+        
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
 
 #ifdef HAVE_BRC_CONTROL
-	brc_initial(getCurrentUser()->userid, ent->board, getSession());
+    brc_initial(getCurrentUser()->userid, ent->board, getSession());
     type = brc_unread(ent->id, getSession()) ? unread_mark : ' ';
 #else
-    type = ' ';	
+    type = ' ';    
 #endif
-		
-	if ((ent->accessed[0] & FILE_DIGEST)) {
+        
+    if ((ent->accessed[0] & FILE_DIGEST)) {
         if (type == ' ')
             type = 'g';
         else
             type = 'G';
     }
-	
-	if (ent->accessed[0] & FILE_MARKED) {
+    
+    if (ent->accessed[0] & FILE_MARKED) {
         switch (type) {
             case ' ':
                 type = 'm';
@@ -748,7 +748,7 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
                 break;
         }
     }
-	
+    
 #if defined(OPEN_NOREPLY) && defined(LOWCOLOR_ONLINE)
     if (ent->accessed[1] & FILE_READ) {
         if (ent->attachment!=0)
@@ -767,8 +767,8 @@ char *member_board_article_ent(char *buf, int num, struct member_board_article *
     else
         attachch[0]=' ';
     attachch[1]='\0';
-#endif	
-	
+#endif    
+    
     sprintf(buf, " %s%4d %c %-12.12s %6.6s  %s%-12.12s%s %s%s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, type, ent->owner, date, same_board?c2:"", ent->board, same_board?"\033[m":"", attachch, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
@@ -834,62 +834,62 @@ static void  member_board_article_attach_link(char* buf,int buf_len,char *ext,in
         if (zd) sprintf(ftype, "&ftype=%d", DIR_MODE_ZHIDING);
 
 #ifdef NEWSMTH
-		snprintf(buf,buf_len,"http://%s/nForum/article/%s/%d?s=%d",
+        snprintf(buf,buf_len,"http://%s/nForum/article/%s/%d?s=%d",
                 get_my_webdomain(0),currboard->filename,fh->groupid,fh->id);
-#else				
+#else                
         snprintf(buf,buf_len,"http://%s/bbscon.php?bid=%d&id=%d%s",
                  get_my_webdomain(0),currboardent,fh->id, ftype);
-#endif	
+#endif    
     }
 }
 
 int member_board_article_read(struct _select_def* conf, struct member_board_article *article, void* extraarg) {
-	struct read_arg *arg;
-	struct boardheader *board;
-	char buf[PATHLEN];
-	int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
-	fileheader_t post[1];
-	struct member_board_article_attach_link_info bali;
-	
-	if (article==NULL)
-		return DONOTHING;
-	
-	arg=(struct read_arg*)conf->arg;
-	board=(struct boardheader *)getbcache(article->board);
-	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+    struct read_arg *arg;
+    struct boardheader *board;
+    char buf[PATHLEN];
+    int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
+    fileheader_t post[1];
+    struct member_board_article_attach_link_info bali;
+    
+    if (article==NULL)
+        return DONOTHING;
+    
+    arg=(struct read_arg*)conf->arg;
+    board=(struct boardheader *)getbcache(article->board);
+    if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
         prints("指定版面不存在...");
         pressreturn();
         return FULLUPDATE;
     }
-	
-	setbdir(DIR_MODE_NORMAL, buf, board->filename);
-	if ((fd=open(buf, O_RDWR, 0644))<0) {
+    
+    setbdir(DIR_MODE_NORMAL, buf, board->filename);
+    if ((fd=open(buf, O_RDWR, 0644))<0) {
         clear();
         prints("无法打开版面文章列表...");
         pressreturn();
         return FULLUPDATE;
     }
-	
-	retnum=get_records_from_id(fd, article->id, post, 1, &num);
-	close(fd);
-	
-	if (0==retnum) {
+    
+    retnum=get_records_from_id(fd, article->id, post, 1, &num);
+    close(fd);
+    
+    if (0==retnum) {
         clear();
         prints("文章不存在，可能已被删除...");
         pressreturn();
         return FULLUPDATE;
     }
 
-	save_currboardent=currboardent;
+    save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
 
     currboardent=getbid(board->filename, NULL);
     currboard=board;
     uinfo.currentboard=currboardent;
-	
-	setbfile(buf, board->filename, post->filename);
-	bali.fh = post;
+    
+    setbfile(buf, board->filename, post->filename);
+    bali.fh = post;
     bali.num = num;
     bali.ftype = member_board_article_bali_get_mode(DIR_MODE_NORMAL);
     register_attach_link(member_board_article_attach_link, &bali);
@@ -897,8 +897,8 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     key=ansimore_withzmodem(buf, true, post->title); 
 #else
     key=ansimore_withzmodem(buf, false, post->title); 
-#endif 	
-	register_attach_link(NULL,NULL);
+#endif     
+    register_attach_link(NULL,NULL);
 
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
@@ -910,14 +910,14 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     set_refer_info(currboardent, post->id, REFER_MODE_REPLY);
 #endif
 
-	if (arg->readdata==NULL)
+    if (arg->readdata==NULL)
         arg->readdata=malloc(sizeof(struct member_board_article));
     memcpy(arg->readdata, article, sizeof(struct member_board_article));
 
     ret=FULLUPDATE;
 #ifndef NOREPLY
-	move(t_lines-1, 0);
-	switch (arg->readmode) {
+    move(t_lines-1, 0);
+    switch (arg->readmode) {
         case READ_THREAD:
             if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
                 prints("\x1b[44m\x1b[1;31m[主题阅读] \x1b[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓");
@@ -930,14 +930,14 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
             else
                 prints("\033[44m\033[31m[阅读文章] \033[33m 回信 R │ 结束 Q,← │上一封 ↑│下一封 <Space>,↓│主题阅读 ^X或p ");
     }
-	clrtoeol();
+    clrtoeol();
     resetcolor();
-	
-	if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("RrEexp", key)))
+    
+    if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("RrEexp", key)))
         key=igetkey();
-	
-	repeat=0;
-	force_update=0;
+    
+    repeat=0;
+    force_update=0;
     do {
         if (repeat)
             key=igetkey();
@@ -963,9 +963,9 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
                     WAIT_RETURN;
                 } else {
                     do_reply(conf, post);
-					ret=DIRCHANGED;
-					force_update=1;
-				}
+                    ret=DIRCHANGED;
+                    force_update=1;
+                }
                 break;
             case Ctrl('R'):
                 post_reply(conf, post, NULL);
@@ -1029,153 +1029,153 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
             case 'S':
                 savePos(DIR_MODE_NORMAL, NULL, num, board);
                 ReadBoard();
-				ret=DOQUIT;
+                ret=DOQUIT;
                 break;
             case '!':
                 Goodbye();
                 break;
         }
-	} while(repeat);
+    } while(repeat);
 #endif /* NOREPLY */
-	
-	uinfo.currentboard=save_uinfo_currentboard;
+    
+    uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
-	
+    
 #ifdef HAVE_BRC_CONTROL
     if (currboard) {
         brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
     }
 #endif
 
-	if (ret==FULLUPDATE&&arg->oldpos!=0) {
+    if (ret==FULLUPDATE&&arg->oldpos!=0) {
         conf->new_pos=arg->oldpos;
         arg->oldpos=0;
         list_select_add_key(conf, KEY_REFRESH);
         arg->readmode=READ_NORMAL;
         return SELCHANGE;
     }
-	
-	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), force_update))
-		return DIRCHANGED;
-		
-	return ret;
+    
+    if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), force_update))
+        return DIRCHANGED;
+        
+    return ret;
 }
 
 int member_board_article_help(struct _select_def* conf,struct member_board_article *article, int act)
 {
-	show_help("help/memberboardarticlehelp");
+    show_help("help/memberboardarticlehelp");
     return FULLUPDATE;
 }
 
 int member_board_article_board_info(struct _select_def* conf,struct member_board_article *article, int act)
 {
-	int save_currboardent, save_uinfo_currentboard;
-	struct boardheader *board;
-	char save_bm[BM_LEN];
-	char path[PATHLEN];
-	
-	if (article==NULL)
-		return DONOTHING;
-	board=(struct boardheader *)getbcache(article->board);
-	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+    int save_currboardent, save_uinfo_currentboard;
+    struct boardheader *board;
+    char save_bm[BM_LEN];
+    char path[PATHLEN];
+    
+    if (article==NULL)
+        return DONOTHING;
+    board=(struct boardheader *)getbcache(article->board);
+    if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
         prints("指定版面不存在...");
         pressreturn();
         return FULLUPDATE;
     }
-	
-	save_currboardent=currboardent;
+    
+    save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
-	memcpy(save_bm, currBM, BM_LEN - 1);
-	
+    memcpy(save_bm, currBM, BM_LEN - 1);
+    
     currboardent=getbid(board->filename, NULL);
     currboard=board;
     uinfo.currentboard=currboardent;
-	memcpy(currBM, board->BM, BM_LEN - 1);
+    memcpy(currBM, board->BM, BM_LEN - 1);
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
-#endif		
-	
-	switch (act) {
-		case MEMBER_BOARD_ARTICLE_BOARD_HOT:
-			read_hot_info(conf, NULL, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_BOARD_NOTE:
-			clear();
-			sprintf(path, "vote/%s/notes", currboard->filename);
-			if (dashf(path)) {
-				ansimore2(path, false, 0, 0);
-			} else if (dashf("vote/notes")) {
-				ansimore2("vote/notes", false, 0, 23);
-			} else {
-				move(3, 30);
-				prints("此讨论区尚无「备忘录」。");
-			}
-			pressanykey();
-			break;
-	}
-	
-	uinfo.currentboard=save_uinfo_currentboard;
+#endif        
+    
+    switch (act) {
+        case MEMBER_BOARD_ARTICLE_BOARD_HOT:
+            read_hot_info(conf, NULL, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_BOARD_NOTE:
+            clear();
+            sprintf(path, "vote/%s/notes", currboard->filename);
+            if (dashf(path)) {
+                ansimore2(path, false, 0, 0);
+            } else if (dashf("vote/notes")) {
+                ansimore2("vote/notes", false, 0, 23);
+            } else {
+                move(3, 30);
+                prints("此讨论区尚无「备忘录」。");
+            }
+            pressanykey();
+            break;
+    }
+    
+    uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
-	memcpy(currBM, save_bm, BM_LEN - 1);
+    memcpy(currBM, save_bm, BM_LEN - 1);
 #ifdef HAVE_BRC_CONTROL
     if (currboard) {
         brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
     }
-#endif		
-	
-	if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 0))
-		return DIRCHANGED;
-		
-	return FULLUPDATE;
+#endif        
+    
+    if (flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 0))
+        return DIRCHANGED;
+        
+    return FULLUPDATE;
 }
 
 int member_board_article_select(struct _select_def* conf,struct member_board_article *article,void* extraarg)
 {
-	Select();
-	
-	return DOQUIT;
+    Select();
+    
+    return DOQUIT;
 }
 
 int member_board_article_clear_new_flag(struct _select_def* conf,struct member_board_article *article,void* extraarg)
 {
 #ifdef HAVE_BRC_CONTROL
-	struct board_member *members;
-	const struct boardheader *board;
-	int total, i, bid;
-	
-	total=get_member_boards(getCurrentUser()->userid);
-	if (total <= 0)
-		return DONOTHING;
-	
-	members=(struct board_member *) malloc(sizeof(struct board_member) * total);
-	bzero(members, sizeof(struct board_member) * total);
-	total=load_member_boards(getCurrentUser()->userid, members, 0, 0, total);
-	if (total <= 0) {
-		free(members);
-		members=NULL;
-		return DONOTHING;
-	}
-	
-	for (i=0;i<total;i++) {
-		bid=getbid(members[i].board, &board);
-		if (bid) {
-			brc_initial(getCurrentUser()->userid, board->filename, getSession());
-			brc_clear(bid, getSession());
-		}
-	}
-	
-	free(members);
-	members=NULL;
-	
-	if (currboard) {
+    struct board_member *members;
+    const struct boardheader *board;
+    int total, i, bid;
+    
+    total=get_member_boards(getCurrentUser()->userid);
+    if (total <= 0)
+        return DONOTHING;
+    
+    members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+    bzero(members, sizeof(struct board_member) * total);
+    total=load_member_boards(getCurrentUser()->userid, members, 0, 0, total);
+    if (total <= 0) {
+        free(members);
+        members=NULL;
+        return DONOTHING;
+    }
+    
+    for (i=0;i<total;i++) {
+        bid=getbid(members[i].board, &board);
+        if (bid) {
+            brc_initial(getCurrentUser()->userid, board->filename, getSession());
+            brc_clear(bid, getSession());
+        }
+    }
+    
+    free(members);
+    members=NULL;
+    
+    if (currboard) {
         brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
     }
-	
-	flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1);
-	return DIRCHANGED;
+    
+    flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1);
+    return DIRCHANGED;
 #else
     return DONOTHING;
 #endif
@@ -1275,67 +1275,67 @@ int member_board_article_search_dir(struct _select_def* conf, char *query, int m
 
 int member_board_article_search(struct _select_def* conf, struct member_board_article *article, int type)
 {
-	int up, mode, length, ret;
-	char buf[STRLEN], pmt[STRLEN];
-	static char title[STRLEN];
-	
-	up=1;
-	switch (type) {
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_PREV:
-			mode=1;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_NEXT:
-			mode=1;
-			up=0;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_TITLE_PREV:
-			mode=2;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_TITLE_NEXT:
-			mode=2;
-			up=0;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_BOARD_PREV:
-			mode=3;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_BOARD_NEXT:
-			mode=3;
-			up=0;
-			break;
-		default:
-			return DONOTHING;
-	}
-	
-	switch(mode) {
-		case 1: // auth
-			strcpy(buf, article->owner);
-			snprintf(pmt, STRLEN, "%s搜寻作者: ", up?"↑" : "↓");
-			length=IDLEN+1;
-			break;
-		case 2: // title
-			strncpy(buf, title, STRLEN);
+    int up, mode, length, ret;
+    char buf[STRLEN], pmt[STRLEN];
+    static char title[STRLEN];
+    
+    up=1;
+    switch (type) {
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_PREV:
+            mode=1;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_NEXT:
+            mode=1;
+            up=0;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_TITLE_PREV:
+            mode=2;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_TITLE_NEXT:
+            mode=2;
+            up=0;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_BOARD_PREV:
+            mode=3;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_BOARD_NEXT:
+            mode=3;
+            up=0;
+            break;
+        default:
+            return DONOTHING;
+    }
+    
+    switch(mode) {
+        case 1: // auth
+            strcpy(buf, article->owner);
+            snprintf(pmt, STRLEN, "%s搜寻作者: ", up?"↑" : "↓");
+            length=IDLEN+1;
+            break;
+        case 2: // title
+            strncpy(buf, title, STRLEN);
             snprintf(pmt, STRLEN, "%s搜寻标题: ", up ? "↑" : "↓");
-			length=STRLEN-1;
-			break;
-		case 3: // board
-			strcpy(buf, article->board);
-			snprintf(pmt, STRLEN, "%s搜寻版面: ", up ? "↑" : "↓");
             length=STRLEN-1;
-			break;
-	}
-	
-	ret=FULLUPDATE;
-	move(t_lines-1, 0);
-	clrtoeol();
-	getdata(t_lines-1, 0, pmt, buf, length, DOECHO, NULL, false);
-	if (buf[0]!='\0') {
-		if (2==mode)
-			strcpy(title, buf);
-		if (member_board_article_search_dir(conf, buf, mode, up))
-			ret=SELCHANGE;
-	}
-	conf->show_endline(conf);
-	return ret;
+            break;
+        case 3: // board
+            strcpy(buf, article->board);
+            snprintf(pmt, STRLEN, "%s搜寻版面: ", up ? "↑" : "↓");
+            length=STRLEN-1;
+            break;
+    }
+    
+    ret=FULLUPDATE;
+    move(t_lines-1, 0);
+    clrtoeol();
+    getdata(t_lines-1, 0, pmt, buf, length, DOECHO, NULL, false);
+    if (buf[0]!='\0') {
+        if (2==mode)
+            strcpy(title, buf);
+        if (member_board_article_search_dir(conf, buf, mode, up))
+            ret=SELCHANGE;
+    }
+    conf->show_endline(conf);
+    return ret;
 }
 
 int member_board_article_thread_search(struct _select_def* conf, struct member_board_article *article, bool down, int act)
@@ -1375,17 +1375,17 @@ int member_board_article_thread_search(struct _select_def* conf, struct member_b
 
                 /* 判断是不是同一主题,不是直接continue*/
                 if (article->s_groupid!=nowFh->s_groupid)
-					continue;
+                    continue;
                 
 
                 /* 是同一主题*/
                 count++;
-				conf->new_pos=now;
-				if (MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV==act||MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT==act)
-					break;
-				else
-					needmove=true;
-			}
+                conf->new_pos=now;
+                if (MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV==act||MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT==act)
+                    break;
+                else
+                    needmove=true;
+            }
         }
     }
     BBS_CATCH {
@@ -1398,11 +1398,11 @@ int member_board_article_thread_search(struct _select_def* conf, struct member_b
 
 int member_board_article_thread_read(struct _select_def* conf,struct member_board_article *article, int act) 
 {
-	struct read_arg *read_arg = (struct read_arg *) conf->arg;
+    struct read_arg *read_arg = (struct read_arg *) conf->arg;
     conf->new_pos=0;
     read_arg->oldpos=0;
     switch (act) {
-		case MEMBER_BOARD_ARTICLE_ACTION_THREAD_FIRST:
+        case MEMBER_BOARD_ARTICLE_ACTION_THREAD_FIRST:
         case MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV:
             member_board_article_thread_search(conf,article,false,act);
             break;
@@ -1410,212 +1410,212 @@ int member_board_article_thread_read(struct _select_def* conf,struct member_boar
         case MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST:
             member_board_article_thread_search(conf,article,true,act);
             break;
-	}
+    }
     if (conf->new_pos==0) return DONOTHING;
     return SELCHANGE;
 }
 
 int member_board_article_info(struct _select_def* conf,struct member_board_article *article, int act)
 {
-	struct boardheader *board;
-	fileheader_t post[1];
-	int fd, num, retnum, save_currboardent, save_uinfo_currentboard;;
-	char buf[STRLEN];
-	int flush;
-	char save_bm[BM_LEN];
-	
-	if (article==NULL)
-		return DONOTHING;
-	board=(struct boardheader *)getbcache(article->board);
-	if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
+    struct boardheader *board;
+    fileheader_t post[1];
+    int fd, num, retnum, save_currboardent, save_uinfo_currentboard;;
+    char buf[STRLEN];
+    int flush;
+    char save_bm[BM_LEN];
+    
+    if (article==NULL)
+        return DONOTHING;
+    board=(struct boardheader *)getbcache(article->board);
+    if (!board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board)) {
         clear();
         prints("指定版面不存在...");
         pressreturn();
         return FULLUPDATE;
     }
-	
-	setbdir(DIR_MODE_NORMAL, buf, board->filename);
-	if ((fd=open(buf, O_RDWR, 0644))<0) {
+    
+    setbdir(DIR_MODE_NORMAL, buf, board->filename);
+    if ((fd=open(buf, O_RDWR, 0644))<0) {
         clear();
         prints("无法打开版面文章列表...");
         pressreturn();
         return FULLUPDATE;
     }
-	
-	retnum=get_records_from_id(fd, article->id, post, 1, &num);
-	close(fd);
-	
-	if (0==retnum) {
+    
+    retnum=get_records_from_id(fd, article->id, post, 1, &num);
+    close(fd);
+    
+    if (0==retnum) {
         clear();
         prints("文章不存在，可能已被删除...");
         pressreturn();
         return FULLUPDATE;
-    }	
+    }    
 
-	save_currboardent=currboardent;
+    save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
-	memcpy(save_bm, currBM, BM_LEN - 1);
+    memcpy(save_bm, currBM, BM_LEN - 1);
 
     currboardent=getbid(board->filename, NULL);
     currboard=board;
     uinfo.currentboard=currboardent;
-	memcpy(currBM, board->BM, BM_LEN - 1);
+    memcpy(currBM, board->BM, BM_LEN - 1);
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
-#endif	
-	
-	flush=0;
-	retnum=FULLUPDATE;
-	switch (act) {
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO:
-			read_showauthor(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL:
-			read_authorinfo(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_MAIL:
-			post_reply(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_FORWARD:
-			mail_forward(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_POST:
-			Post();
-			flush=1;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_CROSS:
-			do_cross(conf, post, NULL);
-			flush=1;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM:
-			read_showauthorBM(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND:
-			read_addauthorfriend(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_ZSEND:
-			read_zsend(conf, post, NULL);
-			break;
-#ifdef PERSONAL_CORP			
-		case MEMBER_BOARD_ARTICLE_ACTION_BLOG:
-			read_importpc(conf, post, NULL);
-			break;
+#endif    
+    
+    flush=0;
+    retnum=FULLUPDATE;
+    switch (act) {
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO:
+            read_showauthor(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL:
+            read_authorinfo(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_MAIL:
+            post_reply(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_FORWARD:
+            mail_forward(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_POST:
+            Post();
+            flush=1;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_CROSS:
+            do_cross(conf, post, NULL);
+            flush=1;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM:
+            read_showauthorBM(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND:
+            read_addauthorfriend(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_ZSEND:
+            read_zsend(conf, post, NULL);
+            break;
+#ifdef PERSONAL_CORP            
+        case MEMBER_BOARD_ARTICLE_ACTION_BLOG:
+            read_importpc(conf, post, NULL);
+            break;
 #endif
-		case MEMBER_BOARD_ARTICLE_ACTION_DENY:
-			deny_user(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_CLUB:
-			clubmember(conf, post, NULL);
-			break;	
-		case MEMBER_BOARD_ARTICLE_ACTION_MSG:
-			read_sendmsgtoauthor(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_INFO:
-			showinfo(conf, post, NULL);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_JUMP:
-			if (num>0) 
-				savePos(DIR_MODE_NORMAL, NULL, num, board);
-			ReadBoard();
-			retnum=DOQUIT;
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_PREV:
-		case MEMBER_BOARD_ARTICLE_ACTION_AUTH_NEXT:
-		case MEMBER_BOARD_ARTICLE_ACTION_TITLE_PREV:
-		case MEMBER_BOARD_ARTICLE_ACTION_TITLE_NEXT:
-		case MEMBER_BOARD_ARTICLE_ACTION_BOARD_PREV:
-		case MEMBER_BOARD_ARTICLE_ACTION_BOARD_NEXT:
-			retnum=member_board_article_search(conf, article, act);
-			break;
-		case MEMBER_BOARD_ARTICLE_ACTION_THREAD_FIRST:
-		case MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV:
-		case MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT:
-		case MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST:
-			retnum=member_board_article_thread_read(conf, article, act);
-			break;
-	}
+        case MEMBER_BOARD_ARTICLE_ACTION_DENY:
+            deny_user(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_CLUB:
+            clubmember(conf, post, NULL);
+            break;    
+        case MEMBER_BOARD_ARTICLE_ACTION_MSG:
+            read_sendmsgtoauthor(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_INFO:
+            showinfo(conf, post, NULL);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_JUMP:
+            if (num>0) 
+                savePos(DIR_MODE_NORMAL, NULL, num, board);
+            ReadBoard();
+            retnum=DOQUIT;
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_PREV:
+        case MEMBER_BOARD_ARTICLE_ACTION_AUTH_NEXT:
+        case MEMBER_BOARD_ARTICLE_ACTION_TITLE_PREV:
+        case MEMBER_BOARD_ARTICLE_ACTION_TITLE_NEXT:
+        case MEMBER_BOARD_ARTICLE_ACTION_BOARD_PREV:
+        case MEMBER_BOARD_ARTICLE_ACTION_BOARD_NEXT:
+            retnum=member_board_article_search(conf, article, act);
+            break;
+        case MEMBER_BOARD_ARTICLE_ACTION_THREAD_FIRST:
+        case MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV:
+        case MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT:
+        case MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST:
+            retnum=member_board_article_thread_read(conf, article, act);
+            break;
+    }
 
-	uinfo.currentboard=save_uinfo_currentboard;
+    uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
-	memcpy(currBM, save_bm, BM_LEN - 1);
+    memcpy(currBM, save_bm, BM_LEN - 1);
 #ifdef HAVE_BRC_CONTROL
     if (currboard) {
         brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
     }
-#endif	
-	
-	if (flush && flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1)) {
-		if (FULLUPDATE==retnum)
-			return DIRCHANGED;
-	}
-		
-	return retnum;
+#endif    
+    
+    if (flush && flush_member_board_articles(DIR_MODE_NORMAL, getCurrentUser(), 1)) {
+        if (FULLUPDATE==retnum)
+            return DIRCHANGED;
+    }
+        
+    return retnum;
 }
 
 struct key_command member_board_article_comms[]={
     {'r', (READ_KEY_FUNC)member_board_article_read, NULL},
-	{Ctrl('P'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_POST},
-	{Ctrl('C'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_CROSS},
-	{'H', (READ_KEY_FUNC)member_board_article_board_info, (void *)MEMBER_BOARD_ARTICLE_BOARD_HOT},
-	{'s', (READ_KEY_FUNC)member_board_article_select,NULL},
-	{'v', (READ_KEY_FUNC)read_callfunc0, (void *)i_read_mail},
-	{'F', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_FORWARD},
-	{Ctrl('R'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_MAIL},
-	{'f', (READ_KEY_FUNC)member_board_article_clear_new_flag,NULL},
-	{Ctrl('A'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO},
-	{'~',(READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL},
-	{Ctrl('W'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM},
-	{Ctrl('O'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND},
-	{Ctrl('Y'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_ZSEND},
+    {Ctrl('P'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_POST},
+    {Ctrl('C'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_CROSS},
+    {'H', (READ_KEY_FUNC)member_board_article_board_info, (void *)MEMBER_BOARD_ARTICLE_BOARD_HOT},
+    {'s', (READ_KEY_FUNC)member_board_article_select,NULL},
+    {'v', (READ_KEY_FUNC)read_callfunc0, (void *)i_read_mail},
+    {'F', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_FORWARD},
+    {Ctrl('R'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_MAIL},
+    {'f', (READ_KEY_FUNC)member_board_article_clear_new_flag,NULL},
+    {Ctrl('A'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_INFO},
+    {'~',(READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_DETAIL},
+    {Ctrl('W'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_BM},
+    {Ctrl('O'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_FRIEND},
+    {Ctrl('Y'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_ZSEND},
 #ifdef PERSONAL_CORP
     {'y', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BLOG},
-#endif	
-	{'h', (READ_KEY_FUNC)member_board_article_help,NULL},
-	{KEY_TAB, (READ_KEY_FUNC)member_board_article_board_info,(void *)MEMBER_BOARD_ARTICLE_BOARD_NOTE},
-	{Ctrl('D'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_DENY},
+#endif    
+    {'h', (READ_KEY_FUNC)member_board_article_help,NULL},
+    {KEY_TAB, (READ_KEY_FUNC)member_board_article_board_info,(void *)MEMBER_BOARD_ARTICLE_BOARD_NOTE},
+    {Ctrl('D'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_DENY},
     {Ctrl('E'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_CLUB},
-	{'z', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_MSG},
-	{'!', (READ_KEY_FUNC)read_callfunc0,(void *)Goodbye},
-	{Ctrl('Q'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_INFO},
-	{Ctrl('S'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_JUMP},
-	{'A', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_PREV},
-	{'a', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_NEXT},
-	{'?', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_TITLE_PREV},
-	{'/', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_TITLE_NEXT},
-	{'B', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BOARD_PREV},
-	{'b', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BOARD_NEXT},
-	{'=', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_FIRST},
-	{'[', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV},
-	{']', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT},
-	{'\\', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST},
-	{'\n', NULL},
+    {'z', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_MSG},
+    {'!', (READ_KEY_FUNC)read_callfunc0,(void *)Goodbye},
+    {Ctrl('Q'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_INFO},
+    {Ctrl('S'), (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_JUMP},
+    {'A', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_PREV},
+    {'a', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_AUTH_NEXT},
+    {'?', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_TITLE_PREV},
+    {'/', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_TITLE_NEXT},
+    {'B', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BOARD_PREV},
+    {'b', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_BOARD_NEXT},
+    {'=', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_FIRST},
+    {'[', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_PREV},
+    {']', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT},
+    {'\\', (READ_KEY_FUNC)member_board_article_info,(void *)MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST},
+    {'\n', NULL},
 };
 
 int t_member_board_articles(void) {
-	static int mode=DIR_MODE_NORMAL;
-	char path[PATHLEN];
-	int returnmode=CHANGEMODE;
-	int ret;
-	
-	set_member_board_article_dir(mode, path, getCurrentUser()->userid);
-	clear();
-	ret=load_member_board_articles(path, mode, getCurrentUser(), 0);
+    static int mode=DIR_MODE_NORMAL;
+    char path[PATHLEN];
+    int returnmode=CHANGEMODE;
+    int ret;
+    
+    set_member_board_article_dir(mode, path, getCurrentUser()->userid);
+    clear();
+    ret=load_member_board_articles(path, mode, getCurrentUser(), 0);
     if (ret<0) {
         move(10, 10);
-		if (-2==ret)
-			prints("您尚未加入任何版面,请进入版面后在Ctrl+K的驻版选单中添加");
-		else
-			prints("加载驻版信息出错");
-		pressanykey();
+        if (-2==ret)
+            prints("您尚未加入任何版面,请进入版面后在Ctrl+K的驻版选单中添加");
+        else
+            prints("加载驻版信息出错");
+        pressanykey();
         return 0;
     }
-	
-	while(returnmode==CHANGEMODE) {
+    
+    while(returnmode==CHANGEMODE) {
         returnmode=new_i_read(DIR_MODE_MEMBER_ARTICLE, path, member_board_article_title, (READ_ENT_FUNC)member_board_article_ent, &member_board_article_comms[0], sizeof(struct member_board_article));
     }
-	
-	return 0;
+    
+    return 0;
 }
 
 #endif /* ENABLE_BOARD_MEMBER */

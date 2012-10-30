@@ -175,9 +175,9 @@ int save_board_member_config(const char *name, struct board_member_config *confi
 
 int get_user_max_member_boards(const struct userec *user) 
 {
-	int level, user_max;
-	char buf[STRLEN];
-	
+    int level, user_max;
+    char buf[STRLEN];
+    
 #if defined(NEWSMTH) && !defined(SECONDSITE)
     level=uvaluetochar(buf, (struct userec *)user);  
     user_max=(level>MEMBER_USER_MAX_DEFAULT)?level:MEMBER_USER_MAX_DEFAULT;
@@ -185,14 +185,14 @@ int get_user_max_member_boards(const struct userec *user)
     user_max=MEMBER_USER_MAX_DEFAULT;        
 #endif    
 
-	if (HAS_PERM(user, PERM_SYSOP))
-		user_max += 6;
-	else if (HAS_PERM(user, PERM_BMAMANGER))
-		user_max += 3;
-	else
-		;
-		
-	return user_max;	
+    if (HAS_PERM(user, PERM_SYSOP))
+        user_max += 6;
+    else if (HAS_PERM(user, PERM_BMAMANGER))
+        user_max += 3;
+    else
+        ;
+        
+    return user_max;    
 }
 
 /**
@@ -278,9 +278,9 @@ int join_board_member(const char *name) {
     sprintf(buf, "用户等级: %d / %d\n", level, config.level);    
     strcat(log, buf);
 #endif    
-	user_max=get_user_max_member_boards(getCurrentUser());
+    user_max=get_user_max_member_boards(getCurrentUser());
     
-	count=0;
+    count=0;
     if (config.max_members>0) {
         count=get_board_members(board->filename);
         if (count<0)
@@ -424,8 +424,8 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     
     if (NULL!=member) {
         bzero(member, sizeof(struct board_member));
-		member->status=BOARD_MEMBER_STATUS_NONE;
-		
+        member->status=BOARD_MEMBER_STATUS_NONE;
+        
         if (row != NULL) {
             strncpy(member->board, row[0], 32);
             strncpy(member->user, row[1], IDLEN+1);
@@ -458,13 +458,13 @@ int load_board_members(const char *board, struct board_member *member, int sort,
     char qtmp[100];
     char my_board[STRLEN];
     int i;
-	const struct boardheader *bh;
-	struct userec *user;
+    const struct boardheader *bh;
+    struct userec *user;
     
     if (!board[0])
         return -1;
-	if (!getbid(board, &bh)||bh->flag&BOARD_GROUP)
-		return -1;
+    if (!getbid(board, &bh)||bh->flag&BOARD_GROUP)
+        return -1;
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -516,20 +516,20 @@ int load_board_members(const char *board, struct board_member *member, int sort,
 
     i=0;
     while (row != NULL) {
-		if (!getuser(row[1], &user)||!check_read_perm(user,bh)) {
-			delete_board_member_record(row[0], row[1]);
-		} else {
-			i++;
-			if (i>num)
-				break;
-				
-			strncpy(member[i-1].board, bh->filename, 32);
-			strncpy(member[i-1].user, user->userid, IDLEN+1);
-			member[i-1].time=atol(row[2]);
-			member[i-1].status=atol(row[3]);
-			strncpy(member[i-1].manager, row[4], IDLEN+1);
-			member[i-1].score=atol(row[5]);
-			member[i-1].flag=atol(row[6]);
+        if (!getuser(row[1], &user)||!check_read_perm(user,bh)) {
+            delete_board_member_record(row[0], row[1]);
+        } else {
+            i++;
+            if (i>num)
+                break;
+                
+            strncpy(member[i-1].board, bh->filename, 32);
+            strncpy(member[i-1].user, user->userid, IDLEN+1);
+            member[i-1].time=atol(row[2]);
+            member[i-1].status=atol(row[3]);
+            strncpy(member[i-1].manager, row[4], IDLEN+1);
+            member[i-1].score=atol(row[5]);
+            member[i-1].flag=atol(row[6]);
         }
         row = mysql_fetch_row(res);
     }
@@ -551,8 +551,8 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
     
     if (!user_id[0])
         return -1;
-	if (!getuser(user_id, &user))
-		return -1;
+    if (!getuser(user_id, &user))
+        return -1;
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -604,23 +604,23 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
 
     i=0;
     while (row != NULL) {
-    		const struct boardheader *board;
-		if (!getbid(row[0], &board)||board->flag&BOARD_GROUP||!check_read_perm(user,board)) {
-			delete_board_member_record(row[0], row[1]);
-		} else if (!check_read_perm(getCurrentUser(),board)) {
-		
-		} else {
-			i++;
-			if (i>num)
-				break;
-				
-			strncpy(member[i-1].board, board->filename, 32);
-			strncpy(member[i-1].user, user->userid, IDLEN+1);
-			member[i-1].time=atol(row[2]);
-			member[i-1].status=atol(row[3]);
-			strncpy(member[i-1].manager, row[4], IDLEN+1);
-			member[i-1].score=atol(row[5]);
-			member[i-1].flag=atol(row[6]);
+            const struct boardheader *board;
+        if (!getbid(row[0], &board)||board->flag&BOARD_GROUP||!check_read_perm(user,board)) {
+            delete_board_member_record(row[0], row[1]);
+        } else if (!check_read_perm(getCurrentUser(),board)) {
+        
+        } else {
+            i++;
+            if (i>num)
+                break;
+                
+            strncpy(member[i-1].board, board->filename, 32);
+            strncpy(member[i-1].user, user->userid, IDLEN+1);
+            member[i-1].time=atol(row[2]);
+            member[i-1].status=atol(row[3]);
+            strncpy(member[i-1].manager, row[4], IDLEN+1);
+            member[i-1].score=atol(row[5]);
+            member[i-1].flag=atol(row[6]);
         }
         row = mysql_fetch_row(res);
     }
@@ -722,8 +722,8 @@ int load_board_member_request(const char *name, struct board_member_config *mine
     if (!haspostperm(getSession()->currentuser, board->filename))
         return -4;
     
-	mine->approve=0;
-	mine->max_members=0;
+    mine->approve=0;
+    mine->max_members=0;
     mine->logins=getSession()->currentuser->numlogins;
     mine->posts=getSession()->currentuser->numposts;
 #if defined(NEWSMTH) && !defined(SECONDSITE)
@@ -776,16 +776,16 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     if (old==status)
         return 0;
     
-	switch(status) {
-		case BOARD_MEMBER_STATUS_NONE:
-		case BOARD_MEMBER_STATUS_CANDIDATE:
-		case BOARD_MEMBER_STATUS_NORMAL:
-		case BOARD_MEMBER_STATUS_MANAGER:
-			break;
-		default:
-			return -7;
-	}
-	
+    switch(status) {
+        case BOARD_MEMBER_STATUS_NONE:
+        case BOARD_MEMBER_STATUS_CANDIDATE:
+        case BOARD_MEMBER_STATUS_NORMAL:
+        case BOARD_MEMBER_STATUS_MANAGER:
+            break;
+        default:
+            return -7;
+    }
+    
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -818,13 +818,13 @@ int set_board_member_flag(struct board_member *member) {
     char my_name[STRLEN];
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
-	char sql[200], buf[1024];
-	
-	mysql_escape_string(my_name, member->board, strlen(member->board));
+    char sql[200], buf[1024];
+    
+    mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
-	
-	sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, my_manager_id, my_name, my_user_id);
+    
+    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, my_manager_id, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -842,15 +842,15 @@ int set_board_member_flag(struct board_member *member) {
 int set_board_member_score(struct board_member *member, int type, int score) {
     char my_name[STRLEN];
     char my_user_id[STRLEN];
-	char sql[200];
+    char sql[200];
     
-	mysql_escape_string(my_name, member->board, strlen(member->board));
+    mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     
-	if (0==type)
-	    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", score, my_name, my_user_id);
+    if (0==type)
+        sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", score, my_name, my_user_id);
     else
-	    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=`score`%s%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", ((type>0)?"+":"-"),score, my_name, my_user_id);
+        sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=`score`%s%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", ((type>0)?"+":"-"),score, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -866,149 +866,149 @@ int set_board_member_score(struct board_member *member, int type, int score) {
 typedef int member_board_article_cmp_func(const void *, const void *);
 
 int member_board_article_cmp(fileheader *a, fileheader *b) {
-	return a->posttime-b->posttime;
-//	return get_posttime(b) - get_posttime(a);
+    return a->posttime-b->posttime;
+//    return get_posttime(b) - get_posttime(a);
 }
 
 char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char *userid) {
-	const char *prefix;
-	
-	switch (mode) {
-		case DIR_MODE_DIGEST:
-			prefix="BMA_DIGEST";
-			break;
-		case DIR_MODE_THREAD:
-			prefix="BMA_THREAD";
-			break;
-		case DIR_MODE_MARK:
-			prefix="BMA_MARK";
-			break;
-		case DIR_MODE_WEB_THREAD:
-			prefix="BMA_THREAD";
-			break;
-		case DIR_MODE_NORMAL:
-		default:
-			prefix="BMA_DIR";
-	}
-	
-	sethomefile(buf, userid, prefix);
-	return buf;
+    const char *prefix;
+    
+    switch (mode) {
+        case DIR_MODE_DIGEST:
+            prefix="BMA_DIGEST";
+            break;
+        case DIR_MODE_THREAD:
+            prefix="BMA_THREAD";
+            break;
+        case DIR_MODE_MARK:
+            prefix="BMA_MARK";
+            break;
+        case DIR_MODE_WEB_THREAD:
+            prefix="BMA_THREAD";
+            break;
+        case DIR_MODE_NORMAL:
+        default:
+            prefix="BMA_DIR";
+    }
+    
+    sethomefile(buf, userid, prefix);
+    return buf;
 }
 
 int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user, int force) {
-	int total, i, j, offset, bid;
-	struct board_member *members;
-	struct fileheader *posts;
-	struct fileheader *board_posts;
-	int post_size, post_total, post_read;
-	char dir[PATHLEN];
-	int board_total, board_offset, board_num;
-	int fd;
-	struct stat st;
-	struct member_board_article article;
-	struct boardheader *bh;
-	
-	switch (mode) {
-		case DIR_MODE_NORMAL:
-		case DIR_MODE_DIGEST:
-		case DIR_MODE_THREAD:
-		case DIR_MODE_MARK:
-		case DIR_MODE_WEB_THREAD:
-			break;
-		default:
-			return -5;
-	}
-	
-	if (stat(path, &st) >= 0 && !force && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
-		return (st.st_size / sizeof(struct member_board_article));
-	
-	total=get_member_boards(user->userid);
-	if (total<0)
-		return -1;
-	if (total==0)
-		return -2;
-	
-	members=(struct board_member *) malloc(sizeof(struct board_member) * total);
-	bzero(members, sizeof(struct board_member) * total);
-	total=load_member_boards(user->userid, members, 0, 0, total);
-	if (total <= 0) {
-		free(members);
-		members=NULL;
-		return -3;
-	}
-	
-	offset=10;
-	while (total>offset) 
-		offset *= 10;
-	
-	post_size=sizeof(struct fileheader);
-	posts=(struct fileheader *) malloc(post_size*(MAX_MEMBER_BOARD_ARTICLES*total));
-	board_posts=(struct fileheader *) malloc(post_size*MAX_MEMBER_BOARD_ARTICLES);
-	memset(posts, 0, post_size * (MAX_MEMBER_BOARD_ARTICLES*total));
-	
-	post_total=0;
-	for (i=0; i<total;i++) {
-		bid=getbid(members[i].board, NULL);
-		if (!bid) continue;
-		
-		setbdir(mode,dir,members[i].board);
-		board_total=get_num_records(dir, post_size);
-		if (board_total > MAX_MEMBER_BOARD_ARTICLES) {
-			board_offset=board_total-MAX_MEMBER_BOARD_ARTICLES+1;
-			board_num=MAX_MEMBER_BOARD_ARTICLES;
-		} else {
-			board_offset=1;
-			board_num=board_total;
-		}
-		memset(board_posts, 0, post_size * MAX_MEMBER_BOARD_ARTICLES);
-		post_read=get_records(dir, board_posts, post_size, board_offset, board_num);
-		if (post_read>0) {
-			for (j=0;j<post_read;j++) {
-				strncpy(posts[j+post_total].filename, board_posts[j].filename, FILENAME_LEN);
-				posts[j+post_total].id=board_posts[j].id;
-				posts[j+post_total].groupid=board_posts[j].groupid;
-				posts[j+post_total].reid=board_posts[j].reid;
-				strncpy(posts[j+post_total].owner, board_posts[j].owner, OWNER_LEN);
-				posts[j+post_total].eff_size=board_posts[j].eff_size;
-				posts[j+post_total].posttime=board_posts[j].posttime;
-				posts[j+post_total].attachment=board_posts[j].attachment;
-				strncpy(posts[j+post_total].title, board_posts[j].title, ARTICLE_TITLE_LEN);
-				posts[j+post_total].accessed[0]=board_posts[j].accessed[0];
-				posts[j+post_total].accessed[1]=board_posts[j].accessed[1];
-				posts[j+post_total].o_id=board_posts[j].id*offset+i;
-				posts[j+post_total].o_reid=board_posts[j].reid*offset+i;
-				posts[j+post_total].o_groupid=board_posts[j].groupid*offset+i;
-				posts[j+post_total].o_bid=bid;
-			}
-			post_total += post_read;
-		}
-	}
-	
-	free(board_posts);
-	board_posts=NULL;
+    int total, i, j, offset, bid;
+    struct board_member *members;
+    struct fileheader *posts;
+    struct fileheader *board_posts;
+    int post_size, post_total, post_read;
+    char dir[PATHLEN];
+    int board_total, board_offset, board_num;
+    int fd;
+    struct stat st;
+    struct member_board_article article;
+    struct boardheader *bh;
+    
+    switch (mode) {
+        case DIR_MODE_NORMAL:
+        case DIR_MODE_DIGEST:
+        case DIR_MODE_THREAD:
+        case DIR_MODE_MARK:
+        case DIR_MODE_WEB_THREAD:
+            break;
+        default:
+            return -5;
+    }
+    
+    if (stat(path, &st) >= 0 && !force && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
+        return (st.st_size / sizeof(struct member_board_article));
+    
+    total=get_member_boards(user->userid);
+    if (total<0)
+        return -1;
+    if (total==0)
+        return -2;
+    
+    members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+    bzero(members, sizeof(struct board_member) * total);
+    total=load_member_boards(user->userid, members, 0, 0, total);
+    if (total <= 0) {
+        free(members);
+        members=NULL;
+        return -3;
+    }
+    
+    offset=10;
+    while (total>offset) 
+        offset *= 10;
+    
+    post_size=sizeof(struct fileheader);
+    posts=(struct fileheader *) malloc(post_size*(MAX_MEMBER_BOARD_ARTICLES*total));
+    board_posts=(struct fileheader *) malloc(post_size*MAX_MEMBER_BOARD_ARTICLES);
+    memset(posts, 0, post_size * (MAX_MEMBER_BOARD_ARTICLES*total));
+    
+    post_total=0;
+    for (i=0; i<total;i++) {
+        bid=getbid(members[i].board, NULL);
+        if (!bid) continue;
+        
+        setbdir(mode,dir,members[i].board);
+        board_total=get_num_records(dir, post_size);
+        if (board_total > MAX_MEMBER_BOARD_ARTICLES) {
+            board_offset=board_total-MAX_MEMBER_BOARD_ARTICLES+1;
+            board_num=MAX_MEMBER_BOARD_ARTICLES;
+        } else {
+            board_offset=1;
+            board_num=board_total;
+        }
+        memset(board_posts, 0, post_size * MAX_MEMBER_BOARD_ARTICLES);
+        post_read=get_records(dir, board_posts, post_size, board_offset, board_num);
+        if (post_read>0) {
+            for (j=0;j<post_read;j++) {
+                strncpy(posts[j+post_total].filename, board_posts[j].filename, FILENAME_LEN);
+                posts[j+post_total].id=board_posts[j].id;
+                posts[j+post_total].groupid=board_posts[j].groupid;
+                posts[j+post_total].reid=board_posts[j].reid;
+                strncpy(posts[j+post_total].owner, board_posts[j].owner, OWNER_LEN);
+                posts[j+post_total].eff_size=board_posts[j].eff_size;
+                posts[j+post_total].posttime=board_posts[j].posttime;
+                posts[j+post_total].attachment=board_posts[j].attachment;
+                strncpy(posts[j+post_total].title, board_posts[j].title, ARTICLE_TITLE_LEN);
+                posts[j+post_total].accessed[0]=board_posts[j].accessed[0];
+                posts[j+post_total].accessed[1]=board_posts[j].accessed[1];
+                posts[j+post_total].o_id=board_posts[j].id*offset+i;
+                posts[j+post_total].o_reid=board_posts[j].reid*offset+i;
+                posts[j+post_total].o_groupid=board_posts[j].groupid*offset+i;
+                posts[j+post_total].o_bid=bid;
+            }
+            post_total += post_read;
+        }
+    }
+    
+    free(board_posts);
+    board_posts=NULL;
 
-	if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0664))==-1) { 
-		free(members);
-		free(posts);
-		members=NULL;
-		posts=NULL;
-		return -4;
-	}
-	
-	writew_lock(fd, 0, SEEK_SET, 0);
-	lseek(fd, 0, SEEK_END);
+    if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0664))==-1) { 
+        free(members);
+        free(posts);
+        members=NULL;
+        posts=NULL;
+        return -4;
+    }
+    
+    writew_lock(fd, 0, SEEK_SET, 0);
+    lseek(fd, 0, SEEK_END);
 
-	i=0;
-	j=0;
-	memset(&article, 0, sizeof(struct member_board_article));	
-	if (post_total > 0) {
-		
-		board_posts=(struct fileheader *) malloc(post_size*post_total);
-		memset(board_posts, 0, post_size * post_total);
-		
-		while(j<post_total) {
-			if (!posts[i].o_bid) break;
-			strncpy(board_posts[j].filename, posts[i].filename, FILENAME_LEN);
+    i=0;
+    j=0;
+    memset(&article, 0, sizeof(struct member_board_article));    
+    if (post_total > 0) {
+        
+        board_posts=(struct fileheader *) malloc(post_size*post_total);
+        memset(board_posts, 0, post_size * post_total);
+        
+        while(j<post_total) {
+            if (!posts[i].o_bid) break;
+            strncpy(board_posts[j].filename, posts[i].filename, FILENAME_LEN);
                         board_posts[j].id=posts[i].id;
                         board_posts[j].groupid=posts[i].groupid;
                         board_posts[j].reid=posts[i].reid;
@@ -1022,67 +1022,67 @@ int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct 
                         board_posts[j].o_id=posts[i].o_id;
                         board_posts[j].o_reid=posts[i].o_reid;
                         board_posts[j].o_groupid=posts[i].o_groupid;
-                        board_posts[j].o_bid=posts[i].o_bid;	
-			j++;
-			i++;
-		}
+                        board_posts[j].o_bid=posts[i].o_bid;    
+            j++;
+            i++;
+        }
 
-		qsort(board_posts, post_total, post_size, (member_board_article_cmp_func *) member_board_article_cmp);
+        qsort(board_posts, post_total, post_size, (member_board_article_cmp_func *) member_board_article_cmp);
 
-		if (post_total <= MAX_MEMBER_BOARD_ARTICLES)
-			i=0;
-		else
-			i=post_total-MAX_MEMBER_BOARD_ARTICLES;
-		
-		while (i<post_total) {	
-			if (!board_posts[i].o_bid) break;
-			bh=(struct boardheader *)getboard(board_posts[i].o_bid);
-			if (!bh) { i++; continue; }
-			
-			strncpy(article.board, bh->filename, STRLEN);
-			strncpy(article.filename, board_posts[i].filename, FILENAME_LEN);
-			article.id=board_posts[i].id;
-			article.groupid=board_posts[i].groupid;
-			article.reid=board_posts[i].reid;
-			article.s_id=board_posts[i].o_id;
-			article.s_groupid=board_posts[i].o_groupid;
-			article.s_reid=board_posts[i].o_reid;
-			strncpy(article.owner, board_posts[i].owner, OWNER_LEN);
-			article.eff_size=board_posts[i].eff_size;
-			article.posttime=board_posts[i].posttime;
-			article.attachment=board_posts[i].attachment;
-			strncpy(article.title, board_posts[i].title, ARTICLE_TITLE_LEN);
-			article.accessed[0]=board_posts[i].accessed[0];
-			article.accessed[1]=board_posts[i].accessed[1];
-			safewrite(fd, &article, sizeof(struct member_board_article));
-			i++;
-		}
+        if (post_total <= MAX_MEMBER_BOARD_ARTICLES)
+            i=0;
+        else
+            i=post_total-MAX_MEMBER_BOARD_ARTICLES;
+        
+        while (i<post_total) {    
+            if (!board_posts[i].o_bid) break;
+            bh=(struct boardheader *)getboard(board_posts[i].o_bid);
+            if (!bh) { i++; continue; }
+            
+            strncpy(article.board, bh->filename, STRLEN);
+            strncpy(article.filename, board_posts[i].filename, FILENAME_LEN);
+            article.id=board_posts[i].id;
+            article.groupid=board_posts[i].groupid;
+            article.reid=board_posts[i].reid;
+            article.s_id=board_posts[i].o_id;
+            article.s_groupid=board_posts[i].o_groupid;
+            article.s_reid=board_posts[i].o_reid;
+            strncpy(article.owner, board_posts[i].owner, OWNER_LEN);
+            article.eff_size=board_posts[i].eff_size;
+            article.posttime=board_posts[i].posttime;
+            article.attachment=board_posts[i].attachment;
+            strncpy(article.title, board_posts[i].title, ARTICLE_TITLE_LEN);
+            article.accessed[0]=board_posts[i].accessed[0];
+            article.accessed[1]=board_posts[i].accessed[1];
+            safewrite(fd, &article, sizeof(struct member_board_article));
+            i++;
+        }
 
-		free(board_posts);
-		board_posts=NULL;
-	}
+        free(board_posts);
+        board_posts=NULL;
+    }
 
-	un_lock(fd, 0, SEEK_SET, 0);
-	close(fd);
-	
-	free(members);
-	free(posts);
-	members=NULL;
-	posts=NULL;
-	
-	return j;
+    un_lock(fd, 0, SEEK_SET, 0);
+    close(fd);
+    
+    free(members);
+    free(posts);
+    members=NULL;
+    posts=NULL;
+    
+    return j;
 }
 
 int flush_member_board_articles(int mode, const struct userec *user, int force) {
-	char path[PATHLEN];
-	struct stat st;
-	
-	set_member_board_article_dir(mode, path, user->userid);
-	if (!force && stat(path, &st) >= 0 && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
-		return 0;
-	
-	load_member_board_articles(path, mode, user, force);
-	return 1;
+    char path[PATHLEN];
+    struct stat st;
+    
+    set_member_board_article_dir(mode, path, user->userid);
+    if (!force && stat(path, &st) >= 0 && st.st_mtime > (time(NULL) - MIN_MEMBER_BOARD_ARTICLE_STAT)) 
+        return 0;
+    
+    load_member_board_articles(path, mode, user, force);
+    return 1;
 }
 #endif
 #endif 
