@@ -877,7 +877,10 @@ int modify_board(int bid)
 			sel[i].x=2;
             sel[i].y=19;
 		} else if (i==26) {
-			sel[i].x=42;
+			sel[i].x=28;
+            sel[i].y=19;
+        } else if (i==27) {
+            sel[i].x=54;
             sel[i].y=19;
         }
 #endif		
