@@ -1774,7 +1774,7 @@ int modify_board(int bid)
             /* 多个版主 */
             case 27:
                 newbh.flag^=BOARD_MULTI_MANAGER;
-                if ((bh.flag&BOARD_MULTI_MANAGER)^(newbh.flag&BOARD_MULTI_MAnAGER)) {
+                if ((bh.flag&BOARD_MULTI_MANAGER)^(newbh.flag&BOARD_MULTI_MANAGER)) {
                     sprintf(menustr[27],"%-15s\033[1;32m%s\033[m",menuldr[27],(newbh.flag&BOARD_MULTI_MANAGER)?"是":"否");
                     change|=(1<<27);
                 } else {
