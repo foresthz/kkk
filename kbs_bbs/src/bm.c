@@ -1820,6 +1820,11 @@ int delete_range(struct _select_def *conf,struct fileheader *file,void *varg)
 #endif
 	)
         return DONOTHING;
+		
+#ifdef MEMBER_MANAGER
+	if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!check_board_member_manager(&currmember, currboard, BMP_RANGE))
+		return DONOTHING;
+#endif		
     timestamp=time(NULL);
     !mail?setbfile(buf,ident,src):setmailfile(buf,ident,src);
     if (stat(buf,&st_src)==-1||!S_ISREG(st_src.st_mode))
