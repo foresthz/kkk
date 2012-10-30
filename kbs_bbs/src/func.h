@@ -864,6 +864,8 @@ while(0)
 	int update_board_member_manager_file(const struct boardheader *board);
 	int get_board_member_managers(const struct boardheader *board);
 	int load_board_member_managers(const struct boardheader *board, struct board_member *members);
+	char *get_bmp_name(char *name, int bmp);
+	int get_bmp_value(int index);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD

@@ -13,6 +13,54 @@
 #define MIN_MEMBER_BOARD_ARTICLE_STAT 60
 #endif
 
+char *get_bmp_name(char *name, int bmp) {
+	switch(bmp) {
+	    case BMP_DELETE:
+			strcpy(name, "删文");
+			break;
+		case BMP_DENY:
+			strcpy(name, "封禁");
+			break;
+		case BMP_SIGN:
+			strcpy(name, "标记");
+			break;
+		case BMP_ANNOUNCE:
+			strcpy(name, "精华区");
+			break;
+		case BMP_REFER:
+			strcpy(name, "驻版提醒");
+			break;
+		case BMP_JUNK:
+			strcpy(name, "查看删除区");
+			break;
+		case BMP_VOTE:
+			strcpy(name, "投票管理");
+			break;
+		case BMP_RECOMMEND:
+			strcpy(name, "置顶/不可RE/推荐");
+			break;
+		case BMP_RANGE:
+			strcpy(name, "区段操作");
+			break;
+		case BMP_NOTE:
+			strcpy(name, "备忘录/模板/版规/封禁理由/标题关键字");
+			break;
+		case BMP_THREAD:
+			strcpy(name, "主题操作");
+			break;
+		default:
+			strcpy(name, "未定义");
+	}
+	
+	return name;
+}
+
+int get_bmp_value(int index) {
+	if (index<0||index>=BMP_COUNT)
+		return 0;
+	return 1<<index;
+}
+
 int board_member_log(struct board_member *member, char *title, char *log) {
     char path[STRLEN], buf[STRLEN];
     FILE *handle;
@@ -821,12 +869,7 @@ int set_board_member_flag(struct board_member *member) {
     char my_manager_id[STRLEN];
     char sql[200], buf[1024];
     const struct boardheader *board;
-    
-    static const int flags[10]={
-        BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
-        BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
-    };
-    int i;
+    int i, flag;
     
     board=getbcache(member->board);
     if (0==board)
@@ -841,8 +884,9 @@ int set_board_member_flag(struct board_member *member) {
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
     
     member->status=BOARD_MEMBER_STATUS_NORMAL;
-    for (i=0;i<10;i++) {
-        if (member->flag&flags[i]) {
+    for (i=0;i<BMP_COUNT;i++) {
+		flag=get_bmp_value(i);
+        if (member->flag&flag) {
             member->status=BOARD_MEMBER_STATUS_MANAGER;
             break;
         }
@@ -967,18 +1011,10 @@ int load_board_member_managers(const struct boardheader *board, struct board_mem
 }
 int set_board_member_manager_file(const struct boardheader *board) {
     struct stat st;
-    char path[PATHLEN];
+    char path[PATHLEN], name[STRLEN];
     FILE *in;
     struct board_member *members=NULL;
-    int total, i, j, k;
-    static const char *flag_names[BMP_COUNT]={
-        "删文", "封禁", "标记", "精华区", "驻版提醒",
-        "看删除区", "投票管理", "置顶/不可RE/推荐", "区段操作", "进版/模板/版规"
-    };
-    static const int flags[BMP_COUNT]={
-        BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
-        BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
-    };
+    int total, i, j, k, flag;
     
     setbfile(path, board->filename, BOARD_MEMBER_MANAGERS_FILE);
     if (stat(path, &st) >= 0)
@@ -1003,10 +1039,12 @@ int set_board_member_manager_file(const struct boardheader *board) {
     
     if (load_board_member_managers(board, members)>0) {
         for (i=0; i<BMP_COUNT; i++) {
-            fprintf(in, "\n具有 \033[1;31m%s\033[m 权限的用户\n", flag_names[i]);
+			flag=get_bmp_value(i);
+			get_bmp_name(name, flag);
+            fprintf(in, "\n具有 \033[1;31m%s\033[m 权限的用户\n", name);
             k=0;
             for (j=0; j<total; j++) {
-                if (members[j].flag&flags[i]) {
+                if (members[j].flag&flag) {
                     k++;
                     fprintf(in, " %3d. \033[1;32m%s\033[m\n", k, members[j].user);
                 }
