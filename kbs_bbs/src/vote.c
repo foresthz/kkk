@@ -84,8 +84,12 @@ int b_rules_edit()
     char oldrules[STRLEN];
 #endif
 
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+#else
     if (!chk_currBM(currBM, getCurrentUser())) {
-        return 0;
+#endif
+		return 0;
     }
     clear();
     makevdir(currboard->filename);
@@ -129,8 +133,12 @@ int b_notes_edit()
     int aborted;
     int oldmode;
 
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+#else	
     if (!chk_currBM(currBM, getCurrentUser())) {
-        return 0;
+#endif
+		return 0;
     }
     clear();
     makevdir(currboard->filename);
@@ -210,8 +218,12 @@ int b_banner_edit()
     int aborted;
     int oldmode;
 
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+#else	
     if (!chk_currBM(currBM, getCurrentUser())) {
-        return 0;
+#endif
+		return 0;
     }
     clear();
     sprintf(buf, "boards/%s/banner", currboard->filename);
@@ -250,8 +262,12 @@ int b_sec_notes_edit(struct _select_def* conf,struct fileheader *fileinfo,void* 
     char ans[4];
     int aborted;
 
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+#else	
     if (!chk_currBM(currBM, getCurrentUser())) {
-        return 0;
+#endif
+		return 0;
     }
     clear();
     makevdir(currboard->filename);
@@ -731,8 +747,12 @@ char *bname;
 
     setcontrolfile();
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
+#ifdef MEMBER_MANAGER
+		if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+#else	
         if (!chk_currBM(currBM, getCurrentUser())) {
-            return 0;
+#endif
+			return 0;
         }
     stand_title("¿ªÆôÍ¶Æ±Ïä");
     makevdir(bname);
@@ -1392,15 +1412,23 @@ int allnum, pagenum;
             break;
         case 'A':
         case 'a':
+#ifdef MEMBER_MANAGER
+			if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) 
+#else		
             if (!chk_currBM(currBM, getCurrentUser()))
-                return true;
+#endif
+				return true;
             vote_maintain(currboard->filename);
             deal = 1;
             break;
         case 'O':
         case 'o':
+#ifdef MEMBER_MANAGER
+			if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) 
+#else		
             if (!chk_currBM(currBM, getCurrentUser()))
-                return true;
+#endif
+				return true;
             clear();
             deal = 1;
             get_record(controlfile, &currvote, sizeof(struct votebal),
@@ -1448,8 +1476,12 @@ int allnum, pagenum;
             break;
         case 'D':
         case 'd':
+#ifdef MEMBER_MANAGER
+			if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+#else
             if (!chk_currBM(currBM, getCurrentUser())) {
-                return 1;
+#endif
+				return 1;
             }
             deal = 1;
             get_record(controlfile, &currvote, sizeof(struct votebal),
