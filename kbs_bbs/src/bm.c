@@ -776,7 +776,13 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
      */
     now = time(0);
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
-        if (!chk_currBM(currBM, getCurrentUser())) {
+        if (
+#ifdef MEMBER_MANAGER
+			!check_board_member_manager(&currmember, currboard, BMP_DENY)
+#else		
+			!chk_currBM(currBM, getCurrentUser())
+#endif
+		) {
             return DONOTHING;
         }
 
@@ -789,7 +795,13 @@ int deny_user(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         if (fileinfo==NULL || fileinfo->o_bid <= 0) {
             return DONOTHING;
         }
-        if (!(bh=getboard(fileinfo->o_bid)) || !chk_currBM(bh->BM, getCurrentUser())) {
+        if (!(bh=getboard(fileinfo->o_bid)) || 
+#ifdef MEMBER_MANAGER
+			!check_board_member_manager(&currmember, bh, BMP_DENY)
+#else		
+			!chk_currBM(bh->BM, getCurrentUser())
+#endif			
+		) {
             return DONOTHING;
         }
 #ifdef NEWSMTH
