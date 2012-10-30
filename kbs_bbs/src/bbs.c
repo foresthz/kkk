@@ -6161,7 +6161,13 @@ static int SR_BMFunc(struct _select_def* conf, struct fileheader* fh, void* extr
         return DONOTHING;
     func_arg.delpostnum=(bool)extraarg;
     func_arg.setflag=true;
-    if (!chk_currBM(currBM, getCurrentUser())) {
+    if (
+#ifdef MEMBER_MANAGER
+		!check_board_member_manager(&currmember, currboard, BMP_THREAD)
+#else
+		!chk_currBM(currBM, getCurrentUser())
+#endif
+	) {
         return DONOTHING;
     }
     if (arg->mode != DIR_MODE_NORMAL && arg->mode != DIR_MODE_DIGEST)     /* KCN:‘›≤ª‘ –Ì */
