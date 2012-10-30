@@ -15,7 +15,13 @@ int tmpl_init_ex(int mode, const char *bname, struct a_template **pptemp)
     int newmode=0;
     int ret;
 
-    if (mode==1 || chk_BM(bname, getCurrentUser())) newmode = 1;
+    if (mode==1 || 
+#ifdef MEMBER_MANAGER
+		check_board_member_manager_by_name(&currmember, bname, BMP_NOTE)
+#else
+		chk_BM(bname, getCurrentUser())
+#endif
+	) newmode = 1;
 
     ret = orig_tmpl_init((char*)bname, newmode, pptemp);
 
@@ -610,6 +616,20 @@ static int content_key(struct _select_def *conf, int key)
         } \
     } while (0)
 
+#ifdef MEMBER_MANAGER
+#define tmpl_check_BM(bname) \
+    do { \
+        int tcB_ret; \
+        if (!strcmp(bname, currboard->filename)) \
+            tcB_ret = check_board_member_manager(&currmember, currboard, BMP_NOTE); \
+        else \
+            tcB_ret = check_board_member_manager_by_name(&currmember, bname, BMP_NOTE); \
+        if (!tcB_ret) { \
+            _prompt("权限不够，按回车继续 << "); \
+            return SHOW_DIRCHANGE; \
+        } \
+    } while (0)
+#else
 #define tmpl_check_BM(bname) \
     do { \
         int tcB_ret; \
@@ -622,6 +642,7 @@ static int content_key(struct _select_def *conf, int key)
             return SHOW_DIRCHANGE; \
         } \
     } while (0)
+#endif
 
 #define tmplcp_sorry() \
     do { \
@@ -1052,9 +1073,13 @@ int m_template()
     POINT *pts;
     struct _select_def grouplist_conf;
 
-    if (!chk_currBM(currBM, getCurrentUser())) {
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE))
+#else	
+    if (!chk_currBM(currBM, getCurrentUser())) 
+#endif	
         return DONOTHING;
-    }
+    
 
     if (tmpl_init(1) < 0)
         return FULLUPDATE;

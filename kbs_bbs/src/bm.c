@@ -2514,9 +2514,13 @@ int b_reason_edit() {
     char reason[MAXDENYREASON][STRLEN];
     int i, count;
 
-    if (!chk_currBM(currBM, getCurrentUser())) {
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE))
+#else
+    if (!chk_currBM(currBM, getCurrentUser())) 
+#endif
         return 0;
-    }
+    
     clear();
 
     for (i=0;i<MAXDENYREASON;i++)
@@ -2745,9 +2749,13 @@ int b_titkey_edit() {
     char key[MAXBOARDTITLEKEY][8];
     int i, count;
 
-    if (!chk_currBM(currBM, getCurrentUser())) {
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE))
+#else
+    if (!chk_currBM(currBM, getCurrentUser())) 
+#endif	
         return 0;
-    }
+    
     clear();
     
     for (i=0;i<MAXBOARDTITLEKEY;i++)

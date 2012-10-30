@@ -5180,7 +5180,12 @@ int b_note_edit_new(struct _select_def* conf,struct fileheader *fileinfo,void* e
 {
     char ans[4];
 
-    if (!chk_currBM(currBM, getCurrentUser())) return DONOTHING;
+#ifdef MEMBER_MANAGER
+	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE))
+#else	
+    if (!chk_currBM(currBM, getCurrentUser())) 
+#endif
+		return DONOTHING;
 
     move(t_lines - 1, 0);
     clrtoeol();

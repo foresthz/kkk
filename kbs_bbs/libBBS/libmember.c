@@ -17,6 +17,15 @@
 #define MIN_MEMBER_STATUS_LOAD_TIME 600
 #endif
 
+int check_board_member_manager_by_name(struct board_member_status *status, char *name, int perm) {
+    const struct boardheader *board;
+	
+	if (getbid(name, &board) <= 0)
+		return 0;
+		
+	return check_board_member_manager(status, board, perm);
+}
+
 int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm) {
     if (NULL==board)
         return 0;

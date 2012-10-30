@@ -871,6 +871,7 @@ while(0)
     char *get_bmp_name(char *name, int bmp);
     int get_bmp_value(int index);
     int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm);
+    int check_board_member_manager_by_name(struct board_member_status *status, char *name, int perm);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD

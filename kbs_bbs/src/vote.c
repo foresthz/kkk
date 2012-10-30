@@ -85,7 +85,7 @@ int b_rules_edit()
 #endif
 
 #ifdef MEMBER_MANAGER
-	if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE)) {
 #else
     if (!chk_currBM(currBM, getCurrentUser())) {
 #endif
@@ -134,7 +134,7 @@ int b_notes_edit()
     int oldmode;
 
 #ifdef MEMBER_MANAGER
-	if (!check_board_member_manager(&currmember, currboard, BMP_VOTE)) {
+	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE)) {
 #else	
     if (!chk_currBM(currBM, getCurrentUser())) {
 #endif
