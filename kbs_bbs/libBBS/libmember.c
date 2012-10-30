@@ -815,6 +815,7 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
 }    
 
 int set_board_member_flag(struct board_member *member) {
+    MYSQL s;
     char my_name[STRLEN];
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
@@ -840,6 +841,7 @@ int set_board_member_flag(struct board_member *member) {
 }
 
 int set_board_member_score(struct board_member *member, int type, int score) {
+    MYSQL s;
     char my_name[STRLEN];
     char my_user_id[STRLEN];
     char sql[200];

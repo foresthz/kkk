@@ -43,7 +43,7 @@ static const char *b_member_item_prefix[10]={
 };
 static const char *b_member_flag_item_prefix[10]={
     "删文", "封禁", "标记", "精华区", "驻版提醒",
-    "看删除区", "投票管理", "置顶/不可RE", "区段操作", "进版/模板"
+    "看删除区", "投票管理", "置顶/不可RE/推荐", "区段操作", "进版/模板/版规"
 };
 static const int b_member_flag_item[10]={
     BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
@@ -248,7 +248,6 @@ int b_member_set() {
 
 int b_member_set_flag_show(struct board_member *b_member, int old) {
     int i, n_set, o_set, same, changed;
-    char buf[STRLEN], old_value[STRLEN];
     
     changed=0;
     for (i=0;i<10;i++) {
@@ -261,7 +260,8 @@ int b_member_set_flag_show(struct board_member *b_member, int old) {
         
         if (!same) changed=1;
         
-        prints(" [%s] %s%s\033[m",
+        prints(" %d [%s] %s%s\033[m",
+            i,
             n_set?"\033[1;32m*\033[m":" ",
             same?"":"\033[1;31m",
             b_member_flag_item_prefix[i]
@@ -273,7 +273,7 @@ int b_member_set_flag_show(struct board_member *b_member, int old) {
 
 int b_member_set_flag(struct board_member *b_member) {
     char ans[4], ans2[20], buf[STRLEN];
-    int i, changed, old;
+    int changed, old, index;
     
     clear();
     old=b_member->flag;
@@ -327,15 +327,16 @@ int b_member_set_flag(struct board_member *b_member) {
             case '7':
             case '8':
             case '9':
+                index=atoi(ans);
                 move(t_lines-1,0);
                 clrtobot();
-                sprintf(buf, "是否给予 \033[1;33m%s\033[m 权限? (Y/N)", b_member_flag_item_prefix[ans[0]]);
+                sprintf(buf, "是否给予 \033[1;33m%s\033[m 权限? (Y/N)", b_member_flag_item_prefix[index]);
                 getdata(t_lines-1, 0, buf, ans2, 8, DOECHO, NULL, true);
                 
                 if (ans2[0]=='y'||ans2[0]=='Y')
-                    b_member->flag |= b_member_flag_item[ans[0]];
+                    b_member->flag |= b_member_flag_item[index];
                 else if (ans2[0]=='n'||ans2[0]=='N')
-                    b_member->flag &= ~b_member_flag_item[ans[0]];
+                    b_member->flag &= ~b_member_flag_item[index];
                 else
                     break;
                     
@@ -606,7 +607,7 @@ static int b_member_key(struct _select_def *conf, int key) {
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
             
-            if (b_member_set_flag(b_members[conf->pos-conf->page_pos])>0)    
+            if (b_member_set_flag(&b_members[conf->pos-conf->page_pos])>0)    
                 return SHOW_DIRCHANGE;
             else
                 return SHOW_REFRESH;            
