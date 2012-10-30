@@ -795,7 +795,7 @@ int m_editbrd(void)
 int modify_board(int bid)
 {
 #ifdef NEWSMTH
-#define MB_ITEMS 28
+#define MB_ITEMS 29
 #else
 #define MB_ITEMS 26
 #endif
@@ -818,7 +818,8 @@ int modify_board(int bid)
         "[O]版面积分  :","[P]强制模板  :",
 #ifdef NEWSMTH		
 		"[Q]先审后发  :","[R]待审版面  :",
-		"[S][退出]    :"
+        "[S]多个版主  :",
+		"[T][退出]    :"
 #else
 		"[Q][退出]    :"
 #endif
@@ -1005,10 +1006,13 @@ int modify_board(int bid)
 	/* 待审文章版面 */
 	sel[26].hotkey='R';
 	sprintf(menustr[26],"%-15s%s",menuldr[26],(bh.flag&BOARD_CENSOR_FILTER)?"是":"否");
+    /* 多个版主 */
+    sel[27].hotkey='S';
+	sprintf(menustr[27],"%-15s%s",menuldr[27],(bh.flag&BOARD_MULTI_MANAGER)?"是":"否");
 #endif	
     /*退出*/
 #ifdef NEWSMTH
-	sel[MB_ITEMS-1].hotkey='S';
+	sel[MB_ITEMS-1].hotkey='T';
 #else	
     sel[MB_ITEMS-1].hotkey='Q';
 #endif
@@ -1766,6 +1770,17 @@ int modify_board(int bid)
 						change&=~(1<<26);
 					}
 				}
+				break;
+            /* 多个版主 */
+            case 27:
+                newbh.flag^=BOARD_MULTI_MANAGER;
+                if ((bh.flag&BOARD_MULTI_MANAGER)^(newbh.flag&BOARD_MULTI_MAnAGER)) {
+                    sprintf(menustr[27],"%-15s\033[1;32m%s\033[m",menuldr[27],(newbh.flag&BOARD_MULTI_MANAGER)?"是":"否");
+                    change|=(1<<27);
+                } else {
+                    sprintf(menustr[27],"%s",orig[27]);
+                    change&=~(1<<27);
+                }
 				break;
 #endif
                 /*退出*/
