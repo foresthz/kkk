@@ -352,8 +352,7 @@ int b_member_set_flag(struct board_member *b_member) {
 
 static int b_member_show(struct _select_def *conf, int i) {
     struct userec *lookupuser;
-    char buf[STRLEN], color[STRLEN], perm[STRLEN];
-    int i;
+    char buf[STRLEN], color[STRLEN];
     
     if (getuser(b_members[i - conf->page_pos].user, &lookupuser)==0) {
         remove_board_member(b_members[i - conf->page_pos].board, b_members[i - conf->page_pos].user);
@@ -365,21 +364,13 @@ static int b_member_show(struct _select_def *conf, int i) {
                 break;
             case BOARD_MEMBER_STATUS_MANAGER:
                 strcpy(color, "\x1b[1;31m");
-                strcpy(perm, "\033[1;32m");
-                for (i=0;i<BMP_COUNT;i++) {
-                    if (b_members[i - conf->page_pos].flag&b_member_flag_item[i])
-                        strcat(perm, b_member_flag_item_note[i]);
-                    else
-                        strcat(perm, " ");
-                }
-                strcat(perm, "\033[m");
                 break;
             case BOARD_MEMBER_STATUS_CANDIDATE:
             default:
                 strcpy(color, "\x1b[1;33m");
         }
         
-        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, lookupuser->userid, perm, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
+        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, lookupuser->userid, lookupuser->username, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
     }
     
     return SHOW_CONTINUE;
@@ -427,8 +418,29 @@ static int b_member_prekey(struct _select_def *conf, int *key)
 }
 
 static int b_member_select(struct _select_def *conf) {
-    t_query(b_members[conf->pos-conf->page_pos].user);
-    
+	int i;
+    clear();
+	
+	move(1, 1);
+	prints("用户 \033[1;33m%s\033[m 在 \033[1;33m%s\033[m 版的驻版权限", b_members[conf->pos-conf->page_pos].user, b_members[conf->pos-conf->page_pos].board);
+    move(3, 1);
+	if (b_members[conf->pos-conf->page_pos].status != BOARD_MEMBER_STATUS_MANAGER) {
+		prints("该用户不是核心驻版用户");
+		pressanykey();
+		return SHOW_REFRESH;
+	}
+	
+	for (i=0;i<BMP_COUNT;i++) {
+		move(3+i, 0);
+        
+        prints(" \033[1;33m%d\033[m. [%s] %s\033[m",
+            i,
+            (b_members[conf->pos-conf->page_pos].flag&b_member_flag_item[i])?"\033[1;32m*\033[m":" ",
+            b_member_flag_item_prefix[i]
+        );
+    }
+	
+	pressanykey();
     return SHOW_REFRESH;
 }
 
@@ -528,6 +540,11 @@ static int b_member_key(struct _select_def *conf, int key) {
     
     del=0;
     switch (key) {
+	    case 'a':
+		case 'A':
+		case Ctrl('A'):
+		    t_query(b_members[conf->pos-conf->page_pos].user);
+			return SHOW_REFRESH;
         case 'v':
             i_read_mail();
             return SHOW_REFRESH;
