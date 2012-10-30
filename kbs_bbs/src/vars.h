@@ -33,6 +33,10 @@ extern char currBM[];           /* BM of currently selected board */
 
 extern char genbuf[1024];       /* generally used global buffer */
 
+#ifdef ENABLE_BOARD_MEMBER
+extern struct board_member_status currmember;
+#endif
+
 extern jmp_buf byebye;          /* Used for exception condition like I/O error */
 
 extern char save_title[];       /* These are used by the editor when inserting */

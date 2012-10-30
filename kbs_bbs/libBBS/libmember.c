@@ -17,7 +17,7 @@
 #define MIN_MEMBER_STATUS_LOAD_TIME 600
 #endif
 
-int check_board_member_manager(struct board_member_status status, const struct boardheader *board, int perm) {
+int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm) {
     if (NULL==board)
         return 0;
     if (chk_currBM(board->BM, getSession()->currentuser))

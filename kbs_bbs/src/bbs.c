@@ -47,8 +47,6 @@ extern int in_do_sendmsg;
 
 #ifdef ENABLE_BOARD_MEMBER
 struct board_member_status currmember;
-currmember.status=-1;
-currmember.flag=-1;
 #endif
 
 #ifndef NOREPLY
