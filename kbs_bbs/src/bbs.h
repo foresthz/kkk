@@ -277,33 +277,48 @@ extern long ti;
 
 /* board member configure. added by windinsn, Aug 11, 2012 */
 #ifdef ENABLE_BOARD_MEMBER
-#define BOARD_MEMBER_CONFIG   ".MEMBER"
-#define BOARD_MEMBER_STATUS_NONE      0
-#define BOARD_MEMBER_STATUS_CANDIDATE 1
-#define BOARD_MEMBER_STATUS_NORMAL    2
-#define BOARD_MEMBER_STATUS_MANAGER   3
-#define MEMBER_BOARD_MAX_DEFAULT 300
-#define MEMBER_USER_MAX_DEFAULT  6
-#define BOARD_MEMBER_SORT_DEFAULT	0
-#define BOARD_MEMBER_SORT_TIME_ASC	0
-#define BOARD_MEMBER_SORT_TIME_DESC	1
-#define BOARD_MEMBER_SORT_ID_ASC	2
-#define BOARD_MEMBER_SORT_ID_DESC	3
-#define BOARD_MEMBER_SORT_SCORE_DESC	4
-#define BOARD_MEMBER_SORT_SCORE_ASC	5
-#define BOARD_MEMBER_SORT_STATUS_ASC 6
-#define BOARD_MEMBER_SORT_STATUS_DESC 7
-#define MEMBER_BOARD_SORT_DEFAULT	0
-#define MEMBER_BOARD_SORT_TIME_ASC	0
-#define MEMBER_BOARD_SORT_TIME_DESC	1
-#define MEMBER_BOARD_SORT_BOARD_ASC	2
-#define MEMBER_BOARD_SORT_BOARD_DESC	3
-#define MEMBER_BOARD_SORT_SCORE_DESC	4
-#define MEMBER_BOARD_SORT_SCORE_ASC	5
-#define MEMBER_BOARD_SORT_STATUS_ASC 6
-#define MEMBER_BOARD_SORT_STATUS_DESC 7
-#define BOARD_MEMBER_SORT_TYPES		8
-#define BOARD_MEMBER_LOG_BOARD	"member.log"
+#define BOARD_MEMBER_CONFIG            ".MEMBER"
+#define BOARD_MEMBER_STATUS_NONE       0
+#define BOARD_MEMBER_STATUS_CANDIDATE  1
+#define BOARD_MEMBER_STATUS_NORMAL     2
+#define BOARD_MEMBER_STATUS_MANAGER    3
+/*
+ * 以下是struct board_member.flag中的位定义，用于细分版主权限
+ * 核心驻版用户本身无任何特殊权限，需要追加定义方有部分管理功能
+ * windinsn , Oct 30, 2012
+ */
+#define BMP_DELETE                     0x01    // 删文
+#define BMP_DENY                       0x02    // 封禁
+#define BMP_SIGN                       0x04    // 标记
+#define BMP_ANNOUNCE                   0x08    // 精华区
+#define BMP_REFER                      0x010   // 驻版提醒
+#define BMP_JUNK                       0x020   // 看删除区
+#define BMP_VOTE                       0x040   // 投票管理
+#define BMP_RECOMMEND                  0x080   // 置顶、推荐、不可re
+#define BMP_RANGE                      0x0100  // 区段删除
+#define BMP_NOTE                       0x0200  // 进版、治版方针、模板
+#define MEMBER_BOARD_MAX_DEFAULT       300
+#define MEMBER_USER_MAX_DEFAULT        6
+#define BOARD_MEMBER_SORT_DEFAULT	   0
+#define BOARD_MEMBER_SORT_TIME_ASC	   0
+#define BOARD_MEMBER_SORT_TIME_DESC	   1
+#define BOARD_MEMBER_SORT_ID_ASC	   2
+#define BOARD_MEMBER_SORT_ID_DESC	   3
+#define BOARD_MEMBER_SORT_SCORE_DESC   4
+#define BOARD_MEMBER_SORT_SCORE_ASC	   5
+#define BOARD_MEMBER_SORT_STATUS_ASC   6
+#define BOARD_MEMBER_SORT_STATUS_DESC  7
+#define MEMBER_BOARD_SORT_DEFAULT	   0
+#define MEMBER_BOARD_SORT_TIME_ASC	   0
+#define MEMBER_BOARD_SORT_TIME_DESC	   1
+#define MEMBER_BOARD_SORT_BOARD_ASC	   2
+#define MEMBER_BOARD_SORT_BOARD_DESC   3
+#define MEMBER_BOARD_SORT_SCORE_DESC   4
+#define MEMBER_BOARD_SORT_SCORE_ASC    5
+#define MEMBER_BOARD_SORT_STATUS_ASC   6
+#define MEMBER_BOARD_SORT_STATUS_DESC  7
+#define BOARD_MEMBER_SORT_TYPES        8
+#define BOARD_MEMBER_LOG_BOARD         "member.log"
 #endif
 
 #define QUIT            0x666       /* Return value to abort recursive functions */
