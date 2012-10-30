@@ -302,6 +302,10 @@
 #define NAME_BM   "版主"
 #endif
 
+#ifndef NAME_CORE_MEMBER
+#define NAME_CORE_MEMBER  "核心驻版用户"
+#endif
+
 #ifndef NAME_POLICE
 #define NAME_POLICE  "警察"
 #endif

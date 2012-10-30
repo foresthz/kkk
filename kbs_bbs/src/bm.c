@@ -422,7 +422,10 @@ int addtodeny(const struct boardheader *bh, char *uident)
         saveptr = getCurrentUser();
         getCurrentUser() = &saveuser;
         sprintf(buffer, "%s被取消在%s版的发文权限", uident, bh->filename);
-
+#ifdef MEMBER_MANAGER		
+		int is_core_member=0;
+#endif
+		
         if ((HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) && !chk_BM_instr(currBM, getCurrentUser()->userid)) {
             strcpy(getCurrentUser()->userid, "SYSOP");
             strcpy(getCurrentUser()->username, NAME_SYSOP);
@@ -447,6 +450,11 @@ int addtodeny(const struct boardheader *bh, char *uident)
             fprintf(fn, "                              %s\n", ctime(&now));
             /*strcpy(getCurrentUser()->realname, NAME_SYSOP);*/
         } else {
+#ifdef MEMBER_MANAGER		
+			if (!HAS_PERM(getCurrentUser(), PERM_SYSOP)&&!chk_currBM(currBM, getCurrentUser()))
+				is_core_member=1;
+#endif
+				
             my_flag = 1;
             fprintf(fn, "寄信人: %s \n", getCurrentUser()->userid);
             fprintf(fn, "标  题: %s\n", buffer);
@@ -464,12 +472,20 @@ int addtodeny(const struct boardheader *bh, char *uident)
 #ifdef ZIXIA
             ndenypic=GetDenyPic(fn, DENYPIC, ndenypic, dpcount);
 #endif
-            fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", saveptr->userid);
+#ifdef MEMBER_MANAGER
+			if (is_core_member)
+				fprintf(fn, "                              " NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m\n", saveptr->userid);
+			else
+#endif			
+				fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", saveptr->userid);
             fprintf(fn, "                              %s\n", ctime(&now));
         }
         fclose(fn);
 #ifdef NEWSMTH
-        mail_file(DELIVER, filename, uident, buffer, 0, NULL);
+		if (is_core_member)
+			mail_file(getCurrentUser()->userid, filename, uident, buffer, 0, NULL);
+		else	
+			mail_file(DELIVER, filename, uident, buffer, 0, NULL);
 #else
         mail_file(getCurrentUser()->userid, filename, uident, buffer, 0, NULL);
 #endif
@@ -485,11 +501,19 @@ int addtodeny(const struct boardheader *bh, char *uident)
         if (my_flag == 0) {
             fprintf(fn, "                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, saveptr->userid);
         } else {
+#ifdef MEMBER_MANAGER
+			if (is_core_member)
+			fprintf(fn, "                              " NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m\n", saveptr->userid);
+			else
+#endif		
             fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", saveptr->userid);
         }
         fprintf(fn, "                              %s\n", ctime(&now));
         fclose(fn);
 #ifdef NEWSMTH
+		if (is_core_member)
+		post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 2, getSession());
+		else
         post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 1, getSession());
 #else
         post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 2, getSession());
