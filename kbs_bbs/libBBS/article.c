@@ -313,7 +313,7 @@ int deny_del_article(const struct boardheader *bh,const struct fileheader *filei
     if (HAS_PERM(session->currentuser,PERM_SYSOP))
 		return 0;
 #ifdef MEMBER_MANAGER
-	if (check_board_member_manager(status, bh, BMP_DELETE)||check_board_member_manager(status, bh, BMP_RANGE))
+	if (check_board_member_manager(status, bh, BMP_DELETE)||check_board_member_manager(status, bh, BMP_RANGE)||check_board_member_manager(status, bh, BMP_THREAD))
 #else
 	if (chk_currBM(bh->BM,session->currentuser))
 #endif
