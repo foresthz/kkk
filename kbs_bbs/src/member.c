@@ -385,7 +385,7 @@ static int b_member_title(struct _select_def *conf) {
         strcat(buf, tmp);
     }
     
-    strcpy(tmp, "排序[\x1b[1;32mc\x1b[m] 寄信[\x1b[1;32mm\x1b[m] 查看[\x1b[1;32m→\x1b[m,\x1b[1;32mr\x1b[m]");
+    strcpy(tmp, "排序[\x1b[1;32mc\x1b[m] 统计[\x1b[1;32mb\x1b[m] 查看[\x1b[1;32m→\x1b[m,\x1b[1;32mr\x1b[m]");
     strcat(buf, tmp);
     
     docmdtitle("[驻版用户列表]", buf);
@@ -413,11 +413,11 @@ static int b_member_prekey(struct _select_def *conf, int *key)
 }
 
 static int b_member_select(struct _select_def *conf) {
-	int i;
+    int i;
     clear();
-	
-	move(1, 1);
-	prints("用户 \033[1;33m%s\033[m 在 \033[1;33m%s\033[m 版的驻版权限", b_members[conf->pos-conf->page_pos].user, b_members[conf->pos-conf->page_pos].board);
+    
+    move(1, 1);
+    prints("用户 \033[1;33m%s\033[m 在 \033[1;33m%s\033[m 版的驻版权限", b_members[conf->pos-conf->page_pos].user, b_members[conf->pos-conf->page_pos].board);
     move(3, 1);
 	if (b_members[conf->pos-conf->page_pos].status != BOARD_MEMBER_STATUS_MANAGER) {
 		prints("\033[1;31m该用户不是核心驻版用户\033[m");
@@ -434,8 +434,8 @@ static int b_member_select(struct _select_def *conf) {
             b_member_flag_item_prefix[i]
         );
     }
-	
-	pressanykey();
+    
+    pressanykey();
     return SHOW_REFRESH;
 }
 
@@ -527,6 +527,7 @@ static int b_member_join(struct _select_def *conf) {
 static int b_member_key(struct _select_def *conf, int key) {
     char ans[4];
     char buf[STRLEN];
+    char path[PATHLEN];
     int del;
     
     if (conf->item_count<=0 && 'v'!=key && 'j'!=key && 'e'!=key) {
@@ -535,11 +536,11 @@ static int b_member_key(struct _select_def *conf, int key) {
     
     del=0;
     switch (key) {
-	    case 'a':
-		case 'A':
-		case Ctrl('A'):
-		    t_query(b_members[conf->pos-conf->page_pos].user);
-			return SHOW_REFRESH;
+        case 'a':
+        case 'A':
+        case Ctrl('A'):
+            t_query(b_members[conf->pos-conf->page_pos].user);
+            return SHOW_REFRESH;
         case 'v':
             i_read_mail();
             return SHOW_REFRESH;
@@ -635,6 +636,14 @@ static int b_member_key(struct _select_def *conf, int key) {
                 return SHOW_CONTINUE;
             b_member_set_flag(&b_members[conf->pos-conf->page_pos]);
             return SHOW_DIRCHANGE;
+        case 'b':
+        case 'B':
+            if (set_board_member_manager_file(currboard)>=0) {
+                setbfile(path, currboard->filename, BOARD_MEMBER_MANAGERS_FILE);
+                ansimore2(path, false, 0, 0);
+                pressanykey();
+            }
+            return SHOW_REFRESH;
     }
     return SHOW_CONTINUE;
 }

@@ -860,6 +860,10 @@ while(0)
 	int get_user_max_member_boards(const struct userec *user);
 	int set_board_member_flag(struct board_member *member);
 	int set_board_member_score(struct board_member *member, int type, int score);
+	int set_board_member_manager_file(const struct boardheader *board);
+	int update_board_member_manager_file(const struct boardheader *board);
+	int get_board_member_managers(const struct boardheader *board);
+	int load_board_member_managers(const struct boardheader *board, struct board_member *members);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD

@@ -320,6 +320,7 @@ extern long ti;
 #define MEMBER_BOARD_SORT_STATUS_DESC  7
 #define BOARD_MEMBER_SORT_TYPES        8
 #define BOARD_MEMBER_LOG_BOARD         "member.log"
+#define BOARD_MEMBER_MANAGERS_FILE     "member.managers"
 #endif
 
 #define QUIT            0x666       /* Return value to abort recursive functions */

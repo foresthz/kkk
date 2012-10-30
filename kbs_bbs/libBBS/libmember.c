@@ -820,6 +820,7 @@ int set_board_member_flag(struct board_member *member) {
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
     char sql[200], buf[1024];
+    const struct boardheader *board;
     
     static const int flags[10]={
         BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
@@ -827,6 +828,14 @@ int set_board_member_flag(struct board_member *member) {
     };
     int i;
     
+    board=getbcache(member->board);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;    
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
+        return -3;
+        
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
@@ -842,7 +851,7 @@ int set_board_member_flag(struct board_member *member) {
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -1;
+        return -4;
     }
     
     sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `status`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, member->status, my_manager_id, my_name, my_user_id);
@@ -850,12 +859,167 @@ int set_board_member_flag(struct board_member *member) {
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -2;
+        return -5;
     }
 
     mysql_close(&s);
     sprintf(buf, "权限: %d", member->flag);
     board_member_log(member, "设置驻版权限", buf);
+    
+    update_board_member_manager_file(board);
+        
+    return 0;
+}
+
+int update_board_member_manager_file(const struct boardheader *board) {
+    struct stat st;
+    char path[PATHLEN];
+    
+    setbfile(path, board->filename, BOARD_MEMBER_MANAGERS_FILE);
+    if (stat(path, &st) >= 0)
+        unlink(path);
+        
+    return 0;
+}
+
+int get_board_member_managers(const struct boardheader *board) {
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char sql[300];
+    char my_board[STRLEN];
+    int i;
+
+    my_board[0]=0;
+    mysql_escape_string(my_board, board->filename, strlen(board->filename));
+    mysql_init(&s);
+
+    if (! my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -1;
+    }
+
+    sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND `status`=%d", my_board, BOARD_MEMBER_STATUS_MANAGER);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -2;
+    }
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+
+    i=0;
+    if (row != NULL) {
+        i=atoi(row[0]);
+    }
+    mysql_free_result(res);
+
+    mysql_close(&s);
+    return i;
+}
+
+int load_board_member_managers(const struct boardheader *board, struct board_member *members) {
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char sql[300];
+    char my_board[STRLEN];
+    int i;
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -1;
+    }
+    
+    my_board[0]=0;
+    mysql_escape_string(my_board, board->filename, strlen(board->filename));
+    
+    sprintf(sql,"SELECT `board`, `user`, UNIX_TIMESTAMP(`time`), `status`, `manager`, `score`, `flag` FROM `board_user` WHERE LOWER(`board`)=LOWER(\"%s\") AND `status`=%d ORDER BY `user`", my_board, BOARD_MEMBER_STATUS_MANAGER);
+    
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -2;
+    }
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+
+    i=0;
+    while (row != NULL) {
+        i++;
+            
+        strncpy(members[i-1].board, row[0], 32);
+        strncpy(members[i-1].user, row[1], IDLEN+1);
+        members[i-1].time=atol(row[2]);
+        members[i-1].status=atol(row[3]);
+        strncpy(members[i-1].manager, row[4], IDLEN+1);
+        members[i-1].score=atol(row[5]);
+        members[i-1].flag=atol(row[6]);
+
+        row = mysql_fetch_row(res);
+    }
+    mysql_free_result(res);
+
+    mysql_close(&s);
+    return i;
+}
+int set_board_member_manager_file(const struct boardheader *board) {
+    struct stat st;
+    char path[PATHLEN];
+    FILE *in;
+    struct board_member *members=NULL;
+    int total, i, j, k;
+    static const char *flag_names[BMP_COUNT]={
+        "删文", "封禁", "标记", "精华区", "驻版提醒",
+        "看删除区", "投票管理", "置顶/不可RE/推荐", "区段操作", "进版/模板/版规"
+    };
+    static const int flags[BMP_COUNT]={
+        BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
+        BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
+    };
+    
+    setbfile(path, board->filename, BOARD_MEMBER_MANAGERS_FILE);
+    if (stat(path, &st) >= 0)
+        return 0;
+    
+    if ((in=fopen(path, "w"))==NULL) 
+        return -1;
+    
+    fprintf(in, "\033[1;33m版面名称\033[m: %s %s\n", board->filename, board->title+1);
+    fprintf(in, "\033[1;33m版面版主\033[m: %s\n\n", board->BM);
+    
+    total=get_board_member_managers(board);
+    if (total <= 0) {
+        fprintf(in, "\033[1;31m本版尚无核心驻版用户\033[m");
+        fclose(in);
+        
+        return 0;
+    }
+    
+    members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+    bzero(b_members, sizeof(struct board_member) * total);
+    
+    if (load_board_member_managers(board, members)>0) {
+        for (i=0; i<BMP_COUNT; i++) {
+            fprintf(in, "\n具有 \033[1;31m%s\033[m 权限的用户\n", flag_names[i]);
+            k=0;
+            for (j=0; j<total; j++) {
+                if (members[j].flag&flags[i]) {
+                    k++;
+                    fprintf(in, " %3d. \033[1;32m%s\033[m\n", k, members[j].user);
+                }
+            }
+        }
+    }
+    
+    fprintf(in, "\n\n");
+    
+    free(members);
+    members=NULL;
+    
+    fclose(in);
     
     return 0;
 }
