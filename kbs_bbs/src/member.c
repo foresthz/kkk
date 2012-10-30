@@ -49,10 +49,6 @@ static const int b_member_flag_item[BMP_COUNT]={
     BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
     BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
 };
-static const char *b_member_flag_item_note[BMP_COUNT]={
-    "d", "%", "m", "X", "@",
-    "J", "V", "R", "D", "W"
-};
 static inline int bmc_digit_string(const char *s) {
     while (isdigit(*s++))
         continue;
@@ -357,7 +353,6 @@ static int b_member_show(struct _select_def *conf, int i) {
     if (getuser(b_members[i - conf->page_pos].user, &lookupuser)==0) {
         remove_board_member(b_members[i - conf->page_pos].board, b_members[i - conf->page_pos].user);
     } else {
-        perm[0]=0;
         switch(b_members[i-conf->page_pos].status) {
             case BOARD_MEMBER_STATUS_NORMAL:
                 strcpy(color, "\x1b[1;32m");
@@ -425,7 +420,7 @@ static int b_member_select(struct _select_def *conf) {
 	prints("用户 \033[1;33m%s\033[m 在 \033[1;33m%s\033[m 版的驻版权限", b_members[conf->pos-conf->page_pos].user, b_members[conf->pos-conf->page_pos].board);
     move(3, 1);
 	if (b_members[conf->pos-conf->page_pos].status != BOARD_MEMBER_STATUS_MANAGER) {
-		prints("该用户不是核心驻版用户");
+		prints("\033[1;31m该用户不是核心驻版用户\033[m");
 		pressanykey();
 		return SHOW_REFRESH;
 	}
