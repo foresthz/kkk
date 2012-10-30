@@ -424,6 +424,11 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
 
 #endif /* FILTER */
 
+#ifdef MEMBER_MANAGER
+	if (!isbm&&flag==FILE_NOREPLY_FLAG&&check_board_member_manager(&currmember, currboard, BMP_RECOMMEND)) 
+		isbm=true;
+#endif
+
     if (!isbm
 #ifdef OPEN_NOREPLY
             && (flag!=FILE_NOREPLY_FLAG || /*strcmp(fileinfo->owner,getCurrentUser()->userid)*/ !isowner(getCurrentUser(), fileinfo))
