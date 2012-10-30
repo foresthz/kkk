@@ -41,13 +41,17 @@ static const char *b_member_item_prefix[10]={
     "是否审核","最大成员","登 录 数","发 文 数","用户积分",
     "用户等级","版面发文","版面原创","版面 M文","版面 G文"
 };
-static const char *b_member_flag_item_prefix[10]={
+static const char *b_member_flag_item_prefix[BMP_COUNT]={
     "删文", "封禁", "标记", "精华区", "驻版提醒",
     "看删除区", "投票管理", "置顶/不可RE/推荐", "区段操作", "进版/模板/版规"
 };
-static const int b_member_flag_item[10]={
+static const int b_member_flag_item[BMP_COUNT]={
     BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
     BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
+};
+static const char *b_member_flag_item_note[BMP_COUNT]={
+    "d", "%", "m", "X", "@",
+    "J", "V", "R", "D", "W"
 };
 static inline int bmc_digit_string(const char *s) {
     while (isdigit(*s++))
@@ -250,7 +254,7 @@ int b_member_set_flag_show(struct board_member *b_member, int old) {
     int i, n_set, o_set, same, changed;
     
     changed=0;
-    for (i=0;i<10;i++) {
+    for (i=0;i<BMP_COUNT;i++) {
         move(3+i, 0);
         clrtobot();
         
@@ -260,7 +264,7 @@ int b_member_set_flag_show(struct board_member *b_member, int old) {
         
         if (!same) changed=1;
         
-        prints(" %d [%s] %s%s\033[m",
+        prints(" \033[1;33m%d\033[m. [%s] %s%s\033[m",
             i,
             n_set?"\033[1;32m*\033[m":" ",
             same?"":"\033[1;31m",
@@ -348,23 +352,34 @@ int b_member_set_flag(struct board_member *b_member) {
 
 static int b_member_show(struct _select_def *conf, int i) {
     struct userec *lookupuser;
-    char buf[STRLEN], color[STRLEN];
+    char buf[STRLEN], color[STRLEN], perm[STRLEN];
+    int i;
     
     if (getuser(b_members[i - conf->page_pos].user, &lookupuser)==0) {
         remove_board_member(b_members[i - conf->page_pos].board, b_members[i - conf->page_pos].user);
     } else {
+        perm[0]=0;
         switch(b_members[i-conf->page_pos].status) {
             case BOARD_MEMBER_STATUS_NORMAL:
                 strcpy(color, "\x1b[1;32m");
                 break;
             case BOARD_MEMBER_STATUS_MANAGER:
                 strcpy(color, "\x1b[1;31m");
+                strcpy(perm, "\033[1;32m");
+                for (i=0;i<BMP_COUNT;i++) {
+                    if (b_members[i - conf->page_pos].flag&b_member_flag_item[i])
+                        strcat(perm, b_member_flag_item_note[i]);
+                    else
+                        strcat(perm, " ");
+                }
+                strcat(perm, "\033[m");
                 break;
             case BOARD_MEMBER_STATUS_CANDIDATE:
             default:
                 strcpy(color, "\x1b[1;33m");
         }
-        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, lookupuser->userid, lookupuser->username, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
+        
+        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, lookupuser->userid, perm, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
     }
     
     return SHOW_CONTINUE;
@@ -390,7 +405,7 @@ static int b_member_title(struct _select_def *conf) {
     docmdtitle("[驻版用户列表]", buf);
     move(2, 0);
     clrtobot();
-    prints("\033[0;1;44m  %-4s %-12s %-12s %8s %8s %8s %10s %-8s \033[m", "编号", "用户ID",  "用户昵称", "驻版积分", "上站数", "发文数", "用户积分", "驻版时间");    
+    prints("\033[0;1;44m  %-4s %-12s %-12s %8s %8s %8s %10s %-8s \033[m", "编号", "用户ID",  "驻版权限", "驻版积分", "上站数", "发文数", "用户积分", "驻版时间");    
     update_endline();
 
     return 0;
