@@ -305,15 +305,12 @@ int b_member_set_flag(struct board_member *b_member) {
                     if (ans2[0]=='y'||ans2[0]=='Y') {
                         if (set_board_member_flag(b_member) < 0)
                             b_member_set_msg("驻版权限修改失败");
-                        else {
+                        else 
                             b_member_set_msg("驻版权限修改成功");
-                            return 1;
-                        }
                     } else {
                         b_member_set_msg("设定并未修改!");
                     }
                 }
-				b_member->flag=old;
                 return 0;
             case 'n':
             case 'N':
@@ -607,11 +604,10 @@ static int b_member_key(struct _select_def *conf, int key) {
         case 's':
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
-            
-            if (b_member_set_flag(&b_members[conf->pos-conf->page_pos])>0)    
-                return SHOW_DIRCHANGE;
-            else
-                return SHOW_REFRESH;            
+            if (b_members[conf->pos-conf->page_pos].status!=BOARD_MEMBER_STATUS_NORMAL&&b_members[conf->pos-conf->page_pos].status!=BOARD_MEMBER_STATUS_MANAGER)
+                return SHOW_CONTINUE;
+            b_member_set_flag(&b_members[conf->pos-conf->page_pos]);
+            return SHOW_DIRCHANGE;
     }
     return SHOW_CONTINUE;
 }
