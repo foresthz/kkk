@@ -77,7 +77,7 @@ int b_member_set_show(struct board_member_config *config, struct board_member_co
     changed=0;
     for (i=0;i<10;i++) {
         move(3+i, 0);
-        clrtobot();
+        clrtoeol();
         same=(values[0][i]==values[1][i]);
         
         if (!same) changed=1;
@@ -109,11 +109,11 @@ int b_member_set_show(struct board_member_config *config, struct board_member_co
 
 int b_member_set_msg(char *msg) {
     move(t_lines-2,0);
-    clrtobot();
+    clrtoeol();
     prints("                    \033[1;31m%s\033[m", msg);
     pressanykey();
     move(t_lines-2,0);
-    clrtobot();    
+    clrtoeol();    
     
     return 0;
 }
@@ -245,7 +245,7 @@ int b_member_set_flag_show(struct board_member *b_member, int old, int index) {
     changed=0;
     for (i=0;i<BMP_COUNT;i++) {
         move(3+i, 0);
-        clrtobot();
+        clrtoeol();
         
         flag=get_bmp_value(i);
         n_set=(b_member->flag&flag)?1:0;
@@ -262,7 +262,7 @@ int b_member_set_flag_show(struct board_member *b_member, int old, int index) {
             name
         );
     }
-    
+    move(t_lines-1, t_columns-1); 
     return changed;
 }
 
@@ -282,7 +282,8 @@ int b_member_set_flag(struct board_member *b_member) {
     b_member_set_flag_show(b_member, old, index);
     move(t_lines-1, 0);
     prints("移动(\033[1;33m↑,↓\033[m)/更改(\033[1;33m空格,→\033[m)/保存(\033[1;33mY\033[m)/退出(\033[1;33mN,←\033[m): ");
-    
+    move(t_lines-1, t_columns-1);
+ 
     key=igetkey();
     repeat=0;
     do {
@@ -324,7 +325,7 @@ int b_member_set_flag(struct board_member *b_member) {
                 } else {
                     sprintf(buf, "您确定要修改用户 \033[1;33m%s\033[m 的核心驻版权限? (Y/N) [N]", b_member->user);
                     move(t_lines-2,0);
-                    clrtobot();
+                    clrtoeol();
                     getdata(t_lines-2, 0, buf, ans, 2, DOECHO, NULL, true);
                     if (ans[0]=='y'||ans[0]=='Y') {
                         if (set_board_member_flag(b_member) < 0) {
@@ -343,11 +344,11 @@ int b_member_set_flag(struct board_member *b_member) {
             case KEY_LEFT:    
                 if (changed) {
                     move(t_lines-2,0);
-                    clrtobot();
+                    clrtoeol();
                     getdata(t_lines-2, 0, "您是否要放弃本次修改? (Y/N) [N]", ans, 2, DOECHO, NULL, true);
                     if (ans[0]!='y'&&ans[0]!='Y') {
                         move(t_lines-2,0);
-                        clrtobot();
+                        clrtoeol();
                         repeat=1;
                     }
                 }
@@ -443,7 +444,7 @@ static int b_member_select(struct _select_def *conf) {
         flag=get_bmp_value(i);
         get_bmp_name(name, flag);
         prints(" \033[1;33m%2d\033[m. [%s] %s\033[m",
-            i,
+            i+1,
             (b_members[conf->pos-conf->page_pos].flag&flag)?"\033[1;32m*\033[m":" ",
             name
         );
