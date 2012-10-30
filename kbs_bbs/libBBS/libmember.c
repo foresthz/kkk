@@ -821,11 +821,25 @@ int set_board_member_flag(struct board_member *member) {
     char my_manager_id[STRLEN];
     char sql[200], buf[1024];
     
+    static const int flags[10]={
+        BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
+        BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
+    };
+    int i;
+    
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
     
-    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, my_manager_id, my_name, my_user_id);
+    member->status=BOARD_MEMBER_STATUS_NORMAL;
+    for (i=0;i<10;i++) {
+        if (member->flag&flags[i]) {
+            member->status=BOARD_MEMBER_STATUS_MANAGER;
+            break;
+        }
+    }
+    
+    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `status`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, member->status, my_manager_id, my_name, my_user_id);
 
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));

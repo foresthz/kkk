@@ -313,6 +313,7 @@ int b_member_set_flag(struct board_member *b_member) {
                         b_member_set_msg("设定并未修改!");
                     }
                 }
+				b_member->flag=old;
                 return 0;
             case 'n':
             case 'N':
