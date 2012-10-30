@@ -424,17 +424,15 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
 
 #endif /* FILTER */
 
-#ifdef MEMBER_MANAGER
-	if (!isbm&&flag==FILE_NOREPLY_FLAG&&check_board_member_manager(&currmember, currboard, BMP_RECOMMEND)) 
-		isbm=true;
-#endif
-
     if (!isbm
 #ifdef OPEN_NOREPLY
             && (flag!=FILE_NOREPLY_FLAG || /*strcmp(fileinfo->owner,getCurrentUser()->userid)*/ !isowner(getCurrentUser(), fileinfo))
 #endif
 #ifdef COMMEND_ARTICLE
             && (flag != FILE_COMMEND_FLAG) /* 权限判断 caller 来保证, 这里保证任何人推荐都修改 FILE_COMMEND 属性 fancy Dec 9 2007 */
+#endif
+#ifdef MEMBER_MANAGER
+			&& !(flag==FILE_NOREPLY_FLAG&&check_board_member_manager(&currmember, currboard, BMP_RECOMMEND))
 #endif
        )
         return DONOTHING;
