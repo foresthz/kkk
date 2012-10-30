@@ -2375,6 +2375,9 @@ int deleted_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     struct read_arg* arg=(struct read_arg*)conf->arg;
 
     if (!check_board_delete_read_perm(getCurrentUser(),currboard,1)) {
+#ifdef MEMBER_MANAGER
+		if (!check_board_member_manager(&currmember, currboard, BMP_JUNK))
+#endif	
         return DONOTHING;
     }
 
