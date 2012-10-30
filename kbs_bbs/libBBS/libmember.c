@@ -814,6 +814,55 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     return 0;
 }    
 
+int set_board_member_flag(struct board_member *member) {
+    char my_name[STRLEN];
+    char my_user_id[STRLEN];
+    char my_manager_id[STRLEN];
+	char sql[200], buf[1024];
+	
+	mysql_escape_string(my_name, member->board, strlen(member->board));
+    mysql_escape_string(my_user_id, member->user, strlen(member->user));
+    mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
+	
+	sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, my_manager_id, my_name, my_user_id);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -1;
+    }
+
+    mysql_close(&s);
+    sprintf(buf, "权限: %d", member->flag);
+    board_member_log(member, "设置驻版权限", buf);
+    
+    return 0;
+}
+
+int set_board_member_score(struct board_member *member, int type, int score) {
+    char my_name[STRLEN];
+    char my_user_id[STRLEN];
+	char sql[200];
+    
+	mysql_escape_string(my_name, member->board, strlen(member->board));
+    mysql_escape_string(my_user_id, member->user, strlen(member->user));
+    
+	if (0==type)
+	    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", score, my_name, my_user_id);
+    else
+	    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `score`=`score`%s%d WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", ((type>0)?"+":"-"),score, my_name, my_user_id);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -1;
+    }
+
+    mysql_close(&s);
+    
+    return 0;
+}
+
 typedef int member_board_article_cmp_func(const void *, const void *);
 
 int member_board_article_cmp(fileheader *a, fileheader *b) {

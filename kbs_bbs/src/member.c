@@ -41,7 +41,14 @@ static const char *b_member_item_prefix[10]={
     "是否审核","最大成员","登 录 数","发 文 数","用户积分",
     "用户等级","版面发文","版面原创","版面 M文","版面 G文"
 };
-
+static const char *b_member_flag_item_prefix[10]={
+    "删文", "封禁", "标记", "精华区", "驻版提醒",
+    "看删除区", "投票管理", "置顶/不可RE", "区段操作", "进版/模板"
+};
+static const int b_member_flag_item[10]={
+    BMP_DELETE, BMP_DENY, BMP_SIGN, BMP_ANNOUNCE, BMP_REFER,
+    BMP_JUNK, BMP_VOTE, BMP_RECOMMEND, BMP_RANGE, BMP_NOTE
+};
 static inline int bmc_digit_string(const char *s) {
     while (isdigit(*s++))
         continue;
@@ -234,6 +241,107 @@ int b_member_set() {
                 }
                 break;
         }
+    }
+    
+    return 0;
+}
+
+int b_member_set_flag_show(struct board_member *b_member, int old) {
+    int i, n_set, o_set, same, changed;
+    char buf[STRLEN], old_value[STRLEN];
+    
+    changed=0;
+    for (i=0;i<10;i++) {
+        move(3+i, 0);
+        clrtobot();
+		
+		n_set=(b_member->flag&b_member_flag_item[i])?1:0;
+		o_set=(old&b_member_flag_item[i])?1:0;
+		same=(n_set==o_set);
+		
+        if (!same) changed=1;
+        
+		prints(" [%s] %s%s\033[m",
+		    n_set?"\033[1;32m*\033[m":" ",
+			same?"":"\033[1;31m",
+			b_member_flag_item_prefix[i]
+		);
+	}
+    update_endline();
+    return changed;
+}
+
+int b_member_set_flag(struct board_member *b_member) {
+    char ans[4], ans2[20], buf[STRLEN];
+    int i, changed, old;
+    
+    clear();
+    old=b_member->flag;
+    
+    static const char *title="\033[1;32m[设定核心驻版用户]\033[m";
+    
+    move(0,0);
+    prints("%s",title);
+    move(0,40);
+    prints("用户: \033[1;33m%s\033[m  版面: \033[1;33m%s\033[m", b_member->user, b_member->board);
+    b_member_set_flag_show(b_member, old);
+    
+    changed=0;
+    while(1) {
+        move(t_lines-1, 0);
+        clrtobot();
+        getdata(t_lines - 1, 0, "请选择修改项(\033[1;33m0\033[m-\033[1;33m9\033[m)/保存(\033[1;33mY\033[m)/退出(\033[1;33mN\033[m): ", ans, 2, DOECHO, NULL, true);
+    
+        switch(ans[0]) {
+            case 'y':
+            case 'Y':
+                if (!changed) {
+                    b_member_set_msg("设定并未修改!");
+                } else {
+				    sprintf(buf, "您确定要修改用户 \033[1;33m%s\033[m 的核心驻版权限? (Y/N) [N]", b_member->user);
+                    move(t_lines-1,0);
+                    clrtobot();
+                    getdata(t_lines-1, 0, buf, ans2, 2, DOECHO, NULL, true);
+                    if (ans2[0]=='y'||ans2[0]=='Y') {
+                        if (set_board_member_flag(b_member) < 0)
+                            b_member_set_msg("驻版权限修改失败");
+                        else {
+                            b_member_set_msg("驻版权限修改成功");
+							return 1;
+						}
+                    } else {
+                        b_member_set_msg("设定并未修改!");
+                    }
+                }
+                return 0;
+            case 'n':
+            case 'N':
+                return 0;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+			    move(t_lines-1,0);
+                clrtobot();
+				sprintf(buf, "是否给予 \033[1;33m%s\033[m 权限? (Y/N)", b_member_flag_item_prefix[ans[0]]);
+                getdata(t_lines-1, 0, buf, ans2, 8, DOECHO, NULL, true);
+                
+                if (ans2[0]=='y'||ans2[0]=='Y')
+                    b_member->flag |= b_member_flag_item[ans[0]];
+                else if (ans2[0]=='n'||ans2[0]=='N')
+                    b_member->flag &= ~b_member_flag_item[ans[0]];
+                else
+                    break;
+                    
+                changed=b_member_set_flag_show(b_member, old);    
+                break;
+		}
     }
     
     return 0;
@@ -497,25 +605,11 @@ static int b_member_key(struct _select_def *conf, int key) {
         case 's':
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
-            if (b_members[conf->pos-conf->page_pos].status == BOARD_MEMBER_STATUS_NORMAL) {
-                sprintf(buf, "您要将%s设置为\033[1;31m核心驻版用户\033[m吗? (Y/N) [N]", b_members[conf->pos-conf->page_pos].user);
-                del=BOARD_MEMBER_STATUS_MANAGER;
-            } else if (b_members[conf->pos-conf->page_pos].status == BOARD_MEMBER_STATUS_MANAGER) {
-                sprintf(buf, "您要将%s设置为\033[1;32m普通驻版用户\033[m吗? (Y/N) [N]", b_members[conf->pos-conf->page_pos].user);
-                del=BOARD_MEMBER_STATUS_NORMAL;
-            } else 
-                return SHOW_CONTINUE;    
-            
-            move(t_lines-1, 0);
-            clrtoeol();
-            ans[0]=0;
-            getdata(t_lines-1, 0, buf, ans, 3, DOECHO, NULL, true);
-            if (ans[0] != 'y' && ans[0]!='Y') 
-                return SHOW_REFRESH;
-            else if (set_board_member_status(currboard->filename, b_members[conf->pos-conf->page_pos].user, del)>=0) 
+			
+            if (b_member_set_flag(b_members[conf->pos-conf->page_pos])>0)	
                 return SHOW_DIRCHANGE;
             else
-                return SHOW_REFRESH;
+                return SHOW_REFRESH;			
     }
     return SHOW_CONTINUE;
 }
