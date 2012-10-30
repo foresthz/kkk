@@ -4706,9 +4706,13 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             )
         return DONOTHING;
 
-    if (deny_del_article(currboard, fileinfo, getSession())) {
-        return DONOTHING;
-    }
+#ifdef MEMBER_MANAGER	
+	if (deny_del_article(currboard, &currmember, fileinfo, getSession())) 
+#else	
+    if (deny_del_article(currboard, fileinfo, getSession())) 
+#endif
+		return DONOTHING;
+    
 
     if (!(flag&ARG_NOPROMPT_FLAG)) {
         char buf[STRLEN];

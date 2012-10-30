@@ -546,7 +546,11 @@ while(0)
     int getmailnum(char *recmaildir);
     int isowner(const struct userec *user, const struct fileheader *fileinfo);
     int deny_modify_article(const struct boardheader *bh, const struct fileheader *fileinfo, int mode, session_t* session);
+#ifdef MEMBER_MANAGER	
+    int deny_del_article(const struct boardheader *bh, struct board_member_status *status, const struct fileheader *fileinfo, session_t* session);
+#else
     int deny_del_article(const struct boardheader *bh, const struct fileheader *fileinfo, session_t* session);
+#endif
     int do_del_post(struct userec *user,struct write_dir_arg *dirarg,struct fileheader *fileinfo, const char *board,int currmode,int flag,session_t* session);
     int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *fileinfo, char *title, session_t* session);
     int do_del_ding(char *boardname, int bid, int ent, struct fileheader *fh, session_t* session);

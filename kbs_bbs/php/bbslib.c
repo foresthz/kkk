@@ -1681,8 +1681,11 @@ int del_post(int ent, struct fileheader *fileinfo, const struct boardheader *bh)
     struct write_dir_arg delarg;
     int ret;
     char direct[PATHLEN];
-
+#ifdef MEMBER_MANAGER
+    ret = deny_del_article(bh, NULL, fileinfo, getSession());
+#else
     ret = deny_del_article(bh, fileinfo, getSession());
+#endif
     switch (ret) {
         case -3:
             return 4;

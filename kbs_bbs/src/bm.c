@@ -1812,7 +1812,13 @@ int delete_range(struct _select_def *conf,struct fileheader *file,void *varg)
         default:
             return DONOTHING;
     }
-    if (!mail&&deny_del_article(currboard,NULL,getSession()))
+    if (!mail&&
+#ifdef MEMBER_MANAGER
+		deny_del_article(currboard,&currmember,NULL,getSession())
+#else
+		deny_del_article(currboard,NULL,getSession())
+#endif
+	)
         return DONOTHING;
     timestamp=time(NULL);
     !mail?setbfile(buf,ident,src):setmailfile(buf,ident,src);
@@ -2137,8 +2143,12 @@ int undelete_range(struct _select_def *conf,struct fileheader *fhptr,void *varg)
          return DONOTHING;
    }
 
-   if(deny_del_article(currboard,NULL,getSession()))
-      return DONOTHING;
+#ifdef MEMBER_MANAGER
+	if(deny_del_article(currboard,&currmember,NULL,getSession()))
+#else 
+    if(deny_del_article(currboard,NULL,getSession()))
+#endif
+	return DONOTHING;
 
    timestamp=time(NULL);
    setbfile(buf,currboard->filename,src);

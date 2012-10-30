@@ -300,14 +300,24 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
     return 0;
 }
 
+#ifdef MEMBER_MANAGER
+int deny_del_article(const struct boardheader *bh,struct board_member_status *status,const struct fileheader *fileinfo,session_t* session)
+#else
 int deny_del_article(const struct boardheader *bh,const struct fileheader *fileinfo,session_t* session)
+#endif
 {
     if (!session||!(session->currentuser)||!bh||!(bh->filename[0]))
         return -1;
     if (!strcmp(bh->filename,"syssecurity"))
         return -3;
-    if (HAS_PERM(session->currentuser,PERM_SYSOP)||chk_currBM(bh->BM,session->currentuser))
-        return 0;
+    if (HAS_PERM(session->currentuser,PERM_SYSOP))
+		return 0;
+#ifdef MEMBER_MANAGER
+	if (check_board_member_manager(status, bh, BMP_DELETE))
+#else
+	if (chk_currBM(bh->BM,session->currentuser))
+#endif
+		return 0;
     if (fileinfo) {
         if (!isowner(session->currentuser,fileinfo))
             return -6;
