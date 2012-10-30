@@ -45,6 +45,12 @@ char quote_user[120];
 
 extern int in_do_sendmsg;
 
+#ifdef ENABLE_BOARD_MEMBER
+struct board_member_status currmember;
+currmember.status=-1;
+currmember.flag=-1;
+#endif
+
 #ifndef NOREPLY
 char replytitle[STRLEN];
 #endif
@@ -159,47 +165,6 @@ int check_stuffmode()
     else
         return false;
 }
-
-#ifdef MEMBER_MANAGER
-int check_key_member()
-{
-#ifdef ENABLE_BOARD_MEMBER
-	static time_t last_time=0;
-	static int last_bid=0;
-	static int is_key_member=-1;
-	int bid;
-	time_t now;
-	
-	if (NULL==currboard)
-		return 0;
-	
-	now=time(NULL);
-	bid=getbid(currboard->filename, NULL);
-	
-	if (now-last_time > 36000 || bid != last_bid)
-		is_key_member=-1;
-	
-	if (-1 != is_key_member)
-		return is_key_member;
-	
-	last_bid=bid;
-	last_time=now;
-	
-	return (is_key_member=is_board_member_manager(currboard->filename, getCurrentUser()->userid, NULL));
-#else
-	return 0;
-#endif /* ENABLE_BOARD_MEMBER */
-}
-
-int is_bm_or_key_member()
-{
-	if (chk_currBM(currboard->BM, getCurrentUser()))
-		return 1;
-	if (check_key_member())
-		return 1;
-	return 0;
-}
-#endif /* MEMBER_MANAGER */
 
 /*Add by SmallPig*/
 int shownotepad(void)           /* ÏÔÊ¾ notepad */
@@ -401,7 +366,7 @@ int set_article_flag(struct _select_def* conf,struct fileheader *fileinfo,long f
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
 #ifdef MEMBER_MANAGER
-	bool	isbm=is_bm_or_key_member();
+    bool    isbm=check_board_member_manager(&currmember, currboard, BMP_SIGN);
 #else	
     bool    isbm=chk_currBM(currboard->BM, getCurrentUser());
 #endif
@@ -1176,8 +1141,18 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         ;
 
 #ifdef MEMBER_MANAGER
-	if (!manager) 
-	manager=is_bm_or_key_member();
+	if (!manager) {
+        if (check_board_member_manager(&currmember, currboard, BMP_SIGN))
+		    manager=1;
+		else if (check_board_member_manager(&currmember, currboard, BMP_DELETE))
+			manager=1;
+		else if (check_board_member_manager(&currmember, currboard, BMP_RANGE))
+			manager=1;	
+		else if (check_board_member_manager(&currmember, currboard, BMP_THREAD))
+			manager=1;		
+		else
+			manager=0;
+    }
 #endif /* MEMBER_MANAGER */
 
 #ifdef BOARD_SECURITY_LOG
@@ -4798,7 +4773,7 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     struct read_arg* arg=(struct read_arg*)conf->arg;
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
 #ifdef MEMBER_MANAGER
-		if (!is_bm_or_key_member())
+		if (!check_board_member_manager(&currmember, currboard, BMP_ANNOUNCE))
 #else	
 		if (!chk_currBM(currBM, getCurrentUser()))
 #endif	
@@ -4850,7 +4825,7 @@ int Semi_save(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     struct read_arg* arg=(struct read_arg*)conf->arg;
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
 #ifdef MEMBER_MANAGER
-		if (!is_bm_or_key_member())
+		if (!check_board_member_manager(&currmember, currboard, BMP_ANNOUNCE))
 #else	
 		if (!chk_currBM(currBM, getCurrentUser()))
 #endif	
@@ -4901,7 +4876,7 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
 #endif
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
 #ifdef MEMBER_MANAGER
-		if (!is_bm_or_key_member()
+		if (!check_board_member_manager(&currmember, currboard, BMP_ANNOUNCE)
 #else	
 		if (!chk_currBM(currBM, getCurrentUser())
 #endif	
@@ -4984,7 +4959,7 @@ int into_announce(struct _select_def* conf,struct fileheader *fileinfo,void* ext
 	
 	level=(HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS)) ? PERM_BOARDS : 0;
 #ifdef MEMBER_MANAGER
-	if (!level && is_bm_or_key_member())
+	if (!level && check_board_member_manager(&currmember, currboard, BMP_ANNOUNCE))
 		level=PERM_BOARDS;
 #endif    
 	if (a_menusearch("0Announce", currboard->filename, level))

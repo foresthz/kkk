@@ -326,9 +326,8 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
 
     if (!getCurrentUser())
         return 0;
-    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(to_board->BM,getSession()->currentuser)&&!is_board_member_manager(to_board->filename, getSession()->currentuser->userid, NULL))
-        return 0;
-
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!check_board_member_manager(NULL, to_board, BMP_REFER))
+		return 0;
     total=get_board_members(to_board->filename);
     if (total<0)
         return -1;

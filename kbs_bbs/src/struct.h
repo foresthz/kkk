@@ -570,39 +570,45 @@ struct protect_id_passwd {
 #ifdef ENABLE_BOARD_MEMBER
 struct board_member_config {
     int approve;
-	int max_members;
-	
-	int logins;
-	int posts;
-	int score;
-	int level;
-	
-	int board_posts;
-	int board_origins;
-	int board_marks;
-	int board_digests;
+    int max_members;
+    
+    int logins;
+    int posts;
+    int score;
+    int level;
+    
+    int board_posts;
+    int board_origins;
+    int board_marks;
+    int board_digests;
 };
 struct board_member {
     char board[STRLEN];
-	char user[IDLEN+2];
-	time_t time;
-	int status;
-	char manager[IDLEN+2];
-	unsigned int score;
-	unsigned int flag;
+    char user[IDLEN+2];
+    time_t time;
+    int status;
+    char manager[IDLEN+2];
+    unsigned int score;
+    unsigned int flag;
 };
 struct member_board_article {
-	char board[STRLEN];
-	char filename[FILENAME_LEN];
-	unsigned int id, groupid, reid;
-	unsigned int s_id, s_groupid, s_reid;
-	char owner[OWNER_LEN];
-	unsigned int eff_size;
-	int posttime;
-	unsigned int attachment;
-	char title[ARTICLE_TITLE_LEN];
-	unsigned char accessed[4];
-	unsigned int flag;
+    char board[STRLEN];
+    char filename[FILENAME_LEN];
+    unsigned int id, groupid, reid;
+    unsigned int s_id, s_groupid, s_reid;
+    char owner[OWNER_LEN];
+    unsigned int eff_size;
+    int posttime;
+    unsigned int attachment;
+    char title[ARTICLE_TITLE_LEN];
+    unsigned char accessed[4];
+    unsigned int flag;
+};
+struct board_member_status {
+    time_t update_time;
+    int bid;
+    int status;
+    int flag;
 };
 #endif
 

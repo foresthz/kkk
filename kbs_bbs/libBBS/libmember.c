@@ -13,6 +13,43 @@
 #define MIN_MEMBER_BOARD_ARTICLE_STAT 60
 #endif
 
+#ifndef MIN_MEMBER_STATUS_LOAD_TIME
+#define MIN_MEMBER_STATUS_LOAD_TIME 600
+#endif
+
+int check_board_member_manager(struct board_member_status status, const struct boardheader *board, int perm) {
+    if (NULL==board)
+        return 0;
+    if (chk_currBM(board->BM, getSession()->currentuser))
+        return 1;
+    
+    int bid, flag;
+    struct board_member member;
+    time_t now;
+    
+    now=time(NULL);    
+    bid=getbid(board->filename, NULL);
+    if (NULL==status || now - status->update_time > MIN_MEMBER_STATUS_LOAD_TIME || status->bid != bid)
+        flag = -1;
+    else
+        flag = status->flag;
+        
+    if (flag != -1)
+        return (flag&perm)?1:0;
+        
+    if (get_board_member(board->filename, getSession()->currentuser->userid, &member)<0)
+        return 0;
+        
+    if (NULL!=status) {
+        status->update_time=now;
+        status->bid=bid;
+        status->status=member.status;
+        status->flag=member.flag;
+    }
+    
+    return (member.flag&perm)?1:0;
+}
+
 char *get_bmp_name(char *name, int bmp) {
     switch(bmp) {
         case BMP_DELETE:

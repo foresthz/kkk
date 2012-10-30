@@ -180,7 +180,7 @@ extern "C"
     int countexp(struct userec *udata);
     int countperf(struct userec *udata);
     int compute_user_value(const struct userec *urec);
-	int uvaluetochar(char *buf, struct userec *urec);
+    int uvaluetochar(char *buf, struct userec *urec);
     void *attach_shm(char *shmstr, int defaultkey, int shmsize, int *iscreate);
     void *attach_shm1(char *shmstr, int defaultkey, int shmsize, int *iscreate, int readonly, void *shmaddr);
     void    remove_shm(char *shmstr, int defaultkey, int shmsize);
@@ -833,39 +833,40 @@ while(0)
     int refer_read_all(char *path);
     int refer_truncate(char *path);
 #ifdef ENABLE_BOARD_MEMBER
-	int send_refer_msg_to_board(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
-#endif /* ENABLE_BOARD_MEMBER */	
+    int send_refer_msg_to_board(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
+#endif /* ENABLE_BOARD_MEMBER */    
 #endif /* ENABLE_REFER */
 
 /* board member, windinsn, Aug 11, 2012 */
 #ifdef ENABLE_BOARD_MEMBER
-	int load_board_member_config(const char *name, struct board_member_config *config);
-	int save_board_member_config(const char *name, struct board_member_config *config);
-	int join_board_member(const char *name);
-	int leave_board_member(const char *name);
-	int approve_board_member(const char *name, const char *user_id);
-	int remove_board_member(const char *name, const char *user_id);
-	int get_board_member(const char *name, const char *user_id, struct board_member *member);
-	int load_board_members(const char *board, struct board_member *members, int sort, int start, int num);
-	int load_member_boards(const char *user_id, struct board_member *members, int sort, int start, int num);
-	int get_board_members(const char *board);
-	int get_member_boards(const char *user_id);
-	int load_board_member_request(const char *name, struct board_member_config *mine);
-	int is_board_member(const char *name, const char *user_id, struct board_member *member);
-	int is_board_member_manager(const char *name, const char *user_id, struct board_member *member);
-	int set_board_member_status(const char *name, const char *user_id, int status);
-	int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user, int force);
-	char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char *userid);
-	int flush_member_board_articles(int mode, const struct userec *user, int force);
-	int get_user_max_member_boards(const struct userec *user);
-	int set_board_member_flag(struct board_member *member);
-	int set_board_member_score(struct board_member *member, int type, int score);
-	int set_board_member_manager_file(const struct boardheader *board);
-	int update_board_member_manager_file(const struct boardheader *board);
-	int get_board_member_managers(const struct boardheader *board);
-	int load_board_member_managers(const struct boardheader *board, struct board_member *members);
-	char *get_bmp_name(char *name, int bmp);
-	int get_bmp_value(int index);
+    int load_board_member_config(const char *name, struct board_member_config *config);
+    int save_board_member_config(const char *name, struct board_member_config *config);
+    int join_board_member(const char *name);
+    int leave_board_member(const char *name);
+    int approve_board_member(const char *name, const char *user_id);
+    int remove_board_member(const char *name, const char *user_id);
+    int get_board_member(const char *name, const char *user_id, struct board_member *member);
+    int load_board_members(const char *board, struct board_member *members, int sort, int start, int num);
+    int load_member_boards(const char *user_id, struct board_member *members, int sort, int start, int num);
+    int get_board_members(const char *board);
+    int get_member_boards(const char *user_id);
+    int load_board_member_request(const char *name, struct board_member_config *mine);
+    int is_board_member(const char *name, const char *user_id, struct board_member *member);
+    int is_board_member_manager(const char *name, const char *user_id, struct board_member *member);
+    int set_board_member_status(const char *name, const char *user_id, int status);
+    int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct userec *user, int force);
+    char *set_member_board_article_dir(enum BBS_DIR_MODE mode, char *buf, const char *userid);
+    int flush_member_board_articles(int mode, const struct userec *user, int force);
+    int get_user_max_member_boards(const struct userec *user);
+    int set_board_member_flag(struct board_member *member);
+    int set_board_member_score(struct board_member *member, int type, int score);
+    int set_board_member_manager_file(const struct boardheader *board);
+    int update_board_member_manager_file(const struct boardheader *board);
+    int get_board_member_managers(const struct boardheader *board);
+    int load_board_member_managers(const struct boardheader *board, struct board_member *members);
+    char *get_bmp_name(char *name, int bmp);
+    int get_bmp_value(int index);
+    int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD
