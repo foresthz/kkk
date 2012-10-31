@@ -2267,7 +2267,7 @@ int undelete_range(struct _select_def *conf,struct fileheader *fhptr,void *varg)
       }
    }
    bmlog(getCurrentUser()->userid,currboard->filename,9,
-         (arg.id_to-arg.id_from)>0?arg.id_to-arg.id_from:0);/* 没有区段恢复这个记录项...... */
+         (arg.id_to-arg.id_from+1)>0?arg.id_to-arg.id_from+1:0);/* 没有区段恢复这个记录项...... */
    move(15,4);
    clrtoeol();
    move(14,4);
