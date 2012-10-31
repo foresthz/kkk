@@ -3005,10 +3005,15 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
      * 标记删除 处理
      */
     if (flag & FILE_DELETE_FLAG) {
-        if (data->accessed[1] & FILE_DEL)
+        if (data->accessed[1] & FILE_DEL) {
             originFh->accessed[1] |= FILE_DEL;
-        else
+            if (dobmlog)
+                bmlog(session -> currentuser -> userid, board -> filename, 17, 1);
+        } else {
             originFh->accessed[1] &= ~FILE_DEL;
+            if (dobmlog)
+                bmlog(session -> currentuser -> userid, board -> filename, 18, 1);
+        }
     }
 
     /*

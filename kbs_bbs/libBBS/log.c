@@ -216,6 +216,8 @@ int bmlog(const char *id, const char *boardname, int type, int value)
       14        相同主题
       15        标记 #/%
       16        去掉 #/% 标记
+      17        标记 X
+      18        去掉 X 标记
     */
 #ifndef NEWBMLOG
     int fd, data[DATALEN];
@@ -367,6 +369,10 @@ int newbmlog(const char *userid, const char *boardname, int type, int value)
       12        收入精华
       13        整理精华
       14        相同主题
+      15        标记 #/%
+      16        去掉 #/% 标记
+      17        标记 X
+      18        去掉 X 标记
     */
     char buf[512];
     struct bbs_msgbuf *msg = (struct bbs_msgbuf *) buf;
