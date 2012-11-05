@@ -1307,7 +1307,7 @@ void a_range_copypaste(MENU *pm,int mode)
 void a_delete(MENU *pm)
 {
     struct stat st;
-    char path[PATHLEN],ans[4];
+    char path[PATHLEN],ans[4],anntitle[STRLEN],*p;
     sprintf(genbuf,"%5d  %s",(pm->now+1),M_ITEM(pm,pm->now)->title);
     move(t_lines-2,0); clrtobot();
     prints("\033[1;37m%s\033[m",genbuf);
@@ -1322,8 +1322,7 @@ void a_delete(MENU *pm)
         }
         S_ISLNK(st.st_mode)?unlink(path):(S_ISDIR(st.st_mode)?my_f_rm(path):my_unlink(path));
     }
-#ifdef BOARD_SECURITY_LOG
-    char anntitle[STRLEN], *p;
+
     strncpy(anntitle, M_ITEM(pm,pm->now)->title, 39);
     anntitle[38] = '\0';
     p = anntitle + strlen(anntitle) - 1;
@@ -1333,7 +1332,7 @@ void a_delete(MENU *pm)
         else
             break;
     }
-#endif
+
     a_delitem(pm,pm->now);
     if (a_savenames(pm)) {
         a_loadnames(pm,getSession());
