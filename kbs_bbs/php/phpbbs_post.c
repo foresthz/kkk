@@ -386,6 +386,10 @@ PHP_FUNCTION(bbs_postarticle)
     int retvalue;
     FILE *fp;
     int NBUser = 0;
+#ifdef NEWSMTH
+    int from = 0;
+#endif
+    char name[STRLEN];
 
 
     int ac = ZEND_NUM_ARGS();
@@ -404,6 +408,12 @@ PHP_FUNCTION(bbs_postarticle)
         if (zend_parse_parameters(9 TSRMLS_CC, "ss/s/llllll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex) == FAILURE) {
             WRONG_PARAM_COUNT;
         }
+#ifdef NEWSMTH
+    } else if (ac == 10) {
+        if (zend_parse_parameters(9 TSRMLS_CC, "ss/s/llllll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from) == FAILURE) {
+            WRONG_PARAM_COUNT;
+        }
+#endif
     } else {
         WRONG_PARAM_COUNT;
     }
@@ -502,10 +512,28 @@ PHP_FUNCTION(bbs_postarticle)
         fprintf(fp, "\n");
     }
     color = (getCurrentUser()->numlogins % 7) + 31; /* 颜色随机变化 */
+#ifdef NEWSMTH
+    switch (from) {
+        case 1:
+            memcpy(name, NFORUM_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
+            name[STRLEN - 1] = 0;
+            break;
+        case 2:
+            memcpy(name, NFORUM_M_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
+            name[STRLEN - 1] = 0;
+            break;
+        default:
+            memcpy(name, NAME_BBS_ENGLISH, STRLEN);
+            name[STRLEN - 1] = 0;
+            break;
+#else
+    memcpy(name, NAME_BBS_ENGLISH, STRLEN);
+    name[STRLEN - 1] = 0;
+#endif
     if (!strcmp(board, "Announce") || !strcmp(board, "Penalty"))
-        fprintf(fp, "\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, BBS_FULL_NAME);
+        fprintf(fp, "\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, name, BBS_FULL_NAME);
     else
-        fprintf(fp, "\n\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, NAME_BBS_ENGLISH, (anony) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
+        fprintf(fp, "\n\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, name, (anony) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
 
     if (brd->flag&BOARD_ATTACH) {
         upload_post_append(fp, &post_file, getSession());
