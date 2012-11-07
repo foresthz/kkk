@@ -526,6 +526,7 @@ PHP_FUNCTION(bbs_postarticle)
             memcpy(name, NAME_BBS_ENGLISH, STRLEN);
             name[STRLEN - 1] = 0;
             break;
+    }
 #else
     memcpy(name, NAME_BBS_ENGLISH, STRLEN);
     name[STRLEN - 1] = 0;
