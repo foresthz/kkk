@@ -522,6 +522,10 @@ PHP_FUNCTION(bbs_postarticle)
             memcpy(name, NFORUM_M_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
             name[STRLEN - 1] = 0;
             break;
+        case 3:
+            memcpy(name, NFORUM_API_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
+            name[STRLEN - 1] = 0;
+            break;
         default:
             memcpy(name, NAME_BBS_ENGLISH, STRLEN);
             name[STRLEN - 1] = 0;
