@@ -387,7 +387,7 @@ PHP_FUNCTION(bbs_postarticle)
     FILE *fp;
     int NBUser = 0;
 #ifdef NEWSMTH
-    int from = 0;
+    long from = 0;
 #endif
     char name[STRLEN];
 
