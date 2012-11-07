@@ -410,7 +410,7 @@ PHP_FUNCTION(bbs_postarticle)
         }
 #ifdef NEWSMTH
     } else if (ac == 10) {
-        if (zend_parse_parameters(9 TSRMLS_CC, "ss/s/llllll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from) == FAILURE) {
+        if (zend_parse_parameters(10 TSRMLS_CC, "ss/s/lllllll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from) == FAILURE) {
             WRONG_PARAM_COUNT;
         }
 #endif
