@@ -396,21 +396,21 @@ function replyForm(board,reid,title,att,signum,sig,ano,outgo,lsave,titkey) {
 	this.outgo = outgo;
 	this.lsave = lsave;
 	this.pDiv = (parent && parent.document.getElementById("divReplyForm"));
-	this.titkey = '';
+    this.titkey = '';
 	if (this.pDiv) {
 		var self = this;
 		addBootFn(function() {
 			parent.showReplyFormReal(self);
 		});
 	}
-	if (!reid && titkey.length) {
-		var tk = titkey.split("\033");
-		this.titkey += '&nbsp;<select name="titkey"><option value="0">选择标签</option>';
-		for (var i=1;i<=tk.length;i++) {
-			this.titkey += '<option value="' + i + '">' + tk[i-1] + '</option>';
-		}
-		this.titkey += '</select>';
-	}
+    if (!reid && titkey.length) {
+        var tk = titkey.split("\033");
+        this.titkey += '&nbsp;<select name="titkey"><option value="0">选择标签</option>';
+        for (var i=1;i<=tk.length;i++) {
+            this.titkey += '<option value="' + i + '">' + tk[i-1] + '</option>';
+        }
+        this.titkey += '</select>';
+    }
 }
 replyForm.prototype.f = function() {
 	var i,focusEle = (this.pDiv ? ' id="rff"' : ' id="sfocus"');
@@ -421,9 +421,9 @@ replyForm.prototype.f = function() {
 	if (this.reid) nt = (this.title.substr(0,4).toLowerCase() == "re: ") ? this.title : ("Re: " + this.title);
 	html += '标&nbsp;&nbsp;题: <input type="text" tabindex="1" name="title" size="40" maxlength="100" value="'
 		+ htmlize(nt,1) + '"' + (this.reid?'':focusEle) + '/>';
-	if (!this.reid)
-		html += this.titkey;
-	html += '<br/>';
+    if (!this.reid)
+        html += this.titkey;
+    html += '<br/>';
 	if (this.att) {
 		html += '附&nbsp;&nbsp;件: <input type="text" name="attachname" size="40" value="" disabled="disabled" />'
 			+ ' <a href="bbsupload.php" target="_blank">操作附件</a>(新窗口打开)<br/>';
@@ -458,14 +458,20 @@ replyForm.prototype.f = function() {
 	return(html);
 };
 replyForm.prototype.t = function() {
-	var html = '<br/>';
+	var html = '<br/><p>请注意，本站规定，同样或相近内容文章一周内不得在本站各版面<br>'
+        + '张贴转载 5 次或 5 次以上，违犯者将视情况给予提醒或封禁部分权限。<br>'
+        + '详细规定请参照 sysop 版精华区《水木社区帐号管理办法》。</p>'
+        + '<p>请大家共同维护 BBS 的环境，节省系统资源。谢谢合作。</p>';
+	html += '<div class="oper">请输入右侧图中的验证码 <input type="text" name="code" size="4" maxlength="4" id="post_code" /> <img id="post_img_rand" src="./img_rand/img_rand.php" border="0" alt="" onclick="reload_img_rand();" /> <a href="javascript:void(0);" onclick="reload_img_rand();" />看不清楚，换一张</a></div>';
 	html += '<div class="oper"><input type="button" onclick="dosubmit();" tabindex="3" name="post" value="发表" />'
 		+ '&nbsp;&nbsp;&nbsp;&nbsp;<input class="sb1" type="reset" value="返回" onclick="history.go(-1)" /></div>';
 	html += '</fieldset></form>';
 	return(html);
 };
 
-
+function reload_img_rand() {
+	document.getElementById('post_img_rand').src="./img_rand/img_rand.php?t="+new Date();
+}
 
 
 

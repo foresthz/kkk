@@ -1,4 +1,5 @@
 <?php
+	session_start();
 	require("www2-funcs.php");
 	require("www2-board.php");
 	login_init();
@@ -16,6 +17,11 @@
 	if (bbs_checkreadperm($usernum, $boardID) == 0) html_error_quit("您无权阅读该版!");
 	if (bbs_is_readonly_board($brdArr)) html_error_quit("本版为只读讨论区!");
 	if (bbs_checkpostperm($usernum, $boardID) == 0) html_error_quit("您无权在该版面发文!");
+
+	$code=@$_POST['code'];
+	if (!$code) html_error_quit('请输入验证码');
+	if (!@$_SESSION['num_auth'] || strcasecmp($_SESSION['num_auth'], $code))
+		html_error_quit('验证码错误，请重新输入');
 	
 	if (!isset($_POST["title"])) html_error_quit("没有指定文章标题!");
 	if (!isset($_POST["tmpl"])) {

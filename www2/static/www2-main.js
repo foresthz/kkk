@@ -525,6 +525,11 @@ function showFindBox(board) {
 }
 
 function dosubmit() {
+	if (!document.getElementById('post_code').value || document.getElementById('post_code').value.length!=4) {
+		alert('请输入验证码!');
+		document.getElementById('post_code').focus();
+		return;
+        }
 	var p = document.postform;
 	p.post.value='发表中，请稍候...';
 	p.post.disabled=true;
