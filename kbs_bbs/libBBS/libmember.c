@@ -915,7 +915,10 @@ int set_board_member_flag(struct board_member *member) {
     char my_manager_id[STRLEN];
     char sql[200], buf[1024];
     const struct boardheader *board;
-    int i, flag;
+    int i, flag, o_set, n_set;
+	struct board_member old;
+	char path[PATHLEN], name[STRLEN];
+	FILE *handle;
     
     board=getbcache(member->board);
     if (0==board)
@@ -924,12 +927,12 @@ int set_board_member_flag(struct board_member *member) {
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-        
-    mysql_escape_string(my_name, member->board, strlen(member->board));
-    mysql_escape_string(my_user_id, member->user, strlen(member->user));
-    mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
-    
-    member->status=BOARD_MEMBER_STATUS_NORMAL;
+	if (get_board_member(board->filename, member->user, &old)<0)
+		return -4;
+	if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
+		return -5;
+	
+	member->status=BOARD_MEMBER_STATUS_NORMAL;
     for (i=0;i<BMP_COUNT;i++) {
         flag=get_bmp_value(i);
         if (member->flag&flag) {
@@ -937,11 +940,18 @@ int set_board_member_flag(struct board_member *member) {
             break;
         }
     }
+	
+	if (old.status == member->status && old.flag == member->flag)
+		return 0;
+        
+    mysql_escape_string(my_name, member->board, strlen(member->board));
+    mysql_escape_string(my_user_id, member->user, strlen(member->user));
+    mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -4;
+        return -6;
     }
     
     sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `flag`=%d, `status`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->flag, member->status, my_manager_id, my_name, my_user_id);
@@ -949,13 +959,51 @@ int set_board_member_flag(struct board_member *member) {
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -5;
+        return -7;
     }
 
     mysql_close(&s);
-    sprintf(buf, "权限: %d", member->flag);
-    board_member_log(member, "设置驻版权限", buf);
     
+	gettmpfilename(path, "board.member.flag.log");
+	if ((handle = fopen(path, "w")) != NULL) { 
+		fprintf(handle, "\033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m版主\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		fprintf(handle, "\033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
+		
+		fprintf(handle, "\n\033[1;33m原驻版身份\033[m: \033[1;32m%s\033[m\n", (old.status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
+		if (old.status == BOARD_MEMBER_STATUS_MANAGER) {
+			for (i=0;i<BMP_COUNT;i++) {
+				flag=get_bmp_value(i);
+				get_bmp_name(name, flag);
+				fprintf(handle, "[%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
+			}
+		}
+		
+		fprintf(handle, "\n\033[1;33m新驻版身份\033[m: \033[1;32m%s\033[m\n", (member->status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
+		if (member->status == BOARD_MEMBER_STATUS_MANAGER) {
+			for (i=0;i<BMP_COUNT;i++) {
+				flag=get_bmp_value(i);
+				get_bmp_name(name, flag);
+				
+				n_set=(member->flag&flag)?1:0;
+				o_set=(old.flag&flag)?1:0;
+				
+				fprintf(handle, "[%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
+			}
+		}
+		fclose(handle);
+		
+		sprintf(buf, "调整 %s 的驻版权限", member->user);
+		post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
+		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());		
+		
+		mail_file(DELIVER, path, member->user, buf, 0, NULL);
+		
+		unlink(path);
+	} else {
+		sprintf(buf, "权限: %d", member->flag);
+		board_member_log(member, "设置驻版权限", buf);
+	}
+	
     update_board_member_manager_file(board);
         
     return 0;
