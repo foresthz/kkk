@@ -233,7 +233,12 @@ int bmlog(const char *id, const char *boardname, int type, int value)
         return 0;
     strncpy(BM, btemp->BM, sizeof(BM) - 1);
     BM[sizeof(BM) - 1] = '\0';
+
+#ifdef MEMBER_MANAGER
+    if (!chk_BM_instr(BM, id) && !is_board_member_manager(boardname, id, NULL))
+#else
     if (!chk_BM_instr(BM, id))
+#endif
         return 0;
 
 #ifdef NEWBMLOG
