@@ -256,7 +256,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         fclose(fn);
     }
 #ifdef NEWSMTH
-	post_file(operator, "", postfile, bh->filename, title, 0, core_member?2:1, getSession());
+	post_file(operator, "", postfile, bh->filename, title, 0, 1 /*core_member?2:1*/, getSession());
 #else
     post_file(operator, "", postfile, bh->filename, title, 0, 2, getSession());
 #endif
@@ -442,7 +442,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
     }
     if (lookupuser)
 #ifdef NEWSMTH
-        mail_file(core_member?operator->userid:DELIVER, mailfile, uident, title, 0, NULL);
+        mail_file(DELIVER /*core_member?operator->userid:DELIVER*/, mailfile, uident, title, 0, NULL);
 #else
         mail_file(operator->userid, mailfile, uident, title, 0, NULL);
 #endif

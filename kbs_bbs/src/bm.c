@@ -482,9 +482,9 @@ int addtodeny(const struct boardheader *bh, char *uident)
         }
         fclose(fn);
 #ifdef NEWSMTH
-		if (is_core_member)
-			mail_file(getCurrentUser()->userid, filename, uident, buffer, 0, NULL);
-		else	
+		//if (is_core_member)
+		//	mail_file(getCurrentUser()->userid, filename, uident, buffer, 0, NULL);
+		//else	
 			mail_file(DELIVER, filename, uident, buffer, 0, NULL);
 #else
         mail_file(getCurrentUser()->userid, filename, uident, buffer, 0, NULL);
@@ -511,9 +511,9 @@ int addtodeny(const struct boardheader *bh, char *uident)
         fprintf(fn, "                              %s\n", ctime(&now));
         fclose(fn);
 #ifdef NEWSMTH
-		if (is_core_member)
-		post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 2, getSession());
-		else
+		//if (is_core_member)
+		//post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 2, getSession());
+		//else
         post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 1, getSession());
 #else
         post_file(getCurrentUser(), "", filename, bh->filename, buffer, 0, 2, getSession());
