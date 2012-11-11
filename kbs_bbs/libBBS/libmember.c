@@ -915,10 +915,11 @@ int set_board_member_flag(struct board_member *member) {
     char my_manager_id[STRLEN];
     char sql[200], buf[1024];
     const struct boardheader *board;
-    int i, flag, o_set, n_set;
+    int i, flag, o_set, n_set, sysop;
 	struct board_member old;
 	char path[PATHLEN], name[STRLEN];
 	FILE *handle;
+	time_t time;
     
     board=getbcache(member->board);
     if (0==board)
@@ -966,7 +967,16 @@ int set_board_member_flag(struct board_member *member) {
     
 	gettmpfilename(path, "board.member.flag.log");
 	if ((handle = fopen(path, "w")) != NULL) { 
-		fprintf(handle, "\033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m版主\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
+				&& !chk_BM_instr(board->BM, getSession()->currentuser->userid))
+			sysop = 1;
+		else {
+			sysop = 0;
+		
+		if (sysop)
+		fprintf(handle, "\033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		else
+		fprintf(handle, "\033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
 		fprintf(handle, "\033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
 		
 		fprintf(handle, "\n\033[1;33m原驻版身份\033[m: \033[1;32m%s\033[m\n", (old.status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
@@ -974,7 +984,7 @@ int set_board_member_flag(struct board_member *member) {
 			for (i=0;i<BMP_COUNT;i++) {
 				flag=get_bmp_value(i);
 				get_bmp_name(name, flag);
-				fprintf(handle, "[%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
+				fprintf(handle, "    [%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
 			}
 		}
 		
@@ -987,9 +997,16 @@ int set_board_member_flag(struct board_member *member) {
 				n_set=(member->flag&flag)?1:0;
 				o_set=(old.flag&flag)?1:0;
 				
-				fprintf(handle, "[%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
+				fprintf(handle, "    [%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
 			}
 		}
+		
+		if (sysop)
+			fprintf(handle, "\n\n                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, getSession()->currentuser->userid);
+		else
+			fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
+		
+		fprintf(fn, "                              %s\n\n", ctime_r(&time, buf));
 		fclose(handle);
 		
 		sprintf(buf, "调整 %s 的驻版权限", member->user);
