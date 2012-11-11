@@ -76,6 +76,9 @@
 		$local_save = 0;
 		if ($reid > 0) $local_save = !strncmp($articles[1]["INNFLAG"], "LL", 2);
 	echo $local_save?"1":"0"; ?>, "<?php echo $tk; ?>");w(o.f());
+	<?php if ($currentuser['score_user']>=2000) { ?>
+	o.code=false;
+	<?php } ?>
 //-->
 </script>
 <?php

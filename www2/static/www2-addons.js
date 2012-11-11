@@ -395,6 +395,7 @@ function replyForm(board,reid,title,att,signum,sig,ano,outgo,lsave,titkey) {
 	this.ano = ano;
 	this.outgo = outgo;
 	this.lsave = lsave;
+	this.code = true;
 	this.pDiv = (parent && parent.document.getElementById("divReplyForm"));
     this.titkey = '';
 	if (this.pDiv) {
@@ -462,7 +463,10 @@ replyForm.prototype.t = function() {
         + '张贴转载 5 次或 5 次以上，违犯者将视情况给予提醒或封禁部分权限。<br>'
         + '详细规定请参照 sysop 版精华区《水木社区帐号管理办法》。</p>'
         + '<p>请大家共同维护 BBS 的环境，节省系统资源。谢谢合作。</p>';
+	if (this.code)
 	html += '<div class="oper">请输入右侧图中的验证码 <input type="text" name="code" size="4" maxlength="4" id="post_code" /> <img id="post_img_rand" src="./img_rand/img_rand.php" border="0" alt="" onclick="reload_img_rand();" /> <a href="javascript:void(0);" onclick="reload_img_rand();" />看不清楚，换一张</a></div>';
+	else
+	html += '<input type="hidden" name="code" value="abcd" id="post_code" />';
 	html += '<div class="oper"><input type="button" onclick="dosubmit();" tabindex="3" name="post" value="发表" />'
 		+ '&nbsp;&nbsp;&nbsp;&nbsp;<input class="sb1" type="reset" value="返回" onclick="history.go(-1)" /></div>';
 	html += '</fieldset></form>';
