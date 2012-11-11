@@ -144,6 +144,7 @@
 <input type="button" onclick="dosubmit();" name="post" value="ÐÞ¸Ä" />&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="reset" value="¸´Ô­" />&nbsp;&nbsp;&nbsp;&nbsp;
 <input type="button" value="·µ»Ø" onclick="history.go(-1)" />
+<input type="hidden" name="code" id="post_code" value="abcd" />
 </div></fieldset>
 </form>
 <?php
