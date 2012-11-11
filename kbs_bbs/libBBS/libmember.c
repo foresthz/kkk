@@ -970,7 +970,7 @@ int set_board_member_flag(struct board_member *member) {
 		if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
 				&& !chk_BM_instr(board->BM, getSession()->currentuser->userid))
 			sysop = 1;
-		else {
+		else 
 			sysop = 0;
 		
 		if (sysop)
