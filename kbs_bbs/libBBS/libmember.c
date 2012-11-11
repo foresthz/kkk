@@ -1006,7 +1006,7 @@ int set_board_member_flag(struct board_member *member) {
 		else
 			fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
 		
-		fprintf(fn, "                              %s\n\n", ctime_r(&time, buf));
+		fprintf(handle, "                              %s\n\n", ctime_r(&time, buf));
 		fclose(handle);
 		
 		sprintf(buf, "调整 %s 的驻版权限", member->user);
