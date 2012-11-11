@@ -972,23 +972,24 @@ int set_board_member_flag(struct board_member *member) {
 			sysop = 1;
 		else 
 			sysop = 0;
+		time=time(0);
 		
 		if (sysop)
-		fprintf(handle, "\033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
 		else
-		fprintf(handle, "\033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
-		fprintf(handle, "\033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
+		fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		fprintf(handle, "  \033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
 		
-		fprintf(handle, "\n\033[1;33m原驻版身份\033[m: \033[1;32m%s\033[m\n", (old.status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
+		fprintf(handle, "\n  \033[1;33m原驻版身份\033[m: \033[1;32m%s\033[m\n", (old.status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
 		if (old.status == BOARD_MEMBER_STATUS_MANAGER) {
 			for (i=0;i<BMP_COUNT;i++) {
 				flag=get_bmp_value(i);
 				get_bmp_name(name, flag);
-				fprintf(handle, "    [%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
+				fprintf(handle, "      [%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
 			}
 		}
 		
-		fprintf(handle, "\n\033[1;33m新驻版身份\033[m: \033[1;32m%s\033[m\n", (member->status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
+		fprintf(handle, "\n  \033[1;33m新驻版身份\033[m: \033[1;32m%s\033[m\n", (member->status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
 		if (member->status == BOARD_MEMBER_STATUS_MANAGER) {
 			for (i=0;i<BMP_COUNT;i++) {
 				flag=get_bmp_value(i);
@@ -997,7 +998,7 @@ int set_board_member_flag(struct board_member *member) {
 				n_set=(member->flag&flag)?1:0;
 				o_set=(old.flag&flag)?1:0;
 				
-				fprintf(handle, "    [%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
+				fprintf(handle, "      [%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
 			}
 		}
 		
