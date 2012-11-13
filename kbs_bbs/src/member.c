@@ -721,7 +721,7 @@ static int b_member_title(struct _select_def *conf) {
         strcat(buf, tmp);
     }
     
-    strcpy(tmp, "排序[\x1b[1;32mc\x1b[m] 统计[\x1b[1;32mb\x1b[m] 查看[\x1b[1;32m→\x1b[m,\x1b[1;32mr\x1b[m]");
+    strcpy(tmp, "其他操作请通过[\x1b[1;32mh\x1b[m]查看帮助");
     strcat(buf, tmp);
     
     docmdtitle("[驻版用户列表]", buf);
@@ -995,6 +995,10 @@ static int b_member_key(struct _select_def *conf, int key) {
 			if (board_member_titles<=0)
 				return SHOW_CONTINUE;
 			return b_member_set_title(&b_members[conf->pos-conf->page_pos]);
+		case 'h':
+		case 'H':
+			show_help("help/boardmemberhelp");
+			return SHOW_REFRESH;
 	}
     return SHOW_CONTINUE;
 }
