@@ -165,7 +165,7 @@ static int b_member_title_key(struct _select_def *conf, int key) {
 			move(t_lines-1, 0);
 			clrtobot();
 			buf[0]=0;
-			getdata(t_lines-1, 0, "请输入新的驻版称号[12字符以内]: ", buf, 12, DOECHO, NULL, true);
+			getdata(t_lines-1, 0, "请输入新的驻版称号[12字符以内]: ", buf, 13, DOECHO, NULL, true);
 			if (buf[0]==0) {
 				update_endline();
 				return SHOW_CONTINUE;
@@ -232,7 +232,7 @@ static int b_member_title_key(struct _select_def *conf, int key) {
 			move(t_lines-1, 0);
 			clrtobot();
 			buf[0]=0;
-			getdata(t_lines-1, 0, "请输入驻版称号[12字符以内]: ", buf, 12, DOECHO, NULL, true);
+			getdata(t_lines-1, 0, "请输入驻版称号[12字符以内]: ", buf, 13, DOECHO, NULL, true);
 			if (buf[0]==0) {
 				update_endline();
 				return SHOW_CONTINUE;
