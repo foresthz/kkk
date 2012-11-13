@@ -1520,8 +1520,8 @@ int load_board_member_titles(const char *board, struct board_member_title *title
         i++;
         
         titles[i-1].id=atol(row[0]);
-        strncpy(titles[i-1].board, bh->filename, STRLEN-2);
-        strncpy(titles[i-1].name, rows[2], STRLEN-2);
+        strncpy(titles[i-1].board, row[1], STRLEN-2);
+        strncpy(titles[i-1].name, row[2], STRLEN-2);
         titles[i-1].serial=atol(row[3]);
         titles[i-1].flag=atol(row[4]);        
         
@@ -1571,11 +1571,11 @@ int get_board_member_title(const char *board, int id, struct board_member_title 
         if (NULL != title) {
             bzero(title, sizeof(struct board_member_title));
 
-            title->id=row[0];
+            title->id=atol(row[0]);
             strncpy(title->board, row[1], STRLEN-2);
             strncpy(title->name, row[2], STRLEN-2);
-            title.serial=atol(row[3]);
-            title.flag=atol(row[4]);
+            title->serial=atol(row[3]);
+            title->flag=atol(row[4]);
         }		
     }
 
@@ -1629,11 +1629,11 @@ int query_board_member_title(const char *board, char *name, struct board_member_
         if (NULL != title) {
             bzero(title, sizeof(struct board_member_title));
 
-            title->id=row[0];
+            title->id=atol(row[0]);
             strncpy(title->board, row[1], STRLEN-2);
             strncpy(title->name, row[2], STRLEN-2);
-            title.serial=atol(row[3]);
-            title.flag=atol(row[4]);
+            title->serial=atol(row[3]);
+            title->flag=atol(row[4]);
         }		
     }
 
@@ -1769,17 +1769,16 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
 	mysql_escape_string(my_name, name, strlen(name));
     mysql_escape_string(my_board, board->filename, strlen(board->filename));
     
-	sprintf(sql, "INSERT INTO `board_title` (`board`, `name`, `serial`, `flag`) VALUES (\"%s\", \"%s\", %d, %d);", my_board, my_name, serial, 0);
 	mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -5;
     }
-	
+	sprintf(sql, "INSERT INTO `board_title` (`board`, `name`, `serial`, `flag`) VALUES (\"%s\", \"%s\", %d, %d);", my_board, my_name, serial, 0);
 	if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -6;
+        return -7;
     }
 
     mysql_close(&s);
@@ -1859,13 +1858,13 @@ int modify_board_member_title(struct board_member_title *title) {
 	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
 	mysql_escape_string(my_name, title->name, strlen(title->name));
 	
-	sprintf(sql, "UPDATE `board_title` SET `name`=\"%s\", serial=%d, flag=%d WHERE `id`=%d AND LOWER(`board`)=LOWER(\"%s\");", my_name, title->serial, title->flag, title->id, my_board);
 	mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -5;
     }
-	
+
+	sprintf(sql, "UPDATE `board_title` SET `name`=\"%s\", serial=%d, flag=%d WHERE `id`=%d AND LOWER(`board`)=LOWER(\"%s\");", my_name, title->serial, title->flag, title->id, my_board);
 	if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);

@@ -120,6 +120,224 @@ int b_member_set_msg(char *msg) {
     return 0;
 }
 
+static int b_member_title_show(struct _select_def *conf, int i) {
+    prints("%4d %-12s %4d", i, b_titles[i-conf->page_pos].name, b_titles[i-conf->page_pos].serial);
+    return SHOW_CONTINUE;
+}
+
+static int b_member_title_title(struct _select_def *conf) {
+    docmdtitle("[×¤°æÓÃ»§ÁÐ±í]", "\x1b[1;31m×¤°æ³ÆºÅ¹ÜÀí\x1b[m: Ìí¼Ó[\x1b[1;32ma\x1b[m] É¾³ý[\x1b[1;32md\x1b[m] ÐÞ¸Ä[\x1b[1;32me\x1b[m] ÐòºÅ[\x1b[1;32ms\x1b[m]");
+    move(2, 0);
+    clrtobot();
+    prints("\033[1;33m  %-4s %-12s %-4s \033[m", "±àºÅ", "Ãû³Æ",  "ÐòºÅ");    
+    update_endline();
+
+    return 0;
+}
+
+static int b_member_title_prekey(struct _select_def *conf, int *key)
+{
+    switch (*key) {
+        case 'q':
+            *key = KEY_LEFT;
+            break;
+        case ' ':
+            *key = KEY_PGDN;
+    }
+    return SHOW_CONTINUE;
+}
+
+static int b_member_title_select(struct _select_def *conf) {
+	return SHOW_CONTINUE;
+}
+
+static int b_member_title_getdata(struct _select_def *conf, int pos, int len) {
+    return SHOW_CONTINUE;
+}
+
+static int b_member_title_key(struct _select_def *conf, int key) {
+	char buf[STRLEN], msg[STRLEN];
+	int i;
+	
+	switch (key) {
+		case 'a':
+		case 'A':
+			move(t_lines-1, 0);
+			clrtobot();
+			buf[0]=0;
+			getdata(t_lines-1, 0, "ÇëÊäÈëÐÂµÄ×¤°æ³ÆºÅ[12×Ö·ûÒÔÄÚ]: ", buf, 12, DOECHO, NULL, true);
+			if (buf[0]==0) {
+				update_endline();
+				return SHOW_CONTINUE;
+			}
+			move(t_lines-1, 0);
+			clrtobot();
+			msg[0]=0;
+			getdata(t_lines-1, 0, "ÄúÈ·¶¨ÒªÌí¼Ó×¤°æ³ÆºÅÂð?(Y/N) [N]: ", msg, 3, DOECHO, NULL, true);
+			if (msg[0] != 'y' && msg[0]!='Y') {
+                	update_endline();
+				return SHOW_CONTINUE;
+			}
+			i=create_board_member_title(currboard->filename, buf, board_member_titles+1);
+			if (i<0)
+				sprintf(msg, "×¤°æ³ÆºÅÌí¼ÓÊ§°Ü£¬Çë¼ì²éÊÇ·ñÖØ¸´(%d)", i);
+			else {
+				strcpy(msg, "×¤°æ³ÆºÅÌí¼Ó³É¹¦");
+				
+				free(b_titles);
+				board_member_titles=get_board_member_titles(currboard->filename);
+				b_titles=(struct board_member_title *) malloc(sizeof(struct board_member_title) * board_member_titles);
+				
+				bzero(b_titles, sizeof(struct board_member_title) * board_member_titles);
+				load_board_member_titles(currboard->filename, b_titles);
+			}
+			move(t_lines-2, 0);
+			clrtobot();
+			prints(msg);
+			pressanykey();
+			update_endline();
+			return SHOW_QUIT;
+		case 'd':
+		case 'D':
+			move(t_lines-1, 0);
+			clrtobot();
+			msg[0]=0;
+			sprintf(buf, "ÄúÈ·¶¨ÒªÉ¾³ý³ÆºÅ¡¾\033[1;33m%s\033[m¡¿Âð?(Y/N) [N]: ", b_titles[conf->pos-conf->page_pos].name);
+			getdata(t_lines-1, 0, buf, msg, 3, DOECHO, NULL, true);
+			if (msg[0] != 'y' && msg[0]!='Y') {
+                	update_endline();
+				return SHOW_CONTINUE;
+			}
+			i=remove_board_member_title(&b_titles[conf->pos-conf->page_pos]);
+			if (i<0)
+				strcpy(msg, "×¤°æ³ÆºÅÉ¾³ýÊ§°Ü");
+			else {
+				strcpy(msg, "×¤°æ³ÆºÅÉ¾³ý³É¹¦");
+				
+				free(b_titles);
+				board_member_titles=get_board_member_titles(currboard->filename);
+				b_titles=(struct board_member_title *) malloc(sizeof(struct board_member_title) * board_member_titles);
+				
+				bzero(b_titles, sizeof(struct board_member_title) * board_member_titles);
+				load_board_member_titles(currboard->filename, b_titles);
+			}
+			move(t_lines-2, 0);
+			clrtobot();
+			prints(msg);
+			pressanykey();
+			update_endline();
+			return SHOW_QUIT;
+		case 'e':
+		case 'E':
+			move(t_lines-1, 0);
+			clrtobot();
+			buf[0]=0;
+			getdata(t_lines-1, 0, "ÇëÊäÈë×¤°æ³ÆºÅ[12×Ö·ûÒÔÄÚ]: ", buf, 12, DOECHO, NULL, true);
+			if (buf[0]==0) {
+				update_endline();
+				return SHOW_CONTINUE;
+			}
+			move(t_lines-1, 0);
+			clrtobot();
+			msg[0]=0;
+			getdata(t_lines-1, 0, "ÄúÈ·¶¨ÒªÐÞ¸Ä×¤°æ³ÆºÅÂð?(Y/N) [N]: ", msg, 3, DOECHO, NULL, true);
+			if (msg[0] != 'y' && msg[0]!='Y') {
+                	update_endline();
+				return SHOW_CONTINUE;
+			}
+			strncpy(b_titles[conf->pos-conf->page_pos].name, buf, STRLEN-2);
+			i=modify_board_member_title(&b_titles[conf->pos-conf->page_pos]);
+			if (i<0)
+				sprintf(msg, "×¤°æ³ÆºÅÐÞ¸ÄÊ§°Ü£¬Çë¼ì²éÊÇ·ñÖØ¸´(%d)", i);
+			else {
+				strcpy(msg, "×¤°æ³ÆºÅÐÞ¸Ä³É¹¦");
+				
+				bzero(b_titles, sizeof(struct board_member_title) * board_member_titles);
+				load_board_member_titles(currboard->filename, b_titles);
+			}
+			move(t_lines-2, 0);
+			clrtobot();
+			prints(msg);
+			pressanykey();
+			update_endline();
+			return SHOW_QUIT;
+		case 's':
+		case 'S':
+			move(t_lines-1, 0);
+			clrtobot();
+			buf[0]=0;
+			getdata(t_lines-1, 0, "ÇëÊäÈë×¤°æ³ÆºÅµÄÐòºÅ[Êý×Ö]: ", buf, 4, DOECHO, NULL, true);
+			if (buf[0]==0 || !bmc_digit_string(buf)) {
+				update_endline();
+				return SHOW_CONTINUE;
+			}
+			move(t_lines-1, 0);
+			clrtobot();
+			msg[0]=0;
+			getdata(t_lines-1, 0, "ÄúÈ·¶¨ÒªÐÞ¸Ä×¤°æ³ÆºÅµÄÐòºÅÂð?(Y/N) [N]: ", msg, 3, DOECHO, NULL, true);
+			if (msg[0] != 'y' && msg[0]!='Y') {
+                	update_endline();
+				return SHOW_CONTINUE;
+			}
+			b_titles[conf->pos-conf->page_pos].serial=atoi(buf);
+			i=modify_board_member_title(&b_titles[conf->pos-conf->page_pos]);
+			if (i<0)
+				sprintf(msg, "×¤°æ³ÆºÅÐÞ¸ÄÊ§°Ü(%d)", i);
+			else {
+				strcpy(msg, "×¤°æ³ÆºÅÐÞ¸Ä³É¹¦");
+				
+				bzero(b_titles, sizeof(struct board_member_title) * board_member_titles);
+				load_board_member_titles(currboard->filename, b_titles);
+			}
+			move(t_lines-2, 0);
+			clrtobot();
+			prints(msg);
+			pressanykey();
+			update_endline();
+			return SHOW_QUIT;
+	}
+	
+	return SHOW_CONTINUE;
+}
+
+int b_member_set_titles() {
+	struct _select_def group_conf;
+    POINT *pts;
+    int i;
+    
+    bzero(&group_conf, sizeof(struct _select_def));
+	pts = (POINT *) malloc(sizeof(POINT) * BBS_PAGESIZE);
+	
+    for (i = 0; i < BBS_PAGESIZE; i++) {
+        pts[i].x = 2;
+        pts[i].y = i + 3;
+    }
+    
+    group_conf.item_per_page = BBS_PAGESIZE;
+    group_conf.flag = LF_VSCROLL | LF_BELL | LF_MULTIPAGE | LF_LOOP;
+    group_conf.prompt = "¡ô";
+    group_conf.item_pos = pts;
+    group_conf.title_pos.x = 0;
+    group_conf.title_pos.y = 0;
+    group_conf.pos = 1;
+    group_conf.page_pos = 1;
+
+    group_conf.item_count = board_member_titles;
+    group_conf.show_data = b_member_title_show;
+    group_conf.show_title = b_member_title_title;
+    group_conf.pre_key_command = b_member_title_prekey;
+    group_conf.on_select = b_member_title_select;
+    group_conf.get_data = b_member_title_getdata;
+    group_conf.key_command = b_member_title_key;
+
+    
+    clear();
+    list_select_loop(&group_conf);
+
+    free(pts);
+    return 0;
+}
+
 int b_member_set() {
     struct board_member_config config;
     struct board_member_config old;
@@ -268,6 +486,93 @@ int b_member_set_flag_show(struct board_member *b_member, int old, int index) {
     return changed;
 }
 
+static int b_member_set_title_show(struct _select_def *conf, int i) {
+	if (i-conf->page_pos<=0)
+		prints("%4d %-12s", i, "\033[1;32m<ÎÞ>\033[m");
+	else
+		prints("%4d %-12s %4d", i, b_titles[i-conf->page_pos-1].name, b_titles[i-conf->page_pos-1].serial);
+    return SHOW_CONTINUE;
+}
+
+static int b_member_set_title_title(struct _select_def *conf) {
+    docmdtitle("[ÊÚÓè×¤°æ³ÆºÅ]", "");
+    move(2, 0);
+    clrtobot();
+    prints("\033[1;33m  %-4s %-12s %-4s \033[m", "±àºÅ", "Ãû³Æ",  "ÐòºÅ");    
+    update_endline();
+
+    return SHOW_CONTINUE;
+}
+
+static int b_member_set_title_key(struct _select_def *conf, int key) {
+	return SHOW_CONTINUE;
+}
+
+static int b_member_set_title_select(struct _select_def *conf) {
+	return SHOW_SELECT;
+}
+
+int b_member_set_title(struct board_member *b_member) {
+	struct _select_def group_conf;
+	POINT *pts;
+    int i, id;
+	char buf[200], ans[4];
+	
+	bzero(&group_conf, sizeof(struct _select_def));
+	pts = (POINT *) malloc(sizeof(POINT) * BBS_PAGESIZE);
+    for (i = 0; i < BBS_PAGESIZE; i++) {
+        pts[i].x = 2;
+        pts[i].y = i + 3;
+    }
+    
+    group_conf.item_per_page = BBS_PAGESIZE;
+    group_conf.flag = LF_VSCROLL | LF_BELL | LF_MULTIPAGE | LF_LOOP;
+    group_conf.prompt = "¡ô";
+    group_conf.item_pos = pts;
+    group_conf.title_pos.x = 0;
+    group_conf.title_pos.y = 0;
+    group_conf.pos = 1;
+    group_conf.page_pos = 1;
+
+    group_conf.item_count = board_member_titles+1;
+    group_conf.show_data = b_member_set_title_show;
+    group_conf.show_title = b_member_set_title_title;
+    group_conf.pre_key_command = b_member_title_prekey;
+    group_conf.on_select = b_member_set_title_select;
+    group_conf.get_data = b_member_title_getdata;
+    group_conf.key_command = b_member_set_title_key;
+
+    
+    clear();
+    i=list_select_loop(&group_conf);
+
+    free(pts);
+	
+	if (SHOW_SELECT != i)
+		return SHOW_REFRESH;
+	
+	i=group_conf.pos-1;
+	if (i<=0 || i>board_member_titles) {
+		id=0;
+		sprintf(buf, "ÄúÒªÈ¡Ïû\033[1;32m%s\033[mµÄ×¤°æ³ÆºÅÂð? (Y/N) [N]", b_member->user);
+	} else {
+		id=b_titles[i-1].id;
+		sprintf(buf, "ÄúÒªÊÚÓè\033[1;32m%s\033[mÓÃ»§\033[1;31m%s\033[m³ÆºÅÂð? (Y/N) [N]", b_member->user, b_titles[i-1].name);
+	}
+	
+	move(t_lines-1, 0);
+	clrtobot();
+	ans[0]=0;
+	getdata(t_lines-1, 0, buf, ans, 3, DOECHO, NULL, true);
+	if (ans[0]=='y'||ans[0]=='Y') {
+		b_member->title=id;
+		set_board_member_title(b_member);	
+		return SHOW_DIRCHANGE;
+	} else {
+		return SHOW_REFRESH;
+	}
+}
+
 int b_member_set_flag(struct board_member *b_member) {
     char buf[STRLEN], ans[8];
     int changed, old, index, key, repeat, flag;
@@ -367,7 +672,7 @@ int b_member_get_title(int id, char *name) {
 	if (id <= 0)
 		strcpy(name, "");
 	else for (i=0;i<board_member_titles;i++) {
-		if (b_titles[i].id=id) {
+		if (b_titles[i].id==id) {
 			strcpy(name, b_titles[i].name);
 			break;
 		}
@@ -396,7 +701,7 @@ static int b_member_show(struct _select_def *conf, int i) {
         }
         
 		b_member_get_title(b_members[i - conf->page_pos].title, title);
-        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, title, lookupuser->username, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
+        prints("%4d %s%-12s\x1b[m \033[1;36m%-12s\033[m %8d %8d %8d %10d %-8s", i, color, lookupuser->username, title, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
     }
     
     return SHOW_CONTINUE;
@@ -677,7 +982,20 @@ static int b_member_key(struct _select_def *conf, int key) {
                 pressanykey();
             }
             return SHOW_REFRESH;
-    }
+		case 'l':
+		case 'L':
+			if (!board_member_is_manager)
+                return SHOW_CONTINUE;
+            b_member_set_titles();    
+            return SHOW_REFRESH;
+		case 'p':
+		case 'P':
+			if (!board_member_is_manager)
+                return SHOW_CONTINUE;
+			if (board_member_titles<=0)
+				return SHOW_CONTINUE;
+			return b_member_set_title(&b_members[conf->pos-conf->page_pos]);
+	}
     return SHOW_CONTINUE;
 }
 
