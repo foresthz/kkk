@@ -701,7 +701,7 @@ static int b_member_show(struct _select_def *conf, int i) {
         }
         
 		b_member_get_title(b_members[i - conf->page_pos].title, title);
-        prints("%4d %s%-12s\x1b[m \033[1;36m%-12s\033[m %8d %8d %8d %10d %-8s", i, color, lookupuser->username, title, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
+        prints("%4d %s%-12s\x1b[m \033[1;36m%-12s\033[m %8d %8d %8d %10d %-8s", i, color, lookupuser->userid, title, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
     }
     
     return SHOW_CONTINUE;
