@@ -292,7 +292,8 @@ int display_member_boards(char *uident) {
 	struct board_member_title member_title;
 	int total, i;
 	char color[STRLEN], title[STRLEN], buf[STRLEN];
-	
+	const struct boardheader *bh;
+
 	clear();
 	total=get_member_boards(uident);
 	move(0, 0);
@@ -308,6 +309,8 @@ int display_member_boards(char *uident) {
 		} else {
 			prints("  \033[1;32m±àºÅ °æÃû         ×¤°æ³ÆºÅ     ×¤°æ»ý·Ö ×¤°æÊ±¼ä\033[m\n");
 			for (i=0;i<total;i++) {
+				if (!(bh=getbcache(members[i].board))||!check_read_perm(getCurrentUser(),bh))
+                			continue;
 				if (members[i].status==BOARD_MEMBER_STATUS_MANAGER)
 					strcpy(color, "\x1b[1;31m");
 				else if (members[i].status==BOARD_MEMBER_STATUS_NORMAL)
