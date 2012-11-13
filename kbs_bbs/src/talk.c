@@ -307,7 +307,7 @@ int display_member_boards(char *uident) {
 		if (load_member_boards(uident, members, MEMBER_BOARD_SORT_BOARD_ASC, 0, total)<=0) {
 			prints("¼ÓÔØ×¤°æÐÅÏ¢³ö´í");
 		} else {
-			prints("  \033[1;32m±àºÅ °æÃû         ×¤°æ³ÆºÅ     ×¤°æ»ý·Ö ×¤°æÊ±¼ä\033[m\n");
+			prints("  \033[1;32m±àºÅ °æÃû                 ×¤°æ³ÆºÅ     ×¤°æ»ý·Ö ×¤°æÊ±¼ä\033[m\n");
 			for (i=0;i<total;i++) {
 				if (!(bh=getbcache(members[i].board))||!check_read_perm(getCurrentUser(),bh))
                 			continue;
@@ -323,7 +323,7 @@ int display_member_boards(char *uident) {
 				else
 					strcpy(title, "");
 					
-				prints("  %4d %s%-12s \033[1;36m%-12s\033[m %8d %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
+				prints("  %4d %s%-20s \033[1;36m%-12s\033[m %8d %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
 			}
 		}
 		free(members);
