@@ -302,7 +302,7 @@ int display_member_boards(char *uident) {
 		prints("该用户尚未入驻版面");
 	else {
 		members=(struct board_member *) malloc(sizeof(struct board_member) * total);
-		bzero(members, sizeof(struct board_member) * BBS_PAGESIZE);
+		bzero(members, sizeof(struct board_member) * total);
 		if (load_member_boards(uident, members, MEMBER_BOARD_SORT_BOARD_ASC, 0, total)<=0) {
 			prints("加载驻版信息出错");
 		} else {
@@ -315,7 +315,7 @@ int display_member_boards(char *uident) {
 				else
 					strcpy(color, "\x1b[1;33m");
 				
-				if (members[i].title > 0 && get_board_member_title(members[i].board, memebrs[i].title, &member_title)>=0)
+				if (members[i].title > 0 && get_board_member_title(members[i].board, members[i].title, &member_title)>=0)
 					strcpy(title, member_title.name);
 				else
 					strcpy(title, "");
@@ -586,7 +586,7 @@ int t_query(char* q_id)
                 sleep(1);
                 break;
 #ifdef ENABLE_BOARD_MEMBER				
-			case 'k':
+			case 'K':
 				if (!strcmp("guest", getCurrentUser()->userid))
                     break;
 				display_member_boards(uident);
