@@ -286,6 +286,52 @@ unsigned char    month, day;
 }
 #endif
 
+#ifdef ENABLE_BOARD_MEMBER
+int display_member_boards(char *uident) {
+	struct board_member *members=NULL;
+	struct board_member_title member_title;
+	int total, i;
+	char color[STRLEN], title[STRLEN], buf[STRLEN];
+	
+	clear();
+	total=get_member_boards(uident);
+	move(0, 0);
+	prints("用户 \033[1;32m%s\033[m 的驻版信息", uident);
+	move(3, 0);
+	if (total<=0)
+		prints("该用户尚未入驻版面");
+	else {
+		members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+		bzero(members, sizeof(struct board_member) * BBS_PAGESIZE);
+		if (load_member_boards(uident, members, MEMBER_BOARD_SORT_BOARD_ASC, 0, total)<=0) {
+			prints("加载驻版信息出错");
+		} else {
+			prints("  \033[1;32m编号 版名         驻版称号     驻版积分 驻版时间\033[m\n");
+			for (i=0;i<total;i++) {
+				if (members[i].status==BOARD_MEMBER_STATUS_MANAGER)
+					strcpy(color, "\x1b[1;31m");
+				else if (members[i].status==BOARD_MEMBER_STATUS_NORMAL)
+					strcpy(color, "\x1b[1;32m");
+				else
+					strcpy(color, "\x1b[1;33m");
+				
+				if (members[i].title > 0 && get_board_member_title(members[i].board, memebrs[i].title, &member_title)>=0)
+					strcpy(title, member_title.name);
+				else
+					strcpy(title, "");
+					
+				prints("  %4d %s%-12s \033[1;36m%-12s\033[m %8d %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
+			}
+		}
+		free(members);
+		members=NULL;
+	}
+	
+	pressanykey();
+	return 0;
+}
+#endif
+
 int t_query(char* q_id)
 {
     char uident[STRLEN];
@@ -462,8 +508,11 @@ int t_query(char* q_id)
         {
             t3 = "       ";
         }
+#ifdef ENABLE_BOARD_MEMBER
+        prints("\x1b[m\x1b[44m%s 寄信[\x1b[1;32mm\x1b[m\x1b[0;44m] %s 加,减朋友[\x1b[1;32mo,d\x1b[m\x1b[0;44m] 说明档[\x1b[1;32ml\x1b[m\x1b[0;44m] 驻版[\x1b[1;32mk\x1b[m\x1b[0;44m] %s 其它键继续", t1, t2, t3);
+#else		
         prints("\x1b[m\x1b[44m%s 寄信[\x1b[1;32mm\x1b[m\x1b[0;44m] %s 加,减朋友[\x1b[1;32mo,d\x1b[m\x1b[0;44m] 查看说明档[\x1b[1;32ml\x1b[m\x1b[0;44m] %s 其它键继续", t1, t2, t3);
-
+#endif
         clrtoeol();
         resetcolor();
         ch = igetkey();
@@ -536,6 +585,13 @@ int t_query(char* q_id)
                 refresh();
                 sleep(1);
                 break;
+#ifdef ENABLE_BOARD_MEMBER				
+			case 'k':
+				if (!strcmp("guest", getCurrentUser()->userid))
+                    break;
+				display_member_boards(uident);
+				break;
+#endif
         }
     }
     uinfo.destuid = 0;
