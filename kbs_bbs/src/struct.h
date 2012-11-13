@@ -590,6 +590,7 @@ struct board_member {
     char manager[IDLEN+2];
     unsigned int score;
     unsigned int flag;
+    int title;
 };
 struct member_board_article {
     char board[STRLEN];
@@ -609,6 +610,13 @@ struct board_member_status {
     int bid;
     int status;
     int flag;
+};
+struct board_member_title {
+    int id;
+    char board[STRLEN];
+    char name[STRLEN];
+    int serial;
+    unsigned int flag;
 };
 #endif
 

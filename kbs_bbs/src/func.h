@@ -872,6 +872,14 @@ while(0)
     int get_bmp_value(int index);
     int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm);
     int check_board_member_manager_by_name(struct board_member_status *status, char *name, int perm);
+    int get_board_member_titles(const char *board);
+    int load_board_member_titles(const char *board, struct board_member_title *titles);
+    int get_board_member_title(const char *board, int id, struct board_member_title *title);
+    int query_board_member_title(const char *board, char *name, struct board_member_title *title);
+    int set_board_member_title(struct board_member *member);
+    int create_board_member_title(const char *board_name, char *name, int serial);
+    int remove_board_member_title(struct board_member_title *title);
+    int modify_board_member_title(struct board_member_title *title);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef TITLEKEYWORD

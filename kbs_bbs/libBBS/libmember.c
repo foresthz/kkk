@@ -589,6 +589,12 @@ int load_board_members(const char *board, struct board_member *member, int sort,
         case BOARD_MEMBER_SORT_STATUS_ASC:
             strcpy(qtmp, " `status` ASC ");
             break;
+        case BOARD_MEMBER_SORT_TITLE_ASC:
+            strcpy(qtmp, " `title` ASC ");
+            break;
+        case BOARD_MEMBER_SORT_TITLE_DESC:
+            strcpy(qtmp, " `title` DESC ");
+            break;			
         case BOARD_MEMBER_SORT_STATUS_DESC:
             strcpy(qtmp, " `status` DESC ");
             break;        
@@ -945,6 +951,9 @@ int set_board_member_flag(struct board_member *member) {
 	if (old.status == member->status && old.flag == member->flag)
 		return 0;
         
+	my_name[0]=0;
+	my_user_id[0]=0;
+	my_manager_id[0]=0;
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
@@ -1182,6 +1191,8 @@ int set_board_member_score(struct board_member *member, int type, int score) {
     char my_user_id[STRLEN];
     char sql[200];
     
+	my_name[0]=0;
+	my_user_id[0]=0;
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     
@@ -1428,5 +1439,440 @@ int flush_member_board_articles(int mode, const struct userec *user, int force) 
     load_member_board_articles(path, mode, user, force);
     return 1;
 }
+
+int get_board_member_titles(const char *board) {
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char sql[300];
+    char my_board[STRLEN];
+    int i;
+
+    if (!board[0])
+        return -1;
+    
+    my_board[0]=0;
+    mysql_escape_string(my_board, board, strlen(board));
+    mysql_init(&s);
+
+    if (! my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -2;
+    }
+
+    sprintf(sql,"SELECT COUNT(*) FROM `board_title` WHERE LOWER(`board`)=LOWER(\"%s\")", my_board);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -3;
+    }
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+
+    i=0;
+    if (row != NULL) {
+        i=atoi(row[0]);
+    }
+    mysql_free_result(res);
+
+    mysql_close(&s);
+    return i;
+}
+
+int load_board_member_titles(const char *board, struct board_member_title *titles) {
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char sql[300];
+    char my_board[STRLEN];
+    int i;
+    
+    if (!board[0])
+        return -1;
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -2;
+    }
+    
+    my_board[0]=0;
+    mysql_escape_string(my_board, board, strlen(board));
+    
+    sprintf(sql,"SELECT `id`, `board`, `name`, `serial`, `flag` FROM `board_title` WHERE LOWER(`board`)=LOWER(\"%s\") ORDER BY `serial` ASC, `id` ASC", my_board);
+    
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -3;
+    }
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+
+    i=0;
+    while (row != NULL) {
+        i++;
+        
+        titles[i-1].id=atol(row[0]);
+        strncpy(titles[i-1].board, bh->filename, STRLEN-2);
+        strncpy(titles[i-1].name, rows[2], STRLEN-2);
+        titles[i-1].serial=atol(row[3]);
+        titles[i-1].flag=atol(row[4]);        
+        
+        row = mysql_fetch_row(res);
+    }
+    mysql_free_result(res);
+
+    mysql_close(&s);
+    return i;
+}
+
+int get_board_member_title(const char *board, int id, struct board_member_title *title) {
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char sql[500];
+    char my_board[STRLEN];
+	int not_found=1;
+    
+    if (!board[0])
+        return -1;
+    if (id<=0)
+        return -2;	
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -3;
+    }
+    
+    my_board[0]=0;
+    mysql_escape_string(my_board, board, strlen(board));
+    
+    sprintf(sql,"SELECT `id`, `board`, `name`, `serial`, `flag` FROM `board_title` WHERE `id`=%d AND LOWER(`board`)=LOWER(\"%s\")", id, my_board);
+    
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -4;
+    }
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+    
+    if (NULL != row) {
+        not_found=0;
+			
+        if (NULL != title) {
+            bzero(title, sizeof(struct board_member_title));
+
+            title->id=row[0];
+            strncpy(title->board, row[1], STRLEN-2);
+            strncpy(title->name, row[2], STRLEN-2);
+            title.serial=atol(row[3]);
+            title.flag=atol(row[4]);
+        }		
+    }
+
+    mysql_free_result(res);
+    mysql_close(&s);
+
+    if (not_found)
+        return 0;
+		
+    return 1;
+}
+
+int query_board_member_title(const char *board, char *name, struct board_member_title *title) {
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char sql[500];
+    char my_board[STRLEN];
+    char my_name[STRLEN];	
+	int not_found=1;
+    
+    if (!board[0])
+        return -1;
+    if (!name[0])
+        return -2;	
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -3;
+    }
+    
+    my_board[0]=0;
+	my_name[0]=0;
+    mysql_escape_string(my_board, board, strlen(board));
+    mysql_escape_string(my_name, name, strlen(name));
+	
+    sprintf(sql,"SELECT `id`, `board`, `name`, `serial`, `flag` FROM `board_title` WHERE LOWER(`name`)=LOWER(\"%s\") AND LOWER(`board`)=LOWER(\"%s\")", my_name, my_board);
+    
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -4;
+    }
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+    
+    if (NULL != row) {
+        not_found=0;
+			
+        if (NULL != title) {
+            bzero(title, sizeof(struct board_member_title));
+
+            title->id=row[0];
+            strncpy(title->board, row[1], STRLEN-2);
+            strncpy(title->name, row[2], STRLEN-2);
+            title.serial=atol(row[3]);
+            title.flag=atol(row[4]);
+        }		
+    }
+
+    mysql_free_result(res);
+    mysql_close(&s);
+
+    if (not_found)
+        return 0;
+		
+    return 1;
+}
+
+int set_board_member_title(struct board_member *member) {
+    MYSQL s;
+    char my_name[STRLEN];
+    char my_user_id[STRLEN];
+    char my_manager_id[STRLEN];
+    char sql[200], buf[1024];
+    const struct boardheader *board;
+    int sysop;
+	struct board_member old;
+    struct board_member_title old_title;
+    struct board_member_title new_title;
+	char path[PATHLEN];
+	FILE *handle;
+	time_t time;
+    
+    board=getbcache(member->board);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;    
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
+        return -3;
+	if (get_board_member(board->filename, member->user, &old)<0)
+		return -4;
+	if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
+		return -5;
+	
+    if (old.title != 0 && get_board_member_title(board->filename, old.title, &old_title)<=0)
+        old.title=0;
+		
+	if (member->title !=0 && get_board_member_title(board->filename, member->title, &new_title)<=0)
+		return -6;
+	
+	if (old.title == member->title)
+		return 0;
+        
+	my_name[0]=0;
+	my_user_id[0]=0;
+	my_manager_id[0]=0;
+    mysql_escape_string(my_name, member->board, strlen(member->board));
+    mysql_escape_string(my_user_id, member->user, strlen(member->user));
+    mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
+    
+    mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -7;
+    }
+    
+    sprintf(sql,"UPDATE `board_user` SET `time`=`time`, `title`=%d, `manager`=\"%s\" WHERE LOWER(`board`)=LOWER(\"%s\") AND LOWER(`user`)=LOWER(\"%s\") LIMIT 1;", member->title, my_manager_id, my_name, my_user_id);
+
+    if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -8;
+    }
+
+    mysql_close(&s);
+    
+	gettmpfilename(path, "board.member.title.log");
+	if ((handle = fopen(path, "w")) != NULL) { 
+		if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
+				&& !chk_BM_instr(board->BM, getSession()->currentuser->userid))
+			sysop = 1;
+		else 
+			sysop = 0;
+		time=time(0);
+		
+		if (sysop)
+		fprintf(handle, "  \033[1;33m°æÃæ\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		else
+		fprintf(handle, "  \033[1;33m°æÃæ\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+		fprintf(handle, "  \033[1;33m×¤°æÓÃ»§\033[m: \033[1;31m%s\033[m\n\n", member->user);
+		
+		fprintf(handle, "\n  \033[1;33mÔ­×¤°æ³ÆºÅ\033[m: \033[1;32m%s\033[m\n", (old.title==0)?"ÎÞ":old_title.name);
+		fprintf(handle, "\n  \033[1;33mÐÂ×¤°æ³ÆºÅ\033[m: \033[1;32m%s\033[m\n", (member->title==0)?"ÎÞ":new_title.name);
+		
+		if (sysop)
+			fprintf(handle, "\n\n                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "£º\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, getSession()->currentuser->userid);
+		else
+			fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
+		
+		fprintf(handle, "                              %s\n\n", ctime_r(&time, buf));
+		fclose(handle);
+		
+		sprintf(buf, "µ÷Õû %s µÄ×¤°æ³ÆºÅ", member->user);
+		post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
+		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());		
+		
+		mail_file(DELIVER, path, member->user, buf, 0, NULL);
+		
+		unlink(path);
+	} else {
+		sprintf(buf, "³ÆºÅ: %d", member->title);
+		board_member_log(member, "ÉèÖÃ×¤°æ³ÆºÅ", buf);
+	}
+	    
+    return 0;
+}
+
+int create_board_member_title(const char *board_name, char *name, int serial) {
+    MYSQL s;
+	char my_name[STRLEN];
+    char my_board[STRLEN];
+    char sql[500], buf[300];
+	const struct boardheader *board;
+	
+	board=getbcache(board_name);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;    
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
+        return -3;
+		
+	if (query_board_member_title(board->filename, name, NULL) != 0)
+		return -4;
+	
+	my_name[0]=0;
+	my_board[0]=0;
+	mysql_escape_string(my_name, name, strlen(name));
+    mysql_escape_string(my_board, board->filename, strlen(board->filename));
+    
+	sprintf(sql, "INSERT INTO `board_title` (`board`, `name`, `serial`, `flag`) VALUES (\"%s\", \"%s\", %d, %d);", my_board, my_name, serial, 0);
+	mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -5;
+    }
+	
+	if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -6;
+    }
+
+    mysql_close(&s);
+
+	sprintf(buf, "Ôö¼Ó×¤°æ³ÆºÅ#%s: %s", board->filename, name);
+	board_member_log(NULL, buf, buf);
+	
+	return 0;
+}
+
+int remove_board_member_title(struct board_member_title *title) {
+	MYSQL s;
+	const struct boardheader *board;
+	char my_board[STRLEN];
+	char sql[500], buf[300];
+	
+	board=getbcache(title->board);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;    
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
+        return -3;
+		
+	if (title->id <= 0)
+		return -4;
+	
+    my_board[0]=0;	
+	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
+	sprintf(sql, "DELETE FROM `board_title` WHERE `id`=%d AND LOWER(`board`)=LOWER(\"%s\");", title->id, my_board);
+	mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -5;
+    }
+	
+	if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -6;
+    }
+	
+	sprintf(sql, "UPDATE `board_user` SET `time`=`time`, `title`=0 WHERE `title`=%d AND LOWER(`board`)=LOWER(\"%s\");", title->id, my_board);
+	if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -7;
+    }
+	
+	mysql_close(&s);
+	sprintf(buf, "É¾³ý×¤°æ³ÆºÅ#%s: [%d]%s", board->filename, title->id, title->name);
+	board_member_log(NULL, buf, buf);
+	
+	return 0;
+}
+
+int modify_board_member_title(struct board_member_title *title) {
+	MYSQL s;
+	const struct boardheader *board;
+	char my_board[STRLEN];
+	char my_name[STRLEN];
+	char sql[500], buf[300];
+	
+	board=getbcache(title->board);
+    if (0==board)
+        return -1;
+    if (board->flag&BOARD_GROUP)
+        return -2;    
+    if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
+        return -3;
+		
+	if (title->id <= 0)
+		return -4;
+		
+	my_board[0]=0;
+	my_name[0]=0;
+	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
+	mysql_escape_string(my_name, title->name, strlen(title->name));
+	
+	sprintf(sql, "UPDATE `board_title` SET `name`=\"%s\", serial=%d, flag=%d WHERE `id`=%d AND LOWER(`board`)=LOWER(\"%s\");", my_name, title->serial, title->flag, title->id, my_board);
+	mysql_init(&s);
+    if (!my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -5;
+    }
+	
+	if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -6;
+    }
+	
+	mysql_close(&s);
+	sprintf(buf, "¸ü¸Ä×¤°æ³ÆºÅ#%s: [%d]%s", board->filename, title->id, title->name);
+	board_member_log(NULL, buf, buf);
+	
+	return 0;
+}
+	
 #endif
 #endif 

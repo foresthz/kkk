@@ -35,6 +35,8 @@
 #define MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST 26
 
 struct board_member *b_members = NULL;
+struct board_member_title *b_titles = NULL;
+int board_member_titles=0;
 int board_member_sort=BOARD_MEMBER_SORT_DEFAULT;
 int board_member_is_manager, board_member_is_joined;
 static const char *b_member_item_prefix[10]={
@@ -359,9 +361,24 @@ int b_member_set_flag(struct board_member *b_member) {
     return 0;
 }
 
+int b_member_get_title(int id, char *name) {
+    int i;
+	
+	if (id <= 0)
+		strcpy(name, "");
+	else for (i=0;i<board_member_titles;i++) {
+		if (b_titles[i].id=id) {
+			strcpy(name, b_titles[i].name);
+			break;
+		}
+	}
+	
+	return 0;
+}
+
 static int b_member_show(struct _select_def *conf, int i) {
     struct userec *lookupuser;
-    char buf[STRLEN], color[STRLEN];
+    char buf[STRLEN], color[STRLEN], title[STRLEN];
     
     if (getuser(b_members[i - conf->page_pos].user, &lookupuser)==0) {
         remove_board_member(b_members[i - conf->page_pos].board, b_members[i - conf->page_pos].user);
@@ -378,7 +395,8 @@ static int b_member_show(struct _select_def *conf, int i) {
                 strcpy(color, "\x1b[1;33m");
         }
         
-        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, lookupuser->userid, lookupuser->username, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
+		b_member_get_title(b_members[i - conf->page_pos].title, title);
+        prints("%4d %s%-12s\x1b[m %-12s %8d %8d %8d %10d %-8s", i, color, title, lookupuser->username, b_members[i - conf->page_pos].score, lookupuser->numlogins, lookupuser->numposts, lookupuser->score_user, tt2timestamp(b_members[i - conf->page_pos].time, buf));
     }
     
     return SHOW_CONTINUE;
@@ -404,7 +422,7 @@ static int b_member_title(struct _select_def *conf) {
     docmdtitle("[驻版用户列表]", buf);
     move(2, 0);
     clrtobot();
-    prints("\033[0;1;44m  %-4s %-12s %-12s %8s %8s %8s %10s %-8s \033[m", "编号", "用户ID",  "驻版权限", "驻版积分", "上站数", "发文数", "用户积分", "驻版时间");    
+    prints("\033[0;1;44m  %-4s %-12s %-12s %8s %8s %8s %10s %-8s \033[m", "编号", "用户ID",  "驻版称号", "驻版积分", "上站数", "发文数", "用户积分", "驻版时间");    
     update_endline();
 
     return 0;
@@ -672,7 +690,13 @@ int t_board_members(void) {
     board_member_is_manager=(!HAS_PERM(getCurrentUser(),PERM_SYSOP)&&!chk_currBM(currboard->BM,getCurrentUser()))?0:1;
     board_member_is_joined=is_board_member(currboard->filename, getCurrentUser()->userid, &mine);
     b_members=(struct board_member *) malloc(sizeof(struct board_member) * BBS_PAGESIZE);
-    bzero(&group_conf, sizeof(struct _select_def));
+	bzero(&group_conf, sizeof(struct _select_def));
+	
+	board_member_titles=get_board_member_titles(currboard->filename);
+	b_titles=(struct board_member_title *) malloc(sizeof(struct board_member_title) * board_member_titles);
+	
+	bzero(b_titles, sizeof(struct board_member_title) * board_member_titles);
+    load_board_member_titles(currboard->filename, b_titles);
     
     pts = (POINT *) malloc(sizeof(POINT) * BBS_PAGESIZE);
     for (i = 0; i < BBS_PAGESIZE; i++) {
@@ -703,7 +727,9 @@ int t_board_members(void) {
 
     free(pts);
     free(b_members);
+	free(b_titles);
     b_members=NULL;
+	b_titles=NULL;
 
     return 0;
 }
