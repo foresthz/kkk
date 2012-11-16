@@ -695,7 +695,7 @@ PHP_FUNCTION(bbs_dynamic_acl_add_record)
 	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &userid, &userid_len, &ip, &ip_len)==FAILURE)
         WRONG_PARAM_COUNT;
 		
-    dynamic_acl_add_record(userid, ntohl(ip));   
+    dynamic_acl_add_record(userid, dynamic_acl_ip2long(ip));   
 #endif
     RETURN_TRUE;
 }

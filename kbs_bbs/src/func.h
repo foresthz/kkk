@@ -886,6 +886,7 @@ while(0)
     long dynamic_acl_check_ip(unsigned long ip);
     int dynamic_acl_add_record(char *id, unsigned long ip);	
 	int dynamic_acl_clear();
+    unsigned long dynamic_acl_ip2long(char *ip);
 #endif
 
 #ifdef TITLEKEYWORD

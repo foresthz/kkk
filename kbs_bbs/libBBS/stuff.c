@@ -1547,7 +1547,7 @@ int check_ban_IP(const char *IP, char *buf)
     if (check_IP_core(".badIP", IP, buf, true))
         return 1;
 #ifdef ENABLE_DYNAMIC_ACL
-    if (dynamic_acl_check_ip(ntohl(IP)) != 0)
+    if (dynamic_acl_check_ip(dynamic_acl_ip2long(IP)) != 0)
         return 1;
 #endif		
     return 0;

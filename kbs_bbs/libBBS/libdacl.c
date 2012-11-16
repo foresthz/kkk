@@ -220,5 +220,13 @@ int dynamic_acl_clear()
 	mysql_close(&s);
 	return 0;
 }
+
+unsigned long dynamic_acl_ip2long(char *ip)
+{
+	unsigned char addr[16];
+	sscanf(ip,"%d.%d.%d.%d",addr,addr+1,addr+2,addr+3);
+	unsigned long *r=(unsigned long *)(&addr);
+	return *r;
+}
 #endif
 #endif
