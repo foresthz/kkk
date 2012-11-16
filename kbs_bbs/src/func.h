@@ -882,6 +882,12 @@ while(0)
     int modify_board_member_title(struct board_member_title *title);
 #endif /* ENABLE_BOARD_MEMBER */
 
+#ifdef ENABLE_DYNAMIC_ACL
+    long dynamic_acl_check_ip(unsigned long ip);
+    int dynamic_acl_add_record(char *id, unsigned long ip);	
+	int dynamic_acl_clear();
+#endif
+
 #ifdef TITLEKEYWORD
     int get_title_key(const char *board, char titlekey[][8], int max);
     int save_title_key(const char *board, char titlekey[][8], int count);

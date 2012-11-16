@@ -1544,7 +1544,13 @@ static int check_IP_core(const char *file, const char *IP, char *reason, bool ha
 
 int check_ban_IP(const char *IP, char *buf)
 {
-    return check_IP_core(".badIP", IP, buf, true);
+    if (check_IP_core(".badIP", IP, buf, true))
+        return 1;
+#ifdef ENABLE_DYNAMIC_ACL
+    if (dynamic_acl_check_ip(ntohl(IP)) != 0)
+        return 1;
+#endif		
+    return 0;
 }
 
 int check_proxy_IP(const char *ip, char *reason)

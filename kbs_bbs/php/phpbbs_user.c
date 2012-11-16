@@ -685,3 +685,17 @@ PHP_FUNCTION(bbs_user_life)
     RETURN_FALSE;
 #endif
 }
+
+PHP_FUNCTION(bbs_dynamic_acl_add_record)
+{
+#ifdef ENABLE_DYNAMIC_ACL
+    char *userid, *ip;
+	int userid_len, ip_len;
+	
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &userid, &userid_len, &ip, &ip_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+    dynamic_acl_add_record(userid, ntohl(ip));   
+#endif
+    RETURN_TRUE;
+}
