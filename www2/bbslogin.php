@@ -25,7 +25,6 @@ case 3:
 }
 
 if (($id!="guest")&&bbs_checkpasswd($id,$passwd)!=0) {
-    bbs_dynamic_acl_add_record($id, $fromhost);
     error_alert("用户密码错误，请重新登录！");
 }
 
