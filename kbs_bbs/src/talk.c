@@ -297,8 +297,8 @@ int display_member_boards(char *uident) {
 	clear();
 	total=get_member_boards(uident);
 	move(0, 0);
-	prints("用户 \033[1;32m%s\033[m 的驻版信息", uident);
-	move(3, 0);
+	prints("  用户 \033[1;33m%s\033[m 的驻版信息", uident);
+	move(2, 0);
 	if (total<=0)
 		prints("该用户尚未入驻版面");
 	else {
@@ -307,7 +307,7 @@ int display_member_boards(char *uident) {
 		if (load_member_boards(uident, members, MEMBER_BOARD_SORT_BOARD_ASC, 0, total)<=0) {
 			prints("加载驻版信息出错");
 		} else {
-			prints("  \033[1;32m编号 版名                 驻版称号     驻版积分 驻版时间\033[m\n");
+			prints("\033[1;44m  编号  版名                 驻版称号     驻版积分  驻版时间          \033[m\n");
 			for (i=0;i<total;i++) {
 				if (!(bh=((struct boardheader *)getbcache(members[i].board)))||!check_read_perm(getCurrentUser(),bh))
                 			continue;
@@ -323,7 +323,7 @@ int display_member_boards(char *uident) {
 				else
 					strcpy(title, "");
 					
-				prints("  %4d %s%-20s \033[1;36m%-12s\033[m %8d %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
+				prints("  %4d  %s%-20s \033[1;36m%-12s\033[m %8d  %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
 			}
 		}
 		free(members);
