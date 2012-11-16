@@ -30,6 +30,8 @@ PHP_FUNCTION(bbs_user_protectID);
 
 PHP_FUNCTION(bbs_user_life);
 
+PHP_FUNCTION(bbs_dynamic_acl_add_record);
+
 #define PHP_BBS_USER_EXPORT_FUNCTIONS \
     PHP_FE(bbs_getuser, NULL) \
     PHP_FE(bbs_checkpasswd, NULL) \
@@ -50,6 +52,7 @@ PHP_FUNCTION(bbs_user_life);
     PHP_FE(bbs_user_level_char, NULL) \
     PHP_FE(bbs_user_touch_lastlogin, NULL) \
     PHP_FE(bbs_user_protectID, NULL) \
-    PHP_FE(bbs_user_life, NULL)
+    PHP_FE(bbs_user_life, NULL) \
+    PHP_FE(bbs_dynamic_acl_add_record, NULL)
 
 #endif //PHP_BBS_USER_H
