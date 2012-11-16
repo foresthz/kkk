@@ -24,7 +24,10 @@ case 3:
     break;
 }
 
-if (($id!="guest")&&bbs_checkpasswd($id,$passwd)!=0) error_alert("用户密码错误，请重新登录！");
+if (($id!="guest")&&bbs_checkpasswd($id,$passwd)!=0) {
+    bbs_dynamic_acl_add_record($id, $fromhost);
+    error_alert("用户密码错误，请重新登录！");
+}
 
 $error=bbs_wwwlogin(($kick_multi!="") ? 1 : 0, $fromhost, $fullfromhost);
 switch($error) {
