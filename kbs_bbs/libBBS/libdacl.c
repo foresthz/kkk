@@ -81,7 +81,6 @@ static int dynamic_acl_add_block(MYSQL *s, unsigned long ip, long block_time)
 static int dynamic_acl_update(MYSQL *s, unsigned long ip)
 {
 	int cnt;
-	long block_time;
 	
 	/* 获取过去3600s内的错误记录数 */
 	cnt=dynamic_acl_error_times(s, ip, 3600);
@@ -107,7 +106,6 @@ static int dynamic_acl_check_in_list(MYSQL *s, char *table, unsigned long ip)
 		bbslog("3system", "mysql error: %s", mysql_error(s));
 		return 0;
 	}
-	
 	res = mysql_store_result(s);
     row = mysql_fetch_row(res);
 	i=0;
@@ -127,8 +125,14 @@ static long dynamic_acl_block_expire_time(MYSQL *s, unsigned long ip)
 	long i, now;
 	
 	sprintf(sql, "SELECT MAX(UNIX_TIMESTAMP(`expire_time`)) FROM `%s` WHERE `start`<=%lu AND `end`>=%lu", DYNAMIC_ACL_TABLE_LIST, ip, ip);
+
+	if (mysql_real_query(s, sql, strlen(sql))) {
+		bbslog("3system", "mysql error: %s", mysql_error(s));
+		return 0;
+	}
+
 	res = mysql_store_result(s);
-    row = mysql_fetch_row(res);
+	row = mysql_fetch_row(res);
 	i=0;
 	if (row != NULL) {
         i=atol(row[0]);
@@ -169,7 +173,7 @@ long dynamic_acl_check_ip(unsigned long ip)
 		ret=0;
 	
 	mysql_close(&s);
-	return 0;
+	return ret;
 }
 
 /**
@@ -209,7 +213,7 @@ int dynamic_acl_clear()
     }
 	
 	now=time(NULL);
-	sprintf(sql, "DELETE FROM `%s` WHERE %ld-UNIX_TIMESTAMP(`time`)>=%ld", DYNAMIC_ACL_TABLE_RECORD, now, DYNAMIC_ACL_MAX_TIME);
+	sprintf(sql, "DELETE FROM `%s` WHERE %ld-UNIX_TIMESTAMP(`time`)>=%d", DYNAMIC_ACL_TABLE_RECORD, now, DYNAMIC_ACL_MAX_TIME);
 	if (mysql_real_query(&s, sql, strlen(sql))) 
 		bbslog("3system", "mysql error: %s", mysql_error(&s));
 	
@@ -223,10 +227,14 @@ int dynamic_acl_clear()
 
 unsigned long dynamic_acl_ip2long(char *ip)
 {
-	unsigned char addr[16];
-	sscanf(ip,"%d.%d.%d.%d",addr,addr+1,addr+2,addr+3);
-	unsigned long *r=(unsigned long *)(&addr);
-	return *r;
+	unsigned long int addr;
+	int len=sizeof(ip);
+	if (len==0||(addr=inet_addr(ip))==INADDR_NONE) {
+		if (len==sizeof("255.255.255.255")-1 && !memcmp(ip, "255.255.255.255", sizeof("255.255.255.255")-1))
+			return 0xFFFFFFFF;
+		return 0;
+	}	
+	return ntohl(addr);
 }
 #endif
 #endif
