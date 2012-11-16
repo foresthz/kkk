@@ -1384,6 +1384,10 @@ void logattempt(char *uid, char *frm, char *action)
         write(fd, buf, len);
         close(fd);
     }
+#ifdef ENABLE_DYNAMIC_ACL
+    dynamic_acl_add_record(uid, dynamic_acl_ip2long(frm));
+#endif	
+	
 }
 
 /* 新的 IP 匹配系统, Nov 30 2008, skybluee@free */
