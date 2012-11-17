@@ -1766,9 +1766,12 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-		
-	if (query_board_member_title(board->filename, name, NULL) != 0)
+	
+	if (!name[0])
 		return -4;
+	
+	if (query_board_member_title(board->filename, name, NULL) != 0)
+		return -5;
 	
 	my_name[0]=0;
 	my_board[0]=0;
@@ -1778,7 +1781,7 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
 	mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -5;
+        return -6;
     }
 	sprintf(sql, "INSERT INTO `board_title` (`board`, `name`, `serial`, `flag`) VALUES (\"%s\", \"%s\", %d, %d);", my_board, my_name, serial, 0);
 	if (mysql_real_query(&s, sql, strlen(sql))) {
@@ -1858,7 +1861,10 @@ int modify_board_member_title(struct board_member_title *title) {
 		
 	if (title->id <= 0)
 		return -4;
-		
+
+	if (!title->name[0])
+		return -5;
+	
 	my_board[0]=0;
 	my_name[0]=0;
 	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
@@ -1867,14 +1873,14 @@ int modify_board_member_title(struct board_member_title *title) {
 	mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
-        return -5;
+        return -6;
     }
 
 	sprintf(sql, "UPDATE `board_title` SET `name`=\"%s\", serial=%d, flag=%d WHERE `id`=%d AND LOWER(`board`)=LOWER(\"%s\");", my_name, title->serial, title->flag, title->id, my_board);
 	if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
-        return -6;
+        return -7;
     }
 	
 	mysql_close(&s);

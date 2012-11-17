@@ -16,27 +16,13 @@ void bbs_make_board_member_config_array(zval *array, struct board_member_config 
 void bbs_make_board_member_array(zval *array, struct board_member *member) {
     add_assoc_string(array, "board", member->board, 1);
     add_assoc_string(array, "user", member->user, 1);
+	add_assoc_long(array, "title", member->title);
     add_assoc_long(array, "time", member->time);
 	add_assoc_long(array, "status", member->status);
 	add_assoc_string(array, "manager", member->manager, 1);
 	add_assoc_long(array, "score", member->score);
     add_assoc_long(array, "flag", member->flag);
 }
-/*
-struct member_board_article {
-	char board[STRLEN];
-	char filename[FILENAME_LEN];
-	unsigned int id, groupid, reid;
-	unsigned int s_id, s_groupid, s_reid;
-	char owner[OWNER_LEN];
-	unsigned int eff_size;
-	int posttime;
-	unsigned int attachment;
-	char title[ARTICLE_TITLE_LEN];
-	unsigned char accessed[4];
-	unsigned int flag;
-};
-*/
 void bbs_make_board_member_article_array(zval *array, struct member_board_article *article) {
 	add_assoc_string(array, "board", article->board, 1);
 	add_assoc_string(array, "filename", article->filename, 1);
@@ -54,6 +40,13 @@ void bbs_make_board_member_article_array(zval *array, struct member_board_articl
 	add_assoc_long(array, "accessed_0", article->accessed[0] & 0xff);
 	add_assoc_long(array, "accessed_1", article->accessed[1] & 0xff);
 	add_assoc_long(array, "flag", article->flag);
+}
+void bbs_make_board_member_title_array(zval *array, struct board_member_title *title) {
+	add_assoc_long(array, "id", title->id);
+	add_assoc_string(array, "board", title->board, 1);
+	add_assoc_string(array, "name", title->name, 1);
+	add_assoc_long(array, "serial", title->serial);
+	add_assoc_long(array, "flag", title->flag);
 }
 /**
   * bbs_load_board_member_config(string board_name, array &config);
@@ -554,5 +547,227 @@ PHP_FUNCTION(bbs_get_board_member_articles)
         RETURN_LONG(-4);
     
 	RETURN_LONG(st.st_size/sizeof(struct member_board_article));
+}
+
+PHP_FUNCTION(bbs_get_board_member_titles)
+{
+	char *name;
+	int name_len, count;
+	const struct boardheader *board;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-2);
+		
+	count=get_board_member_titles(board->filename);
+	if (count<0)
+		RETURN_LONG(-3);
+		
+    RETURN_LONG(count);	
+}
+
+PHP_FUNCTION(bbs_load_board_member_titles)
+{
+	char *name;
+	int name_len, ret, i, count;
+	zval *list, *element;
+	const struct boardheader *board;
+	struct board_member_title *titles = NULL;
+	
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &name, &name_len, &list)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (!PZVAL_IS_REF(list)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-1);
+    }
+	
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-2);
+
+	count=get_board_member_titles(board->filename);
+	if (count<0)
+		RETURN_LONG(-3);
+	if (count==0)
+		RETURN_LONG(0);
+		
+	titles=emalloc(sizeof(struct board_member_title)*count);
+	if (NULL==titles)
+		RETURN_LONG(-4);
+		
+	bzero(titles, sizeof(struct board_member_title)*count);
+	ret=load_board_member_titles(board->filename, titles);
+	
+	for (i=0;i<ret;i++) {
+		MAKE_STD_ZVAL(element);
+		array_init(element);
+		bbs_make_board_member_title_array(element, titles+i);
+		zend_hash_index_update(Z_ARRVAL_P(list), titles[i].id, (void *) &element, sizeof(zval*), NULL);
+	}
+	
+	efree(titles);
+	
+	if (ret<0)
+		RETURN_LONG(-5);
+		
+	RETURN_LONG(ret);
+}
+
+PHP_FUNCTION(bbs_get_board_member_title) 
+{
+	char *name;
+	int name_len;
+	long id;
+	const struct boardheader *board;
+	struct board_member_title title;
+	zval *element;
+	int ret;
+	
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slz", &name, &name_len, &id, &element)==FAILURE)
+        WRONG_PARAM_COUNT;
+	
+	if (!PZVAL_IS_REF(element)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-1);
+    }
+	
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-2);
+		
+	if (!check_read_perm(getCurrentUser(), board))
+		RETURN_LONG(-3);
+		
+	ret=get_board_member_title(board->filename, id, &title);
+	if (ret<=0)
+		RETURN_LONG(-4);
+		
+	bbs_make_board_member_array(element, &title);
+	RETURN_LONG(ret);
+}
+
+PHP_FUNCTION(bbs_get_bmp_value)
+{
+	long index;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &index)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	RETURN_LONG(get_bmp_value(index));
+}
+
+PHP_FUNCTION(bbs_get_bmp_name)
+{
+	char name[STRLEN];
+	long flag;
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &flag)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	get_bmp_name(name, flag);
+	RETURN_STRING(name, 1);
+}
+
+PHP_FUNCTION(bbs_set_board_member_title)
+{
+	char *id, *name;
+	int id_len, name_len, status;
+	long title_id;
+	const struct boardheader *board;
+	struct userec *user;
+	struct board_member member;
+	
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &id, &id_len, &name, &name_len, &title_id)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+	
+	if (id_len>IDLEN)
+        RETURN_LONG(-2);
+		
+    if (!getuser(id, &user))
+        RETURN_LONG(-2);
+
+	status=get_board_member(board->filename, user->userid, &member);
+	if (status != BOARD_MEMBER_STATUS_NORMAL && status != BOARD_MEMBER_STATUS_MANAGER)
+		RETURN_LONG(-3);
+		
+	if (member.title == title_id)
+		RETURN_LONG(0);
+		
+	member.title=title_id;	
+	RETURN_LONG(set_board_member_title(&member));
+}
+
+PHP_FUNCTION(bbs_create_board_member_title)
+{
+	char *name, *title;
+	int name_len, title_len;
+	long serial;
+	const struct boardheader *board;
+	
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssl", &name, &name_len, &title, &title_len, &serial)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+		
+	if (title_len<=0)
+		RETURN_LONG(-2);
+		
+	if (serial<=0)
+		serial=get_board_member_titles(board->filename);
+		
+	RETURN_LONG(create_board_member_title(board->filename, title, serial));
+}
+
+PHP_FUNCTION(bbs_remove_board_member_title)
+{
+	char *name;
+	int name_len;
+	long id;
+	const struct boardheader *board;
+	struct board_member_title title;
+	
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &name, &name_len, &id)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+	if (get_board_member_title(board->filename, id, &title)<=0)
+		RETURN_LONG(-2);
+	RETURN_LONG(remove_board_member_title(&title));
+}
+
+PHP_FUNCTION(bbs_modify_board_member_title)
+{
+	char *name, *title_name;
+	int name_len, title_name_len;
+	long title_id, title_serial, title_flag;
+	const struct boardheader *board;
+	struct board_member_title title;
+	
+	if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slsll", &name, &name_len, &title_id, &title_name, &title_name_len, &title_serial, &title_flag)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_LONG(-1);
+	if (get_board_member_title(board->filename, title_id, &title)<=0)
+		RETURN_LONG(-2);
+	if (title_name_len<=0)
+		RETURN_LONG(-3);
+	strncpy(title.name, title_name, STRLEN-2);
+	title.serial=title_serial;
+	title.flag=title_flag;
+	
+	RETURN_LONG(modify_board_member_title(&title));
 }
 #endif // ENABLE_BOARD_MEMBER

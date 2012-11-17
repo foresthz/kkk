@@ -19,6 +19,15 @@ PHP_FUNCTION(bbs_get_user_max_boards);
 PHP_FUNCTION(bbs_load_board_member_request);
 PHP_FUNCTION(bbs_load_board_member_articles);
 PHP_FUNCTION(bbs_get_board_member_articles);
+PHP_FUNCTION(bbs_get_board_member_titles);
+PHP_FUNCTION(bbs_load_board_member_titles);
+PHP_FUNCTION(bbs_get_board_member_title);
+PHP_FUNCTION(bbs_get_bmp_value);
+PHP_FUNCTION(bbs_get_bmp_name);
+PHP_FUNCTION(bbs_set_board_member_title);
+PHP_FUNCTION(bbs_create_board_member_title);
+PHP_FUNCTION(bbs_remove_board_member_title);
+PHP_FUNCTION(bbs_modify_board_member_title);
 
 #define PHP_BBS_MEMBER_EXPORT_FUNCTIONS \
     PHP_FE(bbs_load_board_member_config, NULL) \
@@ -35,7 +44,16 @@ PHP_FUNCTION(bbs_get_board_member_articles);
 	PHP_FE(bbs_get_user_max_boards, NULL) \
 	PHP_FE(bbs_load_board_member_request, NULL) \
 	PHP_FE(bbs_load_board_member_articles, NULL) \
-	PHP_FE(bbs_get_board_member_articles, NULL)
+	PHP_FE(bbs_get_board_member_articles, NULL) \
+	PHP_FE(bbs_get_board_member_titles, NULL) \
+	PHP_FE(bbs_load_board_member_titles, NULL) \
+	PHP_FE(bbs_get_board_member_title, NULL) \
+	PHP_FE(bbs_get_bmp_value, NULL) \
+	PHP_FE(bbs_get_bmp_name, NULL) \
+	PHP_FE(bbs_set_board_member_title, NULL) \
+	PHP_FE(bbs_create_board_member_title, NULL) \
+	PHP_FE(bbs_remove_board_member_title, NULL) \
+	PHP_FE(bbs_modify_board_member_title, NULL)
 
 #endif // ENABLE_BOARD_MEMBER	
 #endif //PHP_BBS_MEMBER_H
