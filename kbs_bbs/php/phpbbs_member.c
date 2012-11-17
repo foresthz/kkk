@@ -649,7 +649,7 @@ PHP_FUNCTION(bbs_get_board_member_title)
 	if (ret<=0)
 		RETURN_LONG(-4);
 		
-	bbs_make_board_member_array(element, &title);
+	bbs_make_board_member_title_array(element, &title);
 	RETURN_LONG(ret);
 }
 
