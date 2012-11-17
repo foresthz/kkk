@@ -1100,10 +1100,14 @@ int clubmember(struct _select_def *conf,struct fileheader *fh,void *varg)
     FILE *ft;
 #endif
 
-    if (!chk_currBM(currBM,getCurrentUser()))
-        return DONOTHING;
     if (!(currboard->flag&(BOARD_CLUB_READ|BOARD_CLUB_WRITE))||!(currboard->clubnum>0)||(currboard->clubnum>MAXCLUB))
         return DONOTHING;
+	if (!chk_currBM(currBM,getCurrentUser())) {
+#ifdef ENABLE_BOARD_MEMBER
+		if (!check_board_member_manager(&currmember, currboard, BMP_CLUB))
+#endif	
+	    return DONOTHING;	
+	}
     clear();
     if ((currboard->flag&BOARD_CLUB_READ)&&(currboard->flag&BOARD_CLUB_WRITE)) {
         move(0,0);

@@ -94,6 +94,12 @@ char *get_bmp_name(char *name, int bmp) {
         case BMP_THREAD:
             strcpy(name, "主题操作");
             break;
+		case BMP_MODIFY:
+			strcpy(name, "修改文章");
+			break;
+		case BMP_CLUB:
+			strcpy(name, "俱乐部管理");
+			break;
         default:
             strcpy(name, "未定义");
     }

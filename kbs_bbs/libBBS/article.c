@@ -290,6 +290,9 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
     if (!HAS_PERM(session->currentuser, PERM_SYSOP)
             && !chk_currBM(bh->BM, session->currentuser)
             && !isowner(session->currentuser, fileinfo)) {
+#ifdef ENABLE_BOARD_MEMBER
+		if (!check_board_member_manager(NULL, bh, BMP_MODIFY))
+#endif			
         return -6;
     }
 
