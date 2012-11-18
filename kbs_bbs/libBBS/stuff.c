@@ -3671,14 +3671,15 @@ int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, uns
 int board_score_change_record(struct boardheader *bh, char *desc, int os, int ns, int mode)
 {
     unsigned char accessed[2];
-    char postfile[STRLEN], title[STRLEN];
+    char postfile[STRLEN], title[STRLEN], *p;
     FILE *fn;
     int ds;
 
     ds = ns - os;
     accessed[0] = 0;
     accessed[1] = 0;
-    accessed[0] |= FILE_MARKED;
+    if ((p=strstr(desc, " "))!=NULL && strncmp(p+1, "捐献", 4)==0)
+        accessed[0] |= FILE_MARKED;
     gettmpfilename(postfile, "board_score_change");
     fn = fopen(postfile, "w");
     fprintf(fn, "[版面积分变更情况]\n\n");
