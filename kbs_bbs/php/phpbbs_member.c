@@ -770,4 +770,22 @@ PHP_FUNCTION(bbs_modify_board_member_title)
 	
 	RETURN_LONG(modify_board_member_title(&title));
 }
+
+PHP_FUNCTION(bbs_view_member_managers)
+{
+	char *name;
+	int name_len;
+	const struct boardheader *board;
+	char path[PATHLEN];
+	
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &name, &name_len)==FAILURE)
+        WRONG_PARAM_COUNT;
+		
+	if (!getbid(name, &board)||board->flag&BOARD_GROUP)
+		RETURN_FALSE;
+	if (set_board_member_manager_file(board)<0)
+		RETURN_FALSE;
+	setbfile(path, board->filename, BOARD_MEMBER_MANAGERS_FILE);
+	RETURN_STRING(path, 1);
+}
 #endif // ENABLE_BOARD_MEMBER
