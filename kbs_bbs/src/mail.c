@@ -4189,7 +4189,7 @@ int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
     
-    return FULLUPDATE;
+    return DOQUIT;
 }
 int refer_del(struct _select_def* conf, struct refer *refer, void* extraarg) {
     int ent=conf->pos;
@@ -4493,7 +4493,7 @@ int refer_list(char filename[STRLEN], int mode) {
     in_mail=false;
     modify_user_mode(oldmode);     
 
-    return FULLUPDATE;
+    return DOQUIT;
 }
 
 
