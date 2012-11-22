@@ -403,6 +403,7 @@ PHP_FUNCTION(bbs_file_output_attachment)
     char *sendptr = NULL;
     int sendlen;
     off_t ptrlen, mmap_ptrlen;
+    const char *mime;
 
     if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl|s", &filename, &filename_len, &attachpos, &attachname, &attachname_len) == FAILURE) {
         WRONG_PARAM_COUNT;
@@ -441,7 +442,7 @@ PHP_FUNCTION(bbs_file_output_attachment)
         char buf[256];
         ctr.line = buf;
 
-        snprintf(buf, 256, "Content-Type: %s", get_mime_type(attachname));
+        snprintf(buf, 256, "Content-Type: %s", mime = get_mime_type(attachname));
         ctr.line_len = strlen(buf);
         sapi_header_op(SAPI_HEADER_ADD, &ctr TSRMLS_CC);
 
@@ -453,7 +454,10 @@ PHP_FUNCTION(bbs_file_output_attachment)
         ctr.line_len = strlen(buf);
         sapi_header_op(SAPI_HEADER_ADD, &ctr TSRMLS_CC);
 
-        snprintf(buf, 256, "Content-Disposition: inline;filename=%s", attachname);
+        if(strncmp(mime, "image", 5) == 0 || strcmp(mime, "application/x-shockwave-flash") == 0 || strcmp(mime, "application/pdf") == 0)
+            snprintf(buf, 256, "Content-Disposition: inline;filename=%s", attachname);
+        else
+            snprintf(buf, 256, "Content-Disposition: attachment;filename=%s", attachname);
         ctr.line_len = strlen(buf);
         sapi_header_op(SAPI_HEADER_ADD, &ctr TSRMLS_CC);
 
@@ -675,7 +679,7 @@ static void output_ansi_nforum(char *buf, size_t buflen,
                 STATE_SET(ansi_state, STATE_QUOTE_LINE);
                 if (STATE_ISSET(ansi_state, STATE_FONT_SET))
                     BUFFERED_OUTPUT(output, "</font>", 7);
-                /*  
+                /*
                  * set quoted line styles
                  */
                 STYLE_SET(font_style, FONT_STYLE_QUOTE);
@@ -794,17 +798,17 @@ static void output_ansi_nforum(char *buf, size_t buflen,
                     len = ansi_end - ansi_begin + 1;
                     print_raw_ansi(ansi_begin, len, output);
                     STATE_CLR(ansi_state, STATE_ESC_SET);
-                    /*  
+                    /*
                      * clear ansi_val[] array
                      */
                     bzero(ansi_val, sizeof(ansi_val));
                     ival = 0;
                 }
-                
-            } else  
+
+            } else
                 print_raw_ansi(&buf[i], 1, output);
-        }           
-    }                   
+        }
+    }
     if (STATE_ISSET(ansi_state, STATE_FONT_SET)) {
         BUFFERED_OUTPUT(output, "</font>", 7);
         STATE_CLR(ansi_state, STATE_FONT_SET);
