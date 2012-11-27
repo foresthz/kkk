@@ -1862,7 +1862,7 @@ int delete_range(struct _select_def *conf,struct fileheader *file,void *varg)
         return DONOTHING;
 		
 #ifdef MEMBER_MANAGER
-	if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!check_board_member_manager(&currmember, currboard, BMP_RANGE))
+	if (!mail&&!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!check_board_member_manager(&currmember, currboard, BMP_RANGE))
 		return DONOTHING;
 #endif		
     timestamp=time(NULL);
