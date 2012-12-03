@@ -1006,7 +1006,7 @@ return:
 */
 PHP_FUNCTION(bbs_threads_bmfunc)
 {
-    long bid, gid, start, operate;
+    long bid, gid, start, operate, force = 0;
     const struct boardheader *bp;
     char dirpath[STRLEN];
     int ret, haveprev=0, i, fd, ent, count;
@@ -1015,9 +1015,10 @@ PHP_FUNCTION(bbs_threads_bmfunc)
 #ifdef NEWSMTH
     int goddelete = 0;
 #endif
-
     if (ZEND_NUM_ARGS() != 4 || zend_parse_parameters(4 TSRMLS_CC, "llll", &bid, &gid, &start, &operate) == FAILURE) {
-        WRONG_PARAM_COUNT;
+        if (ZEND_NUM_ARGS() != 5 || zend_parse_parameters(5 TSRMLS_CC, "lllll", &bid, &gid, &start, &operate, &force) == FAILURE) {
+            WRONG_PARAM_COUNT;
+        }
     }
 #ifdef NEWSMTH
     if ((operate == 99)) {
@@ -1060,7 +1061,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
         }
         count = 0;
         for (i=0; i<ret; i++) {
-            if (!(articles[i].accessed[0] & (FILE_MARKED | FILE_PERCENT)))
+            if (force || !(articles[i].accessed[0] & (FILE_MARKED | FILE_PERCENT)))
                 if (get_records_from_id(fd, articles[i].id, &fh, 1, &ent)) {
                     if (del_post(ent, &fh, bp) == 0)
                         count++;
@@ -1076,7 +1077,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
         }
         count = 0;
         for (i=0; i<ret; i++) {
-            if ((articles[i].accessed[1] & FILE_DEL) && (!(articles[i].accessed[0] & (FILE_MARKED | FILE_PERCENT))))
+            if ((articles[i].accessed[1] & FILE_DEL) && (force || !(articles[i].accessed[0] & (FILE_MARKED | FILE_PERCENT))))
                 if (get_records_from_id(fd, articles[i].id, &fh, 1, &ent)) {
                     if (del_post(ent, &fh, bp) == 0)
                         count++;
