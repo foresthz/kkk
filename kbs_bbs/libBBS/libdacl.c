@@ -88,8 +88,13 @@ static int dynamic_acl_update(MYSQL *s, unsigned long ip)
 	if (cnt<10)
 		return 0;
 	
-	/* 如果错误次数超过20(貌似不可能?) 或 过去7200s内错误次数超过15，封禁1个小时；否则封禁10分钟 */
-	dynamic_acl_add_block(s, ip, (cnt>=20 || dynamic_acl_error_times(s, ip, 7200)>=15)?3600:600);
+	/* 如果一天内累计错误50次，封禁一天；若错误次数超过20 或 过去7200s内错误次数超过15，封禁1个小时；其他封禁10分钟 */
+	if (dynamic_acl_error_times(s, ip, 86400)>=50)
+		dynamic_acl_add_block(s, ip, 86400);
+	else if (cnt>=20 || dynamic_acl_error_times(s, ip, 7200)>=15)
+		dynamic_acl_add_block(s, ip, 3600);
+	else
+		dynamic_acl_add_block(s, ip, 600);
 	
 	return 0;
 }
