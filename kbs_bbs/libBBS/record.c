@@ -701,3 +701,33 @@ int move_record(char *filename, int size, int id, int toid, RECORD_FUNC_ARG file
     return ret;
 }
 
+/* 反转文件的记录顺序，配合某些逆序查找后的结果使用 */
+int reverse_record(char *filename, int size)
+{
+    int fd;
+    off_t filesize;
+    char *ptr, *tptr;
+    int i, count, ret;
+
+    BBS_TRY {
+        if (safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &filesize, &fd) == 0)
+            BBS_RETURN(-1);
+        ret = 0;
+        count = filesize / size;
+        tptr = (char *)malloc(size);
+        for (i=1;i<count;i++) {
+            memcpy(tptr, ptr + (count - 1) * size, size);
+            memmove(ptr + i * size, ptr + (i - 1) * size, (count - i) * size);
+            memcpy(ptr + (i - 1) * size, tptr, size);
+        }
+        free(tptr);
+    }
+    BBS_CATCH {
+        ret = -1;
+    }
+    BBS_END;
+    end_mmapfile(ptr, filesize, -1);
+    close(fd);
+
+    return ret;
+}

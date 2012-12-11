@@ -1518,11 +1518,19 @@ struct post_report_arg {
     int id;
     int count;
     int ent;
+    int bm;
+    time_t tm;
 };
 
 /* 生成文章对应的操作记录索引，使用apply_record回调 */
 int make_post_report(struct fileheader *fh, int idx, struct post_report_arg *pa){
+    if (get_posttime(fh)<pa->tm)
+        return QUIT;
     if (fh->o_id == pa->id) {
+        /* 非版主不能查看除m/g之外的操作 */
+        if (!pa->bm &&
+                strncmp(fh->title, "标m ", 4) && strncmp(fh->title, "标g ", 4) && strncmp(fh->title, "去m ", 4) && strncmp(fh->title, "去g ", 4))
+            return 0;
         append_record(pa->file, fh, sizeof(struct fileheader));
         pa->count++;
         return 1;
@@ -1536,7 +1544,7 @@ static struct key_command read_post_report[] = { /*阅读状态，键定义 */
     {'\0', NULL},
 };
 
-int view_post_security_report(struct _select_def* conf, struct fileheader* fileinfo, void* extraarg){
+int view_post_security_report(struct _select_def* conf, struct fileheader* fileinfo, int bm){
     char index_s[STRLEN], index_d[STRLEN];
     struct stat st;
     struct post_report_arg pa;
@@ -1549,9 +1557,12 @@ int view_post_security_report(struct _select_def* conf, struct fileheader* filei
     bzero(&pa, sizeof(struct post_report_arg));
     pa.file = index_d;
     pa.id = fileinfo->id;
+    pa.bm = bm;
+    pa.tm = get_posttime(fileinfo);
 
-    /* 这里可以用逆序查找，不过结果也是逆序，所以.. */
-    apply_record(index_s, (APPLY_FUNC_ARG)make_post_report, sizeof(struct fileheader), &pa, 0, 0);
+    /* 这里可以用逆序查找，不过结果也是逆序，所以..查找完了反转一下记录 */
+    apply_record(index_s, (APPLY_FUNC_ARG)make_post_report, sizeof(struct fileheader), &pa, 0, 1);
+    reverse_record(index_d, sizeof(struct fileheader));
     if (pa.count<=0)
         return prompt_return("本文无操作记录", 1, 1);
     new_i_read(DIR_MODE_UNKNOWN, index_d, readtitle, (READ_ENT_FUNC)readdoent, read_post_report, sizeof(struct fileheader));
@@ -1676,15 +1687,17 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     }
 
 #ifdef BOARD_SECURITY_LOG
-    if (isbm && (arg->mode <= DIR_MODE_ZHIDING)) {
+    if (arg->mode <= DIR_MODE_ZHIDING) {
         int k;
-        move(t_lines - 1, 10);      
+        move(t_lines - 1, 10);
         prints("<\033[31mQ\033[m>查看对本文的操作记录");
-        k = igetkey();              
-        if (toupper(k) == 'Q') {    
-            return view_post_security_report(conf, fileinfo, extraarg);
+        k = igetkey();
+        if (toupper(k) == 'Q') {
+            if (isbm==0 || k=='q') /* 版主按Q查看所有记录 */
+                isbm = 0;
+            return view_post_security_report(conf, fileinfo, isbm);
         } else
-            return FULLUPDATE;       
+            return FULLUPDATE;
     }
 #endif
     pressanykey();
@@ -6074,6 +6087,20 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
                 fh->accessed[0] |= FILE_MARKED;
             else
                 fh->accessed[0] &= ~FILE_MARKED;
+#ifdef BOARD_SECURITY_LOG
+            char buf[40], title[ARTICLE_TITLE_LEN];
+            if (strlen(fh->title)>40) {
+                strnzhcpy(buf, fh->title, 38);
+                strcat(buf, "..");
+            } else
+                strcpy(buf, fh->title);
+            if (func_arg->setflag)
+                sprintf(title, "标m <%s>", buf);
+            else
+                sprintf(title, "去m <%s>", buf);
+            /* 同主题mark时单独记一份 @haning */
+            board_security_report(NULL, getCurrentUser(), title, currboard->filename, fh);
+#endif
             break;
         case BM_DELMARKDEL: /* etnlegend, 2005.11.28, 同主题标记删除 */
             if (fh->accessed[1]&FILE_DEL) {
