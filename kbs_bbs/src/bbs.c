@@ -1693,8 +1693,6 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         prints("<\033[31mQ\033[m>查看对本文的操作记录");
         k = igetkey();
         if (toupper(k) == 'Q') {
-            if (isbm==0 || k=='q') /* 版主按Q查看所有记录 */
-                isbm = 0;
             return view_post_security_report(conf, fileinfo, isbm);
         } else
             return FULLUPDATE;
