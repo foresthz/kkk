@@ -1513,71 +1513,19 @@ int zsend_attach(int ent, struct fileheader *fileinfo, char *direct)
 }
 
 #ifdef BOARD_SECURITY_LOG
-struct post_report_arg {
-    char *file;
-    int id;
-    int count;
-    int ent;
-    int bm;
-    time_t tm;
-};
-
-/* 生成文章对应的操作记录索引，使用apply_record回调 */
-int make_post_report(struct fileheader *fh, int idx, struct post_report_arg *pa){
-    if (get_posttime(fh)<pa->tm)
-        return QUIT;
-    if (fh->o_id == pa->id) {
-        /* 非版主不能查看除m/g之外的操作 */
-        if (!pa->bm &&
-                strncmp(fh->title, "标m ", 4) && strncmp(fh->title, "标g ", 4) && strncmp(fh->title, "去m ", 4) && strncmp(fh->title, "去g ", 4))
-            return 0;
-        append_record(pa->file, fh, sizeof(struct fileheader));
-        pa->count++;
-        return 1;
-    }
-    return 0;
-}
-
 int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 static struct key_command read_post_report[] = { /*阅读状态，键定义 */
     {'r', (READ_KEY_FUNC)read_post,NULL},
     {'\0', NULL},
 };
 
-int view_post_security_report(struct _select_def* conf, struct fileheader* fileinfo, int bm){
-    char index_s[STRLEN], index_d[STRLEN];
-    struct stat st;
-    struct post_report_arg pa;
-
-    setbdir(DIR_MODE_BOARD, index_s, currboard->filename);
-    if (!dashf(index_s) || stat(index_s, &st)==-1 || st.st_size==0)
+int view_post_security_report(struct fileheader *fh, int bm) {
+    char index[STRLEN];
+    if (make_post_report_dir(index, currboard, fh, bm)==0)
         return prompt_return("本文无操作记录", 1, 1);
-    sprintf(index_d, "%s.%d[%d]", index_s, fileinfo->id, getpid());
-
-    bzero(&pa, sizeof(struct post_report_arg));
-    pa.file = index_d;
-    pa.id = fileinfo->id;
-    pa.bm = bm;
-    pa.tm = get_posttime(fileinfo);
-
-    /* 这里可以用逆序查找，不过结果也是逆序，所以..查找完了反转一下记录 */
-    apply_record(index_s, (APPLY_FUNC_ARG)make_post_report, sizeof(struct fileheader), &pa, 0, 1);
-    reverse_record(index_d, sizeof(struct fileheader));
-    if (pa.count<=0)
-        return prompt_return("本文无操作记录", 1, 1);
-    new_i_read(DIR_MODE_UNKNOWN, index_d, readtitle, (READ_ENT_FUNC)readdoent, read_post_report, sizeof(struct fileheader));
-    unlink(index_d);
+    new_i_read(DIR_MODE_UNKNOWN, index, readtitle, (READ_ENT_FUNC)readdoent, read_post_report, sizeof(struct fileheader));
+    unlink(index);
     return FULLUPDATE;
-}
-
-/* 从删除区找到对应id的有效帖子，用于apply_record回调 */
-int get_deleted_ent_by_id(struct fileheader *fh, int idx, struct post_report_arg *pa){
-    if (fh->id == pa->id) {
-        if (fh->filename[0])
-            pa->ent = idx;
-        return QUIT;
-    }
-    return 0;
 }
 
 /* 从版面安全记录文章跳转至对应的原文 */
@@ -1596,15 +1544,9 @@ int view_security_report_origin(struct _select_def *conf, struct fileheader *fh,
         setbdir(arg->newmode, arg->direct, arg->board->filename);
         return NEWDIRECT;
     } else {
-        char deldir[STRLEN];
-        struct post_report_arg pa;
-        bzero(&pa, sizeof(struct post_report_arg));
-        pa.id = fh->o_id;
-        setbdir(DIR_MODE_DELETED, deldir, arg->board->filename);
-        /* 逆序从删除区找到最近一篇删除文章 */
-        apply_record(deldir, (APPLY_FUNC_ARG)get_deleted_ent_by_id, sizeof(struct fileheader), &pa, 0, 1);
-        if (pa.ent>0) {
-            savePos(DIR_MODE_DELETED, NULL, pa.ent, arg->board);
+        ent = get_report_deleted_ent(fh, arg->board);
+        if (ent>0) {
+            savePos(DIR_MODE_DELETED, NULL, ent, arg->board);
             arg->newmode = DIR_MODE_DELETED;
             setbdir(arg->newmode, arg->direct, arg->board->filename);
             return NEWDIRECT;
@@ -1693,7 +1635,7 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         prints("<\033[31mQ\033[m>查看对本文的操作记录");
         k = igetkey();
         if (toupper(k) == 'Q') {
-            return view_post_security_report(conf, fileinfo, isbm);
+            return view_post_security_report(fileinfo, isbm);
         } else
             return FULLUPDATE;
     }

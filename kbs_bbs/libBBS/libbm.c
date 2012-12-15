@@ -507,6 +507,73 @@ int save_title_key(const char *board, char titlekey[][8], int count)
 #endif
 
 #ifdef BOARD_SECURITY_LOG
+struct post_report_arg {
+    char *file;
+    int id;
+    int count;
+    int bm;
+    time_t tm;
+};
+
+/* 生成文章对应的操作记录索引，使用apply_record回调 */
+int make_post_report(struct fileheader *fh, int idx, struct post_report_arg *pa){
+    if (get_posttime(fh)<pa->tm)
+        return QUIT;
+    if (fh->o_id == pa->id) {
+        /* 非版主不能查看除m/g之外的操作 */
+        if (!pa->bm &&
+                strncmp(fh->title, "标m ", 4) && strncmp(fh->title, "标g ", 4) && strncmp(fh->title, "去m ", 4) && strncmp(fh->title, "去g ", 4))
+            return 0;
+        append_record(pa->file, fh, sizeof(struct fileheader));
+        pa->count++;
+        return 1;
+    }
+    return 0;
+}
+
+int make_post_report_dir(char *index, struct boardheader *bh, struct fileheader *fh, int bm) {
+    char index_s[STRLEN];
+    struct stat st;
+    struct post_report_arg pa;
+    
+    setbdir(DIR_MODE_BOARD, index_s, bh->filename);
+    if (!dashf(index_s) || stat(index_s, &st)==-1 || st.st_size==0)
+        return 0;
+    
+    sprintf(index, "%s.%d[%d]", index_s, fh->id, getpid());
+    bzero(&pa, sizeof(struct post_report_arg));
+    pa.file = index;
+    pa.id = fh->id;
+    pa.bm = bm;
+    pa.tm = get_posttime(fh);
+    
+    apply_record(index_s, (APPLY_FUNC_ARG)make_post_report, sizeof(struct fileheader), &pa, 0, 1);
+    reverse_record(index, sizeof(struct fileheader));
+    return pa.count;
+}
+
+/* 从删除区找到对应id的有效帖子，用于apply_record回调 */
+int get_report_deleted_ent_by_id(struct fileheader *fh, int idx, struct post_report_arg *pa){
+    if (fh->id == pa->id) {
+        if (fh->filename[0])
+            pa->count = idx;
+        return QUIT;
+    }
+    return 0;
+}
+
+/* 根据操作记录原文ID号在删除区找原文 */
+int get_report_deleted_ent(struct fileheader *fh, struct boardheader *bh) {
+    char dir[STRLEN];
+    struct post_report_arg pa;
+    bzero(&pa, sizeof(struct post_report_arg));
+    pa.id = fh->o_id;
+    setbdir(DIR_MODE_DELETED, dir, bh->filename);
+    /* 逆序从删除区找到最近一篇删除文章 */
+    apply_record(dir, (APPLY_FUNC_ARG)get_report_deleted_ent_by_id, sizeof(struct fileheader), &pa, 0, 1);
+    return pa.count;
+}
+
 /* 版面配置文件修改记录, 通过diff获得新旧文件差异
  */
 void board_file_report(const char *board, char *title, char *oldfile, char *newfile)
