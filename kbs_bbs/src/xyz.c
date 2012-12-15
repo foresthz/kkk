@@ -183,7 +183,7 @@ unsigned int setperms(unsigned int pbits, unsigned int basic, char *prompt, int 
     pts = (POINT *) malloc(sizeof(POINT) * (numbers + 1));
 
     move(4, 0);
-    prints("请按下你要的代码来设定%s, Ctrl+Q退出，Ctrl+A放弃修改退出%s.\n", prompt, dp?", \033[32mCtrl+S切换选项\033[m":"");
+    prints("请按下你要的代码来设定%s, Ctrl+Q退出，Ctrl+A放弃修改退出%s.\n", prompt, dp?", \033[1;32mCtrl+S切换选项\033[m":"");
     move(6, 0);
     clrtobot();
 
