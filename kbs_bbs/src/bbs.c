@@ -4546,7 +4546,7 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
 
 #ifdef NEWSMTH
     else if (ans[0]=='5') {
-        if (!can&0x10)
+        if (!(can&0x10))
             return FULLUPDATE;
         return set_article_flag(conf,fileinfo, FILE_FEN_FLAG);
     }
