@@ -1179,7 +1179,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     if (HAS_PERM(getCurrentUser(), PERM_OBOARDS) && toupper(type) != 'D' && (ent->accessed[1] & FILE_FEN)) {
         strcat(typeprefix , "\x1b[1;31m");
         typesufix = "\x1b[m";
-        type = '+';
+        type = 's';
     }
 #endif /* NEWSMTH */
     filetime = get_posttime(ent);
