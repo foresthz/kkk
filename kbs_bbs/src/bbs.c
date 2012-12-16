@@ -4503,12 +4503,21 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     /* cannot recommend in recommend, pig2532 */
     if (strcmp(currboard->filename, COMMEND_ARTICLE) == 0)
         can &= ~0x4;
-
 #endif
 
+#ifdef NEWSMTH
+    if (HAS_PERM(getCurrentUser(), PERM_SYSOP) && fileinfo->id == fileinfo->groupid)
+        can |= 0x10;
+#endif
     if (can==0) return DONOTHING;
 
-    sprintf(buf,"切换: 0)取消 %s%s%s[%d]", (can&0x1)?"1)不可re标记 ":"", (can&0x2)?"2)置顶标记 ":"", (can&0x4)?"3)推荐 ":"", (can&0x1)?1:0);
+    sprintf(buf,"切换: 0)取消 %s%s%s%s[%d]", (can&0x1)?"1)不可re标记 ":"", (can&0x2)?"2)置顶标记 ":"", (can&0x4)?"3)推荐 ":"",
+#ifdef NEWSMTH
+            (can&0x10)?"5)取消十大 ":"",
+#else
+            "",
+#endif
+            (can&0x1)?1:0);
 
     move(t_lines - 1, 0);
     clrtoeol();
@@ -4532,6 +4541,14 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
         if (!(can & 0x4))
             return FULLUPDATE;
         return do_commend(conf,fileinfo,extraarg);
+    }
+#endif
+
+#ifdef NEWSMTH
+    else if (ans[0]=='5') {
+        if (!can&0x10)
+            return FULLUPDATE;
+        return set_article_flag(conf,fileinfo, FILE_FEN_FLAG);
     }
 #endif
     else {
@@ -6598,9 +6615,6 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {';', (READ_KEY_FUNC)noreply_post,(void*)NULL},        /*Haohmaru.99.01.01,设定不可re模式 */
     {'#', (READ_KEY_FUNC)set_article_flag,(void*)FILE_SIGN_FLAG},           /* Bigman: 2000.8.12  设定文章标记模式 */
     {'%', (READ_KEY_FUNC)set_article_flag,(void*)FILE_PERCENT_FLAG},           /* asing: 2004.4.16  设定文章标记模式 */
-#ifdef NEWSMTH
-    {'+', (READ_KEY_FUNC)set_article_flag,(void*)FILE_FEN_FLAG},
-#endif /* NEWSMTH */
 #ifdef FILTER
     {'@', (READ_KEY_FUNC)set_article_flag,(void*)FILE_CENSOR_FLAG},         /* czz: 2002.9.29 审核被过滤文章 */
 #endif
