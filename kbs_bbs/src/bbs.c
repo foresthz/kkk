@@ -4452,7 +4452,7 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
     /* add by stiger ,20030414, ÖÃ¶¥Ñ¡Ôñ*/
     char ans[4];
     int mode=0; /* 0x1°ßÖñ, 0x2:ÍÆ¼ö°æ°ßÖñ, 0x4:owner */
-    int can=0; /*0x1:noreply  0x2:ding 0x4:commend */
+    int can=0; /*0x1:noreply  0x2:ding 0x4:commend 0x10:top10*/
     int ret=FULLUPDATE;
     char buf[100];
     struct read_arg* arg=(struct read_arg*)conf->arg;
