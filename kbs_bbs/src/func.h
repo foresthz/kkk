@@ -838,6 +838,7 @@ while(0)
     int refer_truncate(char *path);
 #ifdef ENABLE_BOARD_MEMBER
     int send_refer_msg_to_board(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
+    int send_refer_msg_to_club(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
 #endif /* ENABLE_BOARD_MEMBER */    
 #endif /* ENABLE_REFER */
 

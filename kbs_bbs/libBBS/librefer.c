@@ -41,7 +41,7 @@ int set_refer_file_from_mode(char *buf, const int mode)
 }
 
 #ifdef ENABLE_BOARD_MEMBER
-int get_refer_id_fromstr(char *ptr, int ptrlen, int id[], int boards[])
+int get_refer_id_fromstr(char *ptr, int ptrlen, int id[], int boards[], int clubs[])
 #else
 int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
 #endif
@@ -50,10 +50,11 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
     int i, len, count, uid;
     char userid[IDLEN+2];
 #ifdef ENABLE_BOARD_MEMBER
-    int bid, b_count;
+    int bid, b_count, c_count;
     char board[STRLEN+2];
 
     b_count=0;
+	c_count=0;
 #endif
     p = ptr;
     count = 0;
@@ -97,6 +98,26 @@ int get_refer_id_fromstr(char *ptr, int ptrlen, int id[])
             if (i==b_count) {
                 boards[b_count]=bid;
                 b_count++;
+            }
+        }
+		else if (*p == '@' && ((p>ptr && !isalnum(p[-1])) && p[1]=='$' && (isalpha(p[2])||p[2]=='.'||p[2]=='_'))) { /* 找到 @$, 并对前后进行判断，这个是俱乐部成员提醒 windinsn, 2012.12.18 */
+            for (q=p+3,r=p+2,len=2;isalnum(*q)||q[0]=='.'||q[0]=='_';q++)
+                len++;
+            p += len;
+            ptrlen -= len;
+            if (len>STRLEN)
+                continue;
+            strncpy(board, r, len-1);
+            board[len-1]='\0';
+
+            if ((bid=getbid(board, NULL))==0)
+                continue;
+            for (i=0;i<c_count;i++)
+                if (clubs[i]==bid)
+                    break;
+            if (i==c_count) {
+                clubs[c_count]=bid;
+                c_count++;
             }
         }
 #endif
@@ -143,6 +164,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     int users[MAX_REFER];
 #ifdef ENABLE_BOARD_MEMBER
     int boards[MAX_BOARD_REFER];
+	int clubs[MAX_BOARD_REFER];
     struct boardheader *to_board;
 #endif
     int times=0;
@@ -150,6 +172,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     int i;//,uid;
 #ifdef ENABLE_BOARD_MEMBER
     bzero(boards, MAX_BOARD_REFER * sizeof(int));
+	bzero(clubs,  MAX_BOARD_REFER * sizeof(int));
 #endif
     for (i=0;i<MAX_REFER_INCEPTS;i++)
         refer_incepts[i]=0;
@@ -165,7 +188,7 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     ptrlen=mmap_ptrlen;
     cur_ptr=ptr;
 #ifdef ENABLE_BOARD_MEMBER
-    times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users, boards);
+    times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users, boards, clubs);
 #else
     times = get_refer_id_fromstr(ptr, fh->attachment?fh->attachment:mmap_ptrlen, users);
 #endif
@@ -181,6 +204,13 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
         if (NULL!=to_board)
             send_refer_msg_to_board(to_board, board, fh, tmpfile);
     }
+	for (i=0;i<MAX_BOARD_REFER;i++) {
+		if (clubs[i]<=0)
+			break;
+		to_board=getboard(clubs[i]);
+		if (NULL!=to_board)
+			send_refer_msg_to_club(to_board, board, fh, tmpfile);
+	}
 #endif
     /*
     while(ptrlen>0) {
@@ -348,6 +378,94 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
 
     free(b_members);
     return 0;
+}
+struct clubarg_for_refer {
+    const struct boardheader *brd;
+    int mode;
+    struct usernode *ulheader, *ulcurrent;
+};
+static int func_load_club_users_for_refer(struct userec *user,void *varg)
+{
+    struct clubarg_for_refer *clubflag = (struct clubarg_for_refer *)varg;
+    if (user->userid[0]&&get_user_club_perm(user,clubflag->brd,clubflag->mode)) {
+        struct usernode *untmp;
+        untmp = (struct usernode *)emalloc(sizeof(struct usernode));
+        if (untmp != NULL) {
+            untmp->userid = estrdup(user->userid);
+            untmp->next = NULL;
+            if (clubflag->ulheader == NULL) {
+                clubflag->ulheader = clubflag->ulcurrent = untmp;
+            } else {
+                clubflag->ulcurrent->next = untmp;
+                clubflag->ulcurrent = untmp;
+            }
+        }
+        return COUNT;
+    }
+    return 0;
+}
+static void clubread_FreeAll_for_refer(struct usernode *ulheader, char **userarray)
+{
+    struct usernode *ulnext;
+    while (ulheader) {
+        ulnext = ulheader->next;
+        if (ulheader->userid)
+            efree(ulheader->userid);
+        efree(ulheader);
+        ulheader = ulnext;
+    }
+    if (userarray)
+        efree(userarray);
+}
+int send_refer_msg_to_club(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
+    int mode, count, i;
+	struct clubarg_for_refer clubflag;
+	struct usernode *ulheader, *ulcurrent;
+	char **userarray, **t;
+	struct userec *lookupuser;
+	
+    if (!getCurrentUser())
+        return 0;
+	if (!check_read_perm(getCurrentUser(),to_board))
+		return 0;
+	if (!(to_board->flag&(BOARD_CLUB_READ|BOARD_CLUB_WRITE))||!(to_board->clubnum>0)||(to_board->clubnum>MAXCLUB))
+		return 0;
+	
+	mode=0;
+	if (!((to_board->flag & BOARD_CLUB_READ) && (to_board->flag & BOARD_CLUB_WRITE)))
+		mode=to_board->flag&BOARD_CLUB_WRITE;
+        
+	ulheader = ulcurrent = NULL;	
+	clubflag.brd = to_board;
+    clubflag.mode = mode;
+    clubflag.ulheader = ulheader;
+    clubflag.ulcurrent = ulcurrent;
+    count = apply_users(func_load_club_users_for_refer, &clubflag);
+    ulheader = clubflag.ulheader;
+    ulcurrent = clubflag.ulcurrent;
+	
+	if (0 >= count) {
+        clubread_FreeAll_for_refer(ulheader, userarray);
+        return 0;
+    }
+
+    userarray = (char **)emalloc(count * sizeof(char *));
+    if (userarray == NULL) {
+        clubread_FreeAll_for_refer(ulheader, userarray);
+        return -1;
+    }
+    for (ulcurrent=ulheader,t=userarray;ulcurrent;ulcurrent=ulcurrent->next,t++)
+        (*t)=ulcurrent->userid;
+
+    t=userarray;
+    for (i=0; i<count; i++) {
+		if(getuser(*t, &lookupuser))
+        send_refer_msg_to(lookupuser, board, fh, tmpfile)
+        t++;
+    }
+
+    clubread_FreeAll_for_refer(ulheader, userarray);
+	return 0;
 }
 #endif /* ENABLE_BOARD_MEMBER */
 int refer_remove(char *dir, int ent, struct refer *refer) {
