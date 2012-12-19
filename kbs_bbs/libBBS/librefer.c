@@ -379,17 +379,21 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
     free(b_members);
     return 0;
 }
+struct usernode_for_refer {
+    char *userid;
+    struct usernode_for_refer *next;
+};
 struct clubarg_for_refer {
     const struct boardheader *brd;
     int mode;
-    struct usernode *ulheader, *ulcurrent;
+    struct usernode_for_refer *ulheader, *ulcurrent;
 };
 static int func_load_club_users_for_refer(struct userec *user,void *varg)
 {
     struct clubarg_for_refer *clubflag = (struct clubarg_for_refer *)varg;
     if (user->userid[0]&&get_user_club_perm(user,clubflag->brd,clubflag->mode)) {
-        struct usernode *untmp;
-        untmp = (struct usernode *)emalloc(sizeof(struct usernode));
+        struct usernode_for_refer *untmp;
+        untmp = (struct usernode_for_refer *)emalloc(sizeof(struct usernode_for_refer));
         if (untmp != NULL) {
             untmp->userid = estrdup(user->userid);
             untmp->next = NULL;
@@ -404,9 +408,9 @@ static int func_load_club_users_for_refer(struct userec *user,void *varg)
     }
     return 0;
 }
-static void clubread_FreeAll_for_refer(struct usernode *ulheader, char **userarray)
+static void clubread_FreeAll_for_refer(struct usernode_for_refer *ulheader, char **userarray)
 {
-    struct usernode *ulnext;
+    struct usernode_for_refer *ulnext;
     while (ulheader) {
         ulnext = ulheader->next;
         if (ulheader->userid)
@@ -420,7 +424,7 @@ static void clubread_FreeAll_for_refer(struct usernode *ulheader, char **userarr
 int send_refer_msg_to_club(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
     int mode, count, i;
 	struct clubarg_for_refer clubflag;
-	struct usernode *ulheader, *ulcurrent;
+	struct usernode_for_refer *ulheader, *ulcurrent;
 	char **userarray, **t;
 	struct userec *lookupuser;
 	
