@@ -741,3 +741,181 @@ int board_security_report(const char *filename, struct userec *user, const char 
     return 0;
 }
 #endif
+
+#ifdef HAVE_USERSCORE
+/* 获取文章对应的积分奖励记录文件 */
+void setsfile(char *file, struct boardheader *bh, struct fileheader *fh)
+{
+    char buf[STRLEN];
+
+    strcpy(buf, fh->filename);
+    POSTFILE_BASENAME(buf)[0]='A';
+    setbfile(file, bh->filename, buf);
+}
+
+/* 查询符合条件的积分奖励记录，使用apply_record回调 */
+int get_award_score(struct score_award_arg *pa, int idx, struct score_award_arg *sa)
+{
+    if (sa->bm) {
+        if (pa->bm)
+            sa->score += pa->score;
+    } else {
+        if (!pa->bm && !strcmp(pa->userid, sa->userid))
+            sa->score += pa->score;
+    }
+    return 0;
+}
+
+/* 最多可奖励的积分 */
+int max_award_score(struct boardheader *bh, struct userec *user, struct fileheader *fh, int bm)
+{
+    int max;
+    struct score_award_arg sa;
+    char file[STRLEN];
+
+    max = bm?MAX_BOARD_AWARD_SCORE:MAX_USER_AWARD_SCORE;
+
+    bzero(&sa, sizeof(struct score_award_arg));
+    strcpy(sa.userid, user->userid);
+    sa.bm = bm;
+
+    setsfile(file, bh, fh);
+    apply_record(file, (APPLY_FUNC_ARG)get_award_score, sizeof(struct score_award_arg), &sa, 0, 0);
+    max = max - sa.score;
+
+    return max;
+}
+
+/* 查询积分奖励总数，使用apply_record回调 */
+int get_all_award_score(struct score_award_arg *pa, int idx, struct score_award_arg *sa)
+{
+    sa->score += pa->score;
+    return 0;
+}
+
+/* 获得积分奖励总数 */
+int all_award_score(struct boardheader *bh, struct fileheader *fh)
+{
+    struct score_award_arg sa;
+    char file[STRLEN];
+
+    bzero(&sa, sizeof(struct score_award_arg));
+    setsfile(file, bh, fh);
+    apply_record(file, (APPLY_FUNC_ARG)get_all_award_score, sizeof(struct score_award_arg), &sa, 0, 0);
+
+    return sa.score;
+}
+
+/* 版面积分奖励/扣除记录 */
+int add_award_record(struct boardheader *bh, struct userec *opt, struct fileheader *fh, int score, int bm)
+{
+    struct score_award_arg sa;
+    char file[STRLEN];
+
+    bzero(&sa, sizeof(struct score_award_arg));
+    setsfile(file, bh, fh);
+    strcpy(sa.userid, opt->userid);
+    sa.score = score;
+    sa.t = time(0);
+    sa.bm = bm;
+
+    append_record(file, &sa, sizeof(struct score_award_arg));
+    return 0;
+}
+
+void bcache_setreadonly(int readonly);
+
+/* 奖励用户个人积分 */
+int award_score_from_user(struct boardheader *bh, struct userec *from, struct userec *user, struct fileheader *fh, int score)
+{
+    char buf[STRLEN];
+
+    if ((int)(from->score_user) < score)
+        return -1;
+
+    user->score_user += score;
+    from->score_user -= score;
+
+    sprintf(buf, "%s 版奖励积分 <%s>", bh->filename, fh->title);
+    score_change_mail(user, user->score_user-score, user->score_user, 0, 0, buf);
+
+    sprintf(buf, "奖励 %s 版 %s 积分 <%s>", bh->filename, user->userid, fh->title);
+    score_change_mail(user, from->score_user+score, from->score_user, 0, 0, buf);
+
+    add_award_record(bh, from, fh, score, 0);
+    return 0;
+}
+
+/* 奖励用户版面积分 */
+int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score)
+{
+    char buf[STRLEN];
+
+    if ((int)(bh->score) < score)
+        return -1;
+
+    user->score_user += score;
+    bcache_setreadonly(0);
+    bh->score -= score;
+    bcache_setreadonly(1);
+
+    sprintf(buf, "%s 版%s积分 <%s>", bh->filename, score>0?"奖励":"扣除", fh->title);
+    score_change_mail(user, user->score_user-score, user->score_user, 0, 0, buf);
+
+#ifdef BOARD_SECURITY_LOG
+    char tmpfile[STRLEN];
+    FILE *fn;
+    gettmpfilename(tmpfile, "award_score");
+    if ((fn = fopen(tmpfile, "w"))!=NULL) {
+        fprintf(fn, "  版面积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", bh->score+score, bh->score, score<0?"\033[31m↑":"\033[36m↓", abs(score));
+        fclose(fn);
+    }
+    sprintf(buf, "%s %s %d 积分", score>0?"奖励":"扣除", user->userid, abs(score));
+    board_security_report(tmpfile, opt, buf, bh->filename, fh);
+    unlink(tmpfile);
+#endif
+
+    add_award_record(bh, opt, fh, score, 1);
+    return 0;
+}
+
+int add_award_mark(struct boardheader *bh, struct fileheader *fh)
+{
+    FILE *fin, *fout;
+    char buf[256], fname[STRLEN], outfile[STRLEN];
+    int score, asize, added=0;
+
+    setbfile(fname, bh->filename, fh->filename);
+    if ((fin = fopen(fname, "rb")) == NULL)
+        return 0;
+    gettmpfilename(outfile, "awardmark", getpid());
+    if ((fout = fopen(outfile, "w")) == NULL) {
+        fclose(fin);
+        return 0;
+    }
+    while ((asize = -attach_fgets(buf, 256, fin)) != 0) {
+        if (asize<0) {
+            if (!added && !strncmp(buf, "发信站: ", 8)) {
+                char *p;
+                if ((p=strstr(buf, "  \033[31m[累计积分奖励:"))!=NULL)
+                    *p = '\0';
+                else if (buf[strlen(buf)-1] == '\n')
+                    buf[strlen(buf)-1] = '\0';
+                score = all_award_score(bh, fh);
+                fprintf(fout, "%s  \033[31m[累计积分奖励: %d]\033[m\n", buf, score);
+                added = 1;
+            } else
+                fputs(buf, fout);
+        } else
+            put_attach(fin, fout, asize);
+    }
+
+    fclose(fin);
+    fclose(fout);
+
+    f_cp(outfile, fname, O_TRUNC);
+    unlink(outfile);
+    
+    return 1;
+}
+#endif

@@ -1632,16 +1632,33 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 #endif /* HAVE_REPLY_COUNT */
     }
 
-#ifdef BOARD_SECURITY_LOG
+#if defined(BOARD_SECURITY_LOG) || defined(HAVE_USERSCORE)
     if (arg->mode <= DIR_MODE_ZHIDING) {
         int k;
         move(t_lines - 1, 10);
-        prints("<\033[31mQ\033[m>查看对本文的操作记录");
+        prints("%s%s", 
+#ifdef BOARD_SECURITY_LOG
+                isbm?" <\033[31mQ\033[m>查看对本文的操作记录":""
+#else
+                ""
+#endif
+                ,
+#ifdef HAVE_USERSCORE
+               " <\033[31mA\033[m>查看对本文的积分奖励记录"
+#else
+               ""
+#endif
+                );
         k = igetkey();
-        if (toupper(k) == 'Q') {
+#ifdef BOARD_SECURITY_LOG
+        if (isbm && toupper(k) == 'Q')
             return view_post_security_report(fileinfo, isbm);
-        } else
-            return FULLUPDATE;
+#endif
+#ifdef HAVE_USERSCORE
+        if (toupper(k) == 'A')
+            return view_score_award_record(currboard, fileinfo);
+#endif
+        return FULLUPDATE;
     }
 #endif
     pressanykey();
@@ -6619,6 +6636,9 @@ static struct key_command read_comms[] = { /*阅读状态，键定义 */
     {';', (READ_KEY_FUNC)noreply_post,(void*)NULL},        /*Haohmaru.99.01.01,设定不可re模式 */
     {'#', (READ_KEY_FUNC)set_article_flag,(void*)FILE_SIGN_FLAG},           /* Bigman: 2000.8.12  设定文章标记模式 */
     {'%', (READ_KEY_FUNC)set_article_flag,(void*)FILE_PERCENT_FLAG},           /* asing: 2004.4.16  设定文章标记模式 */
+#ifdef HAVE_USERSCORE
+    {'+', (READ_KEY_FUNC)award_author_score,(void*)NULL},
+#endif /* NEWSMTH */
 #ifdef FILTER
     {'@', (READ_KEY_FUNC)set_article_flag,(void*)FILE_CENSOR_FLAG},         /* czz: 2002.9.29 审核被过滤文章 */
 #endif

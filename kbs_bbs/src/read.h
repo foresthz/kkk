@@ -172,6 +172,10 @@ int just_entered_board(int bid, time_t t);
 void free_board_enter_time();
 #endif
 
+#ifdef HAVE_USERSCORE
+int award_author_score(struct _select_def* conf, struct fileheader* fh, void* extraarg);
+#endif
+
 /*调用无参数的函数*/
 int read_callfunc0(struct _select_def* conf, void* data, void* extraarg);
 /*判断两个标题是否是同主题*/

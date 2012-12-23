@@ -381,6 +381,13 @@ extern long ti;
 #endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 
+#ifdef HAVE_USERSCORE
+#define MIN_BOARD_AWARD_SCORE   10
+#define MAX_BOARD_AWARD_SCORE   10000
+#define MIN_USER_AWARD_SCORE    10
+#define MAX_USER_AWARD_SCORE    100
+#endif
+
 #define ZAPPED              0x1     /* For boards...tells if board is Zapped */
 
 /* these are flags in userec.flags[0] */

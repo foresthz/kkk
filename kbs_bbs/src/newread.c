@@ -1534,6 +1534,149 @@ int read_callfunc0(struct _select_def* conf, void* data, void* extraarg)
     return (*(int(*)())extraarg)();
 }
 
+#ifdef HAVE_USERSCORE
+/* 查看积分奖励记录 */
+int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
+{
+    char file[STRLEN], buf[128];
+    int i, ch, score, count, page=0;
+    struct score_award_arg *sa;
+    struct tm *t;
+
+    setsfile(file, bh, fh);
+    if ((count=get_num_records(file, sizeof(struct score_award_arg)))<=0)
+        return prompt_return("本文无积分奖励记录", 1, 1);
+
+    sa = (struct score_award_arg *)malloc(count * (sizeof(struct score_award_arg)));
+    get_records(file, sa, sizeof(struct score_award_arg), 1, count);
+
+    score=all_award_score(bh, fh);
+    clear();
+    move(0, 0);
+    if (strlen(fh->title)>40) {
+        strnzhcpy(buf, fh->title, 38);
+        strcat(buf, "..");
+    } else
+        strcpy(buf, fh->title);
+    prints("\033[44m文章 <\033[33m%s\033[0;44m> 的积分奖励记录 [\033[33m累计: \033[31m%d\033[37m]\033[K\033[m\n", buf, score);
+    prints(" 作者:\033[32m%-12s\033[m\t发表时间:\033[32m%s\033[m\n", fh->owner, Ctime(fh->posttime));
+    prints("\033[44m 编号  用户ID        积分  类别  来源  时间\033[K\033[m\n");
+    while(toupper(ch)!='Q' && toupper(ch)!='E' && ch!=KEY_LEFT) {
+        if (page<0)
+            page = count/(t_lines-4);
+        else if ((t_lines-4)*page > count)
+            page = 0;
+
+        move(3, 0);
+        clrtobot();
+
+        for(i=(t_lines-4)*page;i<(t_lines-4)*(page+1) && i<count;i++) {
+            t = localtime(&sa[i].t);
+            move(i%(t_lines-4)+3, 0);
+            sprintf(buf, "%5d  %-12s  %4d  %s  %s  %4d-%02d-%02d %02d:%02d:%02d\n",
+                    i+1, sa[i].userid, abs(sa[i].score), sa[i].score>0?"奖励":"扣除", sa[i].bm?"版面":"用户",
+                    t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
+            prints(buf);
+        }
+        move(t_lines-1, 0);
+        prints("\033[44;33m 上一页 PGUP,↑  |  下一页 PGDN,空格,↓ |  退出 Q,E,← \033[K\033[m");
+        ch=igetkey();
+        switch (ch) {
+            case KEY_UP:
+            case KEY_PGUP:
+                page--;
+                break;
+            case KEY_DOWN:
+            case KEY_PGDN:
+            case ' ':
+                page++;
+                break;
+            default:
+                break;
+        }
+    }
+
+    free(sa);
+    return FULLUPDATE;
+}
+
+/* 奖励积分给作者 */
+int award_author_score(struct _select_def* conf, struct fileheader* fh, void* extraarg)
+{
+    struct userec *user;
+    char buf[STRLEN];
+    static char str[8]="100";
+    int max, score, isbm=0, done=0;
+
+    if (!(getuser(fh->owner, &user)))
+        return DONOTHING;
+
+    if (!strcmp(user->userid, "SYSOP") || !strcmp(user->userid, "guest") || !strcmp(user->userid, getCurrentUser()->userid))
+        return DONOTHING;
+
+    if (chk_currBM(currboard->BM, getCurrentUser()))
+        isbm = 1;
+
+    max = max_award_score(currboard, getCurrentUser(), fh, isbm);
+    sprintf(buf, "奖励 %s %s积分[%d-%d]: ", user->userid, isbm?"版面":"个人", isbm?MIN_BOARD_AWARD_SCORE:MIN_USER_AWARD_SCORE, max);
+    getdata(t_lines - 1, 0, buf, str, 6, DOECHO, NULL, false);
+    if (str[0]=='\n' || (score=atoi(str))==0) {
+        conf->show_endline(conf);
+        return DONOTHING;
+    }
+    if (isbm) {
+        if ((score>0 && score<MIN_BOARD_AWARD_SCORE) || score>max || score<(max-MAX_BOARD_AWARD_SCORE))
+            prompt_return("输入错误", 1, 1);
+        else if (award_score_from_board(currboard, getCurrentUser(), user, fh, score)==-1)
+            prompt_return("版面积分不足", 2, 0);
+        else
+            done = 1;
+    } else {
+        if ((score>0 && score<MIN_USER_AWARD_SCORE) || score>max || score<0)
+            prompt_return("输入错误", 1, 1);
+        else if (award_score_from_user(currboard, getCurrentUser(), user, fh, score)==-1)
+            prompt_return("个人积分不足", 2, 0);
+        else
+            done = 1;
+    }
+    if (done && add_award_mark(currboard, fh) && fh->attachment) {  /* 更新带附件帖子的attachment */
+        unsigned int attachpos;
+
+        setbfile(buf, currboard->filename, fh->filename);
+        get_effsize_attach(buf, (unsigned int*)&attachpos);
+        if (fh->attachment!=attachpos) {
+            struct read_arg* arg=(struct read_arg*) conf->arg;
+            struct write_dir_arg dirarg;
+            struct fileheader xfh;
+            int edit_top=0;
+
+            fh->attachment=attachpos;
+            memcpy(&xfh, fh, sizeof(struct fileheader));
+            init_write_dir_arg(&dirarg);
+            /* 添加奖励记录，置底文章时，通过 change_post_flag 更新置底的fh，并通过其更新原文fh */
+            if (conf->pos>arg->filecount || (arg->mode==DIR_MODE_NORMAL && is_top(fh, currboard->filename))) {
+                char file[STRLEN];
+                setbdir(DIR_MODE_ZHIDING, file, currboard->filename);
+                dirarg.filename=file;
+                POSTFILE_BASENAME(xfh.filename)[0]='Z';
+                edit_top=1;
+            } else {
+                dirarg.fd = arg->fd;
+                dirarg.ent = conf->pos;
+            }
+            change_post_flag(&dirarg, edit_top?DIR_MODE_ZHIDING:arg->mode, currboard,
+                    &xfh, FILE_ATTACHPOS_FLAG, fh, isbm, getSession());
+            free_write_dir_arg(&dirarg);
+            if (edit_top)
+                board_update_toptitle(arg->bid, true);
+            return DIRCHANGED;
+        }
+    }
+    conf->show_endline(conf);
+    return DONOTHING;
+}
+#endif
+
 #ifdef SAVE_POS
 /* 保存本次的版面光标位置 */
 void save_article_pos()

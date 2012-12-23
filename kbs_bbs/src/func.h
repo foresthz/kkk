@@ -279,6 +279,8 @@ extern "C"
 #ifdef BOARD_SECURITY_LOG
     void board_file_report(const char *board, char *title, char *oldfile, char *newfile);
     int board_security_report(const char *filename, struct userec *user, const char *title, const char *bname, const struct fileheader *fh);
+    int make_post_report_dir(char *index, struct boardheader *bh, struct fileheader *fh, int bm);
+    int get_report_deleted_ent(struct fileheader *fh, struct boardheader *bh) ;
 #endif
     /* end of libbm.c */
     int write_formatted_file(const char *src, const char *dest, const char *format, ...);
@@ -650,6 +652,7 @@ while(0)
                            void *farg,  /* additional param to call fptr() / original record */
                            void *rptr,  /* record data buffer to be used for reading idx file */
                            int sorted); /* if records in file are sorted */
+    int reverse_record(char *filename, int size);
     void load_mail_list(struct userec *user, struct _mail_list *mail_list);
     void save_mail_list(struct _mail_list *mail_list,session_t* session);
 
@@ -883,6 +886,21 @@ while(0)
     int modify_board_member_title(struct board_member_title *title);
 #endif /* ENABLE_BOARD_MEMBER */
 
+#ifdef HAVE_USERSCORE
+    /* 积分奖励相关 */
+    void setsfile(char *file, struct boardheader *bh, struct fileheader *fh);
+    int award_score_from_user(struct boardheader *bh, struct userec *from, struct userec *user, struct fileheader *fh, int score);
+    int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score);
+    int view_score_award_record(struct boardheader *bh, struct fileheader *fh);
+    int max_award_score(struct boardheader *bh, struct userec *user, struct fileheader *fh, int bm);
+    int all_award_score(struct boardheader *bh, struct fileheader *fh);
+    int add_award_mark(struct boardheader *bh, struct fileheader *fh);
+#ifdef NEWSMTH
+    /* 积分变更通知 */
+    int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, unsigned int om, unsigned int nm, char *r);
+    int board_score_change_record(struct boardheader *bh, char *desc, int os, int ns, int mode);
+#endif
+#endif
 #ifdef ENABLE_DYNAMIC_ACL
     long dynamic_acl_check_ip(unsigned long ip);
     int dynamic_acl_add_record(char *id, unsigned long ip);	

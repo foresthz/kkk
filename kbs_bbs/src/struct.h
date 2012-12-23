@@ -687,3 +687,14 @@ struct utmpreqhdr {
         } _clr;
     } arg;
 };
+
+#ifdef HAVE_USERSCORE
+/* »ý·Ö½±Àø¼ÇÂ¼ */
+struct score_award_arg
+{
+    char userid[IDLEN];
+    int score;
+    time_t t;
+    int bm;
+}; 
+#endif
