@@ -98,6 +98,18 @@ int killdir(char *basedir, char *filename)
             strcat(genbuf1, afile->filename);
             unlink(genbuf1);
             deleted++;
+#ifdef HAVE_USERSCORE
+            char sfile[STRLEN];
+            strcpy(sfile, afile->filename);
+            POSTFILE_BASENAME(sfile)[0]='A';
+            strcpy(genbuf1, basedir);
+            strcat(genbuf1, "/");
+            strcat(genbuf1, sfile);
+            if (dashf(genbuf1)) {
+                unlink(genbuf1);
+                deleted++;
+            }
+#endif
         } else {
             write(fd, afile, sizeof(struct fileheader));
             count += sizeof(struct fileheader);
