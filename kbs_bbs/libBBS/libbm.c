@@ -833,8 +833,11 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
     if ((int)(from->score_user) < score)
         return -1;
 
-    user->score_user += score;
     from->score_user -= score;
+    user->score_user += score * 8 / 10;
+    bcache_setreadonly(0);
+    bh->score += score * 2 / 10;
+    bcache_setreadonly(1);
 
     sprintf(buf, "%s °æ½±Àø»ý·Ö <%s>", bh->filename, fh->title);
     score_change_mail(user, user->score_user-score, user->score_user, 0, 0, buf);

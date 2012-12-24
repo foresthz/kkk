@@ -1539,7 +1539,7 @@ int read_callfunc0(struct _select_def* conf, void* data, void* extraarg)
 int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
 {
     char file[STRLEN], buf[128];
-    int i, ch, score, count, page=0;
+    int i, isbm, ch, score, count, page=0;
     struct score_award_arg *sa;
     struct tm *t;
 
@@ -1547,6 +1547,7 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
     if ((count=get_num_records(file, sizeof(struct score_award_arg)))<=0)
         return prompt_return("本文无积分奖励记录", 1, 1);
 
+    isbm = chk_currBM(currboard->BM, getCurrentUser());
     sa = (struct score_award_arg *)malloc(count * (sizeof(struct score_award_arg)));
     get_records(file, sa, sizeof(struct score_award_arg), 1, count);
 
@@ -1560,7 +1561,7 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
         strcpy(buf, fh->title);
     prints("\033[44m文章 <\033[33m%s\033[0;44m> 的积分奖励记录 [\033[33m累计: \033[31m%d\033[37m]\033[K\033[m\n", buf, score);
     prints(" 作者:\033[32m%-12s\033[m\t发表时间:\033[32m%s\033[m\n", fh->owner, Ctime(fh->posttime));
-    prints("\033[44m 编号  用户ID        积分  类别  来源  时间\033[K\033[m\n");
+    prints("\033[44m 编号  用户ID         积分  来源      时间                    %s\033[K\033[m\n", isbm?"用户:版面":"");
     while(toupper(ch)!='Q' && toupper(ch)!='E' && ch!=KEY_LEFT) {
         if (page<0)
             page = count/(t_lines-4);
@@ -1573,13 +1574,16 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
         for(i=(t_lines-4)*page;i<(t_lines-4)*(page+1) && i<count;i++) {
             t = localtime(&sa[i].t);
             move(i%(t_lines-4)+3, 0);
-            sprintf(buf, "%5d  %-12s  %4d  %s  %s  %4d-%02d-%02d %02d:%02d:%02d\n",
-                    i+1, sa[i].userid, abs(sa[i].score), sa[i].score>0?"奖励":"扣除", sa[i].bm?"版面":"用户",
+            sprintf(buf, "%5d  %-12s  %5d  %s%s  %4d-%02d-%02d %02d:%02d:%02d",
+                    i+1, sa[i].userid, sa[i].score, sa[i].bm?"版面":"用户", sa[i].score>0?"奖励":"扣除",
                     t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
             prints(buf);
+            if (isbm && !sa[i].bm)
+                prints("      %3d:%-d", sa[i].score * 8 / 10, sa[i].score * 2 / 10);
+            prints("\n");
         }
         move(t_lines-1, 0);
-        prints("\033[44;33m 上一页 PGUP,↑  |  下一页 PGDN,空格,↓ |  退出 Q,E,← \033[K\033[m");
+        prints("\033[44;33m 上一页 PGUP,↑ |  下一页 PGDN,空格,↓ |  退出 Q,E,← \033[K\033[m");
         ch=igetkey();
         switch (ch) {
             case KEY_UP:
@@ -1606,7 +1610,7 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     struct userec *user;
     char buf[STRLEN];
     static char str[8]="100";
-    int max, score, isbm=0, done=0;
+    int min, max, score, isbm=0, done=0;
 
     if (!(getuser(fh->owner, &user)))
         return DONOTHING;
@@ -1617,8 +1621,19 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     if (chk_currBM(currboard->BM, getCurrentUser()))
         isbm = 1;
 
+    min = isbm?MIN_BOARD_AWARD_SCORE:MIN_USER_AWARD_SCORE;
     max = max_award_score(currboard, getCurrentUser(), fh, isbm);
-    sprintf(buf, "奖励 %s %s积分[%d-%d]: ", user->userid, isbm?"版面":"个人", isbm?MIN_BOARD_AWARD_SCORE:MIN_USER_AWARD_SCORE, max);
+    if (!isbm && max<min) {
+        sprintf(buf, "您不能再次奖励积分给 %s ", user->userid);
+        prompt_return(buf, 2, 0);
+        conf->show_endline(conf);
+        return DONOTHING;
+    }
+    if (max < min) { /* 此时只能输入负分 */
+        min = max - MAX_BOARD_AWARD_SCORE;
+        max = -1;
+    }
+    sprintf(buf, "奖励 %s %s积分[%d～%d]: ", user->userid, isbm?"版面":"个人", min, max);
     getdata(t_lines - 1, 0, buf, str, 6, DOECHO, NULL, false);
     if (str[0]=='\n' || (score=atoi(str))==0) {
         conf->show_endline(conf);

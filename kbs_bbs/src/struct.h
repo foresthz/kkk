@@ -692,7 +692,7 @@ struct utmpreqhdr {
 /* »ý·Ö½±Àø¼ÇÂ¼ */
 struct score_award_arg
 {
-    char userid[IDLEN];
+    char userid[IDLEN+2];
     int score;
     time_t t;
     int bm;
