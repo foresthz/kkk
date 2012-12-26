@@ -2550,6 +2550,31 @@ int board_log_mode(struct _select_def* conf,struct fileheader *fileinfo,void* ex
 }
 #endif
 
+#ifdef HAVE_USERSCORE
+int board_score_mode(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
+{
+    struct read_arg* arg=(struct read_arg*)conf->arg;
+
+    if (!check_board_delete_read_perm(getCurrentUser(),currboard,1)) {
+        return FULLUPDATE;
+    }
+
+    if (arg->mode == DIR_MODE_SCORE) {
+        arg->newmode = DIR_MODE_NORMAL;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
+    } else {
+        arg->newmode = DIR_MODE_SCORE;
+        setbdir(arg->newmode, arg->direct, currboard->filename);
+        if (!dashf(arg->direct)) {
+            arg->newmode = DIR_MODE_NORMAL;
+            setbdir(arg->mode, arg->direct, currboard->filename);
+            return FULLUPDATE;
+        }
+    }
+    return NEWDIRECT;
+}
+#endif
+
 static char search_data[STRLEN];
 
 int search_mode(struct _select_def* conf,struct fileheader *fileinfo,int mode, char *index)
@@ -2628,13 +2653,18 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
         prints("%s","切换模式到: 0)取消 1)文摘区 2)同主题 3)保留区 4)原作 5)同作者 6)标题关键字");
         move(t_lines-1,0);
         clrtoeol();
-        sprintf(buf, "%s%s%s", "7)超级文章选择"
+        sprintf(buf, "%s%s%s%s", "7)超级文章选择"
 #ifdef NEWSMTH
                     " 8)本版精华区搜索"
 #endif /* NEWSMTH */
                     " 9)自删文章", 
 #ifdef BOARD_SECURITY_LOG
                     isbm?" A)版主模式":"",
+#else
+                    "",
+#endif
+#ifdef HAVE_USERSCORE
+                    isbm?" B)积分变更":"",
 #else
                     "",
 #endif
@@ -2707,6 +2737,12 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
                 mode=DIR_MODE_BOARD;
                 break;
 #endif
+#ifdef HAVE_USERSCORE
+            case 'b':
+            case 'B':
+                mode=DIR_MODE_SCORE;
+                break;
+#endif
             default:
                 mode=DIR_MODE_NORMAL;
                 break;
@@ -2737,6 +2773,10 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
 #ifdef BOARD_SECURITY_LOG
         case DIR_MODE_BOARD:
             return board_log_mode(conf,fh,NULL);
+#endif
+#ifdef HAVE_USERSCORE
+        case DIR_MODE_SCORE:
+            return board_score_mode(conf,fh,NULL);
 #endif
         default:
             break;

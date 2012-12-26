@@ -548,16 +548,19 @@ enum BBS_DIR_MODE {
 #ifdef BOARD_SECURITY_LOG
     DIR_MODE_BOARD      = 12,       /* .BRDLOG, 版面安全记录 */
 #endif
-    DIR_MODE_ORIGIN_AUTHOR = 13,    /* .ORIGIN.userid */
-	DIR_MODE_MARK_AUTHOR   = 14,    /* .MARK.userid */
-	DIR_MODE_DIGEST_AUTHOR = 15,    /* .DIGEST.userid */
+#ifdef HAVE_USERSCORE
+    DIR_MODE_SCORE      = 13,       /* .BSLOG, 版面积分变更记录 */
+#endif
+    DIR_MODE_ORIGIN_AUTHOR = 14,    /* .ORIGIN.userid */
+    DIR_MODE_MARK_AUTHOR   = 15,    /* .MARK.userid */
+    DIR_MODE_DIGEST_AUTHOR = 16,    /* .DIGEST.userid */
 	/* 以上三个为驻版用户申请、版面勋章申请使用, windinsn, 2012.08.12 */
     DIR_MODE_MAIL ,                 /* 邮件模式 */
     DIR_MODE_FRIEND,                /* 好友名单 */
     DIR_MODE_TOP10,                 /* 十大模式 */
     DIR_MODE_SELF,                  /* 自删模式, .SELF.userid */
     DIR_MODE_REFER,                 /* @/回文提醒模式, added by windinsn, Jan 28,2012 */
-	DIR_MODE_MEMBER_ARTICLE,        /* 驻版阅读模式, added by windinsn, Sep 20, 2012 */
+    DIR_MODE_MEMBER_ARTICLE,        /* 驻版阅读模式, added by windinsn, Sep 20, 2012 */
     DIR_MODE_UNKNOWN                /* 未知模式 */
 };
 

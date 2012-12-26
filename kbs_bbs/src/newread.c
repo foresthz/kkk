@@ -1579,7 +1579,7 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
                     t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
             prints(buf);
             if (isbm && !sa[i].bm)
-                prints("      %3d:%-d", sa[i].score * 8 / 10, sa[i].score * 2 / 10);
+                prints("      %3d:%-d", sa[i].score * 8 / 10, sa[i].score / 5);
             prints("\n");
         }
         move(t_lines-1, 0);

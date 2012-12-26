@@ -625,14 +625,14 @@ void board_file_report(const char *board, char *title, char *oldfile, char *newf
     }
 }
 
-/* 获得版面安全记录的最新id */
-int board_last_log_id(const char *board)
+/* 获得版面特殊模式下最新id */
+int board_last_index_id(const char *board, int mode)
 {
     struct fileheader fh;
     char filename[STRLEN * 2];
     int count;
 
-    setbdir(DIR_MODE_BOARD, filename, board);
+    setbdir(mode, filename, board);
     memset(&fh, 0, sizeof(struct fileheader));
     count = get_num_records(filename, sizeof(struct fileheader));
     if (count <= 0)
@@ -679,12 +679,12 @@ int board_security_report(const char *filename, struct userec *user, const char 
 
     if (mode) {
         now = time(NULL);
-        fprintf(fout, "发信人: "DELIVER" (自动发信系统), 信区: %s安全记录\n", bname);
+        fprintf(fout, "发信人: "DELIVER" (自动发信系统), 信区: %s版安全记录\n", bname);
         fprintf(fout, "标  题: %s\n", fh.title);
         fprintf(fout, "发信站: %s自动发信系统 (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
     } else {
         now = time(NULL);
-        fprintf(fout, "发信人: %s (%s), 信区: %s安全记录\n", user->userid, user->username, bname);
+        fprintf(fout, "发信人: %s (%s), 信区: %s版安全记录\n", user->userid, user->username, bname);
         fprintf(fout, "标  题: %s\n", fh.title);
         fprintf(fout, "发信站: %s (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
     }
@@ -721,7 +721,7 @@ int board_security_report(const char *filename, struct userec *user, const char 
         return 5;
     }
     writew_lock(fd, 0, SEEK_SET, 0);
-    fh.id = board_last_log_id(bname) + 1;
+    fh.id = board_last_index_id(bname, DIR_MODE_BOARD) + 1;
     fh.groupid = fh.id;
     fh.reid = fh.id;
     if (xfh)
@@ -743,6 +743,99 @@ int board_security_report(const char *filename, struct userec *user, const char 
 #endif
 
 #ifdef HAVE_USERSCORE
+/* 版面积分变更记录 */
+int board_score_change_report(struct userec *user, const char *bname, int os, int ns, char *title, struct fileheader *xfh)
+{
+    struct fileheader fh;
+    struct boardheader bh;
+    FILE *fn;
+    char buf[STRLEN], timebuf[STRLEN];
+    int mode, ds, fd;
+    time_t now;
+
+    bzero(&fh, sizeof(struct fileheader));
+    setbpath(buf, bname);     
+    if (!getboardnum(bname, &bh)) 
+        return 1;
+    if (GET_POSTFILENAME(fh.filename, buf))
+        return 2;
+    POSTFILE_BASENAME(fh.filename)[0] = 'B';
+    set_posttime(&fh);
+
+    mode = 0;
+    if (user == NULL)
+        mode = 1;  //自动发信
+    if (mode) 
+        memcpy(fh.owner, DELIVER, OWNER_LEN);
+    else
+        memcpy(fh.owner, user -> userid, OWNER_LEN);
+    fh.owner[OWNER_LEN - 1] = 0;
+
+    if (xfh) {
+        if (strlen(xfh->title)>40) {
+            strnzhcpy(buf, xfh->title, 38);
+            strcat(buf, "..");
+        } else
+            strcpy(buf, xfh->title);
+        sprintf(fh.title, "%s <%s>", title, buf);
+    } else
+        strnzhcpy(fh.title, title, ARTICLE_TITLE_LEN);
+
+    setbfile(buf, bname, fh.filename);
+    if (!(fn = fopen(buf, "w")))
+        return 3;
+
+    if (mode) {
+        now = time(NULL);
+        fprintf(fn, "发信人: "DELIVER" (自动发信系统), 信区: %s版积分变更记录\n", bname);
+        fprintf(fn, "标  题: %s\n", fh.title);
+        fprintf(fn, "发信站: %s自动发信系统 (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
+    } else {
+        now = time(NULL);
+        fprintf(fn, "发信人: %s (%s), 信区: %s版积分变更记录\n", user->userid, user->username, bname);
+        fprintf(fn, "标  题: %s\n", fh.title);
+        fprintf(fn, "发信站: %s (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
+    }
+    ds = ns - os;
+    fprintf(fn, "\033[36m版面积分变更记录\033[m\n");
+    fprintf(fn, "\033[33m版面积分: \033[33m%-8d\033[m -> \033[32m%8d\t\t%s%d\033[m\n", os, ns, (ds>0)?"\033[31m↑":"\033[36m↓", abs(ds));
+    fprintf(fn, "\033[33m记录原因: \033[32m%s%s\033[m\n", (mode)?"":user->userid, fh.title);
+
+    if (xfh) {
+        time_t t=get_posttime(xfh); 
+        fprintf(fn, "\n\033[36m本次操作对应文章信息\033[m\n");
+        fprintf(fn, "\033[33m文章标题: \033[4;32m%s\033[m\n", xfh->title);
+        fprintf(fn, "\033[33m文章作者: \033[4;32m%s\033[m\n", xfh->owner);
+        fprintf(fn, "\033[33m文章ID号: \033[4;32m%d\033[m\n", xfh->id);
+        fprintf(fn, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime(&t));
+    } 
+    fclose(fn);
+    fh.eff_size = get_effsize_attach(buf, &fh.attachment);
+    setbdir(DIR_MODE_SCORE, buf, bname);
+    if ((fd = open(buf, O_WRONLY|O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) == -1) {
+        return 5;
+    }
+    writew_lock(fd, 0, SEEK_SET, 0);
+    fh.id = board_last_index_id(bname, DIR_MODE_SCORE) + 1;
+    fh.groupid = fh.id;
+    fh.reid = fh.id;
+    if (xfh)
+        fh.o_id = xfh->id;
+    else
+        fh.o_id = 0;
+    lseek(fd, 0, SEEK_END);
+    if (safewrite(fd, &fh, sizeof(struct fileheader)) == -1) {
+        un_lock(fd, 0, SEEK_SET, 0);
+        close(fd);
+        setbfile(buf, bname, fh.filename);
+        unlink(buf);
+        return 6;
+    }
+    un_lock(fd, 0, SEEK_SET, 0);
+    close(fd);
+    return 0;
+}
+
 /* 获取文章对应的积分奖励记录文件 */
 void setsfile(char *file, struct boardheader *bh, struct fileheader *fh)
 {
@@ -836,7 +929,7 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
     from->score_user -= score;
     user->score_user += score * 8 / 10;
     bcache_setreadonly(0);
-    bh->score += score * 2 / 10;
+    bh->score += score / 5;
     bcache_setreadonly(1);
 
     sprintf(buf, "%s 版奖励积分 <%s>", bh->filename, fh->title);
@@ -844,6 +937,9 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
 
     sprintf(buf, "奖励 %s 版 %s 积分 <%s>", bh->filename, user->userid, fh->title);
     score_change_mail(user, from->score_user+score, from->score_user, 0, 0, buf);
+
+    sprintf(buf, "奖励%d用户积分", score);
+    board_score_change_report(from, bh->filename, bh->score-score/5, bh->score, buf, fh);
 
     add_award_record(bh, from, fh, score, 0);
     return 0;
@@ -877,6 +973,9 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     board_security_report(tmpfile, opt, buf, bh->filename, fh);
     unlink(tmpfile);
 #endif
+
+    sprintf(buf, "%s%d版面积分", score>0?"奖励":"扣还", abs(score));
+    board_score_change_report(opt, bh->filename, bh->score+score, bh->score, buf, fh);
 
     add_award_record(bh, opt, fh, score, 1);
     return 0;

@@ -426,6 +426,12 @@ char* setbdir(enum BBS_DIR_MODE mode,char *buf,const char *boardname)
             prefix=".BRDLOG";
             break;
 #endif
+#ifdef HAVE_USERSCORE
+        case DIR_MODE_SCORE:
+            type=0;
+            prefix=".BSLOG";
+            break;
+#endif
         case DIR_MODE_MAIL:
         case DIR_MODE_FRIEND:
         case DIR_MODE_TOP10:

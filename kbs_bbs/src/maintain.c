@@ -1851,9 +1851,13 @@ int modify_board(int bid)
     }
     error|=edit_group(&bh,&newbh);
     set_board(bid,&newbh,&bh);
+#ifdef HAVE_USERSCORE
+    if (change&(1<<23)) {
 #ifdef NEWSMTH
-    if (change&(1<<23))
         board_score_change_record(&newbh, reason, os, newbh.score, 0);
+#endif
+        board_score_change_report(NULL, newbh.filename, os, newbh.score, reason, NULL);
+    }
 #endif
     /*生成安全审核和日志*/
     sprintf(src,"tmp/edit_board_log_%ld_%d",time(NULL),(int)getpid());
