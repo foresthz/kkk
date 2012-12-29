@@ -47,6 +47,10 @@ ispostfilename(char *file)
 #endif
             )
         return 0;
+#ifdef HAVE_USERSCORE
+    if (!strncmp(file, "A.", 2))
+        return 0;
+#endif
     if (!isdigit(file[3]))
         return 0;
     if (strlen(file) >= 20)
@@ -176,6 +180,9 @@ rm_lost(char *path)
 {
     int i, h, total, totalref, lost, t;
     char buf[MAXPATH];
+#ifdef HAVE_USERSCORE
+    char *p;
+#endif
     for (h = 0, total = 0, totalref = 0, lost = 0; h < HASHSIZE; h++) {
         total += nfile[h];
         for (i = 0; i < nfile[h]; i++) {
@@ -196,6 +203,12 @@ rm_lost(char *path)
                 }
                 sprintf(buf, "%s/%s", path, allpost[h][i]);
                 unlink(buf);
+#ifdef HAVE_USERSCORE
+                if ((p=strrchr(buf, '/'))!=NULL) {
+                    *(p+1) = 'A';
+                    unlink(buf);
+                }
+#endif
             }
         }
     }
@@ -244,6 +257,12 @@ find_rm_lost(struct boardheader *bhp,void* arg)
             return -1;
 #ifdef BOARD_SECURITY_LOG
     sprintf(buf, "boards/%s/.BRDLOG", bhp->filename);
+    if (dashf(buf))
+        if (useindexfile(buf) < 0)
+            return -1;
+#endif
+#ifdef HAVE_USERSCORE
+    sprintf(buf, "boards/%s/.BSLOG", bhp->filename);
     if (dashf(buf))
         if (useindexfile(buf) < 0)
             return -1;

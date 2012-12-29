@@ -584,6 +584,10 @@ int Xdeljunk(void)
     sprintf(buf, "boards/%s/.BRDLOG", board);
     unlink(buf);
 #endif
+#ifdef HAVE_USERSCORE
+    sprintf(buf, "boards/%s/.BSLOG", board);
+    unlink(buf);
+#endif
     sprintf(buf, "%s Çå¿Õ %s °æÃæÀ¬»øÏä", getCurrentUser()->userid, board);
     securityreport(buf, NULL, NULL, getSession());
     clear();

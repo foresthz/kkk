@@ -921,7 +921,7 @@ void bcache_setreadonly(int readonly);
 /* 奖励用户个人积分 */
 int award_score_from_user(struct boardheader *bh, struct userec *from, struct userec *user, struct fileheader *fh, int score)
 {
-    char buf[STRLEN];
+    char buf[STRLEN*2];
 
     if ((int)(from->score_user) < score)
         return -1;
@@ -932,11 +932,11 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
     AO_int_fetch_and_add(&(bh->score), score / 5);
     bcache_setreadonly(1);
 
-    sprintf(buf, "%s 版奖励积分 <%s>", bh->filename, fh->title);
-    score_change_mail(user, user->score_user-score, user->score_user, 0, 0, buf);
+    sprintf(buf, "%s 版 %s 奖励个人积分 <%s>", bh->filename, from->userid, fh->title);
+    score_change_mail(user, user->score_user-score*8/10, user->score_user, 0, 0, buf);
 
     sprintf(buf, "奖励 %s 版 %s 积分 <%s>", bh->filename, user->userid, fh->title);
-    score_change_mail(user, from->score_user+score, from->score_user, 0, 0, buf);
+    score_change_mail(from, from->score_user+score, from->score_user, 0, 0, buf);
 
     sprintf(buf, "奖励%d用户积分", score);
     board_score_change_report(from, bh->filename, bh->score-score/5, bh->score, buf, fh);
@@ -948,7 +948,7 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
 /* 奖励用户版面积分 */
 int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score)
 {
-    char buf[STRLEN];
+    char buf[STRLEN*2];
 
     if ((int)(bh->score) < score)
         return -1;
@@ -958,7 +958,7 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     AO_int_fetch_and_add(&(bh->score), -score);
     bcache_setreadonly(1);
 
-    sprintf(buf, "%s 版%s积分 <%s>", bh->filename, score>0?"奖励":"扣除", fh->title);
+    sprintf(buf, "%s 版 %s %s版面积分 <%s>", bh->filename, opt->userid, score>0?"奖励":"扣还", fh->title);
     score_change_mail(user, user->score_user-score, user->score_user, 0, 0, buf);
 
 #ifdef BOARD_SECURITY_LOG
@@ -969,7 +969,7 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
         fprintf(fn, "  版面积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", bh->score+score, bh->score, score<0?"\033[31m↑":"\033[36m↓", abs(score));
         fclose(fn);
     }
-    sprintf(buf, "%s %s %d 积分", score>0?"奖励":"扣除", user->userid, abs(score));
+    sprintf(buf, "%s%d积分", score>0?"奖励":"扣还", abs(score));
     board_security_report(tmpfile, opt, buf, bh->filename, fh);
     unlink(tmpfile);
 #endif
