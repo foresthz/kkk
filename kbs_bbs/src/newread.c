@@ -1575,7 +1575,7 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
             t = localtime(&sa[i].t);
             move(i%(t_lines-4)+3, 0);
             sprintf(buf, "%5d  %-12s  %5d  %s%s  %4d-%02d-%02d %02d:%02d:%02d",
-                    i+1, sa[i].userid, sa[i].score, sa[i].bm?"版面":"用户", sa[i].score>0?"奖励":"扣除",
+                    i+1, sa[i].userid, sa[i].score, sa[i].bm?"版面":"用户", sa[i].score>0?"奖励":"扣还",
                     t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
             prints(buf);
             if (isbm && !sa[i].bm)

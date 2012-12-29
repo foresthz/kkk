@@ -926,10 +926,10 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
     if ((int)(from->score_user) < score)
         return -1;
 
-    from->score_user -= score;
-    user->score_user += score * 8 / 10;
+    AO_int_fetch_and_add(&(from->score_user), -score);
+    AO_int_fetch_and_add(&(user->score_user), score * 8 / 10);
     bcache_setreadonly(0);
-    bh->score += score / 5;
+    AO_int_fetch_and_add(&(bh->score), score / 5);
     bcache_setreadonly(1);
 
     sprintf(buf, "%s °æ½±Àø»ý·Ö <%s>", bh->filename, fh->title);
@@ -953,9 +953,9 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     if ((int)(bh->score) < score)
         return -1;
 
-    user->score_user += score;
+    AO_int_fetch_and_add(&(user->score_user), score);
     bcache_setreadonly(0);
-    bh->score -= score;
+    AO_int_fetch_and_add(&(bh->score), -score);
     bcache_setreadonly(1);
 
     sprintf(buf, "%s °æ%s»ý·Ö <%s>", bh->filename, score>0?"½±Àø":"¿Û³ý", fh->title);
