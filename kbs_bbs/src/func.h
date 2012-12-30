@@ -895,6 +895,7 @@ while(0)
     int max_award_score(struct boardheader *bh, struct userec *user, struct fileheader *fh, int bm);
     int all_award_score(struct boardheader *bh, struct fileheader *fh);
     int add_award_mark(struct boardheader *bh, struct fileheader *fh);
+    int board_score_change_report(struct userec *user, const char *bname, int os, int ns, char *title, struct fileheader *xfh);
 #ifdef NEWSMTH
     /* 积分变更通知 */
     int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, unsigned int om, unsigned int nm, char *r);
