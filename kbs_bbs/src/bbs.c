@@ -2644,9 +2644,9 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
         clrtoeol();
         sprintf(buf, "%s%s%s",
 #ifdef NEWSMTH
-                    " 8)本版精华区搜索"
+                    "8)本版精华区搜索 "
 #endif /* NEWSMTH */
-                    " 9)自删文章"
+                    "9)自删文章"
 #ifdef HAVE_USERSCORE
                     " A)积分变更"
 #endif
