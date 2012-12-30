@@ -1117,18 +1117,7 @@ PHP_FUNCTION(bbs_threads_bmfunc)
 #endif
             if (fp)
                 fclose(fp);
-            char tmp[STRLEN], logtitle[STRLEN];
-            if (strncmp(articles[0].title, "Re: ", 4)==0)
-                strcpy(logtitle, articles[0].title+4);
-            else
-                strcpy(logtitle, articles[0].title);
-            if (strlen(logtitle)>40) {
-                strnzhcpy(tmp, logtitle, 38);
-                strcat(tmp, "..");
-            } else
-                strcpy(tmp, logtitle);
-            sprintf(logtitle, "%s <%s>", "合集", tmp);
-            board_security_report(buf, getCurrentUser(), logtitle, bp->filename, &articles[0]);
+            board_security_report(buf, getCurrentUser(), "合集", bp->filename, &articles[0]);
 #ifdef NEWSMTH
             }
 #endif

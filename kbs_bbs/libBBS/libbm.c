@@ -315,7 +315,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     fprintf(fn, "\033[33m封禁原因: \033[4;32m%s\033[m\n", reason);
     fprintf(fn, "\033[33m封禁天数: \033[4;32m %d 天\033[m\n", day);
     fclose(fn);
-    sprintf(title, "%s %s 在本版的发文权限", mode==0?"取消":"修改", uident);
+    sprintf(title, "%s封禁%s", mode?"修改":"", uident);
 #ifdef RECORD_DENY_FILE
     board_security_report(postfile, operator, title, bh->filename, fh);
 #else
@@ -672,7 +672,17 @@ int board_security_report(const char *filename, struct userec *user, const char 
     else
         memcpy(fh.owner, user -> userid, OWNER_LEN);
     fh.owner[OWNER_LEN - 1] = 0;
-    strnzhcpy(fh.title, title, ARTICLE_TITLE_LEN);
+
+    if (xfh) {
+        if (strlen(xfh->title)>40) {
+            strnzhcpy(buf, xfh->title, 38);
+            strcat(buf, "..");
+        } else
+            strcpy(buf, xfh->title);
+        sprintf(fh.title, "%s <%s>", title, buf);
+    } else
+        strnzhcpy(fh.title, title, ARTICLE_TITLE_LEN);
+
     setbfile(buf, bname, fh.filename);
     if (!(fout = fopen(buf, "w")))
         return 3;

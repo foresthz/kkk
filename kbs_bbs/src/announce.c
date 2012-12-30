@@ -572,20 +572,14 @@ int ent;
                 bmlog(getCurrentUser()->userid, currboard->filename, 12, 1);
 #ifdef BOARD_SECURITY_LOG
             if (ret==0 && !nomsg) { /* 版主b4操作不进行board_security_report */
-                char filename[STRLEN], tmp[STRLEN], title[STRLEN];
+                char filename[STRLEN];
                 FILE *fn;
                 gettmpfilename(filename, "import_post");
                 if ((fn=fopen(filename, "w"))!=NULL) {
                     fprintf(fn, "\033[33m收录精华区目录: \033[4;32m%s\033[m\n", pm.path+17);
                     fclose(fn);
                 }
-                if (strlen(fileinfo->title)>40) {
-                    strnzhcpy(tmp, fileinfo->title, 38);
-                    strcat(tmp, "..");
-                } else
-                    strcpy(tmp, fileinfo->title);
-                sprintf(title, "I收录 <%s>", tmp);
-                board_security_report(filename, getCurrentUser(), title, currboard->filename, fileinfo);
+                board_security_report(filename, getCurrentUser(), "I收录", currboard->filename, fileinfo);
                 unlink(filename);
             }
 #endif

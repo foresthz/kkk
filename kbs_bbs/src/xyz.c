@@ -2140,16 +2140,8 @@ int fhselect(struct _select_def* conf,struct fileheader *fh,long flag)
                 }
                 fclose(fn);
             }
-            if (count) {
-                char tmp[STRLEN], title[STRLEN];
-                if (strlen(fh->title)>40) {
-                    strnzhcpy(tmp, fh->title, 38);
-                    strcat(tmp, "..");
-                } else
-                    strcpy(tmp, fh->title);
-                sprintf(title, "修改参数 <%s>", tmp);
-                board_security_report(buf, getCurrentUser(), title, currboard->filename, fh);
-            }
+            if (count)
+                board_security_report(buf, getCurrentUser(), "修改参数", currboard->filename, fh);
             unlink(buf);
 #endif
             prints("新的参数设定完成...\n\n");
