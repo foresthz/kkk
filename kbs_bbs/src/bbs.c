@@ -1562,7 +1562,7 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     struct read_arg* arg=conf->arg;
     if (fileinfo==NULL) return DONOTHING;
 #ifdef BOARD_SECURITY_LOG
-    if (arg->mode == DIR_MODE_BOARD)
+    if (arg->mode == DIR_MODE_BOARD || arg->mode == DIR_MODE_SCORE)
         return view_security_report_origin(conf, fileinfo, extraarg);
 #endif
 
