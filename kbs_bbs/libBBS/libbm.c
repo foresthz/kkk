@@ -948,7 +948,7 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
     sprintf(buf, "奖励 %s 版 %s 积分 <%s>", bh->filename, user->userid, fh->title);
     score_change_mail(from, from->score_user+score, from->score_user, 0, 0, buf);
 
-    sprintf(buf, "奖励%d用户积分", score);
+    sprintf(buf, "奖励%s %d用户积分", user->userid, score);
     board_score_change_report(from, bh->filename, bh->score-score/5, bh->score, buf, fh);
 
     add_award_record(bh, from, fh, score, 0);
@@ -959,9 +959,15 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
 int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score)
 {
     char buf[STRLEN*2];
+    int insufficient=0, os=score;
 
     if ((int)(bh->score) < score)
         return -1;
+
+    if (user->score_user + score < 0) {
+        score = -user->score_user;
+        insufficient = 1;
+    }
 
     AO_int_fetch_and_add(&(user->score_user), score);
     bcache_setreadonly(0);
@@ -977,6 +983,10 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     gettmpfilename(tmpfile, "award_score");
     if ((fn = fopen(tmpfile, "w"))!=NULL) {
         fprintf(fn, "  版面积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", bh->score+score, bh->score, score<0?"\033[31m↑":"\033[36m↓", abs(score));
+        if (insufficient) {
+            fprintf(fn, "  输入积分: \033[32m%d\033[m\n", os);
+            fprintf(fn, "  扣还积分: \033[31m%d\033[m\n", abs(score));
+        }
         fclose(fn);
     }
     sprintf(buf, "%s%d积分", score>0?"奖励":"扣还", abs(score));
@@ -984,7 +994,7 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     unlink(tmpfile);
 #endif
 
-    sprintf(buf, "%s%d版面积分", score>0?"奖励":"扣还", abs(score));
+    sprintf(buf, "%s%s %d版面积分", score>0?"奖励":"扣还", user->userid, abs(score));
     board_score_change_report(opt, bh->filename, bh->score+score, bh->score, buf, fh);
 
     add_award_record(bh, opt, fh, score, 1);
@@ -1009,12 +1019,12 @@ int add_award_mark(struct boardheader *bh, struct fileheader *fh)
         if (asize<0) {
             if (!added && !strncmp(buf, "发信站: ", 8)) {
                 char *p;
-                if ((p=strstr(buf, "  \033[31m[累计积分奖励:"))!=NULL)
+                if ((p=strstr(buf, "  \033[1;31m[累计积分奖励:"))!=NULL)
                     *p = '\0';
                 else if (buf[strlen(buf)-1] == '\n')
                     buf[strlen(buf)-1] = '\0';
                 score = all_award_score(bh, fh);
-                fprintf(fout, "%s  \033[31m[累计积分奖励: %d]\033[m\n", buf, score);
+                fprintf(fout, "%s  \033[1;31m[累计积分奖励: %d]\033[m\n", buf, score);
                 added = 1;
             } else
                 fputs(buf, fout);

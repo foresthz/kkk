@@ -1631,13 +1631,13 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         move(t_lines - 1, 10);
         prints("%s%s", 
 #ifdef BOARD_SECURITY_LOG
-                isbm?" <\033[31mQ\033[m>查看对本文的操作记录":""
+                isbm?" <\033[1;31mQ\033[m>查看对本文的操作记录":""
 #else
                 ""
 #endif
                 ,
 #ifdef HAVE_USERSCORE
-               " <\033[31mA\033[m>查看对本文的积分奖励记录"
+               " <\033[1;31mA\033[m>查看对本文的积分奖励记录"
 #else
                ""
 #endif

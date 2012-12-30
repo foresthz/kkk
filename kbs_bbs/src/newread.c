@@ -1615,11 +1615,41 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     if (!(getuser(fh->owner, &user)))
         return DONOTHING;
 
-    if (!strcmp(user->userid, "SYSOP") || !strcmp(user->userid, "guest") || !strcmp(user->userid, getCurrentUser()->userid))
+    if (!strcmp(user->userid, "SYSOP") || !strcmp(user->userid, "guest"))
         return DONOTHING;
 
     if (chk_currBM(currboard->BM, getCurrentUser()))
         isbm = 1;
+
+    if (isbm) {
+        int i, b=1;
+        while(1) {
+            move(t_lines - 1, 0);
+            clrtoeol();
+            prints("选择奖励积分类别：%s1.版面 %s2.个人\033[m", b?"\033[32m":"\033[m", b?"\033[m":"\033[32m");
+            i = igetkey();
+            if (i =='1')
+                b = 1;
+            else if (i == '2')
+                b = 0;
+            else if (i == KEY_TAB || i == KEY_RIGHT || i == KEY_LEFT)
+                b = !b;
+            else if (i == '\r')
+                break;
+            else if (i == KEY_ESC) {
+                conf->show_endline(conf);
+                return DONOTHING;
+            } else
+                continue;
+        }
+        isbm = b;
+    }
+
+    if (!isbm && !strcmp(user->userid, getCurrentUser()->userid)) {
+        prompt_return("您不能给自己奖励个人积分", 2, 0);
+        conf->show_endline(conf);
+        return DONOTHING;
+    }
 
     min = isbm?MIN_BOARD_AWARD_SCORE:MIN_USER_AWARD_SCORE;
     max = max_award_score(currboard, getCurrentUser(), fh, isbm);
@@ -1641,19 +1671,20 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     }
     if (isbm) {
         if ((score>0 && score<MIN_BOARD_AWARD_SCORE) || score>max || score<(max-MAX_BOARD_AWARD_SCORE))
-            prompt_return("输入错误", 1, 1);
+            prompt_return("输入错误", 2, 0);
         else if (award_score_from_board(currboard, getCurrentUser(), user, fh, score)==-1)
             prompt_return("版面积分不足", 2, 0);
         else
             done = 1;
     } else {
         if ((score>0 && score<MIN_USER_AWARD_SCORE) || score>max || score<0)
-            prompt_return("输入错误", 1, 1);
+            prompt_return("输入错误", 2, 0);
         else if (award_score_from_user(currboard, getCurrentUser(), user, fh, score)==-1)
             prompt_return("个人积分不足", 2, 0);
         else
             done = 1;
     }
+    prompt_return("操作成功", 0, 1);
     if (done && add_award_mark(currboard, fh) && fh->attachment) {  /* 更新带附件帖子的attachment */
         unsigned int attachpos;
 
