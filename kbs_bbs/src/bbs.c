@@ -1541,6 +1541,14 @@ int view_security_report_origin(struct _select_def *conf, struct fileheader *fh,
         setbdir(arg->newmode, arg->direct, arg->board->filename);
         return NEWDIRECT;
     } else {
+        int isbm;
+#ifdef NEWSMTH
+        isbm = check_board_delete_read_perm(getCurrentUser(), currboard, 0);
+#else
+        isbm = chk_currBM(currboard->BM, getCurrentUser());
+#endif
+        if (!isbm)
+            return DONOTHING;
         ent = get_report_deleted_ent(fh, arg->board);
         if (ent>0) {
             savePos(DIR_MODE_DELETED, NULL, ent, arg->board);
