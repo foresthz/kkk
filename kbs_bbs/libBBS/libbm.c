@@ -846,6 +846,53 @@ int board_score_change_report(struct userec *user, const char *bname, int os, in
     return 0;
 }
 
+#ifdef NEWSMTH
+#define AWARD_TYPE_BOARD 1
+#define AWARD_TYPE_USER  2
+/* 积分奖励系统记录 */
+int score_award_report(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score, int mode)
+{
+    char file[STRLEN], title[STRLEN];
+    FILE *fn;
+    time_t t;
+
+    gettmpfilename(file, "score_award_report");
+    if ((fn=fopen(file, "w"))!=NULL) {
+        fprintf(fn, "\033[36m积分奖励记录\033[m\n");
+        fprintf(fn, "\033[33m来源版面: \033[32m%s\n", bh->filename);
+        fprintf(fn, "\033[33m奖励类型: \033[32m%s%s\n", (mode==AWARD_TYPE_BOARD)?"版面":"个人", score>0?"奖励":"扣还");
+        fprintf(fn, "\033[33m版面积分: \033[33m%-8d\033[m -> \033[32m%8d\t\t%s%d\033[m\n", (mode==AWARD_TYPE_BOARD)?bh->score+score:bh->score-score/5,
+                bh->score, (score<0||mode==AWARD_TYPE_USER)?"\033[31m↑":"\033[36m↓", (mode==AWARD_TYPE_BOARD)?abs(score):score/5);
+
+        fprintf(fn, "\n\033[36m奖励者基本信息\033[m\n");
+        fprintf(fn, "\033[33m操作用户: \033[32m%s\n", opt->userid);
+        fprintf(fn, "\033[33m登录地址: \033[32m%s\n", opt->lasthost);
+        if (mode==AWARD_TYPE_USER)
+            fprintf(fn, "\033[33m积分变动: \033[33m%-8d\033[m -> \033[32m%8d\t\t%s%d\033[m\n", opt->score_user+score, opt->score_user, "\033[36m↓", score);
+
+        fprintf(fn, "\n\033[36m被奖励者基本信息\033[m\n");
+        fprintf(fn, "\033[33m操作用户: \033[32m%s\n", user->userid);
+        fprintf(fn, "\033[33m登录地址: \033[32m%s\n", user->lasthost);
+        fprintf(fn, "\033[33m积分变动: \033[33m%-8d\033[m -> \033[32m%8d\t\t%s%d\033[m\n", (mode==AWARD_TYPE_BOARD)?user->score_user-score:user->score_user-score*4/5,
+                user->score_user, (score>0)?"\033[31m↑":"\033[36m↓", (mode==AWARD_TYPE_BOARD)?abs(score):score*4/5);
+
+        t=get_posttime(fh);
+        fprintf(fn, "\n\033[36m本次操作对应文章信息\033[m\n");
+        fprintf(fn, "\033[33m文章标题: \033[4;32m%s\033[m\n", fh->title);
+        fprintf(fn, "\033[33m文章ID号: \033[4;32m%d\033[m\n", fh->id);
+        fprintf(fn, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime(&t));
+
+        fclose(fn);
+
+        sprintf(title, "[%s%s][%s][%d][%s]", (mode==AWARD_TYPE_BOARD)?"版面":"个人", score>0?"奖励":"扣还", bh->filename, abs(score), user->userid);
+        post_file(opt, "", file, "ScoreAwardLog", title, 0, 2, getSession());
+        unlink(file);
+    }
+    return 0;
+}
+
+#endif
+
 /* 获取文章对应的积分奖励记录文件 */
 void setsfile(char *file, struct boardheader *bh, struct fileheader *fh)
 {
@@ -952,6 +999,10 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
     board_score_change_report(from, bh->filename, bh->score-score/5, bh->score, buf, fh);
 
     add_award_record(bh, from, fh, score, 0);
+
+#ifdef NEWSMTH
+    score_award_report(bh, from, user, fh, score, AWARD_TYPE_USER);
+#endif
     return 0;
 }
 
@@ -982,7 +1033,7 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     FILE *fn;
     gettmpfilename(tmpfile, "award_score");
     if ((fn = fopen(tmpfile, "w"))!=NULL) {
-        fprintf(fn, "  版面积分: \033[33m%8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", bh->score+score, bh->score, score<0?"\033[31m↑":"\033[36m↓", abs(score));
+        fprintf(fn, "\033[33m版面积分: %8d\033[m -> \033[32m%-8d\t\t%s%d\033[m\n", bh->score+score, bh->score, score<0?"\033[31m↑":"\033[36m↓", abs(score));
         if (insufficient) {
             fprintf(fn, "  输入积分: \033[32m%d\033[m\n", os);
             fprintf(fn, "  扣还积分: \033[31m%d\033[m\n", abs(score));
@@ -998,6 +1049,9 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     board_score_change_report(opt, bh->filename, bh->score+score, bh->score, buf, fh);
 
     add_award_record(bh, opt, fh, score, 1);
+#ifdef NEWSMTH
+    score_award_report(bh, opt, user, fh, score, AWARD_TYPE_BOARD);
+#endif
     return 0;
 }
 

@@ -1684,7 +1684,8 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
         else
             done = 1;
     }
-    prompt_return("操作成功", 0, 1);
+    if (done)
+        prompt_return("操作成功", 0, 1);
     if (done && add_award_mark(currboard, fh) && fh->attachment) {  /* 更新带附件帖子的attachment */
         unsigned int attachpos;
 
