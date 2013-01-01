@@ -632,7 +632,9 @@ PHP_FUNCTION(bbs_createnewid)
         RETURN_LONG(10);
     }
 
-#if defined(SMTH) || defined(ZIXIA)
+#ifdef NEWSMTH
+    mail_file("SYSOP","etc/tonewuser",userid,"致新注册用户的信",0,NULL);
+#elif defined(ZIXIA)
     mail_file(DELIVER,"etc/tonewuser",userid,"致新注册用户的信",0,NULL);
 #endif
 
