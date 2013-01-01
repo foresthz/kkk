@@ -1642,7 +1642,7 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
                 b = 0;
             else if (i == KEY_TAB || i == KEY_RIGHT || i == KEY_LEFT)
                 b = !b;
-            else if (i == '\r')
+            else if (i=='\n' || i == '\r')
                 break;
             else if (i == KEY_ESC) {
                 conf->show_endline(conf);
