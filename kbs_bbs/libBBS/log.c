@@ -349,7 +349,13 @@ void newpostlog(const char *userid, const char *boardname, const char *title, in
     ppostlog->articleid = id;
     strncpy(ppostlog->title, title, 80);
     ppostlog->title[80]='\0';
-
+#ifdef NEWSMTH
+    ppostlog->ip[0] = 0;
+    if (getSession()->fromhost[0]) {
+        strncpy(ppostlog->ip, getSession()->fromhost, 16);
+        ppostlog->ip[16] = 0;
+    }
+#endif
     msgsnd(logmsqid, msg, sizeof(struct _new_postlog) + ((char *) msg->mtext - (char *) msg) - sizeof(msg->mtype) + 1, IPC_NOWAIT | MSG_NOERROR);
 }
 #endif

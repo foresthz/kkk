@@ -182,7 +182,11 @@ static void writelog(struct bbs_msgbuf *msg)
 
 		mysql_escape_string(newtitle, ppl->title, strlen(ppl->title));
 
+#ifdef NEWSMTH
+		sprintf(sqlbuf, "INSERT INTO postlog (`id`, `userid`, `bname`, `title`, `time`, `threadid`, `articleid`, `ip`) VALUES (NULL, '%s', '%s', '%s', '%s', '%d', '%d', '%s');", msg->userid, ppl->boardname, newtitle, tt2timestamp(msg->msgtime, newts), ppl->threadid, ppl->articleid, ppl->ip );
+#else
 		sprintf(sqlbuf, "INSERT INTO postlog (`id`, `userid`, `bname`, `title`, `time`, `threadid`, `articleid`) VALUES (NULL, '%s', '%s', '%s', '%s', '%d', '%d');", msg->userid, ppl->boardname, newtitle, tt2timestamp(msg->msgtime, newts), ppl->threadid, ppl->articleid );
+#endif
 
 		if( mysql_real_query( &s, sqlbuf, strlen(sqlbuf) )){
 			mysql_fail ++;

@@ -345,6 +345,9 @@ struct _new_postlog {
     char title[81];
     int threadid;
     int articleid;
+#ifdef NEWSMTH
+    char ip[16];
+#endif
 };
 #endif
 
