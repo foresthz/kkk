@@ -1611,6 +1611,14 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     char buf[STRLEN];
     static char str[8]="100";
     int min, max, score, isbm=0, done=0;
+    struct read_arg* arg=conf->arg;
+
+    if (arg->mode==DIR_MODE_DELETED || arg->mode==DIR_MODE_JUNK || arg->mode==DIR_MODE_SCORE || arg->mode==DIR_MODE_UNKNOWN
+#ifdef BOARD_SECURITY_LOG
+            || arg->mode==DIR_MODE_BOARD
+#endif
+       )
+        return DONOTHING;
 
     if (!(getuser(fh->owner, &user)))
         return DONOTHING;
