@@ -255,6 +255,7 @@ extern "C"
     char* strnzhcpy(char *dest, const char *src, size_t n);
     void trimstr(char*);
     void securityreport(char *str, struct userec *lookupuser, char fdata[9][STRLEN], session_t *session);
+    void new_security_report(const char *filename, struct userec *user, const char *title, session_t *session);
     int remove_blank_ctrlchar(const char *src, char *des, bool head, bool end, bool cc);
 
     /* xyz.c */
@@ -767,6 +768,7 @@ while(0)
 #ifdef FB2KPC
     int fb2kpc_is_owner(char *path);
 #endif
+    int ann_security_report(const char *filename, struct userec *user, const char *title);
     unsigned int check_ann(const struct boardheader* bh);
     int ann_get_board(char *path, char *board, size_t len);
     int ann_get_path(char *board, char *path, size_t len);
