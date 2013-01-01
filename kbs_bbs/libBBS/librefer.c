@@ -200,14 +200,14 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
     for (i=0;i<MAX_BOARD_REFER;i++) {
         if (boards[i]<=0)
             break;
-        to_board=getboard(boards[i]);
+        to_board=(struct boardheader *)getboard(boards[i]);
         if (NULL!=to_board)
             send_refer_msg_to_board(to_board, board, fh, tmpfile);
     }
 	for (i=0;i<MAX_BOARD_REFER;i++) {
 		if (clubs[i]<=0)
 			break;
-		to_board=getboard(clubs[i]);
+		to_board=(struct boardheader *)getboard(clubs[i]);
 		if (NULL!=to_board)
 			send_refer_msg_to_club(to_board, board, fh, tmpfile);
 	}
