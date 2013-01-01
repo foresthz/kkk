@@ -230,7 +230,7 @@ int dynamic_acl_clear()
 	return 0;
 }
 
-unsigned long dynamic_acl_ip2long(char *ip)
+unsigned long dynamic_acl_ip2long(const char *ip)
 {
 	unsigned long int addr;
 	int len=sizeof(ip);
