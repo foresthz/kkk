@@ -1042,9 +1042,56 @@ int set_board_member_flag(struct board_member *member) {
 	}
 	
     update_board_member_manager_file(board);
-        
+
+#ifdef NEWSMTH
+	set_member_manager_level(member->user);
+#endif
+	
     return 0;
 }
+
+#ifdef NEWSMTH
+int set_member_manager_level(char *user_id) {
+	MYSQL s;
+	char my_user_id[STRLEN];
+	char sql[512];
+	struct userec *user;
+	int count;
+	
+	if (!getuser(user_id, &user))
+		return -1;
+	
+	if (! my_connect_mysql(&s)) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        return -2;
+    }
+	
+	my_user_id[0]=0;
+	mysql_escape_string(my_user_id, user->userid, strlen(user->userid));
+	sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `user`='%s' AND `status`=%d", my_user_id, BOARD_MEMBER_STATUS_MANAGER);
+	if (mysql_real_query(&s, sql, strlen(sql))) {
+        bbslog("3system", "mysql error: %s", mysql_error(&s));
+        mysql_close(&s);
+        return -3;
+    }
+	res = mysql_store_result(&s);
+	row = mysql_fetch_row(res);
+	count=0;
+	if (row != NULL)
+		count=atoi(row[0]);
+	mysql_free_result(res);
+	mysql_close(&s);
+
+	if (HAS_PERM(user,PERM_MEMBER_MANAGER) && count <= 0)
+		user->userlevel &= ~PERM_MEMBER_MANAGER;
+	else if (!HAS_PERM(user,PERM_MEMBER_MANAGER) && count > 0)
+		user->userlevel |= PERM_MEMBER_MANAGER;
+	else
+		return 0;
+
+	return 0;
+}
+#endif
 
 int update_board_member_manager_file(const struct boardheader *board) {
     struct stat st;

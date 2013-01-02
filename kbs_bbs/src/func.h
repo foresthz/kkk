@@ -886,6 +886,9 @@ while(0)
     int create_board_member_title(const char *board_name, char *name, int serial);
     int remove_board_member_title(struct board_member_title *title);
     int modify_board_member_title(struct board_member_title *title);
+#ifdef NEWSMTH
+    int set_member_manager_level(char *user_id);
+#endif	
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef HAVE_USERSCORE
