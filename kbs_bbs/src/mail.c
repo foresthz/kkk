@@ -4410,6 +4410,7 @@ struct key_command refer_comms[]={
     {'s', (READ_KEY_FUNC)refer_board, NULL},
     {'d', (READ_KEY_FUNC)refer_del, NULL},
     {'f', (READ_KEY_FUNC)refer_set_read, NULL},
+    {',', (READ_KEY_FUNC)read_splitscreen,NULL},
     {'a', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_NEXT},    
     {'A', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_PREV},    
     {'/', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_TITLE_SEARCH_NEXT},    

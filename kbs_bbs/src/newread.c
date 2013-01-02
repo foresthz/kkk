@@ -518,6 +518,41 @@ static int read_title(struct _select_def *conf)
     return SHOW_CONTINUE;
 }
 
+int get_refer_fileheader(struct refer *r, int ent, struct fileheader *fh)
+{
+    struct boardheader *board;
+    char buf[STRLEN];
+    int fd, ret, num;
+
+    board=(struct boardheader *)getbcache(r->board);
+    if (0==board||board->flag&BOARD_GROUP||!check_read_perm(getCurrentUser(), board))
+        return -1;
+
+    setbdir(DIR_MODE_NORMAL, buf, board->filename);
+    if ((fd=open(buf, O_RDWR, 0644))<0)
+        return -2;
+
+    ret=get_records_from_id(fd, r->id, fh, 1, &num);
+    close(fd);
+    if (ret==0)
+        return -3;
+
+    return 0;
+}
+
+int read_showcontent_error(struct _select_def *conf)
+{
+    int i;
+
+    move(BBS_PAGESIZE / 2+3, 0);
+    prints("\x1b[31;44m打开文件错误！\033[K\033[m");
+    for (i=BBS_PAGESIZE/2+4;i<t_lines-1;i++) {
+        move(i, 0);
+        clrtoeol();
+    }
+    return SHOW_CONTINUE;
+}
+
 extern int draw_content(char *fn, struct fileheader *fh);
 static int read_showcontent(struct _select_def* conf,int newpos)
 {
@@ -533,8 +568,25 @@ static int read_showcontent(struct _select_def* conf,int newpos)
     else if (newpos > conf->item_count) newpos = 1;
 
     if ((newpos-conf->page_pos)>=0&&(newpos-conf->page_pos<conf->item_per_page)) {
+#ifdef ENABLE_REFER
+        if (arg->mode == DIR_MODE_REFER) {
+            struct refer *r;
+            h = (struct fileheader *)malloc(sizeof(struct fileheader));
+            r = (struct refer *)(arg->data+(newpos-conf->page_pos) * arg->ssize);
+            if (get_refer_fileheader(r, newpos, h)<0)
+                return read_showcontent_error(conf);
+            setbfile(genbuf, r->board, h->filename);
+            if (!dashf(genbuf))
+                return read_showcontent_error(conf);
+            draw_content(genbuf, h);
+            outs("\x1b[m");
+            return SHOW_CONTINUE;
+        }
+#endif
         h = (struct fileheader*)(arg->data+(newpos-conf->page_pos) * arg->ssize);
         sprintf(genbuf, "%s/%s", buf, h->filename);
+        if (!dashf(genbuf))
+            return read_showcontent_error(conf);
         draw_content(genbuf,h);
         outs("\x1b[m");
     }
