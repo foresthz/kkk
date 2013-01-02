@@ -1053,6 +1053,8 @@ int set_board_member_flag(struct board_member *member) {
 #ifdef NEWSMTH
 int set_member_manager_level(char *user_id) {
 	MYSQL s;
+	MYSQL_RES *res;
+	MYSQL_ROW row;
 	char my_user_id[STRLEN];
 	char sql[512];
 	struct userec *user;
@@ -1060,7 +1062,8 @@ int set_member_manager_level(char *user_id) {
 	
 	if (!getuser(user_id, &user))
 		return -1;
-	
+		
+	mysql_init(&s);
 	if (! my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -2;
