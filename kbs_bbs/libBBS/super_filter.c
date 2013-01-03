@@ -141,6 +141,10 @@ static int sffn_import(struct super_filter_args *arg)
 {
     return (arg->ptr->accessed[0]&FILE_IMPORTED);
 }
+static int sffn_total(struct super_filter_args *arg)
+{
+    return (arg->ptr->accessed[0]&FILE_TOTAL);
+}
 static int sffn_replied(struct super_filter_args *arg)
 {
     return (arg->ptr->accessed[0]&FILE_REPLIED);
@@ -236,7 +240,8 @@ const static struct super_filter_vars varnames[] = {
     SUPER_FILTER_BM_PAIR(censor),   {"审核", 1, sffn_censor, NULL},
 #endif
     SUPER_FILTER_BM_PAIR(del),      {"删除", 1, sffn_del, NULL},
-    SUPER_FILTER_BM_PAIR(import),   {"精华", 1, sffn_import, NULL}
+    SUPER_FILTER_BM_PAIR(import),   {"精华", 1, sffn_import, NULL},
+    SUPER_FILTER_BM_PAIR(total),    {"合集", 1, sffn_total, NULL}
 };
 
 #define NUM_VARNAMES  sizeof(varnames) / sizeof(struct super_filter_vars)
