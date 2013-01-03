@@ -1678,6 +1678,12 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     if (!strcmp(user->userid, "SYSOP") || !strcmp(user->userid, "guest"))
         return DONOTHING;
 
+    if (!can_award_score(user, 1)) {
+        prompt_return("您不能给该用户奖励积分", 2, 0);
+        conf->show_endline(conf);
+        return DONOTHING;
+    }
+
     if (chk_currBM(currboard->BM, getCurrentUser()))
         isbm = 1;
 
@@ -1707,6 +1713,12 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
 
     if (!isbm && !strcmp(user->userid, getCurrentUser()->userid)) {
         prompt_return("您不能给自己奖励个人积分", 2, 0);
+        conf->show_endline(conf);
+        return DONOTHING;
+    }
+
+    if (!can_award_score(user, isbm)) {
+        prompt_return("您不能给该用户奖励个人积分", 2, 0);
         conf->show_endline(conf);
         return DONOTHING;
     }

@@ -973,6 +973,17 @@ int add_award_record(struct boardheader *bh, struct userec *opt, struct filehead
     return 0;
 }
 
+/* 检查能否发积分 */
+int can_award_score(struct userec *user, int bm)
+{
+    unsigned int lvl=user->userlevel;
+    if (!(lvl & (PERM_CHAT)) && !(lvl & (PERM_PAGE)) && !(lvl & (PERM_POST)) && !(lvl &(PERM_LOGINOK)))
+        return 0;
+    if (user->score_user<2000 && !bm)
+        return 0;
+    return 1;
+}
+
 void bcache_setreadonly(int readonly);
 
 /* 奖励用户个人积分 */
