@@ -893,7 +893,7 @@ while(0)
 
 #ifdef HAVE_USERSCORE
     /* 积分奖励相关 */
-    void setsfile(char *file, struct boardheader *bh, struct fileheader *fh);
+    void setsfile(char *file, char *board, char *filename);
     int award_score_from_user(struct boardheader *bh, struct userec *from, struct userec *user, struct fileheader *fh, int score);
     int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score);
     int view_score_award_record(struct boardheader *bh, struct fileheader *fh);

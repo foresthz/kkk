@@ -894,13 +894,13 @@ int score_award_report(struct boardheader *bh, struct userec *opt, struct userec
 #endif
 
 /* 获取文章对应的积分奖励记录文件 */
-void setsfile(char *file, struct boardheader *bh, struct fileheader *fh)
+void setsfile(char *file, char *board, char *filename)
 {
     char buf[STRLEN];
 
-    strcpy(buf, fh->filename);
+    strcpy(buf, filename);
     POSTFILE_BASENAME(buf)[0]='A';
-    setbfile(file, bh->filename, buf);
+    setbfile(file, board, buf);
 }
 
 /* 查询符合条件的积分奖励记录，使用apply_record回调 */
@@ -929,7 +929,7 @@ int max_award_score(struct boardheader *bh, struct userec *user, struct filehead
     strcpy(sa.userid, user->userid);
     sa.bm = bm;
 
-    setsfile(file, bh, fh);
+    setsfile(file, bh->filename, fh->filename);
     apply_record(file, (APPLY_FUNC_ARG)get_award_score, sizeof(struct score_award_arg), &sa, 0, 0);
     max = max - sa.score;
 
@@ -955,7 +955,7 @@ int all_award_score(struct boardheader *bh, struct fileheader *fh, int bm)
 
     bzero(&sa, sizeof(struct score_award_arg));
     sa.bm = bm;
-    setsfile(file, bh, fh);
+    setsfile(file, bh->filename, fh->filename);
     apply_record(file, (APPLY_FUNC_ARG)get_all_award_score, sizeof(struct score_award_arg), &sa, 0, 0);
 
     return sa.score;
@@ -968,7 +968,7 @@ int add_award_record(struct boardheader *bh, struct userec *opt, struct filehead
     char file[STRLEN];
 
     bzero(&sa, sizeof(struct score_award_arg));
-    setsfile(file, bh, fh);
+    setsfile(file, bh->filename, fh->filename);
     strcpy(sa.userid, opt->userid);
     sa.score = score;
     sa.t = time(0);

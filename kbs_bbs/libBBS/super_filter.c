@@ -203,6 +203,16 @@ static int sffn_asize(struct super_filter_args *arg)
     return (stat(ffn, &st)!=-1) ? st.st_size : 0;
 }
 
+#ifdef HAVE_USERSCORE
+static int sffn_award(struct super_filter_args *arg)
+{
+    char sfile[PATHLEN];
+    
+    setsfile(sfile, arg->boardname, arg->ptr->filename);
+    return (dashf(sfile));
+}
+#endif
+
 const static struct super_filter_vars varnames[] = {
     SUPER_FILTER_PAIR(cid),
     SUPER_FILTER_PAIR(creid),
@@ -225,6 +235,9 @@ const static struct super_filter_vars varnames[] = {
     SUPER_FILTER_PAIR(ftime),       {"时间", 0, sffn_ftime, NULL},
     SUPER_FILTER_PAIR(effsize),     {"有效长度", 0, sffn_effsize, NULL},
     SUPER_FILTER_PAIR(asize),       {"总长度", 0, sffn_asize, NULL},
+#ifdef HAVE_USERSCORE
+    SUPER_FILTER_PAIR(award),       {"奖励", 0, sffn_award, NULL},
+#endif
 
     /* 开放 noreply 搜索 - atppp 20060117 */
     SUPER_FILTER_PAIR(noreply),     {"不可回复", 0, sffn_noreply, NULL},

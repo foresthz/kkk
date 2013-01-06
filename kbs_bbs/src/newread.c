@@ -1595,7 +1595,7 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
     struct score_award_arg *sa;
     struct tm *t;
 
-    setsfile(file, bh, fh);
+    setsfile(file, bh->filename, fh->filename);
     if ((count=get_num_records(file, sizeof(struct score_award_arg)))<=0)
         return prompt_return("本文无积分奖励记录", 1, 1);
 
