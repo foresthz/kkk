@@ -939,17 +939,22 @@ int max_award_score(struct boardheader *bh, struct userec *user, struct filehead
 /* 查询积分奖励总数，使用apply_record回调 */
 int get_all_award_score(struct score_award_arg *pa, int idx, struct score_award_arg *sa)
 {
-    sa->score += pa->score;
+    if (sa->bm) {
+        if (pa->bm)
+            sa->score += pa->score;
+    } else
+        sa->score += pa->score;
     return 0;
 }
 
 /* 获得积分奖励总数 */
-int all_award_score(struct boardheader *bh, struct fileheader *fh)
+int all_award_score(struct boardheader *bh, struct fileheader *fh, int bm)
 {
     struct score_award_arg sa;
     char file[STRLEN];
 
     bzero(&sa, sizeof(struct score_award_arg));
+    sa.bm = bm;
     setsfile(file, bh, fh);
     apply_record(file, (APPLY_FUNC_ARG)get_all_award_score, sizeof(struct score_award_arg), &sa, 0, 0);
 
@@ -1070,7 +1075,7 @@ int add_award_mark(struct boardheader *bh, struct fileheader *fh)
 {
     FILE *fin, *fout;
     char buf[256], fname[STRLEN], outfile[STRLEN];
-    int score, asize, added=0;
+    int score, bscore, asize, added=0;
 
     setbfile(fname, bh->filename, fh->filename);
     if ((fin = fopen(fname, "rb")) == NULL)
@@ -1088,8 +1093,9 @@ int add_award_mark(struct boardheader *bh, struct fileheader *fh)
                     *p = '\0';
                 else if (buf[strlen(buf)-1] == '\n')
                     buf[strlen(buf)-1] = '\0';
-                score = all_award_score(bh, fh);
-                fprintf(fout, "%s  \033[1;31m[累计积分奖励: %d]\033[m\n", buf, score);
+                score = all_award_score(bh, fh, 0);
+                bscore = all_award_score(bh, fh, 1);
+                fprintf(fout, "%s  \033[1;31m[累计积分奖励: %d/%d]\033[m\n", buf, bscore, score-bscore);
                 added = 1;
             } else
                 fputs(buf, fout);

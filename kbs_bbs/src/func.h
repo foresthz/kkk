@@ -898,7 +898,7 @@ while(0)
     int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score);
     int view_score_award_record(struct boardheader *bh, struct fileheader *fh);
     int max_award_score(struct boardheader *bh, struct userec *user, struct fileheader *fh, int bm);
-    int all_award_score(struct boardheader *bh, struct fileheader *fh);
+    int all_award_score(struct boardheader *bh, struct fileheader *fh, int bm);
     int add_award_mark(struct boardheader *bh, struct fileheader *fh);
     int board_score_change_report(struct userec *user, const char *bname, int os, int ns, char *title, struct fileheader *xfh);
 #ifdef NEWSMTH

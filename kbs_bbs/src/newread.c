@@ -1591,7 +1591,7 @@ int read_callfunc0(struct _select_def* conf, void* data, void* extraarg)
 int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
 {
     char file[STRLEN], buf[128];
-    int i, isbm, ch, score, count, page=0;
+    int i, isbm, ch, score, bscore, count, page=0;
     struct score_award_arg *sa;
     struct tm *t;
 
@@ -1603,7 +1603,8 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
     sa = (struct score_award_arg *)malloc(count * (sizeof(struct score_award_arg)));
     get_records(file, sa, sizeof(struct score_award_arg), 1, count);
 
-    score=all_award_score(bh, fh);
+    score=all_award_score(bh, fh, 0);
+    bscore=all_award_score(bh, fh, 1);
     clear();
     move(0, 0);
     if (strlen(fh->title)>40) {
@@ -1611,7 +1612,7 @@ int view_score_award_record(struct boardheader *bh, struct fileheader *fh)
         strcat(buf, "..");
     } else
         strcpy(buf, fh->title);
-    prints("\033[44m文章 <\033[33m%s\033[0;44m> 的积分奖励记录 [\033[33m累计: \033[31m%d\033[37m]\033[K\033[m\n", buf, score);
+    prints("\033[44m文章 <\033[33m%s\033[0;44m> 的积分奖励记录 [\033[33m累计: \033[31m%d/%d\033[37m]\033[K\033[m\n", buf, bscore, score-bscore);
     prints(" 作者:\033[32m%-12s\033[m\t发表时间:\033[32m%s\033[m\n", fh->owner, Ctime(fh->posttime));
     prints("\033[44m 编号  用户ID         积分  来源      时间                    %s\033[K\033[m\n", isbm?"用户:版面":"");
     while(toupper(ch)!='Q' && toupper(ch)!='E' && ch!=KEY_LEFT) {

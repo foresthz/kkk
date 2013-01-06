@@ -284,6 +284,11 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
         return -4;
 #endif
 
+#ifdef HAVE_USERSCORE
+    if (mode == DIR_MODE_SCORE)
+        return -4;
+#endif
+
     if (checkreadonly(bh->filename))      /* Leeward 98.03.28 */
         return -5;
 

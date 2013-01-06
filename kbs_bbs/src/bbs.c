@@ -1569,7 +1569,7 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     struct board_attach_link_info bali;
     struct read_arg* arg=conf->arg;
     if (fileinfo==NULL) return DONOTHING;
-#ifdef BOARD_SECURITY_LOG
+#if defined(BOARD_SECURITY_LOG) || defined(HAVE_USERSCORE)
     if (arg->mode == DIR_MODE_BOARD || arg->mode == DIR_MODE_SCORE)
         return view_security_report_origin(conf, fileinfo, extraarg);
 #endif
@@ -4524,6 +4524,9 @@ int noreply_post(struct _select_def* conf,struct fileheader *fileinfo,void* extr
 #ifdef BOARD_SECURITY_LOG
             || arg->mode == DIR_MODE_BOARD
 #endif
+#ifdef HAVE_USERSCORE
+            || arg->mode == DIR_MODE_SCORE
+#endif
             )
         return DONOTHING;
 
@@ -4736,6 +4739,9 @@ int del_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 #ifdef BOARD_SECURITY_LOG
             || arg->mode == DIR_MODE_BOARD
 #endif
+#ifdef HAVE_USERSCORE
+            || arg->mode == DIR_MODE_SCORE
+#endif
             )
         return DONOTHING;
 
@@ -4815,6 +4821,10 @@ int Save_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
             return DONOTHING;
 #ifdef BOARD_SECURITY_LOG
     if (arg->mode == DIR_MODE_BOARD)
+        return DONOTHING;
+#endif
+#ifdef HAVE_USERSCORE
+    if (arg->mode == DIR_MODE_SCORE)
         return DONOTHING;
 #endif
     sprintf(filepath, "tmp/bm.%s", getCurrentUser()->userid);
@@ -4907,6 +4917,10 @@ int Import_post(struct _select_def* conf,struct fileheader *fileinfo,void* extra
     int ret=FULLUPDATE;
 #ifdef BOARD_SECURITY_LOG
     if (arg->mode == DIR_MODE_BOARD)
+        return DONOTHING;
+#endif
+#ifdef HAVE_USERSCORE
+    if (arg->mode == DIR_MODE_SCORE)
         return DONOTHING;
 #endif
     if (!HAS_PERM(getCurrentUser(), PERM_SYSOP))
