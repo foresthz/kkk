@@ -2864,6 +2864,10 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
         /* 版面安全记录区不允许操作 */
             || currmode == DIR_MODE_BOARD
 #endif
+#ifdef HAVE_USERSCORE
+        /* 版面积分变更记录区不允许操作 */
+            || currmode == DIR_MODE_SCORE
+#endif
             )
         /*
          * 在删除区，自删区不能做操作
