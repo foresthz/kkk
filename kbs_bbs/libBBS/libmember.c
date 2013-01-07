@@ -279,16 +279,16 @@ int get_user_max_member_boards(const struct userec *user)
     char buf[STRLEN];
     
 #if defined(NEWSMTH) && !defined(SECONDSITE)
-    level=uvaluetochar(buf, (struct userec *)user);  
+    level=uvaluetochar(buf, (struct userec *)user)*4;  
     user_max=(level>MEMBER_USER_MAX_DEFAULT)?level:MEMBER_USER_MAX_DEFAULT;
 #else
     user_max=MEMBER_USER_MAX_DEFAULT;        
 #endif    
 
     if (HAS_PERM(user, PERM_SYSOP))
-        user_max += 6;
+        user_max += 20;
     else if (HAS_PERM(user, PERM_BMAMANGER))
-        user_max += 3;
+        user_max += 10;
     else
         ;
         

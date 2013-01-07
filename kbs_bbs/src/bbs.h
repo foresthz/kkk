@@ -302,7 +302,7 @@ extern long ti;
 #define BMP_MODIFY                     0x0800  // 修改文章
 #define BMP_CLUB                       0x01000 // 俱乐部管理
 #define MEMBER_BOARD_MAX_DEFAULT       300
-#define MEMBER_USER_MAX_DEFAULT        6
+#define MEMBER_USER_MAX_DEFAULT        12
 #define BOARD_MEMBER_SORT_DEFAULT	   0
 #define BOARD_MEMBER_SORT_TIME_ASC	   0
 #define BOARD_MEMBER_SORT_TIME_DESC	   1
