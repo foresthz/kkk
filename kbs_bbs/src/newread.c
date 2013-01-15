@@ -1676,6 +1676,9 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     if (!(getuser(fh->owner, &user)))
         return DONOTHING;
 
+    if (!strcmp(getCurrentUser()->userid, "guest"))
+        return DONOTHING;
+
     if (!strcmp(user->userid, "SYSOP") || !strcmp(user->userid, "guest"))
         return DONOTHING;
 
