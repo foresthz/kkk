@@ -972,6 +972,8 @@ static int b_member_key(struct _select_def *conf, int key) {
                 return SHOW_CONTINUE;
             if (b_members[conf->pos-conf->page_pos].status!=BOARD_MEMBER_STATUS_NORMAL&&b_members[conf->pos-conf->page_pos].status!=BOARD_MEMBER_STATUS_MANAGER)
                 return SHOW_CONTINUE;
+			if (!valid_core_member(b_members[conf->pos-conf->page_pos].user))
+				return SHOW_CONTINUE;
             b_member_set_flag(&b_members[conf->pos-conf->page_pos]);
             return SHOW_DIRCHANGE;
         case 'b':
