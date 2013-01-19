@@ -481,6 +481,7 @@ while(0)
     int is_top(struct fileheader *fh, const char *boardname);
     /*推荐文章*/
     int post_commend(struct userec *user, const char *fromboard, struct fileheader *fileinfo);
+    int post_events(struct userec *user, const char *fromboard, struct fileheader *fileinfo);
 
     /* Search_Bin
      * 功能：依据key, 对ptr传入的.DIR索引进行二分查找
@@ -889,7 +890,7 @@ while(0)
 #ifdef NEWSMTH
     int set_member_manager_level(char *user_id);
 #endif	
-    int valid_core_member(char *user_id);
+    int valid_core_member(const char *user_id);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef HAVE_USERSCORE

@@ -1979,7 +1979,7 @@ int modify_board_member_title(struct board_member_title *title) {
 	return 0;
 }
 	
-int valid_core_member(char *user_id)
+int valid_core_member(const char *user_id)
 {
 	struct userec *user;
 	
