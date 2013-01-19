@@ -889,6 +889,7 @@ while(0)
 #ifdef NEWSMTH
     int set_member_manager_level(char *user_id);
 #endif	
+    int valid_core_member(char *user_id);
 #endif /* ENABLE_BOARD_MEMBER */
 
 #ifdef HAVE_USERSCORE

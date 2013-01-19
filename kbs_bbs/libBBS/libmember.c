@@ -31,7 +31,9 @@ int check_board_member_manager(struct board_member_status *status, const struct 
         return 0;
     if (chk_currBM(board->BM, getSession()->currentuser))
         return 1;
-    
+    if (!valid_core_member(getSession()->currentuser->userid))
+		return 0;
+		
     int bid, flag;
     struct board_member member;
     time_t now;
@@ -549,6 +551,17 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     mysql_free_result(res);
 
     mysql_close(&s);
+	
+	if (!valid_core_member(user_id)) {
+		if (BOARD_MEMBER_STATUS_MANAGER==status)
+			status=BOARD_MEMBER_STATUS_NORMAL;
+		if (NULL!=member) {
+			if (BOARD_MEMBER_STATUS_MANAGER==member->status)
+				member->status=BOARD_MEMBER_STATUS_NORMAL;
+			member->flag=0;
+		}
+	}
+	
     return status;
 }
 
@@ -639,6 +652,12 @@ int load_board_members(const char *board, struct board_member *member, int sort,
             member[i-1].score=atol(row[5]);
 			member[i-1].title=atol(row[6]);
             member[i-1].flag=atol(row[7]);
+			
+			if (!valid_core_member(member[i-1].user)) {
+				if (BOARD_MEMBER_STATUS_MANAGER==member[i-1].status)
+					member[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
+				member[i-1].flag=0;
+			}
         }
         row = mysql_fetch_row(res);
     }
@@ -731,6 +750,12 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
             member[i-1].score=atol(row[5]);
 			member[i-1].title=atol(row[6]);
             member[i-1].flag=atol(row[7]);
+			
+			if (!valid_core_member(member[i-1].user)) {
+				if (BOARD_MEMBER_STATUS_MANAGER==member[i-1].status)
+					member[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
+				member[i-1].flag=0;
+			}
         }
         row = mysql_fetch_row(res);
     }
@@ -861,7 +886,11 @@ int is_board_member(const char *name, const char *user_id, struct board_member *
 }
 
 int is_board_member_manager(const char *name, const char *user_id, struct board_member *member) {
-    return (get_board_member(name, user_id, member)==BOARD_MEMBER_STATUS_MANAGER)?1:0;
+    if (get_board_member(name, user_id, member)!=BOARD_MEMBER_STATUS_MANAGER)
+		return 0;
+	if (!valid_core_member(user_id))
+		return 0;
+	return 1;
 }
     
 int set_board_member_status(const char *name, const char *user_id, int status) {
@@ -895,6 +924,9 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
         default:
             return -7;
     }
+	
+	if (BOARD_MEMBER_STATUS_MANAGER==status&&!valid_core_member(user_id))
+		status=BOARD_MEMBER_STATUS_NORMAL;
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -948,6 +980,8 @@ int set_board_member_flag(struct board_member *member) {
 		return -4;
 	if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
 		return -5;
+	if (!valid_core_member(member->user)) 
+		member->flag=0;
 	
 	member->status=BOARD_MEMBER_STATUS_NORMAL;
     for (i=0;i<BMP_COUNT;i++) {
@@ -1085,7 +1119,7 @@ int set_member_manager_level(char *user_id) {
 	mysql_free_result(res);
 	mysql_close(&s);
 
-	if (HAS_PERM(user,PERM_MEMBER_MANAGER) && count <= 0)
+	if (HAS_PERM(user,PERM_MEMBER_MANAGER) && (count <= 0||!valid_core_member(user_id)))
 		user->userlevel &= ~PERM_MEMBER_MANAGER;
 	else if (!HAS_PERM(user,PERM_MEMBER_MANAGER) && count > 0)
 		user->userlevel |= PERM_MEMBER_MANAGER;
@@ -1184,6 +1218,11 @@ int load_board_member_managers(const struct boardheader *board, struct board_mem
 		members[i-1].title=atol(row[6]);
         members[i-1].flag=atol(row[7]);
 
+		if (!valid_core_member(members[i-1].user)) {
+			members[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
+			members[i-1].flag=0;
+		}
+		
         row = mysql_fetch_row(res);
     }
     mysql_free_result(res);
@@ -1940,5 +1979,16 @@ int modify_board_member_title(struct board_member_title *title) {
 	return 0;
 }
 	
+int valid_core_member(char *user_id)
+{
+	struct userec *user;
+	
+	if (!getuser(user_id, &user))
+		return 0;
+	if (HAS_PERM(user, PERM_NOZAP))
+		return 0;
+	
+	return 1;
+}	
 #endif
 #endif 
