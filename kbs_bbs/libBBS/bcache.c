@@ -427,6 +427,11 @@ int delete_board(int bid, session_t* session)
     snprintf(bcache[bid-1].title, STRLEN, " << '%s'被 %s 删除 >>", bcache[bid-1].filename, session->currentuser->userid);
     bcache[bid-1].level = PERM_SYSOP;
     brdshm->bstatus[bid-1].toptitle = 0;
+    brdshm->bstatus[bid-1].nowid = 0;
+    brdshm->bstatus[bid-1].total = 0;
+#ifdef RECORDMAXONLINE
+    brdshm->bstatus[bid-1].maxonline = 0;
+#endif
 
     /* 上面锁住了，不需要单独为它设个锁了 */
     fixFavBoard(NULL);
