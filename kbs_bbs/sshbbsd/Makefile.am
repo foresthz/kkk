@@ -43,7 +43,7 @@ BBSD_SRCS = $(srcdir)/../src/bbs.c $(srcdir)/../src/delete.c $(srcdir)/../src/ma
            $(srcdir)/../src/newmain_single.c $(srcdir)/../src/newio.c $(srcdir)/../src/newterm.c \
            $(srcdir)/../src/definekey.c $(srcdir)/../src/calltime.c $(srcdir)/../src/tmpl.c $(srcdir)/../src/msg_manager.c\
            $(srcdir)/../src/addr_manage.c $(srcdir)/../src/personal_corp.c $(srcdir)/../src/newread.c $(srcdir)/../src/newhelp.c \
-           $(srcdir)/../src/member.c 
+           $(srcdir)/../src/member.c $(srcdir)/../src/newmsg.c 
 
 CLEANFILES=@EXTRA_CLEAN@
 bin_PROGRAMS = sshbbsd

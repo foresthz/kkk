@@ -9,7 +9,7 @@ bbsd_SOURCES=bbs.c delete.c mail.c register.c \
 	   bm.c list.c goodbye.c bbsd_single.c select.c \
 	   newmain_single.c newio.c newterm.c \
 	   definekey.c calltime.c tmpl.c msg_manager.c\
-	   addr_manage.c personal_corp.c newread.c newhelp.c member.c
+	   addr_manage.c personal_corp.c newread.c newhelp.c member.c newmsg.c
 if SITETERM
 nodist_bbsd_SOURCES = $(top_builddir)/src/site-term.c
 endif
