@@ -84,6 +84,51 @@ if test "$MYSQL_DIR" != "no"; then
   fi
 fi
 
+# add sqlite3 support, added by windinsn, Jan 21, 2013
+AC_ARG_WITH(sqlite3,
+[  --with-sqlite3[=DIR]
+                          Include Sqlite3 support (new msg system 
+                          required this).],
+SQLITE_DIR="$withval", SQLITE_DIR="yes")
+
+if test "$SQLITE_DIR" != "no"; then
+  if test -f $SQLITE_DIR/include/sqlite3.h; then
+      SQLITE_INC=$SQLITE_DIR/include
+  else
+    for i in /usr/local /usr ; do
+      if test -f $i/include/sqlite3/sqlite3.h; then
+        SQLITE_DIR=$i
+        SQLITE_INC=$i/include/sqlite3
+      elif test -f $i/include/sqlite3.h; then
+        SQLITE_DIR=$i
+        SQLITE_INC=$i/include
+      elif test -f $i/sqlite3/include/sqlite3.h; then
+        SQLITE_DIR=$i/sqlite3
+        SQLITE_INC=$i/sqlite3/include
+      fi
+    done
+  fi
+  
+  if test -z "$SQLITE_DIR"; then
+    SQLITE_NOTFOUND=yes
+  fi
+
+  if test "$SQLITE_NOTFOUND" != "yes"; then
+    SAVE_LIBS=$LIBS
+    LIBS="$LIBS -L$SQLITE_DIR/lib"
+    AC_CHECK_LIB(sqlite3, sqlite3_open, [
+      AC_DEFINE(HAVE_SQLITE_SMTH,1,[Enable Sqlite3 support])
+    ],[
+  	AC_MSG_ERROR(The Sqlite library not found)
+    ],[ -L$SQLITE_DIR/lib ])
+    LIBS=$SAVE_LIBS
+
+    SQLITE_LIBS="-L$SQLITE_DIR/lib -lsqlite3"
+    ADDINC($SQLITE_INC)
+    LIBS="$LIBS $SQLITE_LIBS"
+  fi
+fi
+
 # Check pthread support
 AC_ARG_WITH(pthread,
 [  --with-pthread[=DIR]
