@@ -914,6 +914,8 @@ while(0)
     int new_msg_get_size(struct new_msg_handle *handle);
     int new_msg_get_capacity(struct userec *user);
     int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info);
+    int new_msg_free_attachment(struct new_msg_attachment *attachment);
+    int new_msg_free_info(struct new_msg_info *info)
 #endif /* ENABLE_NEW_MSG */
 
 
