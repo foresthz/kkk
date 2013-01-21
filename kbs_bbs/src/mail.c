@@ -2819,6 +2819,11 @@ const static struct command_def mail_cmds[] = {
     {"K) @我的文章", 0, refer_at, NULL},
     {"L) 回复我的文章", 0, refer_reply, NULL},
 #endif
+// new msg system, added by windinsn, Jan 21, 2013
+#ifdef ENABLE_NEW_MSG
+    {"T) 短消息", 0, new_msg_main, NULL},
+    {"W) 发送短消息", 0, new_msg_compose, NULL},
+#endif
     {"S) 寄信", PERM_LOGINOK, m_sendnull, NULL},
 #ifdef MAILOUT
     {"I) 发送站外信件", PERM_LOGINOK, m_internet, NULL},

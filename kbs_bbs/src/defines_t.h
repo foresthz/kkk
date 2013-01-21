@@ -189,6 +189,12 @@ int set_refer_info(int bid, int id, int mode);
 void clear_refer_info(int mode);
 #endif
 
+/* newmsg.c */
+#ifdef ENABLE_NEW_MSG
+int new_msg_main(void);
+int new_msg_compose(void);
+#endif
+
 /* maintain.c */
 int check_systempasswd();
 void stand_title(char *title);

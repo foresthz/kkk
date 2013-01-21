@@ -1,5 +1,9 @@
 #ifndef __STRUCT_H__
 #define __STRUCT_H__
+
+#ifdef HAVE_SQLITE_SMTH
+#include "sqlite3.h"
+#endif
 /* Note the protocol field is not inside an #ifdef FILES...
    this is a waste but allows you to add/remove UL/DL support without
    rebuilding the PASSWDS file (and it's only a lil ole int anyway).
@@ -622,6 +626,43 @@ struct board_member_title {
     unsigned int flag;
 };
 #endif
+
+/* new msg system, windinsn, Jan 21,2013 */
+#ifdef ENABLE_NEW_MSG
+struct new_msg_handle {
+    char user[IDLEN+2];
+    sqlite3 *db;
+    unsigned long flag;
+};
+struct new_msg_info {
+    time_t time;
+    unsigned long host;
+    char from[NEW_MSG_FROM_LEN+2];
+    char *msg;
+    unsigned int size;
+};
+struct new_msg_attachment {
+    char type[NEW_MSG_ATTACHMENT_TYPE_LEN+2];
+    unsigned int size;
+    char name[NEW_MSG_ATTACHMENT_NAME_LEN+2];
+    char *body;
+};
+struct new_msg_user {
+    long id;
+    long msg_id;
+    char user[IDLEN+2];
+    struct new_msg_info msg;
+    unsigned int count;
+    unsigned long flag;
+};
+struct new_msg_message {
+    long id;
+    char user[IDLEN+2];
+    struct new_msg_info msg;
+    struct new_msg_attachment attachment;
+    unsigned long flag;
+};
+#endif /* ENABLE_NEW_MSG */
 
 #define ACTIVATIONLEN   15
 struct activation_info {

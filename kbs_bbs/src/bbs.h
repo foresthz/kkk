@@ -330,6 +330,36 @@ extern long ti;
 #define BOARD_MEMBER_MANAGERS_FILE     "member.managers"
 #endif
 
+/* new msg system, windinsn, Jan 21,2013 */
+#ifdef ENABLE_NEW_MSG
+#define NEW_MSG_DB                     "msg.db"
+#define NEW_MSG_INIT_DB                "etc/msg.db"
+#define NEW_MSG_TABLE_USER             "user"
+#define NEW_MSG_TABLE_MESSAGE          "message"
+#define NEW_MSG_FROM_LEN               32
+#define NEW_MSG_ATTACHMENT_TYPE_LEN    64
+#define NEW_MSG_ATTACHMENT_NAME_LEN    128
+
+#ifndef NEW_MSG_ATTACHMENT_MAX_SIZE
+#define NEW_MSG_ATTACHMENT_MAX_SIZE    5000000
+#endif
+
+#ifndef NEW_MSG_MAX_SIZE
+#define NEW_MSG_MAX_SIZE               1024
+#endif
+
+#ifndef NEW_MSG_CAPACITY
+#define NEW_MSG_CAPACITY               100000000
+#endif
+
+#define NEW_MSG_HANDLE_OK              0x01  // msg handle 完成初始化
+#define NEW_MSG_MESSAGE_ATTACHMENT     0x01  // 含有附件
+#define NEW_MSG_MESSAGE_IMAGE          0x02  // 含有图片附件
+#define NEW_MSG_MESSAGE_SEND           0x04  // 发出的信息
+#define NEW_MSG_MESSAGE_READ           0x08  // 已读
+
+#endif /* ENABLE_NEW_MSG */
+
 #define QUIT            0x666       /* Return value to abort recursive functions */
 #define COUNT           0x2         /* count record */
 
