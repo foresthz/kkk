@@ -897,7 +897,7 @@ while(0)
 #ifdef ENABLE_NEW_MSG
     int new_msg_open(struct new_msg_handle *handle);
     int new_msg_close(struct new_msg_handle *handle);
-    int new_msg_check(struct new_msg_handle *sender, struct new_msg_handle *incept);
+    int new_msg_check(struct userec *from, struct userec *to);
     int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new_msg_message *record);
     long new_msg_last_user_message(struct new_msg_handle *handle, char *user_id, struct new_msg_message *message);
     long new_msg_user_info(struct new_msg_handle *handle, char *user_id, struct new_msg_user *info);
@@ -910,7 +910,7 @@ while(0)
     long new_msg_get_message(struct new_msg_handle *handle, long id, struct new_msg_message *message);
     int new_msg_delete_message(struct new_msg_handle *handle, struct new_msg_message *message);
     int new_msg_remove_user_messages(struct new_msg_handle *handle, char *user_id);
-    int new_msg_get_size(struct new_msg_handle *handle);
+    int new_msg_get_size(struct userec *user);
     int new_msg_get_capacity(struct userec *user);
     int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info);
 #endif /* ENABLE_NEW_MSG */

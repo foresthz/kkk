@@ -221,14 +221,12 @@ int new_msg_get_capacity(struct userec *user) {
   *        -9: 收件人超容， 短信息容量为 new_msg_get_capacity(to)
   *        
   */
-int new_msg_check(struct new_msg_handle *sender, struct new_msg_handle *incept) {
-	struct userec *from;
-	struct userec *to;
+int new_msg_check(struct userec *from, struct userec *to) {
 	int size, used;
 	
-	if (!getuser(sender->user, &from))
+	if (!from || !from->userid[0])
 		return -1;
-	if (!getuser(incept->user, &to))
+	if (!to || !to->userid[0])
 		return -2;
 		
 	if (!strcasecmp(from->userid, to->userid))
@@ -251,14 +249,14 @@ int new_msg_check(struct new_msg_handle *sender, struct new_msg_handle *incept) 
 	
 	size=new_msg_get_capacity(from);
 	if (size!=0) {
-		used=new_msg_get_size(sender);
+		used=new_msg_get_size(from);
 		if (used >= size)
 			return -8;
 	}
 	
 	size=new_msg_get_capacity(to);
 	if (size!=0) {
-		used=new_msg_get_size(incept);
+		used=new_msg_get_size(to);
 		if (used >= size)
 			return -9;
 	}
@@ -479,6 +477,7 @@ int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *messag
 			fclose(fp);
 			return -3;
 		}
+		bzero(attachment_content, (&(message->attachment))->size+1);
 		fread(attachment_content, 1, (&(message->attachment))->size, fp);
 		fclose(fp);
 	}
@@ -786,8 +785,15 @@ int new_msg_remove_user_messages(struct new_msg_handle *handle, char *user_id) {
 	return 0;
 }
 
-int new_msg_get_size(struct new_msg_handle *handle) {
-	return new_msg_sum(handle, "[msg_size]+[attachment_size]", NEW_MSG_TABLE_MESSAGE, NULL);
+int new_msg_get_size(struct userec *user) {
+	struct stat st;
+	char path[PATHLEN];
+
+	sethomefile(path, user->userid, NEW_MSG_DB);
+	if (stat(path, &st)<0)
+		return 0;
+
+	return st.st_size;	
 }
 
 int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info) {
