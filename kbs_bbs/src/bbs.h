@@ -339,6 +339,7 @@ extern long ti;
 #define NEW_MSG_FROM_LEN               32
 #define NEW_MSG_ATTACHMENT_TYPE_LEN    64
 #define NEW_MSG_ATTACHMENT_NAME_LEN    128
+#define NEW_MSG_TEXT_LEN               280
 
 #ifndef NEW_MSG_ATTACHMENT_MAX_SIZE
 #define NEW_MSG_ATTACHMENT_MAX_SIZE    5000000

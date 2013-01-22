@@ -901,9 +901,8 @@ while(0)
     int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new_msg_message *record);
     long new_msg_last_user_message(struct new_msg_handle *handle, char *user_id, struct new_msg_message *message);
     long new_msg_user_info(struct new_msg_handle *handle, char *user_id, struct new_msg_user *info);
-    int new_msg_free(struct new_msg_message *message);
     int new_msg_user_free(struct new_msg_user *info);
-    int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, struct new_msg_info *msg, struct new_msg_attachment *attachment);
+    int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, struct new_msg_info *msg, struct new_msg_attachment *attachment, char *attachment_file);
     int new_msg_get_users(struct new_msg_handle *handle);
     int new_msg_load_users(struct new_msg_handle *handle, int start, int count, struct new_msg_user *users);
     int new_msg_get_user_messages(struct new_msg_handle *handle, char *user_id);
@@ -914,8 +913,6 @@ while(0)
     int new_msg_get_size(struct new_msg_handle *handle);
     int new_msg_get_capacity(struct userec *user);
     int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info);
-    int new_msg_free_attachment(struct new_msg_attachment *attachment);
-    int new_msg_free_info(struct new_msg_info *info);
 #endif /* ENABLE_NEW_MSG */
 
 

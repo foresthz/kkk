@@ -127,18 +127,7 @@ int new_msg_fill_msg(struct new_msg_info *msg, sqlite3_stmt  *stmt, int offset) 
 	msg->host=(unsigned long) sqlite3_column_int64(stmt, offset+1);
 	strncpy(msg->from, (char *)sqlite3_column_text(stmt, offset+2), NEW_MSG_FROM_LEN+1);
 	msg->size=(unsigned int)sqlite3_column_int(stmt, offset+4);
-	
-	if (msg->size<=0) 
-		return -1;
-	if (NULL==msg->msg) {
-		msg->msg=(char *)malloc(msg->size+2);
-		if (!msg->msg)
-			return -2;
-	}
-	
-	bzero(msg->msg, msg->size+2);
-	strncpy(msg->msg, (char *)sqlite3_column_text(stmt, offset+3), msg->size+1);
-	msg->msg[msg->size]=0;
+	strncpy(msg->msg, (char *)sqlite3_column_text(stmt, offset+3), NEW_MSG_TEXT_LEN+1);
 	return 0;
 }
 
@@ -276,27 +265,6 @@ int new_msg_check(struct new_msg_handle *sender, struct new_msg_handle *incept) 
 	
 	return 0;
 }
-int new_msg_free_info(struct new_msg_info *info) {
-	if (NULL!=info->msg)
-		free(info->msg);
-	return 0;
-}
-int new_msg_free_attachment(struct new_msg_attachment *attachment) {
-	if (NULL!=attachment->body)
-		free(attachment->body);
-	return 0;
-}
-int new_msg_free(struct new_msg_message *message) {
-	if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT) 
-		new_msg_free_attachment(&(message->attachment));
-	new_msg_free_info(&(message->msg));
-	return 0;
-}
-
-int new_msg_user_free(struct new_msg_user *info) {
-	new_msg_free_info(&(info->msg));
-	return 0;
-}
 
 long new_msg_user_info(struct new_msg_handle *handle, char *user_id, struct new_msg_user *info) {
 	char sql[300];
@@ -347,38 +315,32 @@ int new_msg_get_user_messages(struct new_msg_handle *handle, char *user_id) {
 int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new_msg_message *record) {
 	struct new_msg_message *message;
 	struct new_msg_message query;
-	int size, count, load;
+	int size, count;
 	long id;
 	char *sql;
 	sqlite3_stmt  *stmt=NULL;
 	
 	if (NULL==record || record->id<=0 || strcmp(user_id, record->user)!=0) {
 		id=new_msg_last_user_message(handle, user_id, &query);
-		load=1;
 		if (id<0) {
-			new_msg_free(&query);
 			return -1;
 		}
 		if (id==0) {
-			new_msg_free(&query);
 			message=NULL;
 		} else {
 			message=&query;
 		}
 	} else {
 		message=record;
-		load=0;
 	}
 
 	id=new_msg_user_info(handle, user_id, NULL);
 	if (id<0) {
-		if (load) new_msg_free(&query);
 		return -2;
 	}
 	
 	count=new_msg_get_user_messages(handle, user_id);
 	if (count<0) {
-		if (load) new_msg_free(&query);
 		return -3;
 	}
 	
@@ -389,7 +351,6 @@ int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new
 	sql=(char *)malloc(size);
 	
 	if (!sql) {
-		if (load) new_msg_free(&query);
 		return -4;
 	}
 	
@@ -429,7 +390,6 @@ int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new
 	} else {
 		// 会出现么?
 		free(sql);
-		if (load) new_msg_free(&query);
 		return -6;
 	}
 	
@@ -437,7 +397,6 @@ int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new
 		if (stmt)
 			sqlite3_finalize(stmt);
 		free(sql);
-		if (load) new_msg_free(&query);
 		return -7;
 	}
 	
@@ -450,13 +409,11 @@ int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new
 	if (SQLITE_DONE != sqlite3_step(stmt)) {
 		sqlite3_finalize(stmt);
 		free(sql);
-		if (load) new_msg_free(&query);
 		return -8;
 	}
 	
 	sqlite3_finalize(stmt);
 	free(sql);
-	if (load) new_msg_free(&query);
 	
 	return 0;
 }
@@ -500,16 +457,41 @@ long new_msg_last_user_message(struct new_msg_handle *handle, char *user_id, str
 	return id;
 }
 
-int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *message) {
+int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *message, char *attachment_file) {
 	char *sql;
 	int size;
 	sqlite3_stmt  *stmt=NULL;
-	
+	struct stat st;
+	FILE *fp;
+	char *attachment_content;
+
+	if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT) {
+		if (stat(attachment_file, &st)<0)
+			return -1;
+		fp=fopen(attachment_file, "rb");
+		if (fp==NULL) 
+			return -2;	
+		fseek(fp, 0, SEEK_END);
+		(&(message->attachment))->size=ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+		attachment_content=(char *)malloc((&(message->attachment))->size+1);
+		if (!attachment_content) {
+			fclose(fp);
+			return -3;
+		}
+		fread(attachment_content, 1, (&(message->attachment))->size, fp);
+		fclose(fp);
+	}
+
 	message->id=0;
 	size=1024+(&(message->msg))->size*2+(&(message->attachment))->size*2;
 	sql=(char *)malloc(size);
-	if (!sql)
-		return -1;
+	if (!sql) {
+		if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT)
+			free(attachment_content);
+		return -4;
+	}
+
 	bzero(sql, size);
 	
 	sprintf(sql, "INSERT INTO [%s] ([user], [time], [host], [from], [msg], [msg_size], [attachment_type], [attachment_size], [attachment_name], [attachment_body], [flag]) VALUES ('%s', datetime(%lu, 'unixepoch', 'localtime'), '%lu', ?, ?, %u, ?, %u, ?, ?, %lu);", 
@@ -526,8 +508,9 @@ int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *messag
 		if (stmt)
 			sqlite3_finalize(stmt);
 		free(sql);
-		
-		return -2;
+		if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT)
+			free(attachment_content);
+		return -5;
 	}
 	
 	sqlite3_bind_text(stmt, 1, (&(message->msg))->from, strlen((&(message->msg))->from), NULL);
@@ -535,7 +518,9 @@ int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *messag
 	if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT) {
 		sqlite3_bind_text(stmt, 3, (&(message->attachment))->type, strlen((&(message->attachment))->type), NULL);
 		sqlite3_bind_text(stmt, 4, (&(message->attachment))->name, strlen((&(message->attachment))->name), NULL);
-		sqlite3_bind_blob(stmt, 5, (&(message->attachment))->body, (&(message->attachment))->size, NULL);
+		sqlite3_bind_blob(stmt, 5, attachment_content, (&(message->attachment))->size, NULL);
+
+		
 	} else {
 		sqlite3_bind_null(stmt, 3);
 		sqlite3_bind_null(stmt, 4);
@@ -545,15 +530,19 @@ int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *messag
 	if (SQLITE_DONE != sqlite3_step(stmt)) {
 		sqlite3_finalize(stmt);
 		free(sql);
-		
-		return -3;
+		if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT)
+			free(attachment_content);	
+		return -6;
 	}
 	message->id=(long)sqlite3_last_insert_rowid(handle->db);
 	sqlite3_finalize(stmt);
 	free(sql);
 	
+	if (message->flag&NEW_MSG_MESSAGE_ATTACHMENT)
+		free(attachment_content);
+
 	if (new_msg_update_user(handle, message->user, message)<0)
-		return -4;
+		return -7;
 	
 	return 0;
 }
@@ -576,9 +565,10 @@ int new_msg_create(struct new_msg_handle *handle, struct new_msg_message *messag
   *         -13: 发送失败，发送方存储信息时失败，此时接收方能接受信息
   *         -14: 系统错误，内存不足?
   */
-int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, struct new_msg_info *msg, struct new_msg_attachment *attachment) {
+int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, struct new_msg_info *msg, struct new_msg_attachment *attachment, char *attachment_file) {
 	struct new_msg_message message;
 	int flag;
+	struct stat st;	
 	
 	if (!(sender->flag&NEW_MSG_HANDLE_OK))
 		return -1;
@@ -609,8 +599,9 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 			return -8;
 		if (strlen(attachment->name)>NEW_MSG_ATTACHMENT_NAME_LEN)
 			return -9;
-		if (!attachment->body || attachment->size <= 0)
+		if (stat(attachment_file, &st)<0)
 			return -10;
+		attachment->size=st.st_size;
 		if (attachment->size > NEW_MSG_ATTACHMENT_MAX_SIZE)
 			return -11;
 			
@@ -623,46 +614,34 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 	message.msg.time=msg->time;
 	message.msg.host=msg->host;
 	strncpy(message.msg.from, msg->from, NEW_MSG_FROM_LEN+1);
-	message.msg.size=msg->size;
-	message.msg.msg=(char *)malloc(message.msg.size+2);
-	if (!message.msg.msg)
-		return -14;
-	bzero(message.msg.msg, message.msg.size+2);
-	strncpy(message.msg.msg, msg->msg, message.msg.size+1);
+	strncpy(message.msg.msg, msg->msg, NEW_MSG_TEXT_LEN+1);
+	message.msg.size=strlen(message.msg.msg);
 	message.flag=flag;
 	
 	if (message.flag&NEW_MSG_MESSAGE_ATTACHMENT) {
 		strncpy(message.attachment.type, attachment->type, NEW_MSG_ATTACHMENT_TYPE_LEN+1);
 		message.attachment.size=attachment->size;
 		strncpy(message.attachment.name, attachment->name, NEW_MSG_ATTACHMENT_NAME_LEN+1);
-		message.attachment.body=(char *)malloc(attachment->size+1);
-		if (!message.attachment.body) {
-			new_msg_free(&message);
-			return -14;
-		}
-		bzero(message.attachment.body, attachment->size+1);
-		memcpy(message.attachment.body, attachment->body, attachment->size);
 	} else {
 		message.attachment.size=0;
 		message.attachment.name[0]=0;
+		message.attachment.type[0]=0;
 	}
 	
-	if (new_msg_create(incept, &message)<0) {
-		new_msg_free(&message);
+	if (new_msg_create(incept, &message, attachment_file)<0) {
 		return -12;
 	}
 	
 	message.flag|=NEW_MSG_MESSAGE_SEND;
+	message.flag|=NEW_MSG_MESSAGE_READ;
 	strncpy(message.user, incept->user, IDLEN+1);
-	if (new_msg_create(sender, &message)<0) {
-		new_msg_free(&message);
+	if (new_msg_create(sender, &message, attachment_file)<0) {
 		return -13;
 	}
 		
 	setmailcheck(incept->user);
 	newbbslog(BBSLOG_USER, "sent new message to '%s' (size: %d, attachment: [%d]%s)", incept->user, message.msg.size, message.attachment.size, message.attachment.name);	
 	
-	new_msg_free(&message);
 	return 0;
 }
 

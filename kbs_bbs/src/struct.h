@@ -638,14 +638,13 @@ struct new_msg_info {
     time_t time;
     unsigned long host;
     char from[NEW_MSG_FROM_LEN+2];
-    char *msg;
+    char msg[NEW_MSG_TEXT_LEN+2];
     unsigned int size;
 };
 struct new_msg_attachment {
     char type[NEW_MSG_ATTACHMENT_TYPE_LEN+2];
     unsigned int size;
     char name[NEW_MSG_ATTACHMENT_NAME_LEN+2];
-    char *body;
 };
 struct new_msg_user {
     long id;
