@@ -368,7 +368,7 @@ int new_msg_update_user(struct new_msg_handle *handle, char *user_id, struct new
 		);
 	} else if (count>0 && NULL!=message && id>0) {
 		// 有message记录和user记录
-		sprintf(sql, "UPDATE [%s] SET [msg_id]=%ld, [user]='%s', [time]=datetime(%lu, 'unixepoch', 'localtime'), [host]=%lu, [from]=?, [msg]=?, [msg_size]=%u, [count]=%u, [flag]=%lu WHERE [id]=%ld LIMIT 1;",
+		sprintf(sql, "UPDATE [%s] SET [msg_id]=%ld, [user]='%s', [time]=datetime(%lu, 'unixepoch', 'localtime'), [host]=%lu, [from]=?, [msg]=?, [msg_size]=%u, [count]=%u, [flag]=%lu WHERE [id]=%ld;",
 			NEW_MSG_TABLE_USER,
 			message->id, 
 			message->user,
@@ -803,7 +803,7 @@ int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info) {
 	if (info->flag&NEW_MSG_MESSAGE_READ)
 		return 0;
 	
-	sprintf(sql, "UPDATE [%s] SET [flag]=[flag]|%d WHERE [user]='%s' LIMIT 1;",
+	sprintf(sql, "UPDATE [%s] SET [flag]=[flag]|%d WHERE [user]='%s';",
 		NEW_MSG_TABLE_USER,
 		NEW_MSG_MESSAGE_READ,
 		info->user
