@@ -1,7 +1,7 @@
 #ifndef __STRUCT_H__
 #define __STRUCT_H__
 
-#ifdef HAVE_SQLITE_SMTH
+#if HAVE_SQLITE_SMTH == 1
 #include "sqlite3.h"
 #endif
 /* Note the protocol field is not inside an #ifdef FILES...
