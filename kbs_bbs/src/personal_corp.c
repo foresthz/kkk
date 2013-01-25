@@ -1197,6 +1197,11 @@ static int pc_dir_title(struct _select_def *conf)
      } else if (chkmailflag==4) {
          prints("\033[0;1;5;44m                                 [您有回复提醒]                               \033[m");
      }
+#ifdef ENABLE_NEW_MSG
+     else if (chkmailflag==5) {
+         prints("\033[0;1;5;44m                                  [您有新短信]                                \033[m");
+     }
+#endif
 #else
     else if (chkmailflag) {      /* 信件检查 */
         prints("\033[0;1;5;44m                                   [您有信件]                                 \033[m");
@@ -1811,7 +1816,7 @@ static int pc_com_title(struct _select_def *conf)
     clear();
     move(0, 0);
 
-    if (chkmailflag == 2) {
+    if ( chkmailflag == 2) {
         prints("\033[0;1;5;44m                         [您的信箱超过容量,不能再收信!]                       \033[m");
     } else if (chkmailflag) {
         prints("\033[0;1;5;44m                                   [您有信件]                                 \033[m");
