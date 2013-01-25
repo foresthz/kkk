@@ -359,10 +359,15 @@ int new_msg_display_messages(struct new_msg_handle *handle, struct new_msg_user 
 	int key;
 	int repeat=0;
 	int ret=SHOW_REFRESH;
+	int start, count, total;
 	
-	if (new_msg_dump(handle, info, 0)<0)
+	count=20;
+	start=0;
+	if (new_msg_dump(handle, info, 0, start, count)<0)
 		return SHOW_CONTINUE;
 		
+
+	total=new_msg_get_user_messages(handle, (&(info->msg))->user);
 	new_msg_dump_file(path, handle, info);
 	if (!((&(info->msg))->flag&NEW_MSG_MESSAGE_READ)) {
 		new_msg_read(handle, info);
@@ -371,7 +376,7 @@ int new_msg_display_messages(struct new_msg_handle *handle, struct new_msg_user 
 	
 	clear();
 	key=ansimore2(path, 0, 0, 0);
-	if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("RrEexp", key)))
+	if (!(key==KEY_RIGHT||key==KEY_PGUP||key==KEY_PGDN || key==' ' || key==KEY_UP||key==KEY_DOWN)&&(!(key>0)||!strchr("RrEexp", key)))
 		key=igetkey();
 	
 	do {
@@ -387,6 +392,30 @@ int new_msg_display_messages(struct new_msg_handle *handle, struct new_msg_user 
 			case 'R':
 				new_msg_do_compose((&(info->msg))->user, 0x01);
 				ret=-1;
+				break;
+			case KEY_RIGHT:
+			case KEY_DOWN:
+			case KEY_PGDN:
+			case ' ':
+				if (start+count<total) {
+					start+=count;
+					if (new_msg_dump(handle, info, 0, start, count)<0)
+						return SHOW_REFRESH;
+					clear();
+					key=ansimore2(path, 0, 0, 0);
+					repeat=1;
+				}
+				break;
+			case KEY_UP:
+			case KEY_PGUP:
+				if (start >= count) {
+					start-=count;
+					if (new_msg_dump(handle, info, 0, start, count)<0)
+						return SHOW_REFRESH;
+					clear();
+					key=ansimore2(path, 0, 0, 0);
+					repeat=1;
+				}
 				break;
 		
 		}
@@ -533,7 +562,7 @@ int new_msg_forward(struct new_msg_handle *handle, struct new_msg_user *info) {
 	
 	prints("转寄信件给 %s, 请稍候....\n", address);
 	sprintf(title, "%.50s记录(转寄)", info->name);
-	if (new_msg_dump(handle, info, 0x01)<0) {
+	if (new_msg_dump(handle, info, 0x01, 0, 0)<0) {
 		prints("读取聊天记录发生错误，请稍后再试或联系SYSOP");
 		pressreturn();
 		return -2;	

@@ -1103,7 +1103,7 @@ int new_msg_dump_file(char *path, struct new_msg_handle *handle, struct new_msg_
 /*
  *file_mode: 0x01: ²»ÏÔÊ¾¸½¼þURL
  */
-int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info, int file_mode) {
+int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info, int file_mode, int start, int count) {
 	char path[PATHLEN], buf[STRLEN];
 	struct userec *user;
 	struct stat st;
@@ -1128,7 +1128,7 @@ int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info, int f
 		total=new_msg_get_user_messages(handle, user->userid);
 		if (total > 0) {
 			size=10;
-			i=0;
+			i=start;
 			m=0;
 			messages=(struct new_msg_message *)malloc(sizeof(struct new_msg_message)*size);
 			if (!messages) {
@@ -1141,6 +1141,10 @@ int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info, int f
 				bzero(messages, sizeof(struct new_msg_message)*size);
 				j=new_msg_load_user_messages(handle, user->userid, i, size, messages);
 				for (k=0;k<j;k++) {
+					if (count>0 && i>=start+count) {
+						i=total;
+						break;
+					}
 					show_time=(abs(last_time-messages[k].msg.time)>600)?1:0;
 					is_send=(messages[k].msg.flag&NEW_MSG_MESSAGE_SEND)?1:0;
 					mode=0x04;
