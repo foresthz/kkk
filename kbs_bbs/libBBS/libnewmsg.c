@@ -959,6 +959,7 @@ int new_msg_show_border_horizontal(char *content, char *s_left, char *s_main, ch
  * 0x02 没有上边框
  * 0x04 没有下边框
  * 0x08 有附件
+ * 0x010 不显示附件URL
  */
 int new_msg_show_info_content(char *content, char *src, int left, int right, char *color, int mode, char *attach_name, char *attach_url) {
 	int lines, total, pos, i, j, k, size, border_left, border_right;
@@ -1079,7 +1080,10 @@ int new_msg_show_info(char *content, struct new_msg_info *msg, int mode, struct 
 		buf[0]=0;
 		strcpy(buf, attachment->name);
 		ext=strrchr(buf, '.');
-		sprintf(attach_url, "http://%s/b.php?sid=%s&id=%ld&f%s", NEW_MSG_ATTACHMENT_URL, sid, attachment->id, ext);
+		if (mode & 0x010)
+			sprintf(attach_url, "(请至本人短信箱内查看附件)");
+		else
+			sprintf(attach_url, "http://%s/b.php?sid=%s&id=%ld&f%s", NEW_MSG_ATTACHMENT_URL, sid, attachment->id, ext);
 		lines=new_msg_show_info_content(content, msg->msg, left, right, color, mode, attach_name, attach_url);
 	} else {
 		lines=new_msg_show_info_content(content, msg->msg, left, right, color, mode, NULL, NULL);
@@ -1096,7 +1100,10 @@ int new_msg_dump_file(char *path, struct new_msg_handle *handle, struct new_msg_
 	return 0;
 }
 
-int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info) {
+/*
+ *file_mode: 0x01: 不显示附件URL
+ */
+int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info, int file_mode) {
 	char path[PATHLEN], buf[STRLEN];
 	struct userec *user;
 	struct stat st;
@@ -1180,6 +1187,8 @@ int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info) {
 						fprintf(fp, "%s\n", content);
 					}
 					mode=6;
+					if (file_mode&0x01)
+						mode|=0x010;
 					content[0]=0;
 					new_msg_show_info(content, (&(messages[k].msg)), mode, &(messages[k].attachment));
 					fprintf(fp, "%s\n", content);

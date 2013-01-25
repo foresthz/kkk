@@ -360,7 +360,7 @@ int new_msg_display_messages(struct new_msg_handle *handle, struct new_msg_user 
 	int repeat=0;
 	int ret=SHOW_REFRESH;
 	
-	if (new_msg_dump(handle, info)<0)
+	if (new_msg_dump(handle, info, 0)<0)
 		return SHOW_CONTINUE;
 		
 	new_msg_dump_file(path, handle, info);
@@ -533,7 +533,7 @@ int new_msg_forward(struct new_msg_handle *handle, struct new_msg_user *info) {
 	
 	prints("转寄信件给 %s, 请稍候....\n", address);
 	sprintf(title, "%.50s记录(转寄)", info->name);
-	if (new_msg_dump(handle, info)<0) {
+	if (new_msg_dump(handle, info, 0x01)<0) {
 		prints("读取聊天记录发生错误，请稍后再试或联系SYSOP");
 		pressreturn();
 		return -2;	
