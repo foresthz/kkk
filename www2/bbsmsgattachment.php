@@ -30,7 +30,8 @@
 	header('Content-Length: '.$msg['ATTACHMENT_SIZE']);
 	
 	if ($msg['FLAG']&0x02)
-		header('Content-Disposition: inline;filename="'. rawurlencode($msg['ATTACHMENT_NAME']) .'"');
+		header('Content-Disposition: inline;filename='. rawurlencode($msg['ATTACHMENT_NAME']) .'');
+		//header('Content-Disposition: inline;filename="'. rawurlencode($msg['ATTACHMENT_NAME']) .'"');
 	else
 		header('Content-Disposition:attachment; filename="'. rawurlencode($msg['ATTACHMENT_NAME']) .'"');
 
