@@ -4,6 +4,18 @@
 	$sessionid = login_init(TRUE);
 	assert_login();
 	
+	if (isset($_POST['type']))
+		$type=$_POST['type'];
+	else if (isset($_GET['type']))
+		$type=$_GET['type'];
+	else
+		$type='';
+		
+	if (strcasecmp($type, 'msg')==0)
+		$max_file_count=1;
+	else
+		$max_file_count=BBS_MAXATTACHMENTCOUNT;
+	
 	@$action=$_GET["act"];
 	$msg = "";
 	if ($action=="delete") {
@@ -111,7 +123,7 @@ function clickclose() {
 	return false;
 }
 
-var fileCounter = 0, fileRemains = <?php echo (BBS_MAXATTACHMENTCOUNT - $filecount); ?>;
+var fileCounter = 0, fileRemains = <?php echo ($max_file_count - $filecount); ?>;
 function moreAttach() {
 	var ll = getObj("idAddAtt");
 	var n = document.createElement("br");
@@ -152,12 +164,13 @@ addBootFn(function() {
 <div style="width: 550px; margin: 1em auto;">
 <?php if ($msg) echo "<font color='red'> 提示：".$msg."</font>"; ?>
 <form name="addattach" method="post" ENCTYPE="multipart/form-data" class="left" action="">
+<input type="hidden" name="type" value="<?php echo $type; ?>" />
 <input type="hidden" name="counter" vaue="0" />
 <?php if ($sessionid) echo "<input type='hidden' name='sid' value='$sessionid' />"; ?>
 选择需要上传的文件后点上传：(<a id="idAllAtt" style="display:none;" href="javascript:void(0);" onclick="allAttach();">我要传好多附件</a>)
 <div id="uploads">
 <?php
-	if ($filecount<BBS_MAXATTACHMENTCOUNT) {
+	if ($filecount<$max_file_count) {
 ?>
 		<input type="hidden" name="MAX_FILE_SIZE" value="<?php echo(BBS_MAXATTACHMENTSIZE);?>" />
 		<a id="idAddAtt" style="margin-left: 1em; display:none;" href="javascript:void(0);" onclick="moreAttach();">增加一个附件</a>
@@ -179,9 +192,10 @@ addBootFn(function() {
 </form>
 
 <form name="deleteattach" ENCTYPE="multipart/form-data" method="post" class="left" action=""> 
+<input type="hidden" name="type" value="<?php echo $type; ?>" />
 <?php if ($sessionid) echo "<input type='hidden' name='sid' value='$sessionid' />"; ?>
-<ol style="padding-left: 2em; margin-left: 0em;">已经上传的附件列表: (最多能上传 <?php echo BBS_MAXATTACHMENTCOUNT; ?>
- 个, 还能上传 <font color="#FF0000"><b><?php echo (BBS_MAXATTACHMENTCOUNT-$filecount); ?></b></font> 个)
+<ol style="padding-left: 2em; margin-left: 0em;">已经上传的附件列表: (最多能上传 <?php echo $max_file_count; ?>
+ 个, 还能上传 <font color="#FF0000"><b><?php echo ($max_file_count-$filecount); ?></b></font> 个)
 <?php
 	for($i=0;$i<$filecount;$i++) {
 		$f = $attachments[$i];
