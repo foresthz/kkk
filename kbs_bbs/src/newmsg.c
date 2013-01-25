@@ -165,6 +165,14 @@ int new_msg_do_send(struct userec *incept, struct new_msg_info *msg, struct new_
 
 	return ret;
 }
+int new_msg_rm_dir(const char *path) {
+	char buf[300];
+
+	buf[0]=0;
+	sprintf(buf, "/bin/rm -rf %s", path);
+	system(buf);
+	return 0;
+}
 int new_msg_write(struct userec *incept, int mode) {
 	struct new_msg_info msg;
 	struct new_msg_attachment attachment;
@@ -246,12 +254,12 @@ int new_msg_write(struct userec *incept, int mode) {
 			return 0;
 		if (buf[0]=='N' || buf[0]=='n') {
 			if (msg.msg[0]==0) {
-				f_rm(attach_dir);
+				new_msg_rm_dir(attach_dir);
 				return 0;
 			}
 			i=getdata(t_lines-1, 0, "您确定要取消发送吗? (Y/N) [N]: ", buf, 2, DOECHO, NULL, 1);
 			if (i!=-1&&(buf[0]=='Y'||buf[0]=='y')) {
-				f_rm(attach_dir);
+				new_msg_rm_dir(attach_dir);
 				return 0;
 			}
 		} else if (buf[0]=='F' || buf[0]=='f') {
@@ -274,7 +282,7 @@ int new_msg_write(struct userec *incept, int mode) {
 				i=new_msg_do_send(incept, &msg, &attachment, attachment_path);
 
 			if (i>=0) {
-				f_rm(attach_dir);
+				new_msg_rm_dir(attach_dir);
 				if (!(mode&0x01)) {
 					move(t_lines-2, 0);
 					clrtoeol();
