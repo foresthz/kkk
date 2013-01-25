@@ -1544,6 +1544,10 @@ char *modestr;
          showtitle(modestr, "[您有@提醒]");
      else if (chkmailflag==4)
          showtitle(modestr, "[您有回复提醒]");
+#ifdef ENABLE_NEW_MSG
+     else if (chkmailflag==5)
+         showtitle(modestr, "[您有新短信]");
+#endif
 #else
     else if (chkmailflag)       /* 信件检查 */
         showtitle(modestr, "[您有信件]");
