@@ -46,7 +46,7 @@ int new_msg_write_prompt(struct userec *incept, struct new_msg_info *msg, struct
 	get_telnet_sessionid(buf, getSession()->utmpent);
 	move(3, 0);
 	clrtoeol();
-	prints("附件操作地址: \033[1;4mhttp://%s/bbsupload.php?sid=%s\033[m", get_my_webdomain(0), buf);
+	prints("附件操作地址: \033[1;4mhttp://%s/bbsupload.php?sid=%s&type=msg\033[m", get_my_webdomain(0), buf);
 	move(4, 0);
 	clrtoeol();
 	prints("\033[1;33m-----------------按 Ctrl+q 换行---------------------------\033[m");

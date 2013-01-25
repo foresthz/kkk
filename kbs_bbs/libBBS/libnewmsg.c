@@ -1079,7 +1079,7 @@ int new_msg_show_info(char *content, struct new_msg_info *msg, int mode, struct 
 		buf[0]=0;
 		strcpy(buf, attachment->name);
 		ext=strrchr(buf, '.');
-		sprintf(attach_url, "http://%s/m.php?sid=%s&id=%ld&f%s", NEW_MSG_ATTACHMENT_URL, sid, attachment->id, ext);
+		sprintf(attach_url, "http://%s/b.php?sid=%s&id=%ld&f%s", NEW_MSG_ATTACHMENT_URL, sid, attachment->id, ext);
 		lines=new_msg_show_info_content(content, msg->msg, left, right, color, mode, attach_name, attach_url);
 	} else {
 		lines=new_msg_show_info_content(content, msg->msg, left, right, color, mode, NULL, NULL);
