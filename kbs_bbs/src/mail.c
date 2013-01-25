@@ -130,6 +130,20 @@ int chkmail()
  * 4: 有新的回复
  */
 int chkrefer() {
+#ifdef ENABLE_NEW_MSG
+    int ret;
+    struct new_msg_handle handle;
+
+    ret=0;
+    new_msg_init(&handle, getCurrentUser());
+    if (new_msg_open(&handle)==0) {
+        ret=new_msg_check_new(&handle);
+        new_msg_close(&handle);
+    }
+
+    if (ret)
+        return 5;
+#endif 
     /* 需要更新一下uinfo中的记录 */
     sync_refer_info(REFER_MODE_AT, 1);
     sync_refer_info(REFER_MODE_REPLY, 1);
@@ -2821,8 +2835,8 @@ const static struct command_def mail_cmds[] = {
 #endif
 // new msg system, added by windinsn, Jan 21, 2013
 #ifdef ENABLE_NEW_MSG
-    {"T) 短消息", 0, new_msg_main, NULL},
-    {"W) 发送短消息", 0, new_msg_compose, NULL},
+    {"T) 短信", 0, new_msg_main, NULL},
+    {"W) 发送短信", 0, new_msg_compose, NULL},
 #endif
     {"S) 寄信", PERM_LOGINOK, m_sendnull, NULL},
 #ifdef MAILOUT
@@ -3258,6 +3272,11 @@ int MailProc(void)
         case 4:
             maillist_conf.pos=4;
             break;
+#ifdef ENABLE_NEW_MSG
+        case 5:
+            maillist_conf.pos=5;
+            break;
+#endif
         default:
             maillist_conf.pos=2;
     }    
