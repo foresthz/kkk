@@ -221,6 +221,7 @@ int new_msg_write(struct userec *incept, int mode) {
 	msg.msg[0]=0;
 	attachment.name[0]=0;
 	clear();
+	new_msg_flush_attachment(&attachment, attachment_path);
 	row=new_msg_write_prompt(incept, &msg, &attachment);
 	move(row, 0);
 	edit=1;
@@ -409,7 +410,7 @@ static int new_msg_display_show_data(struct _select_def *conf, int i) {
 	return SHOW_CONTINUE;
 }
 static int new_msg_display_show_title(struct _select_def *conf) {
-	docmdtitle("[我的短信]", "短信简明帮助菜单");
+	docmdtitle("[我的短信]", "回复[\033[1;32mr\033[m] 删除[\033[1;32md\033[m] 转寄[\033[1;32mF\033[m]");
 	update_endline();
 	return 0;
 }
