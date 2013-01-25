@@ -368,7 +368,13 @@ MENU *pm;
          prints("\033[5m");
          sprintf(genbuf, "[您有回复提醒]");
      }
-#endif /* ENABLE_REFER */ 
+#endif /* ENABLE_REFER */
+#ifdef ENABLE_NEW_MSG
+    else if (chkmailflag==5) {
+        prints("\033[5m");
+        sprintf(genbuf, "[您有新短信]");
+    }
+#endif 
     else
         strncpy(genbuf, pm->mtitle, MAXPATH);
     if (strlen(genbuf) <= 80)
