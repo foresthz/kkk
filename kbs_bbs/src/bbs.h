@@ -340,6 +340,9 @@ extern long ti;
 #define NEW_MSG_ATTACHMENT_TYPE_LEN    64
 #define NEW_MSG_ATTACHMENT_NAME_LEN    128
 #define NEW_MSG_TEXT_LEN               280
+#define NEW_MSG_KEY_LEN                128
+#define NEW_MSG_MAX_MEMBERS            16
+#define NEW_MSG_NAME_LEN               128
 
 #ifndef NEW_MSG_ATTACHMENT_MAX_SIZE
 #define NEW_MSG_ATTACHMENT_MAX_SIZE    5000000
@@ -358,6 +361,11 @@ extern long ti;
 #define NEW_MSG_MESSAGE_IMAGE          0x02  // 含有图片附件
 #define NEW_MSG_MESSAGE_SEND           0x04  // 发出的信息
 #define NEW_MSG_MESSAGE_READ           0x08  // 已读
+#define NEW_MSG_MESSAGE_GROUP          0x010 // 多人会话
+
+#define NEW_MSG_DISPLAY_LINES          4
+#define NEW_MSG_DISPLAY_COLUMNS        80
+#define NEW_MSG_DISPLAY_MAX_CONTENT    NEW_MSG_TEXT_LEN*NEW_MSG_DISPLAY_COLUMNS+2
 
 #endif /* ENABLE_NEW_MSG */
 

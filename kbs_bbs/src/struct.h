@@ -635,30 +635,39 @@ struct new_msg_handle {
     unsigned long flag;
 };
 struct new_msg_info {
+    char key[NEW_MSG_KEY_LEN+2];
+    char user[IDLEN+2];
     time_t time;
     unsigned long host;
     char from[NEW_MSG_FROM_LEN+2];
     char msg[NEW_MSG_TEXT_LEN+2];
     unsigned int size;
+    unsigned long flag;
 };
 struct new_msg_attachment {
+    long id;
     char type[NEW_MSG_ATTACHMENT_TYPE_LEN+2];
     unsigned int size;
     char name[NEW_MSG_ATTACHMENT_NAME_LEN+2];
 };
 struct new_msg_user {
     long id;
+    char name[NEW_MSG_NAME_LEN+1];
     long msg_id;
-    char user[IDLEN+2];
     struct new_msg_info msg;
+    struct new_msg_attachment attachment;
     unsigned int count;
-    unsigned long flag;
 };
 struct new_msg_message {
     long id;
-    char user[IDLEN+2];
+    char name[NEW_MSG_NAME_LEN+1];
     struct new_msg_info msg;
     struct new_msg_attachment attachment;
+};
+struct new_msg_member {
+    long id;
+    char key[NEW_MSG_KEY_LEN+2];
+    char user[IDLEN+2];
     unsigned long flag;
 };
 #endif /* ENABLE_NEW_MSG */

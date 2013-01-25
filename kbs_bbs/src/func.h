@@ -895,6 +895,7 @@ while(0)
 
 /* new msg system, windinsn, Jan 21,2013 */
 #ifdef ENABLE_NEW_MSG
+    int new_msg_init(struct new_msg_handle *handle, struct userec *user);
     int new_msg_open(struct new_msg_handle *handle);
     int new_msg_close(struct new_msg_handle *handle);
     int new_msg_check(struct userec *from, struct userec *to);
@@ -913,6 +914,13 @@ while(0)
     int new_msg_get_size(struct userec *user);
     int new_msg_get_capacity(struct userec *user);
     int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info);
+    int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info);
+    int new_msg_show_info(char *content, struct new_msg_info *msg, int mode, struct new_msg_attachment *attachment);
+    int new_msg_dump_file(char *path, struct new_msg_handle *handle, struct new_msg_user *info);
+    int new_msg_check_new(struct new_msg_handle *handle);
+    char *new_msg_show_time(char *buf, struct new_msg_info *msg, int mode);
+    int new_msg_get_attachment(struct new_msg_handle *handle, long id, char *output, int size);
+    int new_msg_attachment_size(char *buf, struct new_msg_attachment *attachment);
 #endif /* ENABLE_NEW_MSG */
 
 
