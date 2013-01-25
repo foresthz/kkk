@@ -13,6 +13,23 @@ void bbs_make_refer_array(zval *array, struct refer *refer) {
 }
 #endif
 
+#ifdef ENABLE_NEW_MSG
+void bbs_make_new_msg_message_array(zval *array, struct new_msg_message *msg) {
+    add_assoc_long(array, "ID", msg->id);
+	add_assoc_long(array, "TIME", (&(msg->msg))->time);
+	add_assoc_long(array, "HOST", (&(msg->msg))->host);
+	add_assoc_long(array, "SIZE", (&(msg->msg))->size);
+	add_assoc_long(array, "FLAG", (&(msg->msg))->flag);
+	add_assoc_string(array, "KEY", (&(msg->msg))->key , 1);
+	add_assoc_string(array, "USER", (&(msg->msg))->user , 1);
+	add_assoc_string(array, "FROM", (&(msg->msg))->from , 1);
+	add_assoc_string(array, "MSG", (&(msg->msg))->msg , 1);
+	add_assoc_long(array, "ATTACHMENT_SIZE", (&(msg->attachment))->size);
+	add_assoc_string(array, "ATTACHMENT_NAME", (&(msg->attachment))->name, 1);
+	add_assoc_string(array, "ATTACHMENT_TYPE", (&(msg->attachment))->type, 1);	
+}
+#endif
+
 PHP_FUNCTION(bbs_checknewmail)
 {
     char *userid;
@@ -1242,5 +1259,99 @@ PHP_FUNCTION(bbs_truncate_refer)
     RETURN_TRUE;
 #else
     RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_get_message)
+{
+#ifdef ENABLE_NEW_MSG
+	long id;
+	zval *message;
+	struct new_msg_handle handle;
+	struct new_msg_message msg;
+	long i;
+	
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lz", &id, &message)==FAILURE)
+        	WRONG_PARAM_COUNT;
+	if (!PZVAL_IS_REF(message)) {
+		zend_error(E_WARNING, "Parameter wasn't passed by reference");
+		RETURN_LONG(-1);
+	}
+
+	if (strcasecmp(getCurrentUser()->userid, "guest")==0)
+		RETURN_LONG(-2);
+	
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-3);
+	
+	bzero(&msg, sizeof(struct new_msg_message));
+	i=new_msg_get_message(&handle, id, &msg);
+	new_msg_close(&handle);
+	
+	if (i<0)
+		RETURN_LONG(-4);
+	if (i==0)
+		RETURN_LONG(0);
+		
+	if (array_init(message)!=SUCCESS)
+		RETURN_LONG(-5);
+		
+	bbs_make_new_msg_message_array(message, &msg);
+	RETURN_LONG(msg.id);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_get_attachment)
+{
+#ifdef ENABLE_NEW_MSG
+	long id;
+	struct new_msg_handle handle;
+	struct new_msg_message msg;
+	long i;
+	char *output;
+	int size;
+
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &id)==FAILURE)
+		WRONG_PARAM_COUNT;
+		
+	if (strcasecmp(getCurrentUser()->userid, "guest")==0)
+		RETURN_FALSE;
+	
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_FALSE;
+
+	bzero(&msg, sizeof(struct new_msg_message));
+	i=new_msg_get_message(&handle, id, &msg);
+	if (i<=0) {
+		new_msg_close(&handle);
+		RETURN_FALSE;
+	}
+	
+	size=msg.attachment.size;
+	if (size<=0) {
+		new_msg_close(&handle);
+		RETURN_FALSE;
+	}
+		
+	output=(char *)emalloc(size);
+	if (!output) {
+		new_msg_close(&handle);
+		RETURN_FALSE;
+	}
+	i=new_msg_get_attachment(&handle, msg.id, output, size);
+	new_msg_close(&handle);
+
+	if (i<0) {
+		efree(output);
+		RETURN_FALSE;
+	}
+
+	RETVAL_STRINGL(output, size, 0);
+#else
+	RETURN_FALSE;
 #endif
 }

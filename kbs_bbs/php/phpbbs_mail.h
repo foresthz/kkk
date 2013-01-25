@@ -28,6 +28,9 @@ PHP_FUNCTION(bbs_delete_refer);
 PHP_FUNCTION(bbs_read_all_refer);
 PHP_FUNCTION(bbs_truncate_refer);
 
+PHP_FUNCTION(bbs_new_msg_get_message);
+PHP_FUNCTION(bbs_new_msg_get_attachment);
+
 #define PHP_BBS_MAIL_EXPORT_FUNCTIONS \
     PHP_FE(bbs_checknewmail, NULL) \
     PHP_FE(bbs_mail_get_num, NULL) \
@@ -50,6 +53,8 @@ PHP_FUNCTION(bbs_truncate_refer);
     PHP_FE(bbs_read_refer, NULL) \
     PHP_FE(bbs_delete_refer, NULL) \
     PHP_FE(bbs_read_all_refer, NULL) \
-    PHP_FE(bbs_truncate_refer, NULL)
+    PHP_FE(bbs_truncate_refer, NULL) \
+    PHP_FE(bbs_new_msg_get_message, NULL) \
+    PHP_FE(bbs_new_msg_get_attachment, NULL)	
 #endif //PHP_BBS_MAIL_H
 
