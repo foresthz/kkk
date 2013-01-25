@@ -1073,6 +1073,10 @@ void member_board_article_title(struct _select_def* conf) {
          strcpy(title, "[您有@提醒]");
      else if (chkmailflag==4)
          strcpy(title, "[您有回复提醒]");
+#ifdef ENABLE_NEW_MSG
+     else if (chkmailflag==5)
+         strcpy(title, "[您有新短信]");
+#endif
 #else
     else if (chkmailflag)       /* 信件检查 */
         strcpy(title, "[您有信件]");
