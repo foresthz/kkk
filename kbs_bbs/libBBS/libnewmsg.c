@@ -1020,14 +1020,16 @@ int new_msg_show_info_content(char *content, char *src, int left, int right, cha
 			j=new_msg_show_border_left(content, NEW_MSG_BORDER_VER, j, left, color);
 			border_left=0;
 			border_right=1;
-		}
-		if (src[i]<0 || src[i]>128)
-			k=1;
-		else
+			pos=0;
 			k=0;
+		}
+		if (k==1)
+			k=0;
+		else if (src[i]<0)
+			k=1;
 		if (
-			(k==0 && pos>=size-1 && src[i]!='\n' && src[i]!='\r')
-			|| (k==1 && pos>=size-2)
+			(k==0 && pos>=size)
+			|| (k==1 && pos>=size-1)
 			|| (src[i]=='\n' || src[i]=='\r')
 		) {
 			j=new_msg_show_border_right(content, NEW_MSG_BORDER_VER, j, size-pos, color);
