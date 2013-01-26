@@ -648,7 +648,7 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 	struct new_msg_message message;
 	int flag;
 	struct stat st;	
-	struct new_msg_member *members;
+	//struct new_msg_member *members;
 	
 	if (!(sender->flag&NEW_MSG_HANDLE_OK))
 		return -1;
@@ -698,13 +698,15 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 	message.msg.size=strlen(message.msg.msg);
 	message.msg.flag=flag;
 
+	/*
 	members=(struct new_msg_member *)malloc(sizeof(struct new_msg_member)*2);
 	bzero(members, sizeof(struct new_msg_member)*2);
 	strncpy(members[0].user, sender->user, IDLEN+1);
 	strncpy(members[1].user, incept->user, IDLEN+1);
 	new_msg_set_key(&(message.msg), members, 2);
 	free(members);
-	
+	*/
+
 	if (message.msg.flag&NEW_MSG_MESSAGE_ATTACHMENT) {
 		strncpy(message.attachment.type, attachment->type, NEW_MSG_ATTACHMENT_TYPE_LEN+1);
 		message.attachment.size=attachment->size;
@@ -716,6 +718,8 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 	}
 
 	sprintf(message.name, "与 %s 的对话", sender->user);	
+	strncpy(message.msg.key, sender->user, IDLEN+1);
+	message.msg.key[IDLEN+1]=0;
 	if (new_msg_create(incept, &message, attachment_file)<0) {
 		return -12;
 	}
@@ -724,6 +728,8 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 	message.msg.flag|=NEW_MSG_MESSAGE_READ;
 	strncpy(message.msg.user, incept->user, IDLEN+1);
 	sprintf(message.name, "与 %s 的对话", incept->user);
+	strncpy(message.msg.key, incept->user, IDLEN+1);
+	message.msg.key[IDLEN+1]=0;
 	if (new_msg_create(sender, &message, attachment_file)<0) {
 		return -13;
 	}
