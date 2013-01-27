@@ -920,7 +920,8 @@ while(0)
     int new_msg_check_new(struct new_msg_handle *handle);
     char *new_msg_show_time(char *buf, struct new_msg_info *msg, int mode);
     int new_msg_get_attachment(struct new_msg_handle *handle, long id, char *output, int size);
-    int new_msg_attachment_size(char *buf, struct new_msg_attachment *attachment);
+    int new_msg_show_size(char *buf, int size);
+    int new_msg_get_new_count(struct new_msg_handle *handle);
 #endif /* ENABLE_NEW_MSG */
 
 

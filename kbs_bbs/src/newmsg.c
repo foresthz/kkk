@@ -21,7 +21,7 @@ int new_msg_attachment_prompt(char *buf, struct new_msg_attachment *attachment) 
 	char size[STRLEN];
 
 	if (NULL!=attachment && attachment->name[0]!=0) {
-		new_msg_attachment_size(size, attachment);
+		new_msg_show_size(size, attachment->size);
 		sprintf(buf, "%s (%s)", attachment->name, size);
 	}
 	return 0;
@@ -452,7 +452,12 @@ static int new_msg_display_show_data(struct _select_def *conf, int i) {
 	return SHOW_CONTINUE;
 }
 static int new_msg_display_show_title(struct _select_def *conf) {
-	docmdtitle("[我的短信]", "回复[\033[1;32mr\033[m] 删除[\033[1;32md\033[m] 转寄[\033[1;32mF\033[m]");
+	char buf[200], size_s[20], capacity_s[20];
+
+	new_msg_show_size(size_s, new_msg_get_size(getCurrentUser()));
+	new_msg_show_size(capacity_s, new_msg_get_capacity(getCurrentUser()));
+	sprintf(buf, "回复[\033[1;32mr\033[m] 删除[\033[1;32md\033[m] 转寄[\033[1;32mF\033[m]   已用空间: \033[1;31m%s\033[m / 总空间: \033[1;31m%s\033[m", size_s, capacity_s);
+	docmdtitle("[我的短信]", buf);
 	update_endline();
 	return 0;
 }

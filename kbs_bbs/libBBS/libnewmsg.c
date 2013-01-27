@@ -18,13 +18,13 @@
 #define NEW_MSG_BORDER_HOR             "━"
 #define NEW_MSG_BORDER_VER             "┃"
 
-int new_msg_attachment_size(char *buf, struct new_msg_attachment *attachment) {	
-	if (attachment->size > 1024*1024)		
-		sprintf(buf, "%d M", attachment->size/1024/1024);	
-	else if (attachment->size > 1024)		
-		sprintf(buf, "%d K", attachment->size/1024);	
+int new_msg_show_size(char *buf, int size) {	
+	if (size > 1024*1024)		
+		sprintf(buf, "%dM", size/1024/1024);	
+	else if (size > 1024)		
+		sprintf(buf, "%dK", size/1024);	
 	else		
-		sprintf(buf, "%d byte", attachment->size);	
+		sprintf(buf, "%dbyte", size);	
 	return 0;
 }
 
@@ -1083,7 +1083,7 @@ int new_msg_show_info(char *content, struct new_msg_info *msg, int mode, struct 
 	if (msg->flag&NEW_MSG_MESSAGE_ATTACHMENT) {
 		mode |= 0x08;
 		get_telnet_sessionid(sid, getSession()->utmpent);
-		new_msg_attachment_size(buf, attachment);
+		new_msg_show_size(buf, attachment->size);
 		sprintf(attach_name, "附件: %s (%s)", attachment->name, buf);
 		buf[0]=0;
 		strcpy(buf, attachment->name);
@@ -1226,7 +1226,16 @@ int new_msg_dump(struct new_msg_handle *handle, struct new_msg_user *info, int f
 	return 0;
 }
 
+int new_msg_get_new_count(struct new_msg_handle *handle) {
+	char buf[100];
+
+	sprintf(buf, " [flag]&%d=0 ", NEW_MSG_MESSAGE_READ);
+	return new_msg_count(handle, NEW_MSG_TABLE_MESSAGE, buf);
+}
+
 int new_msg_check_new(struct new_msg_handle *handle) {
+/*
+	// 仅检查最新的一条记录
 	struct new_msg_user user;
 	
 	if (new_msg_get_users(handle)<=0)
@@ -1235,6 +1244,9 @@ int new_msg_check_new(struct new_msg_handle *handle) {
 	if (new_msg_load_users(handle, 0, 1, &user)<=0)
 		return -2;
 	return (user.msg.flag&NEW_MSG_MESSAGE_READ)?0:1;
+*/
+	// 检查所有未读记录
+	return (new_msg_get_new_count(handle)>0)?1:0;
 }
 
 char *new_msg_show_time(char *buf, struct new_msg_info *msg, int mode) {
