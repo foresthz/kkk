@@ -241,15 +241,18 @@ int new_msg_open(struct new_msg_handle *handle) {
 		return -1;
 	if (!getuser(handle->user, &user))
 		return -1;
-	
+	if (strcasecmp(user->userid, "guest")==0)
+		return -2;
+	if (strcasecmp(user->userid, "SYSOP")==0)
+		return -3;	
 	strncpy(handle->user, user->userid, IDLEN+1);
 	sethomefile(path, handle->user, NEW_MSG_DB);
 	
 	if (stat(path, &st)<0 && f_cp(NEW_MSG_INIT_DB, path, 0)!=0)
-		return -2;
+		return -3;
 		
 	if (SQLITE_OK!=sqlite3_open(path, &handle->db))
-		return -3;
+		return -4;
 		
 	handle->flag |= NEW_MSG_HANDLE_OK;	
 		
