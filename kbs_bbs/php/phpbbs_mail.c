@@ -14,6 +14,23 @@ void bbs_make_refer_array(zval *array, struct refer *refer) {
 #endif
 
 #ifdef ENABLE_NEW_MSG
+void bbs_makr_new_msg_user_array(zval *array, struct new_msg_user *msg) {
+	add_assoc_long(array, "ID", msg->id);
+	add_assoc_long(array, "MSG_ID", msg->msg_id);
+	add_assoc_string(array, "NAME", msg->name, 1);
+	add_assoc_long(array, "COUNT", msg->count);
+	add_assoc_long(array, "TIME", (&(msg->msg))->time);
+	add_assoc_long(array, "HOST", (&(msg->msg))->host);
+	add_assoc_long(array, "SIZE", (&(msg->msg))->size);
+	add_assoc_long(array, "FLAG", (&(msg->msg))->flag);
+	add_assoc_string(array, "KEY", (&(msg->msg))->key , 1);
+	add_assoc_string(array, "USER", (&(msg->msg))->user , 1);
+	add_assoc_string(array, "FROM", (&(msg->msg))->from , 1);
+	add_assoc_string(array, "MSG", (&(msg->msg))->msg , 1);
+	add_assoc_long(array, "ATTACHMENT_SIZE", (&(msg->attachment))->size);
+	add_assoc_string(array, "ATTACHMENT_NAME", (&(msg->attachment))->name, 1);
+	add_assoc_string(array, "ATTACHMENT_TYPE", (&(msg->attachment))->type, 1);
+}
 void bbs_make_new_msg_message_array(zval *array, struct new_msg_message *msg) {
     add_assoc_long(array, "ID", msg->id);
 	add_assoc_long(array, "TIME", (&(msg->msg))->time);
@@ -1355,3 +1372,420 @@ PHP_FUNCTION(bbs_new_msg_get_attachment)
 	RETURN_FALSE;
 #endif
 }
+
+PHP_FUNCTION(bbs_new_msg_get_new)
+{
+#ifdef ENABLE_NEW_MSG
+	struct new_msg_handle handle;
+	int ret;
+
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-1);
+
+	ret=new_msg_get_new_count(&handle);
+	new_msg_close(&handle);
+
+	RETURN_LONG(ret);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_get_users)
+{
+#ifdef ENABLE_NEW_MSG
+	struct new_msg_handle handle;
+	int ret;
+
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-1);
+	ret=new_msg_get_users(&handle);
+	new_msg_close(&handle);
+
+	RETURN_LONG(ret);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_load_users)
+{
+#ifdef ENABLE_NEW_MSG
+	long start, count;
+	int i, ret;
+	zval *list, *element;
+	struct new_msg_user *users;
+	struct new_msg_handle handle;
+
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "llz", &start, &count, &list)==FAILURE)
+        WRONG_PARAM_COUNT;
+
+	if (!PZVAL_IS_REF(list)) {
+		zend_error(E_WARNING, "Parameter wasn't passed by reference");
+		RETURN_LONG(-1);
+	}
+
+	if (count<=0)
+		RETURN_LONG(-2);
+
+	if (array_init(list)!=SUCCESS)
+		RETURN_LONG(-3);
+
+	users=(struct new_msg_user *)emalloc(sizeof(struct new_msg_user)*count);
+
+	if (!users)
+		RETURN_LONG(-4);
+
+	bzero(users, sizeof(struct new_msg_user)*count);
+
+	new_msg_init(&handle, getCurrentUser());
+
+	if (new_msg_open(&handle)<0) {
+		efree(users);
+		RETURN_LONG(-2);
+	}
+
+	ret=new_msg_load_users(&handle, start, count, users);
+	if (ret>0) {
+		for (i=0;i<ret;i++) {
+			MAKE_STD_ZVAL(element);
+			array_init(element);
+			bbs_makr_new_msg_user_array(element, users+i);
+			zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
+		}
+	}
+	efree(users);
+	new_msg_close(&handle);
+
+	if (ret<0)
+		RETURN_LONG(-3);
+
+	RETURN_LONG(ret);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_get_user_messages)
+{
+#ifdef ENABLE_NEW_MSG
+	char *user_id;
+	int user_id_len;
+	struct userec *user;
+	int ret;
+	struct new_msg_handle handle;
+
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &user_id, &user_id_len)==FAILURE)
+		WRONG_PARAM_COUNT;
+
+	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
+		RETURN_LONG(-1);
+	if (!getuser(user_id, &user))
+		RETURN_LONG(-1);
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-2);
+
+	ret=new_msg_get_user_messages(&handle, user->userid);
+	new_msg_close(&handle);
+
+	RETURN_LONG(ret);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_load_user_messages)
+{
+#ifdef ENABLE_NEW_MSG
+	long start, count;
+	int ret, i;
+	zval *list, *element;
+	char *user_id;
+	int user_id_len;
+	struct new_msg_message *messages;
+	struct userec *user;
+
+	if (ZEND_NUM_ARGS()!=4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sllz", &user_id, &user_id_len, &start, &count, &list)==FAILURE)
+		WRONG_PARAM_COUNT;
+
+	if (!PZVAL_IS_REF(list)) {
+		zend_error(E_WARNING, "Parameter wasn't passed by reference");
+		RETURN_LONG(-1);
+	}
+
+	if (count<=0)
+		RETURN_LONG(-2);
+
+	if (array_init(list)!=SUCCESS)
+		RETURN_LONG(-3);
+
+	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
+		RETURN_LONG(-4);
+
+	if (!getuser(usr_id, &user))
+		RETURN_LONG(-4);
+
+	messages=(struct new_msg_message *)emalloc(sizeof(struct new_msg_message)*count);
+	if (!messages)
+		RETURN_LONG(-5);
+	bzero(messages, sizeof(struct new_msg_message)*count);
+
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0) {
+		efree(messages);
+		RETURN_LONG(-6);
+	}
+
+	ret=new_msg_load_user_messages(&handle, user->userid, start, count, messages);
+	if (ret>0) {
+		for (i=0;i<ret;i++) {
+			MAKE_STD_ZVAL(element);
+			array_init(element);
+			bbs_makr_new_msg_message_array(element, messages+i);
+			zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
+		}
+	}
+	efree(messages);
+	new_msg_close(&handle);
+
+	if (ret<0)
+		RETURN_LONG(-7);
+
+	RETURN_LONG(ret);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_delete)
+{
+#ifdef ENABLE_NEW_MSG
+	char *user_id;
+	int user_id_len;
+	struct userec *user;
+	int ret;
+	struct new_msg_handle handle;
+
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &user_id, &user_id_len)==FAILURE)
+		WRONG_PARAM_COUNT;
+
+	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
+		RETURN_LONG(-1);
+	if (!getuser(user_id, &user))
+		RETURN_LONG(-1);
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-2);
+
+	ret=new_msg_remove_user_messages(&handle, user->userid);
+	new_msg_close(&handle);
+
+	if (ret<0)
+		RETURN_LONG(-3);
+
+	RETURN_LONG(0);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_forward)
+{
+#ifdef ENABLE_NEW_MSG
+	char *user_id, *to_id;
+	int user_id_len, to_id_len;
+	struct userec *user, *to;
+	struct new_msg_handle handle;
+	struct new_msg_user info;
+	char title[100], path[PATHLEN];
+	int ret;
+
+	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss", &user_id, &user_id_len, &to_id, &to_id_len)==FAILURE)
+		WRONG_PARAM_COUNT;
+
+	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
+		RETURN_LONG(-1);
+	if (to_id_len<=0 || to_id_len>IDLEN || !to_id[0])
+		RETURN_LONG(-2);
+	if (!getuser(user_id, &user))
+		RETURN_LONG(-1);
+	if (!getuser(to_id, &to))
+		RETURN_LONG(-2);
+
+	if (!HAS_PERM(getCurrentUser(), PERM_SYSOP) && to->userlevel & PERM_SUICIDE)
+		RETURN_LONG(-3);
+
+	if (!HAS_PERM(getCurrentUser(), PERM_SYSOP) && !(to->userlevel & PERM_BASIC))
+		RETURN_LONG(-4);
+
+	if (!HAS_PERM(getCurrentUser(), PERM_SYSOP) && chkusermail(to) >= 3)
+		RETURN_LONG(-5);
+
+	if (false == canIsend2(getCurrentUser(), to->userid))
+		RETURN_LONG(-6);
+
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-7);
+
+	bzero(&info, sizeof(struct new_msg_user));
+	strncpy(info.msg.user, user->userid, IDLEN+1);
+	sprintf(info.name, "与 %s 的对话", user->userid);
+	if (new_msg_dump(&handle, info, 0x01, 0, 0)<0)
+		ret=-8;
+	else {
+		sprintf(title, "与 %s 的短信记录(转寄)", user->userid);
+		new_msg_dump_file(path, &handle, &info);
+		ret=mail_file(getCurrentUser()->userid, path, to->userid, title, BBSPOST_COPY, NULL);
+		if (ret!=0)
+			ret=-9;
+	}
+
+	new_msg_close(&handle);
+	RETURN_LONG(0);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_read)
+{
+#ifdef ENABLE_NEW_MSG
+	char *user_id;
+	int user_id_len;
+	struct userec *user;
+	int ret;
+	struct new_msg_handle handle;
+	struct new_msg_user info;
+
+	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &user_id, &user_id_len)==FAILURE)
+		WRONG_PARAM_COUNT;
+
+	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
+		RETURN_LONG(-1);
+	if (!getuser(user_id, &user))
+		RETURN_LONG(-1);
+	new_msg_init(&handle, getCurrentUser());
+	if (new_msg_open(&handle)<0)
+		RETURN_LONG(-2);
+
+	bzero(&info, sizeof(struct new_msg_user));
+	strncpy(info.msg.user, user->userid, IDLEN+1);
+	info.msg.flag=0;
+	new_msg_read(&handle, &info);
+
+	new_msg_close(&handle);
+
+	RETURN_LONG(0);
+#else
+	RETURN_FALSE;
+#endif
+}
+
+PHP_FUNCTION(bbs_new_msg_send)
+{
+#ifdef ENABLE_NEW_MSG
+	char *user_id, *content, *send_type;
+	int user_id_len, content_len, send_type_len;
+	struct userec *user;
+	int ret;
+	struct new_msg_handle from;
+	struct new_msg_handle to;
+	struct new_msg_info msg;
+	struct new_msg_attachment attachment;
+	char attach_dir[MAXPATH], attach_info[MAXPATH], path[PATHLEN];
+	FILE *fp;
+	char buf[256];
+	struct stat st;
+	char *ext;
+
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sss", &user_id, &user_id_len, &content, &content_len, &send_type, &send_type_len)==FAILURE)
+			WRONG_PARAM_COUNT;
+
+	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
+		RETURN_LONG(-2);
+	if (!getuser(user_id, &user))
+		RETURN_LONG(-2);
+	if (content_len<=0 || !content[0])
+		RETURN_LONG(-24);
+	if (content_len>NEW_MSG_MAX_SIZE)
+		RETURN_LONG(-25);
+
+	ret=new_msg_check(getCurrentUser(), user);
+	if (ret<0)
+		RETURN_LONG(ret);
+
+	new_msg_init(&from, getCurrentUser());
+	new_msg_init(&to, user);
+
+	if (new_msg_open(&from)<0)
+		RETURN_LONG(-11);
+	if (new_msg_open(&to)<0) {
+		new_msg_close(&from);
+		RETURN_LONG(-12);
+	}
+
+	bzero(&msg, sizeof(struct new_msg_info));
+	bzero(&attachment, sizeof(struct new_msg_attachment));
+
+	if (send_type_len<=0 || !send_type[0])
+		strcpy(msg.from, "WWW");
+	else
+		strncpy(msg.from, send_type, NEW_MSG_FROM_LEN+1);
+	strncpy(msg.msg, content, NEW_MSG_MAX_SIZE+1);
+
+	/* attachment */
+	getattachtmppath(attach_dir, MAXPATH, getSession());
+	snprintf(attach_info, MAXPATH, "%s/.index", attach_dir);
+    if ((fp=fopen(attach_info, "r"))!=NULL) {
+            while(fgets(buf, 256, fp)) {
+                    char *name;
+                    char *ptr;
+
+                    name=strchr(buf, ' ');
+                    if (name==NULL)
+                            continue;
+                    *name=0;
+                    name++;
+                    ptr=strchr(name, '\n');
+                    if (ptr)
+                            *ptr=0;
+
+                    if (stat(buf, &st)!=-1&&S_ISREG(st.st_mode)) {
+                            strncpy(attachment.name, name, NEW_MSG_ATTACHMENT_NAME_LEN);
+                            attachment.name[NEW_MSG_ATTACHMENT_NAME_LEN]=0;
+                            ext=strrchr(attachment.name, '.');
+                            strncpy(attachment.type, get_mime_type_from_ext(ext), NEW_MSG_ATTACHMENT_TYPE_LEN);
+                            attachment.size=st.st_size;
+                            strncpy(path, buf, PATHLEN);
+                            path[PATHLEN]=0;
+                            break;
+                    }
+            }
+            fclose(fp);
+    }
+
+    if (attachment.name[0]==0 || attachment.size<=0)
+    	ret=new_msg_send(&from, &to, &msg, NULL, NULL);
+    else {
+    	ret=new_msg_send(&from, &to, &msg, &attachment, path);
+    	if (ret>=0) {
+    		upload_del_file(attachment.name, getSession());
+    	}
+    }
+
+	new_msg_close(&from);
+	new_msg_close(&to);
+
+	if (ret<0)
+		RETURN_LONG(ret-20);
+
+	RETURN_LONG(ret);
+#else
+	RETURN_FALSE;
+#endif
+}
+

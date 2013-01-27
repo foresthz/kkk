@@ -30,6 +30,15 @@ PHP_FUNCTION(bbs_truncate_refer);
 
 PHP_FUNCTION(bbs_new_msg_get_message);
 PHP_FUNCTION(bbs_new_msg_get_attachment);
+PHP_FUNCTION(bbs_new_msg_get_new);
+PHP_FUNCTION(bbs_new_msg_get_users);
+PHP_FUNCTION(bbs_new_msg_load_users);
+PHP_FUNCTION(bbs_new_msg_get_user_messages);
+PHP_FUNCTION(bbs_new_msg_load_user_messages);
+PHP_FUNCTION(bbs_new_msg_delete);
+PHP_FUNCTION(bbs_new_msg_forward);
+PHP_FUNCTION(bbs_new_msg_read);
+PHP_FUNCTION(bbs_new_msg_send);
 
 #define PHP_BBS_MAIL_EXPORT_FUNCTIONS \
     PHP_FE(bbs_checknewmail, NULL) \
@@ -55,6 +64,15 @@ PHP_FUNCTION(bbs_new_msg_get_attachment);
     PHP_FE(bbs_read_all_refer, NULL) \
     PHP_FE(bbs_truncate_refer, NULL) \
     PHP_FE(bbs_new_msg_get_message, NULL) \
-    PHP_FE(bbs_new_msg_get_attachment, NULL)	
+    PHP_FE(bbs_new_msg_get_attachment, NULL) \
+    PHP_FE(bbs_new_msg_get_new, NULL) \
+    PHP_FE(bbs_new_msg_get_users, NULL) \
+    PHP_FE(bbs_new_msg_load_users, NULL) \
+    PHP_FE(bbs_new_msg_get_user_messages, NULL) \
+    PHP_FE(bbs_new_msg_load_user_messages, NULL) \
+    PHP_FE(bbs_new_msg_delete, NULL) \
+    PHP_FE(bbs_new_msg_forward, NULL) \
+    PHP_FE(bbs_new_msg_read, NULL) \
+    PHP_FE(bbs_new_msg_send, NULL)
 #endif //PHP_BBS_MAIL_H
 
