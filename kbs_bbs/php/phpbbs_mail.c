@@ -1506,6 +1506,7 @@ PHP_FUNCTION(bbs_new_msg_load_user_messages)
 	char *user_id;
 	int user_id_len;
 	struct new_msg_message *messages;
+	struct new_msg_handle handle;
 	struct userec *user;
 
 	if (ZEND_NUM_ARGS()!=4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sllz", &user_id, &user_id_len, &start, &count, &list)==FAILURE)
@@ -1525,7 +1526,7 @@ PHP_FUNCTION(bbs_new_msg_load_user_messages)
 	if (user_id_len<=0 || user_id_len>IDLEN || !user_id[0])
 		RETURN_LONG(-4);
 
-	if (!getuser(usr_id, &user))
+	if (!getuser(user_id, &user))
 		RETURN_LONG(-4);
 
 	messages=(struct new_msg_message *)emalloc(sizeof(struct new_msg_message)*count);
@@ -1544,7 +1545,7 @@ PHP_FUNCTION(bbs_new_msg_load_user_messages)
 		for (i=0;i<ret;i++) {
 			MAKE_STD_ZVAL(element);
 			array_init(element);
-			bbs_makr_new_msg_message_array(element, messages+i);
+			bbs_make_new_msg_message_array(element, messages+i);
 			zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
 		}
 	}
@@ -1634,7 +1635,7 @@ PHP_FUNCTION(bbs_new_msg_forward)
 	bzero(&info, sizeof(struct new_msg_user));
 	strncpy(info.msg.user, user->userid, IDLEN+1);
 	sprintf(info.name, "与 %s 的对话", user->userid);
-	if (new_msg_dump(&handle, info, 0x01, 0, 0)<0)
+	if (new_msg_dump(&handle, &info, 0x01, 0, 0)<0)
 		ret=-8;
 	else {
 		sprintf(title, "与 %s 的短信记录(转寄)", user->userid);
@@ -1657,7 +1658,6 @@ PHP_FUNCTION(bbs_new_msg_read)
 	char *user_id;
 	int user_id_len;
 	struct userec *user;
-	int ret;
 	struct new_msg_handle handle;
 	struct new_msg_user info;
 
