@@ -382,7 +382,10 @@ int new_msg_display_messages(struct new_msg_handle *handle, struct new_msg_user 
 
 	total=new_msg_get_user_messages(handle, (&(info->msg))->user);
 	new_msg_dump_file(path, handle, info);
-	if (!((&(info->msg))->flag&NEW_MSG_MESSAGE_READ)) {
+	if (
+            !((&(info->msg))->flag&NEW_MSG_MESSAGE_READ)
+          || (&(info->msg))->flag&NEW_MSG_MESSAGE_SEND
+       ) {
 		new_msg_read(handle, info);
 		setmailcheck(getCurrentUser()->userid); 
 	}

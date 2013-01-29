@@ -897,7 +897,7 @@ int new_msg_read(struct new_msg_handle *handle, struct new_msg_user *info) {
 	char sql[300];
 	char *errmsg=NULL; 
 	
-	if ((&(info->msg))->flag&NEW_MSG_MESSAGE_READ)
+	if ((&(info->msg))->flag&NEW_MSG_MESSAGE_READ && !((&info->msg)->flag&NEW_MSG_MESSAGE_SEND))
 		return 0;
 	
 	sprintf(sql, "UPDATE [%s] SET [flag]=[flag]|%d WHERE [user]='%s';",
