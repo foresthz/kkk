@@ -354,7 +354,7 @@ extern long ti;
 #define NEW_MSG_TEXT_LEN               NEW_MSG_MAX_SIZE
 
 #ifndef NEW_MSG_CAPACITY
-#define NEW_MSG_CAPACITY               100000000
+#define NEW_MSG_CAPACITY               104857600
 #endif
 
 #define NEW_MSG_HANDLE_OK              0x01  // msg handle 完成初始化
