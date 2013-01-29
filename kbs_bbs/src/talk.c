@@ -503,6 +503,9 @@ int t_query(char* q_id)
             t1 = "       ";
             t2 = "         ";
         }
+#ifdef ENABLE_NEW_MSG
+            t3 = "短信[\x1b[1;32mw\x1b[m\x1b[0;44m]";   
+#else
 #ifdef PERSONAL_CORP
         if (lookupuser->flags & PCORP_FLAG) {
             t3 = "BLOG[\x1b[1;32mx\x1b[m\x1b[0;44m]";
@@ -511,6 +514,7 @@ int t_query(char* q_id)
         {
             t3 = "       ";
         }
+#endif
 #ifdef ENABLE_BOARD_MEMBER
         prints("\x1b[m\x1b[44m%s 寄信[\x1b[1;32mm\x1b[m\x1b[0;44m] %s 加,减朋友[\x1b[1;32mo,d\x1b[m\x1b[0;44m] 说明档[\x1b[1;32ml\x1b[m\x1b[0;44m] 驻版[\x1b[1;32mk\x1b[m\x1b[0;44m] %s 其它键继续", t1, t2, t3);
 #else		
@@ -588,12 +592,19 @@ int t_query(char* q_id)
                 refresh();
                 sleep(1);
                 break;
+#ifdef ENABLE_NEW_MSG
+            case 'W':
+               if(!strcmp("guest", getCurrentUser()->userid))
+                   break;
+               new_msg_do_compose(uident, 0); 
+               break;
+#endif
 #ifdef ENABLE_BOARD_MEMBER				
-			case 'K':
-				if (!strcmp("guest", getCurrentUser()->userid))
+            case 'K':
+                if (!strcmp("guest", getCurrentUser()->userid))
                     break;
-				display_member_boards(uident);
-				break;
+                display_member_boards(uident);
+                break;
 #endif
         }
     }

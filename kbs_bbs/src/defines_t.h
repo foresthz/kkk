@@ -193,6 +193,7 @@ void clear_refer_info(int mode);
 #ifdef ENABLE_NEW_MSG
 int new_msg_main(void);
 int new_msg_compose(void);
+int new_msg_do_compose(char *user_id, int mode);
 #endif
 
 /* maintain.c */
