@@ -638,6 +638,11 @@ PHP_FUNCTION(bbs_postmail)
 
     if (stat(filepath, &st) != -1)
         header.eff_size = st.st_size;
+    /* fancy Jan 14 2009, ³ÂÐèÒª */
+    int ChenRequire(const char *fn, const char *toid);
+    if (strcmp(targetID, getCurrentUser()->userid) && strcmp(targetID, "SYSOP") && strcmp(targetID, "Arbitrator") && ChenRequire(filepath, targetID) == 1)
+        setmailfile(fname, targetID, ".DELETED");
+    else
     setmailfile(fname, targetID, ".DIR");
     if (append_record(fname, &header, sizeof(header)) == -1)
         RETURN_LONG(-6);
@@ -1696,7 +1701,7 @@ PHP_FUNCTION(bbs_new_msg_send)
 	struct new_msg_handle to;
 	struct new_msg_info msg;
 	struct new_msg_attachment attachment;
-	char attach_dir[MAXPATH], attach_info[MAXPATH], path[PATHLEN];
+	char attach_dir[MAXPATH], attach_info[MAXPATH], path[PATHLEN+1];
 	FILE *fp;
 	char buf[256];
 	struct stat st;
