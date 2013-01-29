@@ -339,7 +339,6 @@ extern long ti;
 #define NEW_MSG_FROM_LEN               32
 #define NEW_MSG_ATTACHMENT_TYPE_LEN    64
 #define NEW_MSG_ATTACHMENT_NAME_LEN    128
-#define NEW_MSG_TEXT_LEN               280
 #define NEW_MSG_KEY_LEN                128
 #define NEW_MSG_MAX_MEMBERS            16
 #define NEW_MSG_NAME_LEN               128
@@ -349,8 +348,10 @@ extern long ti;
 #endif
 
 #ifndef NEW_MSG_MAX_SIZE
-#define NEW_MSG_MAX_SIZE               1024
+#define NEW_MSG_MAX_SIZE               600
 #endif
+
+#define NEW_MSG_TEXT_LEN               NEW_MSG_MAX_SIZE
 
 #ifndef NEW_MSG_CAPACITY
 #define NEW_MSG_CAPACITY               100000000
