@@ -39,6 +39,8 @@ PHP_FUNCTION(bbs_new_msg_delete);
 PHP_FUNCTION(bbs_new_msg_forward);
 PHP_FUNCTION(bbs_new_msg_read);
 PHP_FUNCTION(bbs_new_msg_send);
+PHP_FUNCTION(bbs_new_msg_get_capacity);
+PHP_FUNCTION(bbs_new_msg_get_size);
 
 #define PHP_BBS_MAIL_EXPORT_FUNCTIONS \
     PHP_FE(bbs_checknewmail, NULL) \
@@ -73,6 +75,8 @@ PHP_FUNCTION(bbs_new_msg_send);
     PHP_FE(bbs_new_msg_delete, NULL) \
     PHP_FE(bbs_new_msg_forward, NULL) \
     PHP_FE(bbs_new_msg_read, NULL) \
-    PHP_FE(bbs_new_msg_send, NULL)
+    PHP_FE(bbs_new_msg_send, NULL) \
+    PHP_FE(bbs_new_msg_get_capacity, NULL) \
+    PHP_FE(bbs_new_msg_get_size, NULL)
 #endif //PHP_BBS_MAIL_H
 

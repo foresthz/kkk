@@ -1789,3 +1789,19 @@ PHP_FUNCTION(bbs_new_msg_send)
 #endif
 }
 
+PHP_FUNCTION(bbs_new_msg_get_capacity)
+{
+#ifdef ENABLE_NEW_MSG
+	RETURN_LONG(new_msg_get_capacity(getCurrentUser()));
+#else
+	RETURN_LONG(0);
+#endif
+} 
+PHP_FUNCTION(bbs_new_msg_get_size)
+{
+#ifdef ENABLE_NEW_MSG
+	RETURN_LONG(new_msg_get_size(getCurrentUser()));
+#else
+	RETURN_LONG(0);
+#endif
+}
