@@ -1735,7 +1735,7 @@ PHP_FUNCTION(bbs_new_msg_send)
 		strcpy(msg.from, "WWW");
 	else
 		strncpy(msg.from, send_type, NEW_MSG_FROM_LEN+1);
-	strncpy(msg.msg, content, NEW_MSG_MAX_SIZE+1);
+	strncpy(msg.msg, content, content_len);
 
 	/* attachment */
 	getattachtmppath(attach_dir, MAXPATH, getSession());
