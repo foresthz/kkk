@@ -628,6 +628,7 @@ static int new_msg_display_key(struct _select_def *conf, int key) {
 			i=getdata(t_lines-1, 0, buf, ans, 3, DOECHO, NULL, true);
 			if (i!=-1 && (ans[0]=='y' || ans[0]=='Y')) {
 				new_msg_remove_user_messages(arg->handle, (&(info->msg))->user);
+				conf->item_count=new_msg_get_users(arg->handle);	
 				return SHOW_DIRCHANGE;
 			} else
 				return SHOW_REFRESH;
