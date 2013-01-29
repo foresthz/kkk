@@ -141,7 +141,7 @@ int chkrefer() {
         new_msg_close(&handle);
     }
 
-    if (ret)
+    if (ret==1)
         return 5;
 #endif 
     /* 需要更新一下uinfo中的记录 */
