@@ -224,6 +224,7 @@ int new_msg_fill_message(struct new_msg_message *message, sqlite3_stmt  *stmt) {
 }
 
 int new_msg_init(struct new_msg_handle *handle, struct userec *user) {
+	bzero(handle, sizeof(struct new_msg_handle));
 	strncpy(handle->user, user->userid, IDLEN+1);
 	handle->flag=0;
 	return 0; 
