@@ -1573,8 +1573,13 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
     struct board_attach_link_info bali;
     struct read_arg* arg=conf->arg;
     if (fileinfo==NULL) return DONOTHING;
-#if defined(BOARD_SECURITY_LOG) || defined(HAVE_USERSCORE)
-    if (arg->mode == DIR_MODE_BOARD || arg->mode == DIR_MODE_SCORE)
+#ifdef BOARD_SECURITY_LOG
+    if (arg->mode == DIR_MODE_BOARD)
+        return view_security_report_origin(conf, fileinfo, extraarg);
+#endif
+
+#ifdef HAVE_USERSCORE
+    if (arg->mode == DIR_MODE_SCORE)
         return view_security_report_origin(conf, fileinfo, extraarg);
 #endif
 
