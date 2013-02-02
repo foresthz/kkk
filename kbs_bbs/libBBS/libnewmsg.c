@@ -160,9 +160,10 @@ int new_msg_delete(struct new_msg_handle *handle, char *table, char *where) {
 	else
 		sprintf(sql, "DELETE FROM [%s] WHERE %s;", table, where);
 		
-	if (SQLITE_OK==sqlite3_exec(handle->db, sql, NULL, NULL, &errmsg)) 
+	if (SQLITE_OK==sqlite3_exec(handle->db, sql, NULL, NULL, &errmsg)) {
 		ret=sqlite3_changes(handle->db);
-	else
+		if (ret>0) sqlite3_exec(handle->db, "vacuum;", NULL, NULL, &errmsg);
+	} else
 		ret=-2;
 	
 	free(sql);
