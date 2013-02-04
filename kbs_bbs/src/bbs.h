@@ -465,10 +465,6 @@ extern long ti;
 #include "tmpl.h"
 #include "modes.h"              /* The list of valid user modes */
 
-#ifdef ENABLE_MEMBER_CACHE
-#include "member_cache.h"
-#endif
-
 #define I_TIMEOUT   (-2)    /* Used for the getchar routine select call */
 #define I_OTHERDATA (-333)  /* interface, (-3) will conflict with chinese */
 #define SCREEN_SIZE (23)    /* Used by read menu  */
