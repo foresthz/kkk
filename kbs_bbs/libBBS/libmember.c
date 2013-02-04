@@ -141,6 +141,21 @@ int board_member_log(struct board_member *member, char *title, char *log) {
 }
 
 int delete_board_member_record(const char *name, const char *user_id) {
+#ifdef ENABLE_MEMBER_CACHE
+	int i;
+	struct board_member member;
+	
+	i=get_member_index(name, usre_id);
+	if (i<=0)
+		return -1;
+	if (remove_member(i)<0)
+		return -2;
+	
+	strncpy(member.user, user_id, IDLEN+1);
+	strncpy(member.board, name, STRLEN);
+	board_member_log(&member, "退出驻版", "退出驻版");	
+	return 0;
+#else
     MYSQL s;
     char sql[200];
     char my_name[STRLEN];
@@ -180,6 +195,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
     board_member_log(&member, "退出驻版", "退出驻版");
     
     return 0;
+#endif
 }
 
 int load_board_member_config(const char *name, struct board_member_config *config) {
@@ -326,8 +342,10 @@ int join_board_member(const char *name) {
     struct board_member_config config;
     int status, user_max, level, count, num;
     char buf[STRLEN];
+#ifndef ENABLE_MEMBER_CACHE	
     MYSQL s;
     char sql[300];
+#endif
     char log[1024];
     
     if (0==strcmp(getSession()->currentuser->userid, "guest"))
@@ -427,25 +445,33 @@ int join_board_member(const char *name) {
     
     status=(config.approve>0)?BOARD_MEMBER_STATUS_CANDIDATE:BOARD_MEMBER_STATUS_NORMAL;
     sprintf(buf, "\n是否需要审批: %s\n", (config.approve>0)?"是":"否");
-    
+#ifndef ENABLE_MEMBER_CACHE    
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -22;
     }
-    
+#endif    
     member.board[0]=0;
     member.user[0]=0;
-    
+
+#ifdef ENABLE_MEMBER_CACHE
+	strncpy(member.board, board->filename, STRLEN);
+	strncpy(member.user, getSession()->currentuser->userid, IDLEN+1);
+#else    
     mysql_escape_string(member.board, board->filename, strlen(board->filename));
     mysql_escape_string(member.user, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
+#endif
     member.time=time(0);
     member.status=status;
     member.manager[0]=0;
     member.score=0;
 	member.title=0;
     member.flag=0;
-    
+#ifdef ENABLE_MEMBER_CACHE
+	if (add_member(&member)<0)
+		return -23;
+#else    
     sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%lu), %d, \"\", %u, %d, %u);", member.board, member.user, member.time, member.status, member.score, member.title, member.flag);
     if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -454,6 +480,7 @@ int join_board_member(const char *name) {
     }
     
     mysql_close(&s);
+#endif
     if (BOARD_MEMBER_STATUS_CANDIDATE==status) {
         // 向版主发信
         // TODO
@@ -489,6 +516,9 @@ int remove_board_member(const char *name, const char *user_id) {
 }
 
 int get_board_member(const char *name, const char *user_id, struct board_member *member) {
+#ifdef ENABLE_MEMBER_CACHE
+    return get_member_cache(name, user_id, member);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -563,9 +593,13 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 	}
 	
     return status;
+#endif
 }
 
 int load_board_members(const char *board, struct board_member *member, int sort, int start, int num) {
+#ifdef ENABLE_MEMBER_CACHE
+
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -665,6 +699,7 @@ int load_board_members(const char *board, struct board_member *member, int sort,
 
     mysql_close(&s);
     return i;
+#endif
 }
 
 int load_member_boards(const char *user_id, struct board_member *member, int sort, int start, int num) {

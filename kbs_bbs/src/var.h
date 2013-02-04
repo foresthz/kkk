@@ -40,6 +40,9 @@ extern struct UTMPHEAD *utmphead;
 extern int WORDBOUND, WHOLELINE, NOUPPER, INVERSE, FILENAMEONLY, SILENT, FNAME;
 extern int ONLYCOUNT;
 extern struct UCACHE *uidshm;
+#ifdef ENABLE_MEMBER_CACHE
+extern struct MEMBER_CACHE *membershm;
+#endif
 
 extern struct WWW_GUEST_TABLE *wwwguest_shm;
 

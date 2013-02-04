@@ -891,6 +891,10 @@ while(0)
     int set_member_manager_level(char *user_id);
 #endif	
     int valid_core_member(const char *user_id);
+#ifdef ENABLE_MEMBER_CACHE
+    void resolve_members(ARG_VOID);
+    void detach_members(ARG_VOID);
+#endif
 #endif /* ENABLE_BOARD_MEMBER */
 
 /* new msg system, windinsn, Jan 21,2013 */

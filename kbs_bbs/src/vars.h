@@ -50,6 +50,10 @@ SMTH_API struct boardheader *bcache;
 SMTH_API struct BCACHE *brdshm;
 SMTH_API struct BDIRCACHE *bdirshm;
 
+#ifdef ENABLE_MEMBER_CACHE
+SMTH_API struct MEMBER_CACHE *membershm;
+#endif
+
 extern int idle_count;
 
 

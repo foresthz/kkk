@@ -261,6 +261,10 @@ extern long ti;
 #define PASSFILE        ".PASSWDS"          /* Name of file User records stored in */
 #define ULIST           "UTMP"              /* Names of users currently on line */
 #define POSTLOGFILE     ".post.X"           /* Name of file which log posting report */
+#ifdef ENABLE_MEMBER_CACHE
+#define MEMBERS_FILE    ".MEMBERS"
+#define MEMBER_TITLES_FILE ".MEMBER.TITLES"
+#endif
 
 #define USER_TITLE_LEN 18
 #define USER_TITLE_FILE "etc/title"
@@ -461,6 +465,10 @@ extern long ti;
 #include "tmpl.h"
 #include "modes.h"              /* The list of valid user modes */
 
+#ifdef ENABLE_MEMBER_CACHE
+#include "member_cache.h"
+#endif
+
 #define I_TIMEOUT   (-2)    /* Used for the getchar routine select call */
 #define I_OTHERDATA (-333)  /* interface, (-3) will conflict with chinese */
 #define SCREEN_SIZE (23)    /* Used by read menu  */
@@ -571,6 +579,9 @@ extern int KEY_ESC_arg;
 #define UTMP_SEMLOCK        1
 #define BCACHE_SEMLOCK      2
 #define BSTATUS_SEMLOCK     3
+#ifdef ENABLE_MEMBER_CACHE
+#define MEMBER_CACHE_SEMLOCK 4 /* member_cache shm lock, windinsn */
+#endif
 
 /* Enumeration values for the so-called board .DIR file, @author flyriver */
 enum BBS_DIR_MODE {
