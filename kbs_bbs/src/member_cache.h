@@ -24,7 +24,7 @@
 #endif
 
 /*
- * struct.h ä¸­ board_member çš„ç˜¦èº«ç‰ˆï¼Œä¾¿äºŽå­˜å‚¨å’Œæ¯”è¾ƒ
+ * struct.h ÖÐ board_member µÄÊÝÉí°æ£¬±ãÓÚ´æ´¢ºÍ±È½Ï
  * 40byte
  */
 struct MEMBER_CACHE_NODE {
@@ -40,7 +40,7 @@ struct MEMBER_CACHE_NODE {
 	int board_next;
 };
 /*
- * strcut.h ä¸­ board_member_title çš„ç˜¦èº«ç‰ˆï¼Œä¾¿äºŽå­˜å‚¨å’Œæ¯”è¾ƒ
+ * strcut.h ÖÐ board_member_title µÄÊÝÉí°æ£¬±ãÓÚ´æ´¢ºÍ±È½Ï
  */
 struct MEMBER_CACHE_TITLE {
 	int id;
