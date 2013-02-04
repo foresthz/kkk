@@ -48,18 +48,21 @@ struct MEMBER_CACHE_TITLE {
 	char name[STRLEN];
 	int serial;
 	unsigned int flag;
+	
+	int next;
 };
 struct MEMBER_CACHE {
 	int users[MAXUSERS];
 	int boards[MAXBOARD];
+	int board_titles[MAXBOARD];
 	struct MEMBER_CACHE_NODE nodes[MAX_MEMBERS];
 	struct MEMBER_CACHE_TITLE titles[MAX_MEMBER_TITLES];
 	
 	int member_count;
 	int title_count;
-	int next_member_id;
-	int next_title_id;
 };
-
+struct MEMBER_CACHE_CONTAINER {
+	struct MEMBER_CACHE_NODE *node;
+}
 
 #endif

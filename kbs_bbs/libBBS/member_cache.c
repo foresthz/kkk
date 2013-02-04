@@ -15,6 +15,8 @@
 
 #ifdef ENABLE_MEMBER_CACHE
 #ifndef USE_SEM_LOCK
+
+int member_cache_node_cmp_type=0;
 static int member_cache_lock()
 {
 	int lockfd;
@@ -137,6 +139,15 @@ int fill_member_title(struct board_member_title *title, struct MEMBER_CACHE_TITL
 	
 	return 0;
 }
+int find_null_member_title() {
+	int i;
+	
+	for (i=0;i<MAX_MEMBER_TITLES;i++) {
+		if (is_null_member_title(&(membershm->titles[i])))
+			return i+1;
+	}
+	return 0;
+}
 int find_null_member() {
 	int i;
 	
@@ -144,6 +155,51 @@ int find_null_member() {
 		if (is_null_member(&(membershm->nodes[i])))
 			return i+1;
 	}
+	return 0;
+}
+int add_member_title(struct board_member_title *title) {
+	struct MEMBER_CACHE_TITLE *t, *p;
+	int bid, i, index;
+	
+	if (membershm->title_count >= MAX_MEMBER_TITLES) {
+		bbslog("3system", "BBS board member titles records full.");
+		return -1;
+	}
+	
+	if (!title->board[0] || !title->name[0])
+		return -2;
+		
+	bid=getbid(title->board, NULL);
+	
+	if (bid==0)
+		return -3;
+		
+	index=find_null_member_title();
+	if (index==0)
+		return -4;
+		
+	t=&(membershm->titles[index-1]);
+	t->id=index;
+	t->bid=bid;
+	strncpy(t->name, title->name, STRLEN);
+	t->serial=title->serial;
+	t->flag=title->flag;
+	t->next=0;
+	
+	i=membershm->board_titles[bid-1];
+	if (i==0) {
+		membershm->board_titles[bid-1]=index;
+	} else {
+		while (i!=0) {
+			p=&(membershm->titles[i-1]);
+			i=p->next;
+			if (i==0) {
+				p->next=index;
+			}
+		}
+	}
+	
+	membershm->title_count ++;
 	return 0;
 }
 int add_member(struct board_member *member) {
@@ -155,7 +211,7 @@ int add_member(struct board_member *member) {
 		return -1;
 	}
 	
-	if (!members->user[0] || !member->board[0])
+	if (!member->user[0] || !member->board[0])
 		return -2;
 	
 	uid=getuser(member->user, NULL);
@@ -168,6 +224,8 @@ int add_member(struct board_member *member) {
 		return -4;
 	
 	index=find_null_member();
+	if (index==0)
+		return -5;
 	node=&(membershm->nodes[index-1]);
 	node->bid=bid;
 	node->uid=uid;
@@ -286,12 +344,12 @@ int load_members ()
 		bzero(membershm->boards,sizeof(membershm->boards));
 		bzero(membershm->nodes,sizeof(membershm->nodes));
 		membershm->member_count=0;
-		membershm->next_member_id=1;
 		
 		size=sizeof(struct board_member);
 		bzero(&member, size);
 		while ((n = read(fd, &member, size)) != -1) {
 			add_member(&member);
+			bzero(&member, size);
 		}
 		close(member_file_fd);
 		newbbslog(BBSLOG_USIES, "CACHE:reload member cache for %d records", membercache->member_count);
@@ -305,9 +363,11 @@ void load_member_titles() {
 	char errbuf[STRLEN];
 	struct board_member_title title;
 	struct MEMBER_CACHE_TITLE *t;
-	int size, n, i;
+	int size, n;
 	
 	bzero(membershm->titles,sizeof(membershm->titles));
+	bzero(membershm->board_titles, sizeof(membershm->board_titles));
+	membershm->title_count=0;
 	if ((fd = open(MEMBER_TITLES_FILE, O_RDONLY, 0)) == -1) {
 		bbslog("3system", "Can't open " MEMBER_TITLES_FILE " file %s", strerror_r(errno, errbuf, STRLEN));
 		exit(-1);
@@ -320,28 +380,11 @@ void load_member_titles() {
 	
 	size=sizeof(struct board_member_title);
 	bzero(&title, size);
-	membershm->next_title_id=1;
-	i=0;
 	while ((n = read(fd, &title, size)) != -1) {
-		t=&(membershm->titles[i]);
-		t->id=title.id;
-		t->bid=getbid(title.board, NULL);
-		strncpy(t->name, title.name, STRLEN);
-		t->name[STRLEN-1]=0;
-		t->serial=title.serial;
-		t->flag=title.flag;
-		
-		if (t->id >= membershm->next_title_id)
-			membershm->next_title_id=t->id+1;
-		
+		add_member_title(&title);
 		bzero(&title, size);
-		i++;
-		if (i>MAX_MEMBER_TITLES) {
-			break;
-		}
 	}
 	
-	membershm->title_count=i;
 	newbbslog(BBSLOG_USIES, "CACHE:reload member title cache for %d records", membercache->title_count);
 	close(fd);
 }
@@ -451,7 +494,7 @@ int get_member_cache(const char *name, const char *user_id, struct board_member 
 	
 	return node->status;
 }
-int get_board_members_cache(char *name, struct board_member *members, int size)
+int get_board_members_cache(char *name, struct MEMBER_CACHE_CONTAINER *members, int size)
 {
 	int bid, i, ret;
 	struct MEMBER_CACHE_NODE *node;
@@ -466,7 +509,7 @@ int get_board_members_cache(char *name, struct board_member *members, int size)
 		
 	ret=0;
 	if (NULL!=members && size>0)
-		bzero(members, sizeof(struct board_member)*size);
+		bzero(members, sizeof(struct MEMBER_CACHE_CONTAINER)*size);
 	
 	while (i>0) {
 		node=&(membershm->nodes[i-1]);
@@ -475,15 +518,106 @@ int get_board_members_cache(char *name, struct board_member *members, int size)
 		if (node->bid != bid)
 			break;
 			
-		if (NULL!=members && size>0)
-			fill_member(members[ret], node);
+		if (NULL!=members && size>0 && ret<size)
+			members[ret].node=&(membershm->nodes[i-1]);
 		
 		i=node->board_next;
 		ret++;
 	}
 	return ret;
 }
-int get_member_boards_cache(char *user_id, struct board_member *members, int size)
+typedef int member_cache_node_cmp_func(const void *, const void *);
+int member_cache_node_cmp(struct MEMBER_CACHE_CONTAINER *a, struct MEMBER_CACHE_CONTAINER *b) {
+	switch(member_cache_node_cmp_type) {
+		case BOARD_MEMBER_SORT_TIME_ASC:
+		case MEMBER_BOARD_SORT_TIME_ASC:
+			return a->time - b->time;
+		case BOARD_MEMBER_SORT_TIME_DESC:
+		case MEMBER_BOARD_SORT_TIME_DESC:
+			return b->time - a->time;
+		case BOARD_MEMBER_SORT_ID_ASC:
+		case BOARD_MEMBER_SORT_ID_DESC:
+			struct userc *u1, *u2;
+			u1=getuserbynum(a->uid);
+			u2=getuserbynum(b->uid);
+			if (u1==NULL || u2==NULL)
+				return 0;
+			if (BOARD_MEMBER_SORT_ID_ASC==member_cache_node_cmp_type)
+				return strcasecmp(u1->userid, u2->userid);
+			else
+				return strcasecmp(u2->userid, u1->userid);
+		case BOARD_MEMBER_SORT_SCORE_DESC:
+		case MEMBER_BOARD_SORT_SCORE_DESC:
+			return b->score - a->score;
+		case BOARD_MEMBER_SORT_SCORE_ASC:
+		case MEMBER_BOARD_SORT_SCORE_ASC:
+			return a->score - b->score;
+		case BOARD_MEMBER_SORT_STATUS_ASC:
+		case MEMBER_BOARD_SORT_STATUS_ASC:
+			return a->status - b->status;
+		case BOARD_MEMBER_SORT_STATUS_DESC:
+		case MEMBER_BOARD_SORT_STATUS_DESC:
+			return b->status - a->status;
+		case BOARD_MEMBER_SORT_TITLE_ASC:
+			return a->title - b->title;
+		case BOARD_MEMBER_SORT_TITLE_DESC:
+			return b->title - a->title;
+		case MEMBER_BOARD_SORT_BOARD_ASC:
+		case MEMBER_BOARD_SORT_BOARD_DESC:
+			struct boardheader *b1, *b2;
+			b1=getboard(a->bid);
+			b2=getboard(b->bid);
+			if (b1==NULL || b2==NULL)
+				return 0;
+			if (MEMBER_BOARD_SORT_BOARD_ASC==member_cache_node_cmp_type)
+				return strcasecmp(b1->filename, b2->filename);
+			else
+				return strcasecmp(b2->filename, b1->filename);
+	}
+	return 0;
+}
+
+int load_board_members_cache(const char *board, struct board_member *members, int sort, int start, int num)
+{
+	int total, i, j;
+	struct MEMBER_CACHE_CONTAINER *container;
+	
+	total=get_board_members_cache(board, NULL, 0);
+	if (start<0 || start>=total)
+		return -1;
+	
+	container=(struct MEMBER_CACHE_CONTRAINER *)malloc(sizeof(struct MEMBER_CACHE_CONTAINER)*total);
+	if (NULL==container)
+		return -2;
+	get_board_members_cache(board, container, total);
+	
+	switch(sort) {
+		case BOARD_MEMBER_SORT_TIME_DESC:
+		case BOARD_MEMBER_SORT_ID_ASC:
+		case BOARD_MEMBER_SORT_ID_DESC:
+		case BOARD_MEMBER_SORT_SCORE_DESC:
+		case BOARD_MEMBER_SORT_SCORE_ASC:
+		case BOARD_MEMBER_SORT_STATUS_ASC:
+		case BOARD_MEMBER_SORT_TITLE_ASC:
+		case BOARD_MEMBER_SORT_TITLE_DESC:
+		case BOARD_MEMBER_SORT_STATUS_DESC:
+			member_cache_node_cmp_type=sort;
+			break;
+		case BOARD_MEMBER_SORT_TIME_ASC:
+		default:
+			member_cache_node_cmp_type=BOARD_MEMBER_SORT_TIME_ASC;
+	}
+	
+	qsort(container, total, sizeof(struct MEMBER_CACHE_CONTAINER), (member_cache_node_cmp_func *) member_cache_node_cmp);
+	j=0;
+	for (i=start; i<start+num && i<total;i++) {
+		fill_member(members[j], container[i].node);
+		j++;
+	}
+	free(container);
+	return j;
+}
+int get_member_boards_cache(char *user_id, struct MEMBER_CACHE_CONTAINER *members, int size)
 {
 	int uid, i, ret;
 	struct MEMBER_CACHE_NODE *node;
@@ -501,7 +635,7 @@ int get_member_boards_cache(char *user_id, struct board_member *members, int siz
 		
 	ret=0;
 	if (NULL!=members && size>0)
-		bzero(members, sizeof(struct board_member)*size);
+		bzero(members, sizeof(struct MEMBER_CACHE_CONTAINER)*size);
 	
 	while (i>0) {
 		node=&(membershm->nodes[i-1]);
@@ -510,12 +644,143 @@ int get_member_boards_cache(char *user_id, struct board_member *members, int siz
 		if (node->uid != uid)
 			break;
 			
-		if (NULL!=members && size>0)	
-			fill_member(members[ret], node);
+		if (NULL!=members && size>0 && ret<size)	
+			members[ret].node=&(membershm->nodes[i-1]);
 			
 		i=node->user_next;
 		ret ++;
 	}
 	return ret;
+}
+int load_member_boards_cache(const char *user_id, struct board_member *members, int sort, int start, int num) 
+{
+	int total, i, j;
+	struct MEMBER_CACHE_CONTAINER *container;
+	
+	total=get_member_boards_cache(user_id, NULL, 0);
+	if (start<0 || start>=total)
+		return -1;
+	
+	container=(struct MEMBER_CACHE_CONTRAINER *)malloc(sizeof(struct MEMBER_CACHE_CONTAINER)*total);
+	if (NULL==container)
+		return -2;
+	get_member_boards_cache(user_id, container, total);
+	
+	switch(sort) {
+		case MEMBER_BOARD_SORT_TIME_DESC:
+		case MEMBER_BOARD_SORT_BOARD_ASC:
+		case MEMBER_BOARD_SORT_BOARD_DESC:
+		case MEMBER_BOARD_SORT_SCORE_DESC:
+		case MEMBER_BOARD_SORT_SCORE_ASC:
+		case MEMBER_BOARD_SORT_STATUS_ASC:
+		case MEMBER_BOARD_SORT_STATUS_DESC:
+			member_cache_node_cmp_type=sort;
+			break;
+		case MEMBER_BOARD_SORT_TIME_ASC:
+		default:
+			member_cache_node_cmp_type=MEMBER_BOARD_SORT_TIME_ASC;
+	}
+	
+	qsort(container, total, sizeof(struct MEMBER_CACHE_CONTAINER), (member_cache_node_cmp_func *) member_cache_node_cmp);
+	j=0;
+	for (i=start; i<start+num && i<total;i++) {
+		fill_member(members[j], container[i].node);
+		j++;
+	}
+	free(container);
+	return j;
+}
+int update_member_cache(struct board_member *member) {
+	struct MEMBER_CACHE_NODE *node;
+	int index;
+	
+	index=get_member_index(member->board, member->user);
+	if (index <= 0)
+		return -1;
+	
+	node=get_member_by_index(index);
+	node->flag = member->flag;
+	node->status = member->status;
+	node->score = member->score;
+	
+	return 0;
+}
+int get_member_managers_cache(char *user_id) {
+	int uid, i, ret;
+	struct MEMBER_CACHE_NODE *node;
+	
+	if (strcasecmp("guest", user_id)==0)
+		return 0;
+		
+	uid=getuser(user_id, NULL);
+	if (uid<=0)
+		return 0;
+		
+	i=membershm->users[uid-1];
+	if (i==0)
+		return 0;
+		
+	ret=0;
+	while (i>0) {
+		node=&(membershm->nodes[i-1]);
+		if (is_null_member(node))
+			break;
+		if (node->uid != uid)
+			break;
+			
+		if (node->status==BOARD_MEMBER_STATUS_MANAGER)
+			ret ++;
+			
+		i=node->user_next;
+	}
+	return ret;
+}
+int get_member_board_managers_cache(char *name, struct MEMBER_CACHE_CONTAINER *members, int size) {
+	int bid, i, ret;
+	struct MEMBER_CACHE_NODE *node;
+	
+	bid=getbid(name);
+	if (bid<=0)
+		return -1;
+		
+	i=membershm->boards[bid-1];
+	if (i==0)
+		return 0;
+		
+	ret=0;
+	if (NULL!=members && size>0)
+		bzero(members, sizeof(struct MEMBER_CACHE_CONTAINER)*size);
+	
+	while (i>0) {
+		node=&(membershm->nodes[i-1]);
+		if (is_null_member(node))
+			break;
+		if (node->bid != bid)
+			break;
+		if (node->status==BOARD_MEMBER_STATUS_MANAGER) {	
+			if (NULL!=members && size>0 && ret<size)
+				members[ret].node=&(membershm->nodes[i-1]);
+			ret++;
+		}
+		i=node->board_next;
+	}
+	return ret;	
+}
+int load_board_member_managers_cache(char *name, struct board_member *members) {
+	int total, i;
+	struct MEMBER_CACHE_CONTAINER *container;
+	
+	total=get_member_board_managers_cache(name, NULL, 0);
+	if (total<=0)
+		return 0;
+	container=(struct MEMBER_CACHE_CONTRAINER *)malloc(sizeof(struct MEMBER_CACHE_CONTAINER)*total);
+	if (NULL==container)
+		return -2;
+	get_member_board_managers_cache(name, container, total);
+	for (i=0;i<total;i++) {
+		fill_member(members[i], container[i].node);
+	}
+	free(container);
+	return total;
 }
 #endif

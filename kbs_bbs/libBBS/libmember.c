@@ -598,7 +598,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 
 int load_board_members(const char *board, struct board_member *member, int sort, int start, int num) {
 #ifdef ENABLE_MEMBER_CACHE
-
+	return load_board_members_cache(board, member, sort, start, num);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -703,6 +703,9 @@ int load_board_members(const char *board, struct board_member *member, int sort,
 }
 
 int load_member_boards(const char *user_id, struct board_member *member, int sort, int start, int num) {
+#ifdef ENABLE_MEMBER_CACHE
+	return load_member_boards_cache(user_id, member, sort, start, num);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -798,8 +801,12 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
 
     mysql_close(&s);
     return i;
+#endif
 }
 int get_board_members(const char *board) {
+#ifdef ENABLE_MEMBER_CACHE
+	return get_board_members_cache(board, NULL, 0);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -837,8 +844,12 @@ int get_board_members(const char *board) {
 
     mysql_close(&s);
     return i;
+#endif
 }
 int get_member_boards(const char *user_id) {
+#ifdef ENABLE_MEMBER_CACHE
+	return get_member_boards_cache(user_id, NULL, 0);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -876,6 +887,7 @@ int get_member_boards(const char *user_id) {
 
     mysql_close(&s);
     return i;
+#endif
 }
 
 int load_board_member_request(const char *name, struct board_member_config *mine) {
@@ -932,11 +944,14 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     const struct boardheader *board;
     struct board_member member;
     int old;
+#ifndef ENABLE_MEMBER_CACHE	
     MYSQL s;
-    char sql[200], buf[1024];
-    char my_name[STRLEN];
+	char sql[200];
+	char my_name[STRLEN];
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
+#endif
+    char buf[1024];
     
     board=getbcache(name);
     if (0==board)
@@ -962,7 +977,11 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
 	
 	if (BOARD_MEMBER_STATUS_MANAGER==status&&!valid_core_member(user_id))
 		status=BOARD_MEMBER_STATUS_NORMAL;
-    
+
+#ifdef ENABLE_MEMBER_CACHE		
+	member.status=status;
+	update_member_cache(&member);
+#else	
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -985,6 +1004,7 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     }
 
     mysql_close(&s);
+#endif	
     sprintf(buf, "Ô­×´Ì¬: %d\nÐÂ×´Ì¬: %d", old, status);
     board_member_log(&member, "ÉèÖÃ×¤°æ×´Ì¬", buf);
     
@@ -992,11 +1012,14 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
 }    
 
 int set_board_member_flag(struct board_member *member) {
+#ifndef ENABLE_MEMBER_CACHE
     MYSQL s;
     char my_name[STRLEN];
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
-    char sql[200], buf[1024];
+    char sql[200];
+#endif	
+	char buf[1024];
     const struct boardheader *board;
     int i, flag, o_set, n_set, sysop;
 	struct board_member old;
@@ -1029,7 +1052,10 @@ int set_board_member_flag(struct board_member *member) {
 	
 	if (old.status == member->status && old.flag == member->flag)
 		return 0;
-        
+ 
+#ifdef ENABLE_MEMBER_CACHE 
+	update_member_cache(member);
+#else
 	my_name[0]=0;
 	my_user_id[0]=0;
 	my_manager_id[0]=0;
@@ -1052,6 +1078,7 @@ int set_board_member_flag(struct board_member *member) {
     }
 
     mysql_close(&s);
+#endif
     
 	gettmpfilename(path, "board.member.flag.log");
 	if ((handle = fopen(path, "w")) != NULL) { 
@@ -1121,17 +1148,22 @@ int set_board_member_flag(struct board_member *member) {
 
 #ifdef NEWSMTH
 int set_member_manager_level(char *user_id) {
+#ifndef ENABLE_MEMBER_CACHE
 	MYSQL s;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char my_user_id[STRLEN];
 	char sql[512];
+#endif
 	struct userec *user;
 	int count;
 	
 	if (!getuser(user_id, &user))
 		return -1;
-		
+
+#ifdef ENABLE_MEMBER_CACHE		
+	count=get_member_managers_cache(user->userid);
+#else
 	mysql_init(&s);
 	if (! my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -1153,6 +1185,7 @@ int set_member_manager_level(char *user_id) {
 		count=atoi(row[0]);
 	mysql_free_result(res);
 	mysql_close(&s);
+#endif
 
 	if (HAS_PERM(user,PERM_MEMBER_MANAGER) && (count <= 0||!valid_core_member(user_id)))
 		user->userlevel &= ~PERM_MEMBER_MANAGER;
@@ -1177,6 +1210,9 @@ int update_board_member_manager_file(const struct boardheader *board) {
 }
 
 int get_board_member_managers(const struct boardheader *board) {
+#ifdef ENABLE_MEMBER_CACHE
+	return get_member_board_managers_cache(board->filename, NULL, 0);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -1211,9 +1247,13 @@ int get_board_member_managers(const struct boardheader *board) {
 
     mysql_close(&s);
     return i;
+#endif
 }
 
 int load_board_member_managers(const struct boardheader *board, struct board_member *members) {
+#ifdef ENABLE_MEMBER_CACHE
+	return load_board_member_managers_cache(board->filename, members);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -1264,6 +1304,7 @@ int load_board_member_managers(const struct boardheader *board, struct board_mem
 
     mysql_close(&s);
     return i;
+#endif
 }
 int set_board_member_manager_file(const struct boardheader *board) {
     struct stat st;
@@ -1321,6 +1362,19 @@ int set_board_member_manager_file(const struct boardheader *board) {
 }
 
 int set_board_member_score(struct board_member *member, int type, int score) {
+#ifdef ENABLE_MEMBER_CACHE
+	if (type==0)
+		member->score = score;
+	else if (type>0)
+		member->score += score;
+	else
+		member->score -= score;
+		
+	if (member->score < 0)
+		member->score = 0;
+		
+	return update_member_cache(member);
+#else
     MYSQL s;
     char my_name[STRLEN];
     char my_user_id[STRLEN];
@@ -1351,6 +1405,7 @@ int set_board_member_score(struct board_member *member, int type, int score) {
     mysql_close(&s);
     
     return 0;
+#endif
 }
 
 typedef int member_board_article_cmp_func(const void *, const void *);
