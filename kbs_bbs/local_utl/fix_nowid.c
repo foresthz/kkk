@@ -26,7 +26,17 @@ int generate_board_title(struct boardheader *bh,void* arg)
 
     iid = ptr1[total-1].id;
 
-    if (iid <=0) iid = 1;
+    if ((int)iid <=0) {
+        int i;
+        for (i = total - 1; i >= 0; i--) {
+            if ((int)ptr1[i].id > 0) {
+                iid = ptr1[i].id;
+                break;
+            }
+        }
+        if ((int)iid <= 0)
+            iid = 0;
+    }
 
     end_mmapfile((void *) ptr, buf.st_size, -1);
     close(fd2);
