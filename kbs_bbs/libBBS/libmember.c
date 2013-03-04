@@ -148,7 +148,7 @@ int delete_board_member_record(const char *name, const char *user_id) {
 	int i;
 	struct board_member member;
 	
-	i=get_member_index(name, usre_id);
+	i=get_member_index(name, user_id);
 	if (i<=0)
 		return -1;
 	if (remove_member(i)<0)
@@ -1986,7 +1986,7 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
 	strncpy(title.name, name, STRLEN);
 	title.serial=serial;
 	title.flag=0;
-	if (add_member_title(title)<0)
+	if (add_member_title(&title)<0)
 		return -6;
 #else
 	my_name[0]=0;
