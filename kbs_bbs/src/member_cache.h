@@ -63,9 +63,10 @@ struct MEMBER_CACHE {
 };
 struct MEMBER_CACHE_CONTAINER {
 	struct MEMBER_CACHE_NODE *node;
-}
+};
 struct MEMBER_TITLE_CONTAINER {
 	struct MEMBER_CACHE_TITLE *title;
-}
+};
 
+#endif
 #endif
