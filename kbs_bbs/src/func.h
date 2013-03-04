@@ -894,6 +894,27 @@ while(0)
 #ifdef ENABLE_MEMBER_CACHE
     void resolve_members(ARG_VOID);
     void detach_members(ARG_VOID);
+	int get_member_index(const char *name, const char *user_id);
+	int remove_member(int index);
+	int add_member(struct board_member *member);
+	int get_member_cache(const char *name, const char *user_id, struct board_member *member);
+	int load_board_members_cache(const char *board, struct board_member *members, int sort, int start, int num);
+	int load_member_boards_cache(const char *user_id, struct board_member *members, int sort, int start, int num);
+	int count_board_members_cache(char *name);
+	int count_member_boards_cache(char *user_id);
+	int update_member_cache(struct board_member *member);
+	int get_member_managers_cache(char *user_id);
+	int count_member_board_managers_cache(char *name);
+	int load_board_member_managers_cache(char *name, struct board_member *members);
+	int count_board_titles_cache(char *name);
+	int load_board_titles_cache(const char *board, struct board_member_title *titles);
+	int get_board_member_title_cache(const char *board, int id, struct board_member_title *title);
+	int query_board_member_title_cache(const char *board, char *name, struct board_member_title *title);
+	int set_board_member_title_cache(struct board_member *member);
+	int add_member_title(struct board_member_title *title);
+	int remove_member_title(int index);
+	int set_member_title_cache(struct board_member_title *title);
+	
 #endif
 #endif /* ENABLE_BOARD_MEMBER */
 

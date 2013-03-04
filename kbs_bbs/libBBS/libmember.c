@@ -2,7 +2,10 @@
 
 #ifndef LIB_MEMBER
 #ifdef ENABLE_BOARD_MEMBER
+
+#ifndef ENABLE_MEMBER_CACHE
 #include <mysql.h>
+#endif
 
 
 #ifndef MAX_MEMBER_BOARD_ARTICLES
@@ -805,7 +808,7 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
 }
 int get_board_members(const char *board) {
 #ifdef ENABLE_MEMBER_CACHE
-	return get_board_members_cache(board, NULL, 0);
+	return count_board_members_cache(board);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -848,7 +851,7 @@ int get_board_members(const char *board) {
 }
 int get_member_boards(const char *user_id) {
 #ifdef ENABLE_MEMBER_CACHE
-	return get_member_boards_cache(user_id, NULL, 0);
+	return count_member_boards_cache(user_id);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -1211,7 +1214,7 @@ int update_board_member_manager_file(const struct boardheader *board) {
 
 int get_board_member_managers(const struct boardheader *board) {
 #ifdef ENABLE_MEMBER_CACHE
-	return get_member_board_managers_cache(board->filename, NULL, 0);
+	return count_member_board_managers_cache(board->filename);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -1631,6 +1634,9 @@ int flush_member_board_articles(int mode, const struct userec *user, int force) 
 }
 
 int get_board_member_titles(const char *board) {
+#ifdef ENABLE_MEMBER_CACHE
+	return count_board_titles_cache(board);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -1668,9 +1674,13 @@ int get_board_member_titles(const char *board) {
 
     mysql_close(&s);
     return i;
+#endif
 }
 
 int load_board_member_titles(const char *board, struct board_member_title *titles) {
+#ifdef ENABLE_MEMBER_CACHE
+	return load_board_titles_cache(board, titles);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -1716,9 +1726,13 @@ int load_board_member_titles(const char *board, struct board_member_title *title
 
     mysql_close(&s);
     return i;
+#endif	
 }
 
 int get_board_member_title(const char *board, int id, struct board_member_title *title) {
+#ifdef ENABLE_MEMBER_CACHE
+	return get_board_member_title_cache(board, id, title);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -1771,9 +1785,13 @@ int get_board_member_title(const char *board, int id, struct board_member_title 
         return 0;
 		
     return 1;
+#endif
 }
 
 int query_board_member_title(const char *board, char *name, struct board_member_title *title) {
+#ifdef ENABLE_MEMBER_CACHE
+	return query_board_member_title_cache(board, name, title);
+#else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -1829,14 +1847,18 @@ int query_board_member_title(const char *board, char *name, struct board_member_
         return 0;
 		
     return 1;
+#endif
 }
 
 int set_board_member_title(struct board_member *member) {
+#ifndef ENABLE_MEMBER_CACHE
     MYSQL s;
     char my_name[STRLEN];
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
-    char sql[200], buf[1024];
+    char sql[200];
+#endif
+	char buf[1024];
     const struct boardheader *board;
     int sysop;
 	struct board_member old;
@@ -1866,7 +1888,9 @@ int set_board_member_title(struct board_member *member) {
 	
 	if (old.title == member->title)
 		return 0;
-        
+#ifdef ENABLE_MEMBER_CACHE        
+	set_board_member_title_cache(member);
+#else
 	my_name[0]=0;
 	my_user_id[0]=0;
 	my_manager_id[0]=0;
@@ -1889,7 +1913,7 @@ int set_board_member_title(struct board_member *member) {
     }
 
     mysql_close(&s);
-    
+#endif    
 	gettmpfilename(path, "board.member.title.log");
 	if ((handle = fopen(path, "w")) != NULL) { 
 		if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
@@ -1932,10 +1956,15 @@ int set_board_member_title(struct board_member *member) {
 }
 
 int create_board_member_title(const char *board_name, char *name, int serial) {
+#ifdef ENABLE_MEMBER_CACHE
+	struct board_member_title title;
+#else
     MYSQL s;
 	char my_name[STRLEN];
     char my_board[STRLEN];
-    char sql[500], buf[300];
+    char sql[500];
+#endif
+	char buf[300];
 	const struct boardheader *board;
 	
 	board=getbcache(board_name);
@@ -1951,7 +1980,15 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
 	
 	if (query_board_member_title(board->filename, name, NULL) != 0)
 		return -5;
-	
+#ifdef ENABLE_MEMBER_CACHE	
+	bzero(&title, sizeof(struct board_member_title));
+	strncpy(title.board, board->filename, STRLEN);
+	strncpy(title.name, name, STRLEN);
+	title.serial=serial;
+	title.flag=0;
+	if (add_member_title(title)<0)
+		return -6;
+#else
 	my_name[0]=0;
 	my_board[0]=0;
 	mysql_escape_string(my_name, name, strlen(name));
@@ -1970,6 +2007,7 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
     }
 
     mysql_close(&s);
+#endif
 
 	sprintf(buf, "Ôö¼Ó×¤°æ³ÆºÅ#%s: %s", board->filename, name);
 	board_member_log(NULL, buf, buf);
@@ -1978,10 +2016,12 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
 }
 
 int remove_board_member_title(struct board_member_title *title) {
+#ifndef ENABLE_MEMBER_CACHE
 	MYSQL s;
+	char my_board[STRLEN], sql[500];
+#endif
 	const struct boardheader *board;
-	char my_board[STRLEN];
-	char sql[500], buf[300];
+	char buf[300];
 	
 	board=getbcache(title->board);
     if (0==board)
@@ -1993,7 +2033,11 @@ int remove_board_member_title(struct board_member_title *title) {
 		
 	if (title->id <= 0)
 		return -4;
-	
+
+#ifdef ENABLE_MEMBER_CACHE
+	if (remove_member_title(title->id)<0)
+		return -5;
+#else		
     my_board[0]=0;	
 	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
 	sprintf(sql, "DELETE FROM `board_title` WHERE `id`=%d AND `board`='%s';", title->id, my_board);
@@ -2017,6 +2061,7 @@ int remove_board_member_title(struct board_member_title *title) {
     }
 	
 	mysql_close(&s);
+#endif	
 	sprintf(buf, "É¾³ý×¤°æ³ÆºÅ#%s: [%d]%s", board->filename, title->id, title->name);
 	board_member_log(NULL, buf, buf);
 	
@@ -2024,11 +2069,14 @@ int remove_board_member_title(struct board_member_title *title) {
 }
 
 int modify_board_member_title(struct board_member_title *title) {
+#ifndef ENABLE_MEMBER_CACHE
 	MYSQL s;
-	const struct boardheader *board;
 	char my_board[STRLEN];
 	char my_name[STRLEN];
-	char sql[500], buf[300];
+	char sql[500];
+#endif
+	const struct boardheader *board;
+	char buf[300];
 	
 	board=getbcache(title->board);
     if (0==board)
@@ -2043,7 +2091,10 @@ int modify_board_member_title(struct board_member_title *title) {
 
 	if (!title->name[0])
 		return -5;
-	
+#ifdef ENABLE_MEMBER_CACHE	
+	if (set_member_title_cache(title)<0)
+		return -6;
+#else	
 	my_board[0]=0;
 	my_name[0]=0;
 	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
@@ -2063,6 +2114,7 @@ int modify_board_member_title(struct board_member_title *title) {
     }
 	
 	mysql_close(&s);
+#endif	
 	sprintf(buf, "¸ü¸Ä×¤°æ³ÆºÅ#%s: [%d]%s", board->filename, title->id, title->name);
 	board_member_log(NULL, buf, buf);
 	
