@@ -200,6 +200,9 @@ static int initialize_ext()
     resolve_boards();
     init_bbslog();
     www_data_init();
+#ifdef ENABLE_MEMBER_CACHE
+    resolve_members();
+#endif
     ext_init = 1;
 
     chdir(old_cwd);
