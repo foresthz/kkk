@@ -630,7 +630,7 @@ while(0)
 #endif /* HAVE_REPLY_COUNT */
 
     /* 查询是否回复过一篇文章, windinsn, Feb 2, 2013 */
-    int have_replied(int fd, struct fileheader *fh, struct userec *user, int index, struct fileheader *buf);
+    //int have_replied(int fd, struct fileheader *fh, struct userec *user, int index, struct fileheader *buf);
 
     /* define in record.c */
     int safewrite(int fd, void *buf, int size);
