@@ -373,7 +373,7 @@ int count_board_members_cache(const char *name) {
 }
 int add_member_title(struct board_member_title *title) {
 	struct MEMBER_CACHE_TITLE *t, *p;
-	int bid, i, index;
+	int bid, i, index, fd;
 	
 	if (membershm->title_count >= MAX_MEMBER_TITLES) {
 		bbslog("3system", "BBS board member titles records full.");
@@ -387,10 +387,13 @@ int add_member_title(struct board_member_title *title) {
 	
 	if (bid==0)
 		return -3;
-		
+	
+	fd=member_cache_lock();
 	index=find_null_member_title();
-	if (index==0)
+	if (index==0) {
+		member_cache_unlock(fd);
 		return -4;
+	}
 		
 	t=&(membershm->titles[index-1]);
 	t->id=index;
@@ -414,11 +417,12 @@ int add_member_title(struct board_member_title *title) {
 	}
 	
 	membershm->title_count ++;
+	member_cache_unlock(fd);
 	return 0;
 }
 int add_member(struct board_member *member) {
 	struct MEMBER_CACHE_NODE *node, *p;
-	int uid, bid, i, index;
+	int uid, bid, i, index, fd;
 	
 	if (membershm->member_count >= MAX_MEMBERS) {
 		bbslog("3system", "BBS board members records full.");
@@ -437,9 +441,12 @@ int add_member(struct board_member *member) {
 	if (get_member_index(member->board, member->user)>0)
 		return -4;
 	
+	fd=member_cache_lock();
 	index=find_null_member();
-	if (index==0)
+	if (index==0) {
+		member_cache_unlock(fd);
 		return -5;
+	}
 	node=&(membershm->nodes[index-1]);
 	node->bid=bid;
 	node->uid=uid;
@@ -478,17 +485,19 @@ int add_member(struct board_member *member) {
 	}
 	
 	membershm->member_count ++;
+	member_cache_unlock(fd);
 	return 0;	
 }
 int remove_member_title(int index) {
 	struct MEMBER_CACHE_TITLE *title, *t;
 	struct MEMBER_CACHE_NODE *p;
-	int i, son;
+	int i, son, fd;
 	
 	title=get_member_title(index);
 	if (NULL==title)
 		return -1;
-		
+	
+	fd=member_cache_lock();
 	i=membershm->board_titles[title->bid-1];
 	son=title->next;
 	
@@ -517,14 +526,14 @@ int remove_member_title(int index) {
 	
 	bzero(title, sizeof(struct MEMBER_CACHE_TITLE));
 	membershm->title_count --;
-	
+	member_cache_unlock(fd);
 	
 	return 0;
 }
 
 int remove_member(int index) {
 	struct MEMBER_CACHE_NODE *node, *p;
-	int bid, uid, i, son;
+	int bid, uid, i, son, fd;
 
 	node=get_member_by_index(index);
 	if (NULL==node)
@@ -533,6 +542,7 @@ int remove_member(int index) {
 	bid=node->bid;
 	uid=node->uid;
 	
+	fd=member_cache_lock();
 	i=membershm->users[uid-1];
 	son=node->user_next;
 	if (i==index || i==0)
@@ -566,6 +576,8 @@ int remove_member(int index) {
 		
 	bzero(node, sizeof(struct MEMBER_CACHE_NODE));
 	membershm->member_count --;
+	member_cache_unlock(fd);
+	
 	return 0;
 }
 
