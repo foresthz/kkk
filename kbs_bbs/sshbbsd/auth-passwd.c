@@ -41,6 +41,9 @@ int auth_password(const char *server_user, const char *password)
     load_sysconf();
     resolve_ucache();
     resolve_utmp();
+#ifdef ENABLE_MEMBER_CACHE
+    resolve_members();
+#endif
     strcpy(useridbuf, server_user);
 
 #ifdef SECONDSITE
