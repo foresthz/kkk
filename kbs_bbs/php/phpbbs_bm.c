@@ -351,7 +351,11 @@ PHP_FUNCTION(bbs_denyadd)
     if (!check_read_perm(getCurrentUser(), brd))
         RETURN_LONG(-1);
     strcpy(board,brd->filename);
+#ifdef MEMBER_MANAGER
+    if (!check_board_member_manager(NULL, brd, BMP_DENY))
+#else	
     if (!is_BM(brd, getCurrentUser()))
+#endif
         RETURN_LONG(-2);
 #ifdef RECORD_DENY_FILE
     //TODO: 想办法获得对应的fh
@@ -531,7 +535,11 @@ PHP_FUNCTION(bbs_denymod)
     if (!check_read_perm(getCurrentUser(), brd))
         RETURN_LONG(-1);
     strcpy(board,brd->filename);
+#ifdef MEMBER_MANAGER
+    if (!check_board_member_manager(NULL, brd, BMP_DENY))
+#else	
     if (!is_BM(brd, getCurrentUser()))
+#endif
         RETURN_LONG(-2);
     if (getuser(userid,&lookupuser)==0)
         RETURN_LONG(-3);
@@ -687,7 +695,11 @@ PHP_FUNCTION(bbs_denydel)
     if (!check_read_perm(getCurrentUser(), brd))
         RETURN_LONG(-1);
     strcpy(board,brd->filename);
+#ifdef MEMBER_MANAGER
+    if (!check_board_member_manager(NULL, brd, BMP_DENY))
+#else	
     if (!is_BM(brd, getCurrentUser()))
+#endif
         RETURN_LONG(-2);
 
     if (deny_me(userid, board)) {
