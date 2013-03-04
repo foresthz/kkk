@@ -268,7 +268,11 @@ PHP_FUNCTION(bbs_denyusers)
     if (!check_read_perm(getCurrentUser(), brd))
         RETURN_LONG(-2);
     strcpy(board,brd->filename);
+#ifdef MEMBER_MANAGER
+    if (!check_board_member_manager(NULL, brd, BMP_DENY))
+#else	
     if (!is_BM(brd, getCurrentUser()))
+#endif
         RETURN_LONG(-3);
 
     sprintf(path, "boards/%s/deny_users", board);
