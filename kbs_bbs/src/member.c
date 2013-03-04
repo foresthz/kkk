@@ -34,6 +34,11 @@
 #define MEMBER_BOARD_ARTICLE_ACTION_THREAD_NEXT 25
 #define MEMBER_BOARD_ARTICLE_ACTION_THREAD_LAST 26
 
+int Select(void);
+int Post(void);
+int do_cross(struct _select_def *conf,struct fileheader *info,void *varg);
+int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+
 struct board_member *b_members = NULL;
 struct board_member_title *b_titles = NULL;
 int board_member_titles=0;
@@ -851,7 +856,6 @@ static int b_member_join(struct _select_def *conf) {
         pressanykey();
         return 0;
     }
-    
     ans[0]=0;
     getdata(t_lines - 1, 0, "您要申请成为驻版用户吗?(Y/N) [N]: ", ans, 3, DOECHO, NULL, true);
     if (ans[0] != 'y' && ans[0]!='Y') 
