@@ -21,7 +21,9 @@ static void flushdata(int mode)
     
         flush_ucache(NULL);
         flush_bcache();
-
+#ifdef ENABLE_MEMBER_CACHE
+        flush_member_cache(); 
+#endif
         if (NULL != (fp = fopen("etc/maxuser", "w"))) {
             fprintf(fp, "%d %d", publicshm->max_user,publicshm->max_wwwguest);
             fclose(fp);
@@ -723,6 +725,10 @@ static int miscd_dodaemon(char *argv1, char *daemon)
     resolve_utmp();
     resolve_guest_table();
 
+#ifdef ENABLE_MEMBER_CACHE
+    load_members();
+#endif
+
     if (argv1 != NULL) {
         switch (fork()) {
         case -1:
@@ -873,6 +879,9 @@ int main(int argc, char *argv[])
             if (resolve_ucache() != 0)
                 return -1;
             resolve_boards();
+#ifdef ENABLE_MEMBER_CACHE
+            resolve_members();
+#endif
             flushdata(0);
             return 0;
         }
