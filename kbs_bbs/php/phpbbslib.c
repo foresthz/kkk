@@ -453,6 +453,9 @@ PHP_MINIT_FUNCTION(kbs_bbs)
 PHP_MSHUTDOWN_FUNCTION(kbs_bbs)
 {
     if (get_initialized()) {
+#ifdef ENABLE_MEMBER_CACHE
+        detach_members();
+#endif
         www_data_detach();
         detach_utmp();
         detach_boards();
