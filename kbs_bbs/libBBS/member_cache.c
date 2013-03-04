@@ -649,6 +649,7 @@ int load_members ()
 			add_member(&members[i]);
 		}
 		
+		free(members);
 		bbslog("3system", "CACHE:reload member cache for %d records", membershm->member_count);
 	}
 	member_cache_unlock(fd);
