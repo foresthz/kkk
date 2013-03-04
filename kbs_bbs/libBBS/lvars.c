@@ -10,6 +10,9 @@ int WORDBOUND, WHOLELINE, NOUPPER, INVERSE, FILENAMEONLY, SILENT, FNAME;
 int ONLYCOUNT;
 
 struct UCACHE *uidshm = NULL;
+#ifdef ENABLE_MEMBER_CACHE
+struct MEMBER_CACHE *membershm = NULL;
+#endif
 
 /*log.c*/
 int disablelog = 0;
@@ -70,5 +73,8 @@ int init_all(ARG_VOID)
     init_sessiondata(getSession());
 #endif
     resolve_guest_table();
+#ifdef ENABLE_MEMBER_CACHE
+    resolve_members();
+#endif
     return ret;
 }
