@@ -1639,6 +1639,9 @@ void main_bbs(int convit, char *argv)
     resolve_utmp();
     resolve_boards();
     init_bbslog();
+#ifdef ENABLE_MEMBER_CACHE
+    resolve_members();
+#endif
     srand(time(0) + getpid());
 
     /* commented by period for it changed to local variable 2000.11.12
