@@ -402,6 +402,7 @@ int add_member_title(struct board_member_title *title) {
 	}
 		
 	t=&(membershm->titles[index-1]);
+	bzero(t, sizeof(struct MEMBER_CACHE_TITLE));
 	t->id=index;
 	t->bid=bid;
 	strncpy(t->name, title->name, STRLEN);
@@ -454,6 +455,7 @@ int add_member(struct board_member *member) {
 		return -5;
 	}
 	node=&(membershm->nodes[index-1]);
+	bzero(node, sizeof(struct MEMBER_CACHE_NODE));
 	node->bid=bid;
 	node->uid=uid;
 	node->time=member->time;
