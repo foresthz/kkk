@@ -640,16 +640,17 @@ int load_members ()
 	struct board_member *members;
 	int i;
 
-	fd=member_cache_lock();
 	membershm = (struct MEMBER_CACHE *) attach_shm("MEMBER_CACHE_SHMKEY", 3702, sizeof(*membershm), &iscreate);   /*attach to member cache shm */
 	if (!iscreate) {
 		bbslog("3system", "load a exitist member cache shm!");
 	} else {
+		fd=member_cache_lock();
 		bzero(membershm, sizeof(struct MEMBER_CACHE));
+		member_cache_unlock(fd);
+		
 		load_member_titles();
 		if ((member_file_fd = open(MEMBERS_FILE, O_RDWR | O_CREAT, 0644)) == -1) {
 			bbslog("3system", "Can't open " MEMBERS_FILE " file %s", strerror_r(errno, errbuf, STRLEN));
-			member_cache_unlock(fd);
 			exit(-1);
 		}
 		ftruncate(member_file_fd, MAX_MEMBERS * sizeof(struct board_member));
@@ -658,13 +659,11 @@ int load_members ()
 		members=(struct board_member *)malloc(sizeof(struct board_member)*MAX_MEMBERS);
 		if (NULL==members) {
 			bbslog("3system", "can not malloc members!");
-			member_cache_unlock(fd);
 			exit(-1);
 		}
 		bzero(members, sizeof(struct board_member)*MAX_MEMBERS);
 		if (get_records(MEMBERS_FILE, members, sizeof(struct board_member), 1, MAX_MEMBERS) != MAX_MEMBERS) {
 			bbslog("3system", "error members file!");
-			member_cache_unlock(fd);
 			free(members);
 			exit(-1);
 		}
@@ -677,7 +676,6 @@ int load_members ()
 		free(members);
 		bbslog("3system", "CACHE:reload member cache for %d records", membershm->member_count);
 	}
-	member_cache_unlock(fd);
 	return 0;
 }
 
