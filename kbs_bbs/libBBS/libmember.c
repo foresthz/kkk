@@ -61,6 +61,9 @@ int check_board_member_manager(struct board_member_status *status, const struct 
         status->flag=member.flag;
     }
     
+    if (member.status!=BOARD_MEMBER_STATUS_MANAGER)
+    	return 0;
+
     return (member.flag&perm)?1:0;
 }
 
