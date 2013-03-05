@@ -207,6 +207,11 @@ int get_member_cache(const char *name, const char *user_id, struct board_member 
 	int index;
 	struct MEMBER_CACHE_NODE *node;
 
+	if (NULL!=member) {
+		bzero(member, sizeof(struct board_member));
+		member->status=BOARD_MEMBER_STATUS_NONE;
+	}
+	
 	index=get_member_index(name, user_id);
 	if (index<=0)
 		return index;
