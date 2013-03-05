@@ -99,9 +99,14 @@ int fill_member(struct board_member *member, struct MEMBER_CACHE_NODE *node) {
 		node->flag=0;
 	}
 	
+	if (BOARD_MEMBER_STATUS_MANAGER!=node->status) {
+		node->flag=0;
+	}
+
 	if (NULL==member)
 		return 0;
 	
+	bzero(member, sizeof(struct board_member));
 	strncpy(member->board, board->filename, STRLEN);
 	strncpy(member->user, user->userid, IDLEN+1);
 	member->time=node->time;
@@ -132,6 +137,7 @@ int fill_member_title(struct board_member_title *title, struct MEMBER_CACHE_TITL
 	if (NULL==title)
 		return 0;
 		
+	bzero(title, sizeof(struct board_member_title));
 	title->id=t->id;
 	strncpy(title->board, board->filename, STRLEN);
 	strncpy(title->name, t->name, STRLEN);
