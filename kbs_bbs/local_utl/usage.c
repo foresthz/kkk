@@ -430,7 +430,7 @@ int main(void)
     now = time(0);
     localtime_r(&now, &t);
 
-    ehdir(BBSHOME);
+    chdir(BBSHOME);
 
     if (stat(BONLINE_LOGDIR, &stt) < 0) {
         if (mkdir(BONLINE_LOGDIR, 0755) < 0)
@@ -470,7 +470,7 @@ int main(void)
     }
 
     init_all();
-#ifdef NEWSMTH/
+#ifdef NEWSMTH
     fillboardall();
     memcpy(st_all, st, (MAXBOARD+1)*sizeof(struct binfo));
     numboards_all = numboards;
