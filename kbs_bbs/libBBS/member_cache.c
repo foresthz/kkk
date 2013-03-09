@@ -183,6 +183,9 @@ int get_board_member_title_cache(const char *board, int id, struct board_member_
 	int bid;
 	struct MEMBER_CACHE_TITLE *t;
 	
+	if (NULL!=title)
+		bzero(title, sizeof(struct board_member_title));
+
 	bid=getbid(board, NULL);
 	if (bid<=0)
 		return -1;
