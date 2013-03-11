@@ -799,5 +799,9 @@ struct refer_info {
 
 #include "func.h"
 
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+#include "ar.h"
+#endif
+
 #endif /* _BBS_H_ */
 
