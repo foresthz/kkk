@@ -74,6 +74,13 @@ void detach_members ()
 int update_member_manager_flag(int uid) {
 	return 0;
 }
+int is_valid_member(struct userec *user, const struct boardheader *board) {
+	if (board->flag&BOARD_GROUP)
+		return 0;
+	if (!check_read_perm(user,board))
+		return 0;
+	return 1;
+}
 int is_null_member(struct MEMBER_CACHE_NODE *node) {
 	if (node->bid==0 || node->uid==0)
 		return 1;
@@ -286,15 +293,17 @@ int set_member_title_cache(struct board_member_title *title) {
 int get_member_index(const char *name, const char *user_id) {
 	int uid, bid, i;
 	struct MEMBER_CACHE_NODE *node;
+	struct userec *user;
+	const struct boardheader *board;
 	
 	if (strcasecmp("guest", user_id)==0)
 		return -1;
 	
-	uid=getuser(user_id, NULL);
+	uid=getuser(user_id, &user);
 	if (uid<=0)
 		return -2;
 		
-	bid=getbid(name, NULL);
+	bid=getbid(name, &board);
 	if (bid<=0)
 		return -3;
 		
@@ -308,10 +317,17 @@ int get_member_index(const char *name, const char *user_id) {
 			return 0;
 		if (node->uid!=uid)
 			return 0;
-		if (node->bid==bid) 
-			return i;
+		if (node->bid==bid) {
+			if (!is_valid_member(user, board))
+				break;
+			else
+				return i;
+		}
 		i=node->user_next;
 	}
+	
+	if (i>0)
+		remove_member(i);
 	
 	return 0;
 }
@@ -352,10 +368,11 @@ int count_board_titles_cache(const char *name) {
 }
 int get_board_members_cache(const char *name, struct MEMBER_CACHE_CONTAINER *members, int size)
 {
-	int bid, i, ret;
+	int bid, i, ret, j;
 	struct MEMBER_CACHE_NODE *node;
+	const struct boardheader *board;
 	
-	bid=getbid(name, NULL);
+	bid=getbid(name, &board);
 	if (bid<=0)
 		return -1;
 		
@@ -373,12 +390,18 @@ int get_board_members_cache(const char *name, struct MEMBER_CACHE_CONTAINER *mem
 			break;
 		if (node->bid != bid)
 			break;
-			
-		if (NULL!=members && size>0 && ret<size)
-			members[ret].node=&(membershm->nodes[i-1]);
 		
-		i=node->board_next;
-		ret++;
+		if (is_valid_member(getuserbynum(node->uid), board)) {
+			if (NULL!=members && size>0 && ret<size)
+				members[ret].node=&(membershm->nodes[i-1]);
+			
+			i=node->board_next;
+			ret++;
+		} else {
+			j=node->board_next;
+			remove_member(i);
+			i=j;
+		}
 	}
 	return ret;
 }
@@ -438,6 +461,8 @@ int add_member_title(struct board_member_title *title) {
 int add_member(struct board_member *member) {
 	struct MEMBER_CACHE_NODE *node, *p;
 	int uid, bid, i, index, fd;
+	struct userec *user;
+	const struct boardheader *board;
 	
 	if (membershm->member_count >= MAX_MEMBERS) {
 		bbslog("3system", "BBS board members records full.");
@@ -447,20 +472,23 @@ int add_member(struct board_member *member) {
 	if (!member->user[0] || !member->board[0])
 		return -2;
 	
-	uid=getuser(member->user, NULL);
-	bid=getbid(member->board, NULL);
+	uid=getuser(member->user, &user);
+	bid=getbid(member->board, &board);
 	
 	if (uid==0 || bid==0)
 		return -3;
 		
-	if (get_member_index(member->board, member->user)>0)
+	if (!is_valid_member(user, board))
 		return -4;
+		
+	if (get_member_index(member->board, member->user)>0)
+		return -5;
 	
 	fd=member_cache_lock();
 	index=find_null_member();
 	if (index==0) {
 		member_cache_unlock(fd);
-		return -5;
+		return -6;
 	}
 	node=&(membershm->nodes[index-1]);
 	bzero(node, sizeof(struct MEMBER_CACHE_NODE));
@@ -848,13 +876,14 @@ int load_board_members_cache(const char *board, struct board_member *members, in
 }
 int get_member_boards_cache(const char *user_id, struct MEMBER_CACHE_CONTAINER *members, int size)
 {
-	int uid, i, ret;
+	int uid, i, ret, j;
 	struct MEMBER_CACHE_NODE *node;
+	struct userec *user;
 	
 	if (strcasecmp("guest", user_id)==0)
 		return 0;
 		
-	uid=getuser(user_id, NULL);
+	uid=getuser(user_id, &user);
 	if (uid<=0)
 		return -1;
 		
@@ -872,12 +901,18 @@ int get_member_boards_cache(const char *user_id, struct MEMBER_CACHE_CONTAINER *
 			break;
 		if (node->uid != uid)
 			break;
-			
-		if (NULL!=members && size>0 && ret<size)	
-			members[ret].node=&(membershm->nodes[i-1]);
-			
-		i=node->user_next;
-		ret ++;
+		
+		if (is_valid_member(user, getboard(node->bid))) {
+			if (NULL!=members && size>0 && ret<size)	
+				members[ret].node=&(membershm->nodes[i-1]);
+				
+			i=node->user_next;
+			ret ++;
+		} else {
+			j=node->user_next;
+			remove_member(i);
+			i=j;
+		}
 	}
 	return ret;
 }
@@ -938,13 +973,14 @@ int update_member_cache(struct board_member *member) {
 	return 0;
 }
 int get_member_managers_cache(char *user_id) {
-	int uid, i, ret;
+	int uid, i, ret, j;
 	struct MEMBER_CACHE_NODE *node;
+	struct userec *user;
 	
 	if (strcasecmp("guest", user_id)==0)
 		return 0;
 		
-	uid=getuser(user_id, NULL);
+	uid=getuser(user_id, &user);
 	if (uid<=0)
 		return 0;
 		
@@ -959,19 +995,26 @@ int get_member_managers_cache(char *user_id) {
 			break;
 		if (node->uid != uid)
 			break;
-			
-		if (node->status==BOARD_MEMBER_STATUS_MANAGER)
-			ret ++;
-			
-		i=node->user_next;
+		if (is_valid_member(user, getboard(node->bid))) {	
+			if (node->status==BOARD_MEMBER_STATUS_MANAGER)
+				ret ++;
+				
+			i=node->user_next;
+		} else {
+			j=node->user_next;
+			remove_member(i);
+			i=j;
+		}
 	}
 	return ret;
 }
 int get_member_board_managers_cache(const char *name, struct MEMBER_CACHE_CONTAINER *members, int size) {
-	int bid, i, ret;
+	int bid, i, ret, j;
 	struct MEMBER_CACHE_NODE *node;
+	const struct boardheader *board;
+	struct userec *user;
 	
-	bid=getbid(name, NULL);
+	bid=getbid(name, &board);
 	if (bid<=0)
 		return -1;
 		
@@ -989,12 +1032,19 @@ int get_member_board_managers_cache(const char *name, struct MEMBER_CACHE_CONTAI
 			break;
 		if (node->bid != bid)
 			break;
-		if (node->status==BOARD_MEMBER_STATUS_MANAGER) {	
-			if (NULL!=members && size>0 && ret<size)
-				members[ret].node=&(membershm->nodes[i-1]);
-			ret++;
+		user=getuserbynum(node->uid);
+		if (is_valid_member(user, board)) {
+			if (node->status==BOARD_MEMBER_STATUS_MANAGER) {	
+				if (NULL!=members && size>0 && ret<size)
+					members[ret].node=&(membershm->nodes[i-1]);
+				ret++;
+			}
+			i=node->board_next;
+		} else {
+			j=node->board_next;
+			remove_member(i);
+			i=j;
 		}
-		i=node->board_next;
 	}
 	return ret;	
 }
