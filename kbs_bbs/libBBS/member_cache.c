@@ -72,6 +72,26 @@ void detach_members ()
 	membershm=NULL;
 }
 int update_member_manager_flag(int uid) {
+	struct userec *user;
+	int count;
+	
+	user=getuserbynum(uid);
+	if (NULL==user)
+		return -1;
+		
+	if (HAS_PERM(user, PERM_NOZAP)) {
+		if (HAS_PERM(user,PERM_MEMBER_MANAGER))
+			user->userlevel &= ~PERM_MEMBER_MANAGER;
+		return -2;
+	}
+	
+	count=get_member_managers_cache(user->userid);
+	
+	if (count <= 0 && HAS_PERM(user,PERM_MEMBER_MANAGER))
+		user->userlevel &= ~PERM_MEMBER_MANAGER;
+	if (count > 0 && !HAS_PERM(user,PERM_MEMBER_MANAGER))
+		user->userlevel |= PERM_MEMBER_MANAGER;
+		
 	return 0;
 }
 int is_valid_member(struct userec *user, const struct boardheader *board) {
