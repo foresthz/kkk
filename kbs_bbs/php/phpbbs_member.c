@@ -788,4 +788,14 @@ PHP_FUNCTION(bbs_view_member_managers)
 	setbfile(path, board->filename, BOARD_MEMBER_MANAGERS_FILE);
 	RETURN_STRING(path, 1);
 }
+
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+#include "phpar.c"
+#else
+PHP_FUNCTION(bbs_load_ar_timeline)
+{
+	RETURN_FALSE;
+}
+#endif
+
 #endif // ENABLE_BOARD_MEMBER
