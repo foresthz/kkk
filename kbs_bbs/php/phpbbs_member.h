@@ -30,7 +30,7 @@ PHP_FUNCTION(bbs_remove_board_member_title);
 PHP_FUNCTION(bbs_modify_board_member_title);
 PHP_FUNCTION(bbs_view_member_managers);
 PHP_FUNCTION(bbs_load_ar_timeline);
-PHP_FNUCTION(bbs_load_ar_attachment);
+PHP_FUNCTION(bbs_load_ar_attachment);
 
 #define PHP_BBS_MEMBER_EXPORT_FUNCTIONS \
     PHP_FE(bbs_load_board_member_config, NULL) \
