@@ -796,6 +796,10 @@ PHP_FUNCTION(bbs_load_ar_timeline)
 {
 	RETURN_FALSE;
 }
+PHP_FUNCTION(bbs_load_ar_attachment)
+{
+	RETURN_FALSE;
+}
 #endif
 
 #endif // ENABLE_BOARD_MEMBER
