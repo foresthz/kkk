@@ -1133,6 +1133,7 @@ int set_board_member_flag(struct board_member *member) {
 		
 		sprintf(buf, "调整 %s 的驻版权限", member->user);
 		post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
+		sprintf(buf, "调整 %s#%s 的驻版权限", member->user, board->filename);
 		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());		
 		
 		mail_file(DELIVER, path, member->user, buf, 0, NULL);
@@ -1945,6 +1946,7 @@ int set_board_member_title(struct board_member *member) {
 		
 		sprintf(buf, "调整 %s 的驻版称号", member->user);
 		post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
+		sprintf(buf, "调整 %s#%s 的驻版称号", member->user, board->filename);
 		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());		
 		
 		mail_file(DELIVER, path, member->user, buf, 0, NULL);
