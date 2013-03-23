@@ -575,7 +575,7 @@ void board_setcurrentuser(int idx,int num)
 #endif
 #ifdef RECORDMAXONLINE
         /* save board max online record */
-        if (brdshm->bstatus[idx - 1].currentusers > brdshm->bstatus[idx - 1].maxonline) {
+        if ((int)brdshm->bstatus[idx - 1].currentusers > (int)brdshm->bstatus[idx - 1].maxonline) {
             brdshm->bstatus[idx - 1].maxonline = brdshm->bstatus[idx - 1].currentusers;
             brdshm->bstatus[idx - 1].maxtime = time(0);
         }
