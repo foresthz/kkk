@@ -551,7 +551,7 @@ PHP_FUNCTION(bbs_read_ann_dir)
     int i,j;
     char *id,*ptr;
     char buf[256];
-    char r_title[STRLEN],r_path[256],r_bm[256];
+    char r_title[STRLEN],r_path[256],r_bm[256],bname[STRLEN];
     int  r_flag,r_time;
     struct stat st;
     bool cansee;
@@ -598,6 +598,7 @@ PHP_FUNCTION(bbs_read_ann_dir)
 
     buf[0] = '\0';
     ann_get_board(pathbuf, buf, sizeof(buf));
+    strcpy(bname, buf);
     ZVAL_STRING(board,buf,1);
     if (me.num <= 0)
         RETURN_LONG(-3);
