@@ -30,6 +30,7 @@ typedef struct _ann_menu {
     int     level;
     int     total;                  /* 当前 .Names 的所有 ITEM 数量, 对应于 `pool[]` 数组 */
     time_t  modified_time;          /* 加载 .Names 时文件的时间戳 */
+    int     bid;                    /* 版面id，0为非版面目录 */
 #ifdef ANN_COUNT
     int     count;
 #endif /* ANN_COUNT */

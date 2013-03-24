@@ -564,6 +564,19 @@ int a_loadnames(MENU *pm,session_t *session)
                 if (!(p-pm->pool[i]->title<38))
                     continue;
             }
+            if ((p=strstr(pm->pool[i]->title,"(BM: CURRBM)"))) {
+                if (pm->bid) {
+                    const struct boardheader *bh;
+                    bh = getboard(pm->bid);
+                    if (!getbnum_safe(bh->filename, session, 1))
+                        if (!(p-pm->pool[i]->title<38))
+                            continue;
+                    if (!chk_currBM(bh->BM, session->currentuser))
+                        if (!(p-pm->pool[i]->title<38))
+                            continue;
+                } else
+                    continue;
+            }
             if ((p=strstr(pm->pool[i]->title,"(BM: SYSOPS)"))) {
                 if (!(p-pm->pool[i]->title<38))
                     continue;

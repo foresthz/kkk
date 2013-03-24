@@ -454,6 +454,8 @@ MENU *pm;
     prints("%s", (pm->level & PERM_BOARDS) ?
            "\033[31m\033[44m[版  主]  \033[33m说明 h │ 离开 q,← │ 新增文章 a │ 新增目录 g │ 修改档案 e        \033[m" :
            "\033[31m\033[44m[功能键] \033[33m 说明 h │ 离开 q,← │ 移动游标 k,↑,j,↓ │ 读取资料 Rtn,→         \033[m");
+    move(t_lines - 1, 70);
+    prints("bid:%d", pm->bid);
 }
 
 int a_chkbmfrmpath(char *path, char *board)
@@ -633,7 +635,7 @@ int level;
 	if (HAS_PERM(getCurrentUser(), PERM_ANNOUNCE) || HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
 		level = PERM_BOARDS;
 		
-    a_menu("", bname, level, 0, NULL);
+    a_menu("", bname, level, 0, NULL, num);
     return 1;
 }
 
@@ -2073,9 +2075,9 @@ int AddPCorpus(void)
 }
 #endif
 
-void a_menu(maintitle, path, lastlevel, lastbmonly, father)
+void a_menu(maintitle, path, lastlevel, lastbmonly, father, bid)
 char *maintitle, *path;
-int lastlevel, lastbmonly;
+int lastlevel, lastbmonly, bid;
 MENU *father;
 {
     MENU me;
@@ -2099,6 +2101,12 @@ MENU *father;
     helpmode = HELP_ANNOUNCE;
 #endif
     me.path = path;
+    if (!bid) {
+        char board[STRLEN];
+        if (!ann_get_board(me.path, board, sizeof(board)))
+            bid=getboardnum(board, NULL);
+    }
+    me.bid = bid;
 #ifdef ANN_SHOW_WELCOME
     strcpy(welcome,path);
     strcat(welcome,"/welcome");
@@ -2400,7 +2408,7 @@ EXPRESS:                 /* Leeward 98.09.13 */
                                 break;
                         }
                     } else if (dashd(fname)) {
-                        a_menu(M_ITEM(&me,me.now)->title, fname, me.level, bmonly, &me);
+                        a_menu(M_ITEM(&me,me.now)->title, fname, me.level, bmonly, &me, bid);
                         me.nowmenu = NULL;
                         a_loadnames(&me, getSession());   /* added by bad 03-2-10 */
                     }
@@ -2505,7 +2513,7 @@ EXPRESS:                 /* Leeward 98.09.13 */
 int Announce(void)
 {
     sprintf(genbuf,"%s 精华区公布栏",BBS_FULL_NAME);
-    a_menu(genbuf,"0Announce",(HAS_PERM(getCurrentUser(),PERM_ANNOUNCE)?PERM_BOARDS:0),0,NULL);
+    a_menu(genbuf,"0Announce",(HAS_PERM(getCurrentUser(),PERM_ANNOUNCE)?PERM_BOARDS:0),0,NULL,0);
     clear();
     return 0;
 }
