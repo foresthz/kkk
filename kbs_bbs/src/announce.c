@@ -454,8 +454,6 @@ MENU *pm;
     prints("%s", (pm->level & PERM_BOARDS) ?
            "\033[31m\033[44m[版  主]  \033[33m说明 h │ 离开 q,← │ 新增文章 a │ 新增目录 g │ 修改档案 e        \033[m" :
            "\033[31m\033[44m[功能键] \033[33m 说明 h │ 离开 q,← │ 移动游标 k,↑,j,↓ │ 读取资料 Rtn,→         \033[m");
-    move(t_lines - 1, 70);
-    prints("bid:%d", pm->bid);
 }
 
 int a_chkbmfrmpath(char *path, char *board)
