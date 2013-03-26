@@ -564,7 +564,7 @@ int a_loadnames(MENU *pm,session_t *session)
                 if (!(p-pm->pool[i]->title<38))
                     continue;
             }
-            if ((p=strstr(pm->pool[i]->title,"(BM: CURRBM)"))) {
+            if ((p=strstr(pm->pool[i]->title,"(BM: CURRBMS)"))) {
                 if (pm->bid) {
                     const struct boardheader *bh;
                     bh = getboard(pm->bid);

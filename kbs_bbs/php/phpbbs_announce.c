@@ -646,7 +646,7 @@ PHP_FUNCTION(bbs_read_ann_dir)
         if (strcmp(r_bm, "BMS")==0) {
             if (HAS_PERM(getCurrentUser(), PERM_BOARDS) && (seespecial!=0))
                 cansee = true;
-        } else if (strcmp(r_bm, "CURRBM")==0) {
+        } else if (strcmp(r_bm, "CURRBMS")==0) {
             const struct boardheader *bh;
             if ((bh=getbcache(bname))!=NULL && chk_currBM(bh->BM, getCurrentUser()) && (seespecial!=0))
                 cansee = true;
