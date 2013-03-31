@@ -573,7 +573,11 @@ int a_loadnames(MENU *pm,session_t *session)
                             continue;
                     struct board_member member;
                     bzero(&member, sizeof(struct board_member));
-                    if(!chk_currBM(bh->BM, session->currentuser) && get_board_member(bh->filename, session->currentuser->userid, &member)!=BOARD_MEMBER_STATUS_MANAGER)
+                    if(!chk_currBM(bh->BM, session->currentuser)
+#ifdef ENABLE_BOARD_MEMBER
+                            && get_board_member(bh->filename, session->currentuser->userid, &member)!=BOARD_MEMBER_STATUS_MANAGER
+#endif
+                            )
                         if (!(p-pm->pool[i]->title<38))
                             continue;
                 } else
