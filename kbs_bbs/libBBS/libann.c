@@ -571,8 +571,10 @@ int a_loadnames(MENU *pm,session_t *session)
                     if (!getbnum_safe(bh->filename, session, 1))
                         if (!(p-pm->pool[i]->title<38))
                             continue;
+#ifdef ENABLE_BOARD_MEMBER
                     struct board_member member;
                     bzero(&member, sizeof(struct board_member));
+#endif
                     if(!chk_currBM(bh->BM, session->currentuser)
 #ifdef ENABLE_BOARD_MEMBER
                             && get_board_member(bh->filename, session->currentuser->userid, &member)!=BOARD_MEMBER_STATUS_MANAGER
