@@ -123,7 +123,7 @@ int save_deny_reason(const char *board, char denyreason[][STRLEN], int count)
 /* 从封禁文件读取的字符串中获得封禁理由, 与文件内容格式关系紧密 */
 int get_denied_reason(const char *buf, char *reason)
 {
-    char genbuf[STRLEN], *p;
+    char genbuf[STRLEN*2], *p;
 
     strcpy(genbuf, buf);
     p = genbuf + IDLEN;
@@ -135,7 +135,7 @@ int get_denied_reason(const char *buf, char *reason)
 /* 从封禁文件读取的字符串中获得封禁操作ID, 与文件内容格式关系紧密 */
 int get_denied_operator(const char *buf, char *opt)
 {
-    char genbuf[STRLEN], *p;
+    char genbuf[STRLEN*2], *p;
 
     strcpy(genbuf, buf);
     p = genbuf+43;
@@ -156,14 +156,30 @@ int get_denied_freetype(const char *buf)
 time_t get_denied_time(const char *buf)
 {
     time_t denytime;
-    char genbuf[STRLEN], *p;
+    char genbuf[STRLEN*2], *p;
+
+    strcpy(genbuf, buf);
+    if ((NULL != (p = strrchr(genbuf, '['))) && *(p+12)!='\n')
+        sscanf(p + 12, "%lu", &denytime);
+    else
+        denytime = time(0) + 1;
+
+    return denytime;
+}
+
+/* 从封禁文件读取的字符串中获取解封时间 */
+time_t get_undeny_time(const char *buf)
+{
+    time_t undenytime;
+    char genbuf[STRLEN*2], *p;
 
     strcpy(genbuf, buf);
     if (NULL != (p = strrchr(genbuf, '[')))
-        sscanf(p + 1, "%lu", &denytime);
+        sscanf(p + 1, "%lu", &undenytime);
     else
-        denytime = time(0) + 1;
-    return denytime;
+        undenytime = time(0) + 1;
+
+    return undenytime;
 }
 
 /* 使用模板发布封禁公告

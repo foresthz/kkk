@@ -32,7 +32,7 @@
 /*Add by SmallPig*/
 
 extern int ingetdata;
-int modify_denytime(time_t *denytime, int *autofree);
+int modify_denytime(time_t denytime, int denyday, int *autofree);
 
 int listdeny(const struct boardheader *bh, int page)
 {                               /* Haohmaru.12.18.98.为那些变态得封人超过一屏的版主而写 */
@@ -351,7 +351,7 @@ int addtodeny(const struct boardheader *bh, char *uident)
 #endif
 #endif
     autofree = 1;
-    if ((denyday=modify_denytime(NULL, &autofree))<0)
+    if ((denyday=modify_denytime(0, 0, &autofree))<0)
         return 0;
 #if 0
     sprintf(filebuf, "输入天数(最长%d天)(按*取消封禁)", maxdeny);
@@ -397,13 +397,13 @@ int addtodeny(const struct boardheader *bh, char *uident)
 
         tmtime = localtime(&undenytime);
 
-        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);   /*Haohmaru 98,09,25,显示是谁什么时候封的 */
+        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);   /*Haohmaru 98,09,25,显示是谁什么时候封的 */
     } else {
         struct tm *tmtime;
         time_t undenytime = now + denyday * 24 * 60 * 60;
 
         tmtime = localtime(&undenytime);
-        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);
     }
 
     if (addtofile(genbuf, strtosave) == 1) {
@@ -553,57 +553,66 @@ int addtodeny(const struct boardheader *bh, char *uident)
 }
 
 /* 修改已封禁id的封禁时间 */
-int modify_denytime(time_t *denytime, int *autofree)
+int modify_denytime(time_t denytime, int denyday, int *autofree)
 {
     struct tm *tm_time;
-    int days, maxdeny, ch, start;
+    int firstdeny, maxdeny, mindeny, newday, ch, start;
     time_t settime, now;
 
-    /* 设定时间从当前开始计算 */
     now = time(0);
     tm_time = localtime(&now);
-    if (denytime)
-        days = ((*denytime)+tm_time->tm_gmtoff)/86400 - (now+tm_time->tm_gmtoff)/86400;
-    else
-        days = 1;
+
+    if (!denytime) {    /* 首次封禁 */
+        firstdeny = 1;
+        denytime = now;
+        denyday = 1;
+        mindeny = 1;
+    } else {            /* 修改封禁 */
+        firstdeny = 0;
+        mindeny = (now+tm_time->tm_gmtoff)/86400 - (denytime+tm_time->tm_gmtoff)/86400 + 1;
+    }
+
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
         maxdeny = 70;
     else
         maxdeny = 14;
+
+    newday = denyday;
+
     move(16, 0);
     prints("操作提示: \033[33m上/下键\033[m调整或直接输入天数，\033[33m回车\033[m确认，\033[33mESC\033[m放弃\n");
-    if (denytime) /* 表示是修改封禁时间 */
-        prints("特别提示: \033[31m确定修改后将按照新的时间计算封禁！\033[m");
+    if (!firstdeny) /* 表示是修改封禁时间 */
+        prints("特别提示: \033[31m确定修改后将按照首次封禁时间计算封禁天数！\033[m");
     start = 0;
     while (1) {
-        settime = now + days * 86400;
+        settime = denytime + newday * 86400;
         tm_time = localtime(&settime);
         move (15, 0);
         prints("\033[33m设定封禁天数: \033[4;32m %d \033[0;32m天\033[0;33m\t解封日期: \033[32m%d年%2d月%2d日\033[m",
-                days, tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday);
+                newday, tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday);
         move(15, 16);
         ch = igetkey();
         if(ch==KEY_UP) {
-            if (days < maxdeny)
-                days++;
+            if (newday < maxdeny)
+                newday++;
         } else if (ch==KEY_DOWN) {
-            if (days > 1) /* 至少需要1天 */
-                days--;
+            if (newday > mindeny) /* 至少需要mindeny天 */
+                newday--;
         } else if (ch>='0' && ch<='9') { /* 直接输入日期，可输入三位数字 */
             if (!start)
-                days = (ch-'0')?(ch-'0'):1;
+                newday = (ch-'0')>mindeny?(ch-'0'):mindeny;
             else {
                 int day = ch - '0';
                 /* 先处理上次结果 */
-                if (days>100)
-                    days = day;
+                if (newday>100)
+                    newday = day>mindeny?day:mindeny;
                 else
-                    days = 10*days + ch - '0';
+                    newday = 10*newday + ch - '0';
                 /* 再处理此次结果 */
-                if (days>maxdeny)
-                    days = day;
-                if (days==0)
-                    days = 1;
+                if (newday>maxdeny)
+                    newday = day;
+                if (newday<mindeny)
+                    newday = mindeny;
             }
             start = 1;
         } else if (ch=='\n' || ch=='\r') {
@@ -615,18 +624,16 @@ int modify_denytime(time_t *denytime, int *autofree)
             else
                 *autofree = 1;
 #endif
-            if(denytime)
-                *denytime = settime;
             break;
         } else if (ch==KEY_ESC) {
-            if (denytime)
-                return ((*denytime)+tm_time->tm_gmtoff)/86400 - (now+tm_time->tm_gmtoff)/86400;
-            else
+            if (firstdeny)
                 return -1;
+            else
+                return denyday;
         } else
             continue;
     }
-    return days;
+    return newday;
 }
 
 /* 修改已封禁的id */
@@ -637,10 +644,10 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
 #ifdef MANUAL_DENY
 #define MOD_DENY_TYPE   0x004
 #endif
-    time_t denytime, newtime;
+    time_t denytime, undenytime;
     char denymsg[STRLEN], newmsg[STRLEN], operator[IDLEN+1];
-    int ch, i, day;
-    struct tm *tm_time;
+    int ch, i, denyday, newday;
+    struct tm deny_time, undeny_time;
     unsigned int flag;
     int autofree, newfree;
 
@@ -655,31 +662,35 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
     autofree = 1;
 #endif
     denytime = get_denied_time(denystr);
+    undenytime = get_undeny_time(denystr);
 
     strcpy(newmsg, denymsg);
     newfree = autofree;
-    newtime = denytime;
-    tm_time = localtime(&newtime);
-    day = (denytime+tm_time->tm_gmtoff)/86400 - (time(0)+tm_time->tm_gmtoff)/86400;
+    localtime_r(&denytime, &deny_time);
+    localtime_r(&undenytime, &undeny_time);
+    denyday = (undenytime+undeny_time.tm_gmtoff)/86400 - (denytime+deny_time.tm_gmtoff)/86400;
+    newday = denyday;
     while(1) {
-        tm_time = localtime(&newtime);
+        localtime_r(&undenytime, &undeny_time);
         move(3, 0);
         clrtobot();
         prints("该用户的封禁情况如下: \n\n");
         prints("  \033[33m被封禁ID:\033[m %s\n", uident);
         prints("  \033[33m封禁理由:\033[m %s%s\033[m\n", (flag&MOD_DENY_REASON)?"\033[31m":"", newmsg);
+        prints("  \033[33m封禁日期:\033[m %d年%2d月%2d日\033[m\n", deny_time.tm_year + 1900, deny_time.tm_mon + 1, deny_time.tm_mday);
+        prints("  \033[33m封禁天数:\033[m %s%d天\033[m\n", newday!=denyday?"\033[31m":"", newday);
 #ifdef MANUAL_DENY
         prints("  \033[33m解封日期:\033[m %s%d年%2d月%2d日\033[m  %s[%s]\033[m\n", (flag&MOD_DENY_TIME)?"\033[31m":"",
-                tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday,
+                undeny_time.tm_year + 1900, undeny_time.tm_mon + 1, undeny_time.tm_mday,
                 (flag&MOD_DENY_TYPE)?"\033[31m":"", newfree?"自动解封":"手动解封");
 #else
         prints("  \033[33m解封日期:\033[m %s%d年%2d月%2d日\033[m\033[m\n", (flag&MOD_DENY_TIME)?"\033[31m":"",
-                tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday);
+                undeny_time.tm_year + 1900, undeny_time.tm_mon + 1, undeny_time.tm_mday);
 #endif
         prints("  \033[33m操作者ID:\033[m %s%s\033[m\n", (flag&&strcmp(getCurrentUser()->userid, operator))?"\033[31m":"",
                 flag?getCurrentUser()->userid:operator);
         while (1) {
-            move(11, 0);
+            move(12, 0);
             prints("\033[33m选择操作: \033[m%s[1.删除封禁用户]%s[2.修改封禁理由]%s[3.调整解封日期]%s[4.保存并退出]\033[m",
                     i==1?"\033[32m":"\033[m", i==2?"\033[32m":"\033[m", i==3?"\033[32m":"\033[m", i==4?"\033[32m":"\033[m");
             ch = igetkey();
@@ -696,7 +707,7 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
             } else if (ch=='\n'||ch=='\r') {
                 if (i==1) { /* 删除封禁ID */
                     move(13, 0);
-                    prints("%s确定解封？[N]", (denytime>time(0))?"该用户封禁时限未到，":"");
+                    prints("%s确定解封？[N]", (undenytime>time(0))?"该用户封禁时限未到，":"");
                     ch = igetkey();
                     if (toupper(ch)=='Y') {
                         if (deldeny(getCurrentUser(), bh->filename, (char *)uident, 0, 1, getSession())<0) {
@@ -713,11 +724,13 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                     else
                         flag &= ~MOD_DENY_REASON;
                 } else if (i==3) { /* 调整封禁天数 */
-                    day = modify_denytime(&newtime, &newfree);
-                    if (denytime!=newtime)
+                    newday = modify_denytime(denytime, newday, &newfree);
+                    if (denyday!=newday)
                         flag |= MOD_DENY_TIME;
                     else
                         flag &= ~MOD_DENY_TIME;
+                    /* 重新设定解封时间戳 */
+                    undenytime = denytime + newday * 86400;
 #ifdef MANUAL_DENY
                     if (newfree!=autofree)
                         flag |= MOD_DENY_TYPE;
@@ -726,7 +739,7 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
 #endif
                 } else { /* 保存并退出 */
                     if (flag) { /* 如果发生修改 */
-                        char savestr[STRLEN], filename[STRLEN], ans[2];
+                        char savestr[STRLEN*2], filename[STRLEN], ans[2];
                         getdata(13, 0, "确定修改? [Y]", ans, 2, DOECHO, NULL, true);
                         if (toupper(ans[0])=='N') {
                             prints("\033[33m取消...<Enter>\033[m");
@@ -734,11 +747,11 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                             return 0;
                         }
                         if (newfree)
-                            sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum",
-                                    uident, newmsg, getCurrentUser()->userid, tm_time->tm_mon+1, tm_time->tm_mday, newtime);
+                            sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum%lum",
+                                    uident, newmsg, getCurrentUser()->userid, undeny_time.tm_mon+1, undeny_time.tm_mday, undenytime, denytime);
                         else
-                            sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum",
-                                    uident, newmsg, getCurrentUser()->userid, tm_time->tm_mon+1, tm_time->tm_mday, newtime);
+                            sprintf(savestr, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum%lum",
+                                    uident, newmsg, getCurrentUser()->userid, undeny_time.tm_mon+1, undeny_time.tm_mday, undenytime, denytime);
                         setbfile(filename, bh->filename, "deny_users");
                         if (replace_from_file_by_id(filename, uident, savestr)<0) {
                             move(13, 0);
@@ -746,14 +759,14 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                             WAIT_RETURN;
                         }
 #ifdef RECORD_DENY_FILE
-                        if (deny_announce(uident,bh,newmsg,day,getCurrentUser(),time(0),1,NULL,0)<0 ||
-                            deny_mailuser(uident,bh,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
+                        if (deny_announce(uident,bh,newmsg,newday,getCurrentUser(),time(0),1,NULL,0)<0 ||
+                            deny_mailuser(uident,bh,newmsg,newday,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }
 #else
-                        if (deny_announce(uident,bh,newmsg,day,getCurrentUser(),time(0),1)<0 ||
-                            deny_mailuser(uident,bh,newmsg,day,getCurrentUser(),time(0),1,newfree)<0) {
+                        if (deny_announce(uident,bh,newmsg,newday,getCurrentUser(),time(0),1)<0 ||
+                            deny_mailuser(uident,bh,newmsg,newday,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }

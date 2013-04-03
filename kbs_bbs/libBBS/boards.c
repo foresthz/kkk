@@ -1342,7 +1342,7 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only, int
             return -1;
         get_denied_reason(denystr, denymsg);
         get_denied_operator(denystr, operator);
-        ut = get_denied_time(denystr);
+        ut = get_undeny_time(denystr);
         fn1 = fopen(filename, "w");
         fprintf(fn1, "\033[36m本次封禁原始信息\033[m\n");
         fprintf(fn1, "\033[33m封禁用户: \033[4;32m%s\033[m\n", lookupuser?lookupuser->userid:uident);
