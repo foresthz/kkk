@@ -403,9 +403,9 @@ PHP_FUNCTION(bbs_denyadd)
     tmtime = localtime(&undenytime);
 
     if (autofree)
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);
     else
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);
 
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
@@ -518,12 +518,12 @@ PHP_FUNCTION(bbs_denymod)
     char *board,*userid,*exp;
     int  board_len,userid_len,exp_len;
     long  denyday,manual_deny;
-    int autofree;
+    int autofree,minday;
     const struct boardheader *brd;
     struct userec *lookupuser;
     char buf[256], denystr[32];
     struct tm *tmtime;
-    time_t now,undenytime;
+    time_t now,denytime,undenytime;
     char path[STRLEN];
 
     int ac = ZEND_NUM_ARGS();
@@ -548,6 +548,12 @@ PHP_FUNCTION(bbs_denymod)
         RETURN_LONG(-7);
     if (!deny_me(userid, board))
         RETURN_LONG(-4);
+    setbfile(path, board, "deny_users");
+    if (!seek_in_file(path, userid, buf))
+        RETURN_LONG(-4);
+    denytime = get_denied_time(buf);
+    now = time(0);
+    minday = (now - denytime) / 86400 + 1;
 
     process_control_chars(exp,NULL);
 
@@ -555,7 +561,7 @@ PHP_FUNCTION(bbs_denymod)
         RETURN_LONG(-6);
     strnzhcpy(denystr, exp, 30);
 
-    if (denyday < 1 || denyday > (HAS_PERM(getCurrentUser(), PERM_SYSOP)?70:14))
+    if (denyday < minday || denyday > (HAS_PERM(getCurrentUser(), PERM_SYSOP)?70:14))
         RETURN_LONG(-5);
 
 #ifdef MANUAL_DENY
@@ -568,16 +574,14 @@ PHP_FUNCTION(bbs_denymod)
     brc_initial(getCurrentUser()->userid, board, getSession());
 #endif
 
-    now = time(0);
-    undenytime = now + denyday * 24 * 60 * 60;
+    undenytime = denytime + denyday * 24 * 60 * 60;
     tmtime = localtime(&undenytime);
 
     if (autofree)
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, denytime);
     else
-        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime);
+        sprintf(buf, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum%lum", userid, denystr, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, denytime);
 
-    setbfile(path, board, "deny_users");
     if (replace_from_file_by_id(path, userid, buf)>=0) {
 #ifdef RECORD_DENY_FILE
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),1,NULL,0);
