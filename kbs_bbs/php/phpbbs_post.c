@@ -388,6 +388,8 @@ PHP_FUNCTION(bbs_postarticle)
     int NBUser = 0;
 #ifdef NEWSMTH
     long from = 0;
+    char *from_name;
+    int from_name_len=0;
 #endif
     char name[STRLEN];
 
@@ -408,13 +410,20 @@ PHP_FUNCTION(bbs_postarticle)
         if (zend_parse_parameters(9 TSRMLS_CC, "ss/s/llllll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex) == FAILURE) {
             WRONG_PARAM_COUNT;
         }
+    }
 #ifdef NEWSMTH
-    } else if (ac == 10) {
+    else if (ac == 10) {
         if (zend_parse_parameters(10 TSRMLS_CC, "ss/s/lllllll", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from) == FAILURE) {
             WRONG_PARAM_COUNT;
         }
+    }
+    else if (ac == 11) {
+        if (zend_parse_parameters(10 TSRMLS_CC, "ss/s/llllllls", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from,&from_name,&from_name_len) == FAILURE) {
+            WRONG_PARAM_COUNT;
+        }
+    }
 #endif
-    } else {
+    else {
         WRONG_PARAM_COUNT;
     }
 
@@ -513,23 +522,28 @@ PHP_FUNCTION(bbs_postarticle)
     }
     color = (getCurrentUser()->numlogins % 7) + 31; /* 颜色随机变化 */
 #ifdef NEWSMTH
-    switch (from) {
-        case 1:
-            memcpy(name, NFORUM_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
-            name[STRLEN - 1] = 0;
-            break;
-        case 2:
-            memcpy(name, NFORUM_M_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
-            name[STRLEN - 1] = 0;
-            break;
-        case 3:
-            memcpy(name, NFORUM_API_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
-            name[STRLEN - 1] = 0;
-            break;
-        default:
-            memcpy(name, NAME_BBS_ENGLISH, STRLEN);
-            name[STRLEN - 1] = 0;
-            break;
+    if(from_name_len>0) {
+        memcpy(name, from_name, STRLEN);
+		name[STRLEN - 1] = 0;
+    } else {
+        switch (from) {
+            case 1:
+                memcpy(name, NFORUM_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
+                name[STRLEN - 1] = 0;
+                break;
+            case 2:
+                memcpy(name, NFORUM_M_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
+                name[STRLEN - 1] = 0;
+                break;
+            case 3:
+                memcpy(name, NFORUM_API_FROM_PREFIX NAME_BBS_ENGLISH, STRLEN);
+                name[STRLEN - 1] = 0;
+                break;
+            default:
+                memcpy(name, NAME_BBS_ENGLISH, STRLEN);
+                name[STRLEN - 1] = 0;
+                break;
+        }
     }
 #else
     memcpy(name, NAME_BBS_ENGLISH, STRLEN);
