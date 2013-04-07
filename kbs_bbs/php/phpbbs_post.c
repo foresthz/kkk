@@ -391,6 +391,7 @@ PHP_FUNCTION(bbs_postarticle)
     char *from_name;
     int from_name_len=0;
 #endif
+    char from_prefix[STRLEN];
     char name[STRLEN];
 
 
@@ -418,7 +419,7 @@ PHP_FUNCTION(bbs_postarticle)
         }
     }
     else if (ac == 11) {
-        if (zend_parse_parameters(10 TSRMLS_CC, "ss/s/llllllls", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from,&from_name,&from_name_len) == FAILURE) {
+        if (zend_parse_parameters(11 TSRMLS_CC, "ss/s/llllllls", &boardName, &blen, &title, &tlen, &content, &clen, &sig, &reid, &outgo,&anony,&mailback,&is_tex,&from,&from_name,&from_name_len) == FAILURE) {
             WRONG_PARAM_COUNT;
         }
     }
@@ -521,10 +522,12 @@ PHP_FUNCTION(bbs_postarticle)
         fprintf(fp, "\n");
     }
     color = (getCurrentUser()->numlogins % 7) + 31; /* 颜色随机变化 */
+    sprintf(from_prefix, "http://");
 #ifdef NEWSMTH
     if(from_name_len>0) {
         memcpy(name, from_name, STRLEN);
-		name[STRLEN - 1] = 0;
+        name[STRLEN - 1] = 0;
+        from_prefix[0]=0;
     } else {
         switch (from) {
             case 1:
@@ -550,9 +553,9 @@ PHP_FUNCTION(bbs_postarticle)
     name[STRLEN - 1] = 0;
 #endif
     if (!strcmp(board, "Announce") || !strcmp(board, "Penalty"))
-        fprintf(fp, "\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, name, BBS_FULL_NAME);
+        fprintf(fp, "\033[m\033[%2dm※ 来源:·%s %s%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, from_prefix, name, BBS_FULL_NAME);
     else
-        fprintf(fp, "\n\033[m\033[%2dm※ 来源:·%s http://%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, name, (anony) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
+        fprintf(fp, "\n\033[m\033[%2dm※ 来源:·%s %s%s·[FROM: %s]\033[m\n", color, BBS_FULL_NAME, from_prefix, name, (anony) ? NAME_ANONYMOUS_FROM : SHOW_USERIP(getCurrentUser(), getSession()->fromhost));
 
     if (brd->flag&BOARD_ATTACH) {
         upload_post_append(fp, &post_file, getSession());
