@@ -283,11 +283,11 @@ int send_refer_like_to(struct userec *user, const struct boardheader *board, str
 	struct refer refer;
 	
 	if(like->score>0)
-		sprintf(title, "[\033[1;31m+%d\033[m] %s@%s", like->score, like->msg, fh->title);
+		sprintf(title, "[\033[1;31m+%d\033[m] %s", like->score, like->msg);
 	else if(like->score<0)
-		sprintf(title, "[\033[1;32m%d\033[m] %s@%s", like->score, like->msg, fh->title);
+		sprintf(title, "[\033[1;32m%d\033[m] %s", like->score, like->msg);
 	else
-		sprintf(title, "%s@%s", like->msg, fh->title);
+		sprintf(title, "%s", like->msg);
 	
 	memset(&refer, 0, sizeof(refer));
 	strncpy(refer.board, board->filename, STRLEN);
