@@ -799,12 +799,12 @@ struct refer_info {
 };
 #endif /* ENABLE_REFER */
 
-#include "func.h"
-
 #if defined(NEWSMTH) && !defined(SECONDSITE)
 #include "ar.h"
 #include "extra.h"
 #endif
+
+#include "func.h"
 
 #endif /* _BBS_H_ */
 
