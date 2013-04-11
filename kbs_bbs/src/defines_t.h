@@ -180,6 +180,9 @@ int chkrefer();
 int chkrefer_dir(char *filename);
 int refer_at(void);
 int refer_reply(void);
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+int refer_like(void);
+#endif
 int refer_list(char filename[STRLEN], int mode);
 int refer_search(struct _select_def* conf, char *query, bool up, int mode);
 int load_refer_info(int mode, int init);

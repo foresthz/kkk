@@ -128,7 +128,7 @@ struct user_info {              /* Structure used in UTMP file */
     time_t currboard_freshtime;
     unsigned int mailcheck;             /* if have new mail or new msg, stiger */
 #ifdef ENABLE_REFER
-#ifdef ENABLE_REFER_LIKE
+#if defined(NEWSMTH) && !defined(SECONDSITE)
 #define REFER_MODES 3
 #else
 #define REFER_MODES 2

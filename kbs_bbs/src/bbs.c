@@ -3673,8 +3673,10 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
 #ifdef FILTER
     int returnvalue;
 #endif
+    int hide_article;
 
     check_upload = 0;
+    hide_article = 0;
 
     if (conf!=NULL)  {
         struct read_arg* arg;
@@ -3812,7 +3814,7 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         sprintf(buf3, "引言模式 [%c]", include_mode);
         move(t_lines - 4, 0);
         clrtoeol();
-        prints("\033[m发表文章于 %s 讨论区  %s %s %s %s\n", currboard->filename, havemath ? "\033[1;31mMath\033[m" : "", (anonyboard) ? (Anony == 1 ? "\033[1m要\033[m使用匿名" : "\033[1m不\033[m使用匿名") : "", mailback? "回复到信箱":"",use_tmpl?"使用模板":"");
+        prints("\033[m发表文章于 %s 讨论区  %s %s %s %s %s\n", currboard->filename, havemath ? "\033[1;31mMath\033[m" : "", (anonyboard) ? (Anony == 1 ? "\033[1m要\033[m使用匿名" : "\033[1m不\033[m使用匿名") : "", mailback? "回复到信箱":"",use_tmpl?"使用模板":"", hide_article?"回复可见":"");
         clrtoeol();
         prints("使用标题: %s\n", (buf[0] == '\0') ? "[正在设定主题]" : buf);
 
@@ -3845,6 +3847,11 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         else
             sprintf(buf2, "使用第 %d 个签名档", getCurrentUser()->signature);
         prints("%s  %s 按\033[1;32m0\033[m~\033[1;32m%d/V/" RAND_SIG_KEYS "\033[m选/看/随机签名档", buf2, (replymode) ? buf3 : " ", getSession()->currentmemo->ud.signum);
+
+#ifdef ENABLE_HIDE_ARTICLE
+        if (!anonyboard) 
+            prints("  \033[1;32mh\033[m回复可见");
+#endif
 
         move(t_lines - 1, 0);
         clrtoeol();
@@ -3891,7 +3898,13 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
                 mailback = 0;
             else*/
             if (Anony == 0) mailback = mailback ? 0 : 1;
-        } else if (ooo == ANONY_KEY) {
+        } 
+#ifdef ENABLE_HIDE_ARTICLE
+        else if (ooo == 'H') {
+            if (!anonyboard) hide_article=hide_article?0:1;
+        }
+#endif
+        else if (ooo == ANONY_KEY) {
             Anony = (Anony == 1) ? 0 : 1;
             if (Anony == 1) mailback = 0;
         } else if (ooo == RAND_SIG_KEY) {
@@ -3969,6 +3982,11 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
     /* 回复到信箱，stiger */
     if (mailback)
         post_file.accessed[1] |= FILE_MAILBACK;
+    /* 回复可见, windins */
+#ifdef ENABLE_HIDE_ARTICLE
+    if (!anonyboard && hide_article)
+        post_file.accessed[1] |= FILE_HIDDEN;
+#endif
 
     /*
      * if ((!strcmp(currboard,"Announce"))&&(!strcmp(post_file.owner,"Anonymous")))
