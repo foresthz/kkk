@@ -850,6 +850,11 @@ while(0)
     int send_refer_msg_to_board(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
     int send_refer_msg_to_club(struct boardheader *to_board, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
 #endif /* ENABLE_BOARD_MEMBER */    
+#ifdef ENABLE_REFER_LIKE
+    int send_refer_like_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, struct like *like);
+    int refer_get_like_count(struct userec *user);
+    int refer_get_like_new(struct userec *user);
+#endif /* ENABLE_REFER_LIKE */
 #endif /* ENABLE_REFER */
 
 /* board member, windinsn, Aug 11, 2012 */

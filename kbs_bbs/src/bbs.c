@@ -985,6 +985,10 @@ void readtitle(struct _select_def* conf)
          strcpy(title, "[您有@提醒]");
      else if (chkmailflag==4)
          strcpy(title, "[您有回复提醒]");
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6)
+         strcpy(title, "[您有Like提醒]");
+#endif
 #ifdef ENABLE_NEW_MSG
      else if (chkmailflag==5)
          strcpy(title, "[您有新短信]");
@@ -1817,6 +1821,9 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
     set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
     set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+#ifdef ENABLE_REFER_LIKE
+    set_refer_info(currboardent, fileinfo->id, REFER_MODE_LIKE);
+#endif
 #endif
 #ifndef NOREPLY
     move(t_lines - 1, 0);
@@ -5588,6 +5595,9 @@ int Goodbye(void)                       /*离站 选单 */
     /* 退出时清空uinfo中的refer记录 */
     clear_refer_info(REFER_MODE_AT);
     clear_refer_info(REFER_MODE_REPLY);
+#ifdef ENABLE_REFER_LIKE
+    clear_refer_info(REFER_MODE_LIKE);
+#endif
 #endif
 
 #ifdef NEWSMTH
@@ -6938,6 +6948,10 @@ static void read_top_title(struct _select_def *conf)
          sprintf(title, "%s", "[您有@提醒]");
      else if (chkmailflag==4)
          sprintf(title, "%s", "[您有回复提醒]");
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6)
+         sprintf(title, "%s", "[您有Like提醒]");
+#endif
 #ifdef ENABLE_NEW_MSG
      else if (chkmailflag==5)
          sprintf(title, "%s", "[您有新短信]");
@@ -7069,6 +7083,9 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
     set_refer_info(currboardent, fh->id, REFER_MODE_AT);
     set_refer_info(currboardent, fh->id, REFER_MODE_REPLY);
+#ifdef ENABLE_REFER_LIKE
+    set_refer_info(currboardent, fh->id, REFER_MODE_LIKE);
+#endif
 #endif
     arg=(struct read_arg*)conf->arg;
     move(t_lines-1,0);

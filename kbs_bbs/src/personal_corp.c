@@ -1197,6 +1197,11 @@ static int pc_dir_title(struct _select_def *conf)
      } else if (chkmailflag==4) {
          prints("\033[0;1;5;44m                                 [您有回复提醒]                               \033[m");
      }
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6) {
+         prints("\033[0;1;5;44m                                 [您有LIKE提醒]                               \033[m");
+     }
+#endif
 #ifdef ENABLE_NEW_MSG
      else if (chkmailflag==5) {
          prints("\033[0;1;5;44m                                  [您有新短信]                                \033[m");

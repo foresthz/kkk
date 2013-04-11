@@ -128,6 +128,8 @@ int chkmail()
  * 0: 无
  * 3: 有新的 @
  * 4: 有新的回复
+ * 5: 有新的短信, added by windinsn
+ * 6: 有新的Like, added by windinsn, 2013-4-11
  */
 int chkrefer() {
 #ifdef ENABLE_NEW_MSG
@@ -147,10 +149,17 @@ int chkrefer() {
     /* 需要更新一下uinfo中的记录 */
     sync_refer_info(REFER_MODE_AT, 1);
     sync_refer_info(REFER_MODE_REPLY, 1);
+#ifdef ENABLE_REFER_LIKE
+    sync_refer_info(REFER_MODE_LIKE, 1);
+#endif
     if (DEFINE(getCurrentUser(), DEF_REFER)&&check_refer_info(REFER_MODE_AT)>0/*chkrefer_dir(REFER_DIR)>0*/)
         return 3;
     if (DEFINE(getCurrentUser(), DEF_REPLY)&&check_refer_info(REFER_MODE_REPLY)>0/*chkrefer_dir(REPLY_DIR)>0*/)
         return 4;
+#ifdef ENABLE_REFER_LIKE
+    if (DEFINE(getCurrentUser(), DEF_REPLY)&&check_refer_info(REFER_MODE_LIKE)>0/*chkrefer_dir(LIKE_DIR)>0*/)
+        return 6;
+#endif
 
     return 0; 
 }
@@ -2832,6 +2841,9 @@ const static struct command_def mail_cmds[] = {
 #ifdef ENABLE_REFER
     {"K) @我的文章", 0, refer_at, NULL},
     {"L) 回复我的文章", 0, refer_reply, NULL},
+#ifdef ENABLE_REFER_LIKE
+    {"B) Like我的文章", 0, refer_like, NULL},
+#endif /* ENABLE_REFER_LIKE */
 #endif
 // new msg system, added by windinsn, Jan 21, 2013
 #ifdef ENABLE_NEW_MSG
@@ -3274,6 +3286,11 @@ int MailProc(void)
             break;
 #ifdef ENABLE_NEW_MSG
         case 5:
+            maillist_conf.pos=6;
+            break;
+#endif
+#ifdef ENABLE_REFER_LIKE
+        case 6:
             maillist_conf.pos=5;
             break;
 #endif
@@ -4490,6 +4507,12 @@ int refer_reply(void) {
     sprintf(refer_title_bar, "[回复我的文章]");
     return refer_list(REPLY_DIR, REFER_MODE_REPLY);
 }
+#ifdef ENABLE_REFER_LIKE
+int refer_like(void) {
+    sprintf(refer_title_bar, "[Like我的文章]");
+    return refer_list(LIKE_DIR, REFER_MODE_LIKE);
+}
+#endif
 int refer_list(char filename[STRLEN], int mode) {
     char dir[255];
     int oldmode;

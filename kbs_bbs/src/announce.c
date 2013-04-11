@@ -368,6 +368,12 @@ MENU *pm;
          prints("\033[5m");
          sprintf(genbuf, "[您有回复提醒]");
      }
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6) {
+         prints("\033[5m");
+         sprintf(genbuf, "[您有Like提醒]");
+     }
+#endif
 #endif /* ENABLE_REFER */
 #ifdef ENABLE_NEW_MSG
     else if (chkmailflag==5) {

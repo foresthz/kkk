@@ -1391,6 +1391,9 @@ void user_login()
     /* 应该是不管用户是否启用，都需要load记录至uinfo */
     load_refer_info(REFER_MODE_AT, 1);
     load_refer_info(REFER_MODE_REPLY, 1);
+#ifdef ENABLE_REFER_LIKE
+    load_refer_info(REFER_MODE_LIKE, 1);
+#endif
 #endif
 
 #ifndef SSHBBS
@@ -2002,6 +2005,10 @@ void docmdtitle(const char *title,const char *prompt)
          strcpy(middoc, "[您有@提醒]");
      else if (chkmailflag==4)
          strcpy(middoc, "[您有回复提醒]");
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6)
+         strcpy(middoc, "[您有Like提醒]");
+#endif
 #ifdef ENABLE_NEW_MSG
      else if (chkmailflag==5)
          strcpy(middoc, "[您有新短信]");

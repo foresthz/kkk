@@ -33,6 +33,12 @@ int set_refer_file_from_mode(char *buf, const int mode)
         case REFER_MODE_REPLY:
             sprintf(buf, "%s", REPLY_DIR);
             break;
+/* ONLY FOR NewSMTH.Net, enable like, added by windinsn, 2013-4-11 */
+#ifdef ENABLE_REFER_LIKE
+		case REFER_MODE_LIKE:
+			sprintf(buf, "%s", LIKE_DIR);
+			break;
+#endif /* ENABLE_REFER_LIKE */
         default:
             return -1;
     }
@@ -258,6 +264,51 @@ int send_refer_msg(const char *boardname, struct fileheader *fh, struct filehead
 
     return 0;
 }
+/* ONLY FOR NewSMTH.Net, enable like, added by windinsn, 2013-4-11 */
+#ifdef ENABLE_REFER_LIKE
+int send_refer_like_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, struct like *like) {
+	if (0==strcmp(user->userid, "guest")||0==strcmp(user->userid, "SYSOP"))
+		return -1;
+	if (!DEFINE(user, DEF_REPLY))
+		return -2;
+	if (0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
+		return -3;
+	if (!check_read_perm(user,board))
+		return -4;
+	if (0!=check_mail_perm(getSession()->currentuser, user))
+		return -5;
+
+	char buf[255];
+	char title[255];
+	struct refer refer;
+	
+	if(like->score>0)
+		sprintf(title, "[\033[1;31m+%d\033[m] %s@%s", like->score, like->msg, fh->title);
+	else if(like->score<0)
+		sprintf(title, "[\033[1;32m%d\033[m] %s@%s", like->score, like->msg, fh->title);
+	else
+		sprintf(title, "%s@%s", like->msg, fh->title);
+	
+	memset(&refer, 0, sizeof(refer));
+	strncpy(refer.board, board->filename, STRLEN);
+	strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+	strnzhcpy(refer.title, title, ARTICLE_TITLE_LEN);
+	refer.id=fh->id;
+	refer.groupid=fh->groupid;
+	refer.reid=fh->reid;
+	refer.flag=0;
+	refer.time=time(NULL);
+
+	sethomefile(buf, user->userid, LIKE_DIR);
+	if (-1==append_record(buf, &refer, sizeof(refer)))
+		return -6;
+
+	setmailcheck(user->userid);
+	newbbslog(BBSLOG_USER, "sent like refer '%s' to '%s'", title, user->userid);
+
+	return 0;
+}
+#endif /* ENABLE_REFER_LIKE */
 int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh) {
     if (0==strcmp(user->userid, "guest")||0==strcmp(user->userid, "SYSOP"))
         return -1;
@@ -444,6 +495,11 @@ int refer_get_refer_count(struct userec *user) {
 int refer_get_reply_count(struct userec *user) {
     return refer_get_count(user, REPLY_DIR);
 }
+#ifdef ENABLE_REFER_LIKE
+int refer_get_like_count(struct userec *user) {
+	return refer_get_count(user, LIKE_DIR);
+}
+#endif /* ENABLE_REFER_LIKE */
 int refer_get_count(struct userec *user, char *filename) {
     char buf[STRLEN];
     struct stat st;
@@ -460,6 +516,11 @@ int refer_get_refer_new(struct userec *user) {
 int refer_get_reply_new(struct userec *user) {
     return refer_get_new(user, REPLY_DIR);
 }
+#ifdef ENABLE_REFER_LIKE
+int refer_get_like_new(struct userec *user) {
+	return refer_get_new(user, LIKE_DIR);
+}
+#endif /* ENABLE_REFER_LIKE */
 int refer_get_new(struct userec *user, char *filename) {
     char buf[STRLEN];
     struct stat st;

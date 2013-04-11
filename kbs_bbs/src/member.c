@@ -1077,6 +1077,10 @@ void member_board_article_title(struct _select_def* conf) {
          strcpy(title, "[您有@提醒]");
      else if (chkmailflag==4)
          strcpy(title, "[您有回复提醒]");
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6)
+         strcpy(title, "[您有Like提醒]");
+#endif
 #ifdef ENABLE_NEW_MSG
      else if (chkmailflag==5)
          strcpy(title, "[您有新短信]");
@@ -1315,6 +1319,9 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
     set_refer_info(currboardent, post->id, REFER_MODE_AT);
     set_refer_info(currboardent, post->id, REFER_MODE_REPLY);
+#ifdef ENABLE_REFER_LIKE
+    set_refer_info(currboardent, post->id, REFER_MODE_LIKE);
+#endif
 #endif
 
     if (arg->readdata==NULL)

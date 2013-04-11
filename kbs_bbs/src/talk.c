@@ -1555,6 +1555,10 @@ char *modestr;
          showtitle(modestr, "[您有@提醒]");
      else if (chkmailflag==4)
          showtitle(modestr, "[您有回复提醒]");
+#ifdef ENABLE_REFER_LIKE
+     else if (chkmailflag==6)
+         showtitle(modestr, "[您有LIKE提醒]");
+#endif
 #ifdef ENABLE_NEW_MSG
      else if (chkmailflag==5)
          showtitle(modestr, "[您有新短信]");

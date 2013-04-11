@@ -785,9 +785,11 @@ extern struct sms_shm_head *head;
 #ifdef ENABLE_REFER
 #define REFER_DIR ".REFER"
 #define REPLY_DIR ".REPLY"
+#define LIKE_DIR  ".LIKE"
 
 #define REFER_MODE_AT    1
 #define REFER_MODE_REPLY 2
+#define REFER_MODE_LIKE  3
 
 struct refer_info {
     int bid;
@@ -801,6 +803,7 @@ struct refer_info {
 
 #if defined(NEWSMTH) && !defined(SECONDSITE)
 #include "ar.h"
+#include "extra.h"
 #endif
 
 #endif /* _BBS_H_ */

@@ -584,7 +584,13 @@ igetagain:
 
     switch (c) {
         case Ctrl('@'):
+/*
+ * ^L 快捷键收回归 Like 功能能，重绘仅支持^@
+ * windinsn, 2013-4-11
+ */
+#ifndef ENABLE_LIKE
         case Ctrl('L'):
+#endif /* ENABLE_LIKE */
             redoscr();
             icurrchar++;
             now = time(0);
