@@ -6791,7 +6791,9 @@ static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
 #ifdef ENABLE_BOARD_MEMBER
     {Ctrl('K'), (READ_KEY_FUNC)b_member_list, NULL},
 #endif
-
+#ifdef ENABLE_LIKE
+    {Ctrl('L'), (READ_KEY_FUNC)b_like, NULL},
+#endif
     {Ctrl('U'), (READ_KEY_FUNC)author_read,(void*)SR_READ},
     {Ctrl('H'), (READ_KEY_FUNC)author_read,(void*)SR_READX},
     /*----------------------------------------*/
@@ -7932,6 +7934,12 @@ static int select_sec_top(int secid, int pos)
 #ifdef ENABLE_BOARD_MEMBER
 int b_member_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg) {
     t_board_members();
+    return FULLUPDATE;
+}
+#endif
+#ifdef ENABLE_LIKE
+int b_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg) {
+    t_board_like(conf, fileinfo, extraarg);
     return FULLUPDATE;
 }
 #endif

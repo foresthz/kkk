@@ -372,4 +372,9 @@ int t_board_members(void);
 int t_member_board_articles(void);
 #endif
 
+/* LIKE for newsmth, added by windinsn, 2013-4-11 */
+#ifdef ENABLE_LIKE
+int b_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+int t_board_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+#endif
 #endif /* _DEFINES_T_H_ */
