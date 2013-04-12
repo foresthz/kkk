@@ -1118,7 +1118,12 @@ int isonline(char *s)
 char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* readfh,struct _select_def* conf)
 {                               /* 在文章列表中 显示 一篇文章标题 */
     time_t filetime;
+#ifdef ENABLE_LIKE
+    char date[80];
+    int like_count, like_score;
+#else
     char date[20];
+#endif
     char TITLE[ARTICLE_TITLE_LEN+30];
     int titlelen;
     int type;
@@ -1330,6 +1335,22 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         strcat(TITLE, str_re);
     }
 #endif /* HAVE_REPLY_COUNT */
+
+#ifdef ENABLE_LIKE
+    if(arg->mode==DIR_MODE_NORMAL && ent->id==ent->groupid && ent->like!=0) {
+        like_count=(int)ent->like;
+        if(like_count>99) like_count=99;
+        like_score=abs(ent->score);
+        if(like_score>99) like_score=99;
+        if(ent->score>0)
+		sprintf(date, "\033[%s31m+%-2d\033[m/%2d", highstr, like_score, like_count);
+        else if(ent->score<0)
+		sprintf(date, "\033[%s32m-%-2d\033[m/%2d", highstr, like_score, like_count);
+        else        
+		sprintf(date, "\033[%s33m %-2d\033[m/%2d", highstr, like_score, like_count);
+
+    }
+#endif /* ENABLE_LIKE windinsn, 2013-4-12 */
 
 #if defined(COLOR_ONLINE)
     sprintf(buf, " %s%4d%s %s%c%s \033[1;3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
