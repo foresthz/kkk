@@ -27,7 +27,7 @@ int getPos(int mode,char* direct,struct boardheader* bh)
     char* key;
 
     ptr=read_pos_head;
-    if (mode==DIR_MODE_MAIL||mode==DIR_MODE_REFER||mode==DIR_MODE_TOP10||mode==DIR_MODE_MEMBER_ARTICLE)
+    if (mode==DIR_MODE_MAIL||mode==DIR_MODE_REFER||mode==DIR_MODE_TOP10||mode==DIR_MODE_MEMBER_ARTICLE||mode==DIR_MODE_LIKE)
         key=direct;
     else if (mode==DIR_MODE_FRIEND)
         key=NULL;
@@ -54,7 +54,7 @@ void savePos(int mode,char* direct,int pos,struct boardheader* bh)
     char* key;
 
     ptr=read_pos_head;
-    if (mode==DIR_MODE_MAIL||mode==DIR_MODE_REFER||mode==DIR_MODE_TOP10||mode==DIR_MODE_MEMBER_ARTICLE)
+    if (mode==DIR_MODE_MAIL||mode==DIR_MODE_REFER||mode==DIR_MODE_TOP10||mode==DIR_MODE_MEMBER_ARTICLE||mode==DIR_MODE_LIKE)
         key=direct;
     else if (mode==DIR_MODE_FRIEND)
         key=NULL;
@@ -867,6 +867,13 @@ int new_i_read(enum BBS_DIR_MODE cmdmode, char *direct, void (*dotitle)(struct _
 #ifdef ENABLE_BOARD_MEMBER
         else if (cmdmode == DIR_MODE_MEMBER_ARTICLE) {
             prints("没有任何文章...");
+            pressreturn();
+            clear();
+        }
+#endif
+#ifdef ENABLE_LIK
+        else if (cmdmode == DIR_MODE_LIKE) {
+            prints("本文尚未被Like过...");
             pressreturn();
             clear();
         }

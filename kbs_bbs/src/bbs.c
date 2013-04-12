@@ -2027,6 +2027,11 @@ reget:
             modify_user_mode(QUERY);
             t_query(NULL);
             break;
+#ifdef ENABLE_LIKE
+        case Ctrl('L'): /* like, windinsn, 2013-4-12 */
+            b_like_list(conf, fileinfo, extraarg);
+            break;
+#endif
         case 'U':  /* pig2532 2005.12.10 */
             return(board_query());
     }
@@ -7934,12 +7939,6 @@ static int select_sec_top(int secid, int pos)
 #ifdef ENABLE_BOARD_MEMBER
 int b_member_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg) {
     t_board_members();
-    return FULLUPDATE;
-}
-#endif
-#ifdef ENABLE_LIKE
-int b_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg) {
-    t_board_like(conf, fileinfo, extraarg);
     return FULLUPDATE;
 }
 #endif

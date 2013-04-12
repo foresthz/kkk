@@ -374,7 +374,13 @@ int t_member_board_articles(void);
 
 /* LIKE for newsmth, added by windinsn, 2013-4-11 */
 #if defined(NEWSMTH) && !defined(SECONDSITE)
+struct b_like_args {
+	char *path;
+    struct fileheader *file;
+	struct like *likes;
+    int size;
+};
 int b_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
-int t_board_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+int b_like_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 #endif
 #endif /* _DEFINES_T_H_ */
