@@ -6818,7 +6818,7 @@ static struct key_command read_comms[] = { /*ÔÄ¶Á×´Ì¬£¬¼ü¶¨Òå */
     {Ctrl('K'), (READ_KEY_FUNC)b_member_list, NULL},
 #endif
 #ifdef ENABLE_LIKE
-    {Ctrl('L'), (READ_KEY_FUNC)b_like, NULL},
+    {Ctrl('L'), (READ_KEY_FUNC)b_like_list, NULL},
 #endif
     {Ctrl('U'), (READ_KEY_FUNC)author_read,(void*)SR_READ},
     {Ctrl('H'), (READ_KEY_FUNC)author_read,(void*)SR_READX},
