@@ -24,6 +24,7 @@
 #include "bbs.h"
 #include "screen.h"             /* Leeward 98.06.05 */
 #define TELNET_WORD_WRAP 1
+#define LIKE_SINGLE_LINE 1
 
 time_t calltime = 0;
 char calltimememo[40];
@@ -33,11 +34,16 @@ enum LINE_CODE {
     LINE_NORMAL_NOCF,        //没有 回车的行
     LINE_QUOTA,                    //引文
     LINE_QUOTA_NOCF,         //没有回车的引文
+/* like struct for newsmth, added by windinsn, 2013-4-14*/
+#ifdef ENABLE_LIKE
+    LINE_LIKE_NAME,          // Like开始段落
+    LINE_LIKE_INFO,          // Like
+    LINE_LIKE_MSG,             // Like的内容
+#endif
     LINE_ATTACHMENT,         //附件
     LINE_ATTACHLINK,           //附件链接
     LINE_ATTACHALLLINK           //本文链接
 };
-
 #ifdef DEF_HIDEEMFLAG
 static int mem_show(char *ptr, int size, int origsize, int row, int numlines, char *fn);
 #else
@@ -651,6 +657,9 @@ struct MemMoreLines {
 #ifdef DEF_HIDEEMFLAG
     int hidden_size;
 #endif
+#ifdef ENABLE_LIKE
+    unsigned int like;
+#endif
 };
 
 /*
@@ -678,7 +687,12 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
         }
         return -1;
     }
-    if (oldty!=LINE_ATTACHMENT) { //上一行不是附件
+#ifdef ENABLE_LIKE
+    if (oldty!=LINE_ATTACHMENT && oldty!=LINE_LIKE_NAME && oldty!=LINE_LIKE_INFO && oldty!=LINE_LIKE_MSG)
+#else
+    if (oldty!=LINE_ATTACHMENT) //上一行不是附件
+#endif
+    {
         for (i = 0, w = 0; i < size; i++, p++) {
             if (*p == '\n') {
                 *l = i;
@@ -786,8 +800,50 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
         if (*s == size)
             return 0;
     }
+#ifdef ENABLE_LIKE
+    if (oldty!=LINE_ATTACHMENT && oldty!=LINE_ATTACHLINK && oldty!=LINE_ATTACHALLLINK && oldty!=LINE_LIKE_NAME && oldty!=LINE_LIKE_INFO && oldty!=LINE_LIKE_MSG) {
+        if(size>=LIKE_PAD_SIZE && !memcmp(p0, LIKE_PAD, LIKE_PAD_SIZE)) {
+            // 开始解析Like
+            *ty=LINE_LIKE_NAME;
+            *s=LIKE_PAD_SIZE;
+            *l=0;
+            return 0;
+        }
+    }
+    if (oldty==LINE_LIKE_NAME||oldty==LINE_LIKE_MSG) {
+        if(size<sizeof(struct like) || (size>=strlen("\n") && !memcmp(p0, "\n", strlen("\n")))) {
+            // Like完毕
+        } else {
+            *s=sizeof(struct like);
+
+        //if(*s>size) 
+        //    return -1;
+        //if((*s+1==size)||(*s<0));
+        //    *s=size;
+#ifdef LIKE_SINGLE_LINE
+            *ty=LINE_LIKE_MSG;
+#else        
+            *ty=LINE_LIKE_INFO;
+            *s=0;
+#endif
+            *l=0;
+            return 0;
+        }
+    }
+#ifndef LIKE_SINGLE_LINE
+    if(oldty==LINE_LIKE_INFO) {
+        // 上一行是Like的基本信息，本行显示内容
+        *ty=LINE_LIKE_MSG;
+        *l=0;
+        *s=sizeof(struct like);
+        if(*s>size)
+            return -1;
+        return 0;
+    }
+#endif
+#endif
     if (oldty==LINE_ATTACHMENT|| (size > ATTACHMENT_SIZE
-                                  && !memcmp(p0, ATTACHMENT_PAD, ATTACHMENT_SIZE))) {
+                                  && !memcmp(p0,  ATTACHMENT_PAD, ATTACHMENT_SIZE))) {
 
         *ty = LINE_ATTACHMENT;
         p = p0;
@@ -833,6 +889,7 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
     int i, s, u;
     char *p0, oldty = 0;
 
+    bzero(l, sizeof(struct MemMoreLines));
     l->ptr = ptr;
     l->size = size;
     l->start = 0;
@@ -840,6 +897,9 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
     l->total = 0;
 #ifdef DEF_HIDEEMFLAG
     l->hidden_size = hidden_size;
+#endif
+#ifdef ENABLE_LIKE
+	l->like=0;
 #endif
     effectiveline = 0;
     for (i = 0, p0 = ptr, s = size; i < 50 && s >= 0; i++) {
@@ -849,6 +909,9 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
                 < 0) {
             break;
         }
+#ifdef ENABLE_LIKE
+		if(l->ty[u]==LINE_LIKE_MSG) l->like++;
+#endif
         oldty = l->ty[u];
         s -= l->s[u];
         p0 = l->line[u] + l->s[u];
@@ -1049,6 +1112,43 @@ void mem_printline(struct MemMoreLines *l, char *fn,char* begin)
         }
         return;
     }
+#ifdef ENABLE_LIKE
+    else if (ty==LINE_LIKE_NAME && l->like!=0) {
+        if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
+            prints("\033[1;36m有用户评价了这篇文章\033[m\n");
+        else
+            prints("\033[36m有用户评价了这篇文章\033[m\n");
+        return;
+    }
+    else if (ty==LINE_LIKE_INFO || ty==LINE_LIKE_MSG) {
+        struct like like;
+        
+        memcpy(&like, ptr, sizeof(struct like));
+#ifndef LIKE_SINGLE_LINE        
+        if(ty==LINE_LIKE_INFO) {
+#endif
+            if(like.score>0)
+                prints(" [\033[1;31m+%1d\033[m]", like.score);
+            else if(like.score<0)
+                prints(" [\033[1;32m%1d\033[m]", like.score);
+            else
+                prints(" [  ]");
+                
+            prints(" \033[1;33m%s\033[m", like.user);
+#ifndef LIKE_SINGLE_LINE
+            char buf[200];
+            struct tm *desc=localtime(&like.time);
+            sprintf(buf, "  \033[1;36m%04d-%02d-%02d %02d:%02d\033[m", desc->tm_year+1900,desc->tm_mon+1,desc->tm_mday,desc->tm_hour,desc->tm_min);
+            prints("%s\n", buf);
+        } else {
+            prints("   %s\n", like.msg);
+        }
+#else
+            prints(": %s\n", like.msg);
+#endif
+        return;
+    }
+#endif
     if (stuffmode) {
         char buf[256];
 
@@ -1173,7 +1273,11 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
         last_line = l.curr_line;
         if (l.total && l.total <= t_lines - 1)
             return 0;
+#ifdef ENABLE_LIKE
+        if (l.line[last_line % 100] - ptr + l.s[last_line % 100] == size && (ch == KEY_RIGHT || ch == KEY_PGDN || ch == ' ' || ch == Ctrl('f')) && ((l.ty[last_line % 100] != LINE_ATTACHLINK) && (l.ty[last_line % 100] != LINE_LIKE_MSG))) {
+#else
         if (l.line[last_line % 100] - ptr + l.s[last_line % 100] == size && (ch == KEY_RIGHT || ch == KEY_PGDN || ch == ' ' || ch == Ctrl('f')) && (l.ty[last_line % 100] != LINE_ATTACHLINK)) {
+#endif
             move(t_lines - 1, 0);
             clrtobot();
             return 0;
@@ -1250,7 +1354,11 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
                             if (seek_MemMoreLines(&l, i) <
                                     0)
                                 break;
+#ifdef ENABLE_LIKE
+                            if (l.currty == LINE_ATTACHMENT || l.currty == LINE_ATTACHLINK || l.currty == LINE_ATTACHALLLINK || l.currty == LINE_LIKE_NAME || l.currty == LINE_LIKE_INFO || l.currty == LINE_LIKE_MSG)
+#else
                             if (l.currty == LINE_ATTACHMENT || l.currty == LINE_ATTACHLINK || l.currty == LINE_ATTACHALLLINK)
+#endif
                                 continue;
                             /*
                             memcpy(buf, l.curr,
@@ -1359,7 +1467,11 @@ int mem_more(char *ptr, int size, int quit, char *keystr, char *fn, char *title)
                     mem_printline(&l, fn, ptr);
                     if ((ch == KEY_PGDN || ch == ' ' || ch == Ctrl('f')
                             || ch == KEY_RIGHT || ch == KEY_DOWN || ch == 'j' || ch == '\n')
+#ifdef ENABLE_LIKE
+                            && (l.ty[last_line % 100] != LINE_ATTACHLINK) && (l.ty[last_line % 100] != LINE_LIKE_MSG)
+#else
                             && (l.ty[last_line % 100] != LINE_ATTACHLINK) // 防止一直往下按会不显示全文链接 atppp 20060122
+#endif
                             && l.line[last_line % 100] - ptr + l.s[last_line % 100] == size) {
                         move(t_lines - 1, 0);
                         clrtoeol();
@@ -1530,3 +1642,5 @@ int draw_content(char *fn, struct fileheader *fh)
 
     return retv;
 }
+
+#undef LIKE_SINGLE_LINE
