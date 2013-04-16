@@ -1115,6 +1115,32 @@ int a_SeSave(char *path, const char *key, struct fileheader *fileinfo, bool appe
                 strcpy(buf + 250, "\n"); - disabled by atppp */
             fprintf(outf, "%s", buf);
         }
+#ifdef ENABLE_LIKE
+        /* Like信息附加在合集后面 */
+        if(fileinfo->groupid==fileinfo->id && fileinfo->like!=0) {
+            struct like *likes;
+            int like_count=(int)fileinfo->like;
+            int i;
+            likes=(struct like *)malloc(sizeof(struct like)*like_count);
+            if(NULL!=likes) {
+                like_count=load_like(qfile, 0, like_count, likes);
+                if(like_count>0) {
+                    fprintf(outf, "\n\033[1;36m有 \033[1;33m%d\033[1;36m 位用户评价了这篇文章：\033[m", like_count);
+                    for(i=0;i<like_count;i++) {
+                        if(likes[i].score>0)
+                            fprintf(outf, "\n [\033[1;31m+%1d\033[m]", likes[i].score);
+                        else if(likes[i].score<0)
+                            fprintf(outf, "\n [\033[1;32m%1d\033[m]", likes[i].score);
+                        else
+                            fprintf(outf, "\n [  ]");
+                        
+                        fprintf(outf, " \033[1;33m%s\033[m: %s", likes[i].user, likes[i].msg);
+                    }
+                }
+                free(likes);
+            }
+        }
+#endif
         fprintf(outf, "\n\n");
         fclose(inf);
     }
