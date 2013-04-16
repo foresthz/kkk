@@ -899,7 +899,7 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
     l->hidden_size = hidden_size;
 #endif
 #ifdef ENABLE_LIKE
-	l->like=0;
+    l->like=0;
 #endif
     effectiveline = 0;
     for (i = 0, p0 = ptr, s = size; i < 50 && s >= 0; i++) {
@@ -910,7 +910,7 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
             break;
         }
 #ifdef ENABLE_LIKE
-		if(l->ty[u]==LINE_LIKE_MSG) l->like++;
+        if(l->ty[u]==LINE_LIKE_MSG) l->like++;
 #endif
         oldty = l->ty[u];
         s -= l->s[u];
@@ -1115,9 +1115,9 @@ void mem_printline(struct MemMoreLines *l, char *fn,char* begin)
 #ifdef ENABLE_LIKE
     else if (ty==LINE_LIKE_NAME && l->like!=0) {
         if (DEFINE(getCurrentUser(), DEF_HIGHCOLOR))
-            prints("\033[1;36m有用户评价了这篇文章\033[m\n");
+            prints("\033[1;36m有\033[1;33m%d\033[1;36m位用户评价了这篇文章\033[m\n", l->like);
         else
-            prints("\033[36m有用户评价了这篇文章\033[m\n");
+            prints("\033[36m有\033[33m%d\033[36m位用户评价了这篇文章\033[m\n", l->like);
         return;
     }
     else if (ty==LINE_LIKE_INFO || ty==LINE_LIKE_MSG) {

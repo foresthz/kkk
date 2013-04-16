@@ -630,14 +630,22 @@ void insertch_from_fp(int ch)
     else if (ch == '\n')
         split(currline, currpnt);
 }
+#ifdef ENABLE_LIKE
+long insert_from_fp(FILE *fp, long * attach_length, long *extra_pos, long *extra_length)
+#else
 long insert_from_fp(FILE *fp, long * attach_length)
+#endif
 {
     int matched;
     char* ptr;
     off_t size;
     long ret=0;
-
     if (attach_length) *attach_length=0;
+#ifdef ENABLE_LIKE
+    int match_like=0;
+    if(extra_length) *extra_length=0;
+    if(extra_pos) *extra_pos=0;
+#endif
     matched=0;
     BBS_TRY {
         if (safe_mmapfile_handle(fileno(fp), PROT_READ, MAP_SHARED, &ptr, & size) == 1) {
@@ -645,6 +653,28 @@ long insert_from_fp(FILE *fp, long * attach_length)
             long not;
             data=ptr;
             for (not=0; not<size; not++,data++) {
+#ifdef ENABLE_LIKE
+        if(not<size-1 && *data=='\n' && *(data+1)==LIKE_PAD[match_like])
+            continue;
+                if(*data==LIKE_PAD[match_like]) {
+                    match_like++;
+                    if(match_like==LIKE_PAD_SIZE) {
+                        // Like部分
+                        char *like_start=data;
+                        if(extra_pos) *extra_pos=data-ptr-LIKE_PAD_SIZE;
+                        data++;
+                        not++;
+                        while(*data!='\n' && not<size) {
+                            // 处于Like结构中
+                            data+=sizeof(struct like);
+                            not+=sizeof(struct like);
+                        }
+                        match_like=0;
+                        if(extra_length) *extra_length=data-like_start+LIKE_PAD_SIZE+1;
+                    }
+                    continue;
+                }
+#endif
                 if (*data==0) {
                     matched++;
                     if (matched==ATTACHMENT_SIZE) {
@@ -683,8 +713,11 @@ long insert_from_fp(FILE *fp, long * attach_length)
     if (ret <= 0) return 0;
     return ret;
 }
-
+#ifdef ENABLE_LIKE
+long read_file(char *filename,long *attach_length, long *extra_pos, long *extra_length)
+#else
 long read_file(char *filename,long *attach_length)
+#endif
 {
     FILE *fp;
     long ret = 0;
@@ -702,7 +735,11 @@ long read_file(char *filename,long *attach_length)
     }
     fstat(fileno(fp), &fs);
     if (fs.st_size != 0)
+#ifdef ENABLE_LIKE
+        ret=insert_from_fp(fp, attach_length, extra_pos, extra_length);
+#else
         ret=insert_from_fp(fp, attach_length);
+#endif
     fclose(fp);
     return ret;
 }
@@ -1009,7 +1046,11 @@ static long edit_attach(char *fn)
 #undef EA_PER_PAGE
 #undef EA_TMP_DIR
 
+#ifdef ENABLE_LIKE
+int write_file(char* filename,int saveheader,long* effsize,long* pattachpos, long attach_length, int add_loginfo, int filtrate, long extra_pos, long extra_length)
+#else
 int write_file(char* filename,int saveheader,long* effsize,long* pattachpos, long attach_length, int add_loginfo, int filtrate)
+#endif
 {
     struct textline *p = firstline;
     FILE *fp=NULL;
@@ -1157,6 +1198,36 @@ int write_file(char* filename,int saveheader,long* effsize,long* pattachpos, lon
     if (local_article == 2) local_article = 1; // 到了这一步 2 和 1 已经没有区别了，但是下面的程序要求 1。atppp
     firstline = NULL;
     if (!aborted) {
+#ifdef ENABLE_LIKE
+#define EXTRA_BUFFER_LENGTH 10240
+        if(extra_pos>0&&extra_length>0) {
+            char extra_path[MAXPATH];
+            int extra_from, extra_to;
+            snprintf(extra_path,MAXPATH,"%s.extra",filename);
+            if((extra_from=open(filename, O_RDONLY))>=0) {
+                if((extra_to=open(extra_path, O_WRONLY|O_CREAT , 0600)) >= 0) {
+                    char *extra_buffer=(char*)malloc(EXTRA_BUFFER_LENGTH);
+                    long extra_ret, extra_size, extra_read;
+                    extra_size=extra_length;
+                    lseek(extra_from, extra_pos, SEEK_SET);
+                    do {
+                        if(extra_size>EXTRA_BUFFER_LENGTH)
+                            extra_read=EXTRA_BUFFER_LENGTH;
+                        else
+                            extra_read=extra_size;
+                        extra_ret=read(extra_from, extra_buffer, extra_read);
+                        if(extra_ret<=0)
+                            break;
+                        extra_size -= extra_ret;
+                    } while(write(extra_to, extra_buffer, extra_ret)>0 && extra_size>0);
+                    close(extra_to);
+                    free(extra_buffer);
+                }
+                close(extra_from);
+            }
+        }
+#undef EXTRA_BUFFER_LENGTH
+#endif
         if (pattachpos && *pattachpos) {
             char buf[MAXPATH];
             int fsrc,fdst;
@@ -1307,6 +1378,14 @@ int write_file(char* filename,int saveheader,long* effsize,long* pattachpos, lon
         if (add_loginfo)
             bbsmain_add_loginfo(fp, getCurrentUser(), quote_board, Anony);
         fclose(fp);
+#ifdef ENABLE_LIKE
+        if(extra_pos>0&&extra_length>0) {
+            char extra_path[MAXPATH];
+            snprintf(extra_path,MAXPATH,"%s.extra",filename);
+            f_catfile(extra_path, filename);
+            f_rm(extra_path);
+        }
+#endif
         if (pattachpos && *pattachpos) {
             char buf[MAXPATH];
             struct stat st;
@@ -1656,7 +1735,11 @@ static int process_ESC_action(int action, int arg)
         case 'I':
             sprintf(filename, "tmp/clip/%s.%c", getCurrentUser()->userid, arg);
             if ((fp = fopen(filename, "r")) != NULL) {
+#ifdef ENABLE_LIKE
+                insert_from_fp(fp,NULL,NULL,NULL);
+#else            
                 insert_from_fp(fp,NULL);
+#endif
                 fclose(fp);
                 sprintf(msg, "已取出剪贴簿第 %c 页", arg);
             } else
@@ -2241,13 +2324,25 @@ static int raw_vedit(char *filename,int saveheader,int headlines,long* eff_size,
     struct textline *st_tmp, *st_tmp2;
     long attach_length;
     long ret;
+#ifdef ENABLE_LIKE
+    long extra_pos=0;
+    long extra_length=0;
+#endif
 
     if (pattachpos != NULL) {
+#ifdef ENABLE_LIKE
+        ret=read_file(filename,&attach_length,&extra_pos,&extra_length);
+#else
         ret=read_file(filename,&attach_length);
+#endif
         *pattachpos=ret;
     } else {
         // TODO: add zmodem upload
+#ifdef ENABLE_LIKE
+        ret=read_file(filename,NULL,&extra_pos,&extra_length);
+#else
         ret=read_file(filename,NULL);
+#endif
     }
     if (ret<0) return -1;
     top_of_win = firstline;
@@ -2279,7 +2374,11 @@ static int raw_vedit(char *filename,int saveheader,int headlines,long* eff_size,
                     firstline->prev = st_tmp;
                     firstline = st_tmp2;
                 }
+#ifdef ENABLE_LIKE        
+                foo = write_file(filename, saveheader, eff_size,pattachpos,attach_length, add_loginfo, filtrate, extra_pos, extra_length);
+#else
                 foo = write_file(filename, saveheader, eff_size,pattachpos,attach_length, add_loginfo, filtrate);
+#endif
                 if (foo != KEEP_EDITING)
                     return foo;
                 if (headlines) {
