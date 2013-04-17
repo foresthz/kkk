@@ -36,6 +36,10 @@ void bbs_make_article_array(zval * array, struct fileheader *fh, char *flags, si
 #ifdef NEWSMTH
     add_assoc_long(array, "FENED", (fh->accessed[1] & FILE_FEN));
 #endif
+#ifdef ENABLE_LIKE
+    add_assoc_long(array, "LIKE", fh->like);
+    add_assoc_long(array, "SCORE", fh->score);
+#endif
 }
 
 

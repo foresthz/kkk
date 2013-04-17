@@ -2,6 +2,133 @@
 #include "SAPI.h"
 #include "md5.h"
 
+#ifdef ENABLE_LIKE
+void bbs_make_like_array(zval *array, struct like *like) {
+    add_assoc_string(array, "user", like->user, 1);
+    add_assoc_string(array, "ip", like->ip, 1);
+    add_assoc_long(array, "time", like->time);
+    add_assoc_string(array, "msg", like->msg, 1);
+    add_assoc_long(array, "score", like->score);
+}
+#endif
+
+PHP_FUNCTION(bbs_load_like)
+{
+#ifdef ENABLE_LIKE
+    char *path;
+    int path_len;
+    zval *list, *element;
+    int count, i;
+    struct like *likes;
+    
+    if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sz", &path, &path_len, &list) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+    if (!PZVAL_IS_REF(list)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_LONG(-5);
+    }
+    
+    count=get_like_count(path);
+    if(count<0)
+        RETURN_LONG(-1);
+    
+    if (array_init(list) != SUCCESS)
+        RETURN_LONG(-2);
+        
+    if(count==0)
+        RETURN_LONG(0);
+        
+    likes=(struct like *)emalloc(sizeof(struct like)*count);
+    if(NULL==likes)
+        RETURN_LONG(-3);
+        
+    count=load_like(path, 0, count, likes);
+    if(count>0) for(i=0;i<count;i++) {
+        MAKE_STD_ZVAL(element);
+        array_init(element);
+        bbs_make_like_array(element, likes+i);
+        zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
+    }
+    efree(likes);
+    if(count<0)
+        RETURN_LONG(-4);
+    RETURN_LONG(count);
+#else
+    RETURN_LONG(-1);
+#endif
+}
+
+PHP_FUNCTION(bbs_add_like) {
+#ifdef ENABLE_LIKE
+	long article_id, score;
+	char *board_id, *msg;
+	int board_id_len, msg_len;
+	
+	const struct boardheader *board;
+	struct fileheader article;
+	char path[MAXPATH];
+	int fd, ret, num;
+	
+	if (ZEND_NUM_ARGS()!=4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slsl", &board_id, &board_id_len, &article_id, &msg, &msg_len, &score) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+	
+	if ((board=getbcache(board_id))==NULL)
+		RETURN_LONG(-101);
+		
+	setbdir(DIR_MODE_NORMAL, path, board->filename);
+	if ((fd=open(path, O_RDONLY, 0))==-1)
+		RETURN_LONG(-102);
+	ret=get_records_from_id(fd, article_id, &article, 1, &num);
+	close(fd);
+	if(ret==0 || num!=1)
+		RETURN_LONG(-103);
+	
+	ret=add_user_like(board, &article, score, msg);
+	RETURN_LONG(ret);
+#else
+    RETURN_LONG(-1);
+#endif
+}
+
+PHP_FUNCTION(bbs_del_like) {
+#ifdef ENABLE_LIKE
+	long article_id;
+	char *board_id, *user_id;
+	int board_id_len, user_id_len;
+	
+	struct userec *user;
+	const struct boardheader *board;
+	struct fileheader article;
+	char path[MAXPATH];
+	int fd, ret, num;
+	
+	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sls", &board_id, &board_id_len, &article_id, &user_id, &user_id_len) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+	
+	if ((board=getbcache(board_id))==NULL)
+		RETURN_LONG(-101);
+		
+	if(!getuser(user_id, &user))
+		RETURN_LONG(-102);
+	
+	setbdir(DIR_MODE_NORMAL, path, board->filename);
+	if ((fd=open(path, O_RDONLY, 0))==-1)
+		RETURN_LONG(-103);
+	ret=get_records_from_id(fd, article_id, &article, 1, &num);
+	close(fd);
+	if(ret==0 || num!=1)
+		RETURN_LONG(-104);
+	
+	ret=delete_user_like(board, &article, user);
+	RETURN_LONG(ret);
+#else
+    RETURN_LONG(-1);
+#endif
+}
+
 /*
  * refer Ecma-262
  * '\033'  -> \r (not exactly the same thing, but borrow...)
@@ -44,6 +171,29 @@ PHP_FUNCTION(bbs2_readfile)
     while (1) {
         for (; j > 0 ; j--) {
             c = *cur_ptr;
+#ifdef ENABLE_LIKE
+            /*
+             * 略过整个Like结构, added by windinsn
+             */
+            if(c==LIKE_PAD[0]) {
+                if(ptrlen>LIKE_PAD_SIZE && !memcmp(cur_ptr, LIKE_PAD, LIKE_PAD_SIZE)) {
+                    cur_ptr += LIKE_PAD_SIZE;
+                    ptrlen -= LIKE_PAD_SIZE;
+                    while(ptrlen>0 && (*cur_ptr)!='\n') {
+                        cur_ptr += sizeof(struct like);
+                        ptrlen -= sizeof(struct like);
+                    }
+                }
+                ptrlen--; 
+                cur_ptr++;
+                
+                if(ptrlen<0) { 
+                    ptrlen=0;
+                    break;
+                }
+                continue;
+            }
+#endif
             if (c == '\0') { //assume ATTACHMENT_PAD[0] is '\0'
                 if (ptrlen >= ATTACHMENT_SIZE + sizeof(int) + 2) {
                     if (!memcmp(cur_ptr, ATTACHMENT_PAD, ATTACHMENT_SIZE)) {
@@ -188,6 +338,11 @@ PHP_FUNCTION(bbs2_readfile_text)
     for (i=0;i<4;i++) escape_seq_len[i] = strlen(escape_seq[i]);
     while (ptrlen > 0) {
         c = *cur_ptr;
+#ifdef ENABLE_LIKE
+        if (c==LIKE_PAD[0]) {
+            break;
+        } else 
+#endif
         if (c == '\0') { //assume ATTACHMENT_PAD[0] is '\0'
             break;
         } else if (c == '\033') {
@@ -299,6 +454,29 @@ PHP_FUNCTION(bbs2_readfile_nforum)
     for (i=0;i<4;i++) escape_seq_len[i] = strlen(escape_seq[i]);
     while (ptrlen > 0) {
         c = *cur_ptr;
+#ifdef ENABLE_LIKE
+        /*
+         * 略过整个Like结构, added by windinsn
+         */
+        if(c==LIKE_PAD[0]) {
+            if(ptrlen>LIKE_PAD_SIZE && !memcmp(cur_ptr, LIKE_PAD, LIKE_PAD_SIZE)) {
+                cur_ptr += LIKE_PAD_SIZE;
+                ptrlen -= LIKE_PAD_SIZE;
+                while(ptrlen>0 && (*cur_ptr)!='\n') {
+                    cur_ptr += sizeof(struct like);
+                    ptrlen -= sizeof(struct like);
+                }
+            }
+            ptrlen--; 
+            cur_ptr++;
+            
+            if(ptrlen<0) { 
+                ptrlen=0;
+                break;
+            }
+            continue;
+        } else 
+#endif
         if (c == '\0') { //assume ATTACHMENT_PAD[0] is '\0'
             if (ptrlen >= ATTACHMENT_SIZE + sizeof(int) + 2) {
                 if (!memcmp(cur_ptr, ATTACHMENT_PAD, ATTACHMENT_SIZE)) {
@@ -665,6 +843,23 @@ static void output_ansi_nforum(char *buf, size_t buflen,
     bzero(ansi_val, sizeof(ansi_val));
 
     for (i = 0; i < article_len; i++) {
+#ifdef ENABLE_LIKE
+        /*
+         * 略过整个Like结构, added by windinsn
+         */
+        if(buf[i]==LIKE_PAD[0] && article_len-i>=LIKE_PAD_SIZE && !memcmp(buf+i, LIKE_PAD, LIKE_PAD_SIZE)) {
+            i += LIKE_PAD_SIZE;
+            while(i<article_len && buf[i]!='\n') {
+                i += sizeof(struct like);
+            }
+            
+            if(i>article_len) { 
+                i=article_len;
+                break;
+            }
+            continue;
+        } else 
+#endif
         if (buf[i] == '\0') { //assume ATTACHMENT_PAD[0] is '\0'
             if (article_len - i >= ATTACHMENT_SIZE + sizeof(int) + 2) {
                 if (!memcmp(buf + i, ATTACHMENT_PAD, ATTACHMENT_SIZE)) {

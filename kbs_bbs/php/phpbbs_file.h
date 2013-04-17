@@ -18,7 +18,9 @@ PHP_FUNCTION(bbs_printoriginfile);
 PHP_FUNCTION(bbs_originfile);
 PHP_FUNCTION(bbs_decode_att_hash);
 PHP_FUNCTION(bbs_parse_article);
-
+PHP_FUNCTION(bbs_load_like);
+PHP_FUNCTION(bbs_add_like);
+PHP_FUNCTION(bbs_del_like);
 
 #define PHP_BBS_FILE_EXPORT_FUNCTIONS_STD \
     PHP_FE(bbs2_readfile, NULL) \
@@ -31,6 +33,9 @@ PHP_FUNCTION(bbs_parse_article);
     PHP_FE(bbs_originfile, NULL) \
     PHP_FE(bbs_decode_att_hash, NULL) \
     PHP_FE(bbs_parse_article, NULL) \
+    PHP_FE(bbs_load_like, NULL) \
+    PHP_FE(bbs_add_like, NULL) \
+    PHP_FE(bbs_del_like, NULL) \
      
 #ifdef NFORUM
 #define PHP_BBS_FILE_EXPORT_FUNCTIONS\
