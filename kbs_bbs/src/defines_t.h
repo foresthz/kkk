@@ -180,7 +180,7 @@ int chkrefer();
 int chkrefer_dir(char *filename);
 int refer_at(void);
 int refer_reply(void);
-#if defined(NEWSMTH) && !defined(SECONDSITE)
+#if ENABLE_REFER_LIKE
 int refer_like(void);
 #endif
 int refer_list(char filename[STRLEN], int mode);
