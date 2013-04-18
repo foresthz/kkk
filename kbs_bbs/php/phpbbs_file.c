@@ -62,15 +62,15 @@ PHP_FUNCTION(bbs_load_like)
 PHP_FUNCTION(bbs_add_like) {
 #ifdef ENABLE_LIKE
 	long article_id, score;
-	char *board_id, *msg;
-	int board_id_len, msg_len;
+	char *board_id, *msg, *tag;
+	int board_id_len, msg_len, tag_len;
 	
 	const struct boardheader *board;
 	struct fileheader article;
 	char path[MAXPATH];
 	int fd, ret, num;
 	
-	if (ZEND_NUM_ARGS()!=4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slsl", &board_id, &board_id_len, &article_id, &msg, &msg_len, &score) == FAILURE) {
+	if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slssl", &board_id, &board_id_len, &article_id, &msg, &msg_len, &tag, &tag_len, &score) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
 	
@@ -85,7 +85,7 @@ PHP_FUNCTION(bbs_add_like) {
 	if(ret==0 || num!=1)
 		RETURN_LONG(-103);
 	
-	ret=add_user_like(board, &article, score, msg);
+	ret=add_user_like(board, &article, score, msg, tag);
 	RETURN_LONG(ret);
 #else
     RETURN_LONG(-1);
