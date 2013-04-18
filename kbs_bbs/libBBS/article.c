@@ -1229,7 +1229,14 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
     if (-1 == getcross(filepath, filename, user, in_mail, fromboard, title, Anony, mode, local_article, toboard, session)) {
         return -1;
     }
-
+#ifdef ENABLE_LIKE
+    unsigned int like_count=0;
+    int like_score=0;
+    if(get_like_count_score(filepath, &like_count, &like_score)>0) {
+        postfile.like=like_count;
+        postfile.score=like_score;
+    }
+#endif
     postfile.eff_size = get_effsize_attach(filepath, &postfile.attachment);     /* FreeWizard: get effsize & attachment */
 
     strnzhcpy(postfile.title, save_title, ARTICLE_TITLE_LEN);
