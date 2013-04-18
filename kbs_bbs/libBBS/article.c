@@ -1639,7 +1639,11 @@ int after_post(struct userec *user, struct fileheader *fh, const char *boardname
             }
         }
 
-
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+    setbfile(buf, boardname, fh->filename);
+    record_first_post(session, bh, fh, buf);
+#endif
+		
 #ifdef ENABLE_REFER
     setbfile(buf, boardname, fh->filename);
     send_refer_msg(boardname, fh, re, buf);
