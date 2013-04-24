@@ -108,6 +108,9 @@ char *get_bmp_name(char *name, int bmp) {
 		case BMP_CLUB:
 			strcpy(name, "俱乐部管理");
 			break;
+		case BMP_SELENE:
+			strcpy(name, "收录被Like的文章");
+			break;
         default:
             strcpy(name, "未定义");
     }

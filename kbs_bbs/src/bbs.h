@@ -291,7 +291,7 @@ extern long ti;
  * 核心驻版用户本身无任何特殊权限，需要追加定义方有部分管理功能
  * windinsn , Oct 30, 2012
  */
-#define BMP_COUNT                      13      // 权限位个数
+#define BMP_COUNT                      14      // 权限位个数
 #define BMP_DELETE                     0x01    // 删文
 #define BMP_DENY                       0x02    // 封禁
 #define BMP_SIGN                       0x04    // 标记
@@ -305,6 +305,7 @@ extern long ti;
 #define BMP_THREAD                     0x0400  // 区段操作
 #define BMP_MODIFY                     0x0800  // 修改文章
 #define BMP_CLUB                       0x01000 // 俱乐部管理
+#define BMP_SELENE                     0x02000 // 收录Like
 #define MEMBER_BOARD_MAX_DEFAULT       300
 #define MEMBER_USER_MAX_DEFAULT        12
 #define BOARD_MEMBER_SORT_DEFAULT	   0
