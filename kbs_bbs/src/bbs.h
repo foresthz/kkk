@@ -393,7 +393,7 @@ extern long ti;
 #define FILE_COMMEND    0x8         /* 推荐文章,stiger , in accessed[1], */
 #define FILE_TEX        0x80        /* tex article, in accessed[1], added by atppp 20040729 */
 #define FILE_FEN        0x10        /* had added fen by bm */
-#define FILE_HIDDEN     0x40        /* 回复可见... */
+#define FILE_SELENE     0x40        /* Like收录 windinsn */
 
 #define BADWORD_IMG_FILE    "etc/badwordv3.img"
 #define MAXMAILSIZE         (30000)

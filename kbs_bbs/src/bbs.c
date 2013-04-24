@@ -4010,8 +4010,9 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         post_file.accessed[1] |= FILE_MAILBACK;
     /* »Ø¸´¿É¼û, windins */
 #ifdef ENABLE_HIDE_ARTICLE
-    if (!anonyboard && hide_article)
-        post_file.accessed[1] |= FILE_HIDDEN;
+/*    if (!anonyboard && hide_article)
+        post_file.accessed[1] |= ???;
+*/
 #endif
 
     /*
