@@ -242,7 +242,7 @@ int killauser(struct userec *theuser, void *data)
 #ifndef SAVELIVE
     if ((a <= 0)&&strcmp(copyuser.userid,"guest"))
 #else
-    if (HAS_PERM(&copyuser, PERM_SUICIDE) && (a <= 0))
+    if ((copyuser.userlevel == PERM_BASIC ||HAS_PERM(&copyuser, PERM_SUICIDE)) && (a <= 0))
 #endif
     {
         newbbslog(BBSLOG_USIES, "kill user %s", copyuser.userid);
@@ -271,7 +271,7 @@ int dokilluser()
 #ifndef SAVELIVE
     newbbslog(BBSLOG_USIES, "Started kill users\n");
 #else
-    newbbslog(BBSLOG_USIES, "Started kill suicided users ... due to SAVE_LIFE is defined\n");
+    newbbslog(BBSLOG_USIES, "Started kill suicided users and new users ... due to SAVELIVE(f**k this name) is defined\n");
 #endif
     apply_users(killauser, NULL);
     newbbslog(BBSLOG_USIES, "kill users done\n");
