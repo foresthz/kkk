@@ -17,6 +17,7 @@ var gKon = (agt.indexOf("konqueror") != -1) && (agt.indexOf("safari") == -1);
 var gIE5 = false;
 if (gIE) {
 	gIE5 = (parseFloat( agt.substring( agt.indexOf('msie ') + 5 ) ) < 6);
+	gIE9 = (parseFloat( agt.substring( agt.indexOf('msie ') + 5 ) ) > 8);
 }
 var kbsrc = null; //namespace in this window
 var www2dev = (typeof gwww2dev != "undefined");

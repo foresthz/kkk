@@ -128,7 +128,7 @@ function moreAttach() {
 	var ll = getObj("idAddAtt");
 	var n = document.createElement("br");
 	getObj("uploads").insertBefore(n, ll);
-	if (gIE) {
+	if (gIE && !gIE9) {
 		n = document.createElement("<input name='attachfile" + fileCounter + "'/>");
 	} else {
 		n = document.createElement("input");
