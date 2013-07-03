@@ -3165,7 +3165,12 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
 #ifdef BOARD_SECURITY_LOG
     /* DIR_MODE_NORMAL中，记录下列标记操作 */
     if (currmode == DIR_MODE_NORMAL && (flag & FILE_MARK_FLAG || flag & FILE_DIGEST_FLAG || flag & FILE_NOREPLY_FLAG
-            || flag & FILE_SIGN_FLAG || flag & FILE_DELETE_FLAG || flag & FILE_PERCENT_FLAG)) {
+            || flag & FILE_SIGN_FLAG || flag & FILE_DELETE_FLAG || flag & FILE_PERCENT_FLAG
+#ifdef NEWSMTH
+            || flag & FILE_FEN_FLAG
+#endif
+            ))
+    {
         if (flag & FILE_MARK_FLAG) {
             if (data->accessed[0] & FILE_MARKED)
                 sprintf(buf, "标m");
@@ -3197,6 +3202,14 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
             else
                 sprintf(buf, "去X");
         }
+#ifdef NEWSMTH
+        else if (flag & FILE_FEN_FLAG) {
+            if (data->accessed[1] & FILE_FEN)
+                sprintf(buf,"摘十大");
+            else
+                sprintf(buf,"恢复十大");
+        }
+#endif
         board_security_report(NULL, getCurrentUser(), buf, board->filename, originFh);
     }
 #endif
