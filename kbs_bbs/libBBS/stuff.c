@@ -3697,8 +3697,8 @@ int board_score_change_record(struct boardheader *bh, char *desc, int os, int ns
     post_file_alt(postfile, getCurrentUser(), "版面积分变更记录", bh->filename, NULL, 0x05, accessed);
     if (mode) {
         /* 发到ScoreService版 */
-        if (normal_board(bh->filename))
-            post_file_alt(postfile, getCurrentUser(), desc, "ScoreService", NULL, 0x05, accessed);
+        /* if (normal_board(bh->filename)) 所有版面的积分捐献都发ScoreService */
+        post_file_alt(postfile, getCurrentUser(), desc, "ScoreService", NULL, 0x05, accessed);
         /* 发到ScoreClub版 */
         accessed[0] = 0;
         accessed[1] = 0;
