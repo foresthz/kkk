@@ -1061,6 +1061,11 @@ int super_filter(struct _select_def* conf,struct fileheader* curfh,void* extraar
     static char query[180]="";
     int inmail = (extraarg)?1:0;
 
+#ifdef ENABLE_BOARD_MEMBER
+    struct board_member member;
+    bzero(&member, sizeof(struct board_member));
+#endif
+
     if (!strcmp(getCurrentUser()->userid, "guest")) {
         return FULLUPDATE;
     }
@@ -1111,6 +1116,9 @@ int super_filter(struct _select_def* conf,struct fileheader* curfh,void* extraar
         q_arg.isbm =
 #ifdef NEWSMTH
             check_board_delete_read_perm(getCurrentUser(), currboard, 0)
+#ifdef ENABLE_BOARD_MEMBER
+            || get_board_member(currboard->filename, getCurrentUser()->userid, &member)==BOARD_MEMBER_STATUS_MANAGER
+#endif
 #else
             chk_currBM(currBM, getCurrentUser())
 #endif
