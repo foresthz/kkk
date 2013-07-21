@@ -728,7 +728,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
     ret = member_read_perm(currboard, info, getCurrentUser());
     if (!ret) {
         move(3, 10);
-        prints("本版为驻版可读，非驻版用户不允许转载本版文章！");
+        prints("本版为驻版可读，非本版驻版用户不允许转载本版文章！");
         move(4, 10);
         prints("详情请联系本版版主。");
         pressreturn();
@@ -1837,7 +1837,7 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 #ifdef ENABLE_BOARD_MEMBER
     if (!member_read_perm(currboard, fileinfo, getCurrentUser())) {
         move(3, 10);
-        prints("本版为驻版可读，非本版用户不能查看本版文章！");
+        prints("本版为驻版可读，非本版驻版用户不能查看本版文章！");
         move(4, 10);
         prints("详情请联系本版版主。");
         pressreturn();
@@ -3452,7 +3452,7 @@ int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
     if (!member_read_perm(currboard, fileinfo, getCurrentUser())) {
         clear();
         move(3, 10);
-        prints("本版为驻版可读，非驻版用户不能回信给作者！");
+        prints("本版为驻版可读，非本版驻版用户不能回信给作者！");
         move(4, 10);
         prints("详情请联系本版版主。");
         pressreturn();

@@ -4562,7 +4562,7 @@ int member_read_perm(struct boardheader *bh, struct fileheader *fh, struct usere
     struct board_member member;
     int status;
 
-    if (!bh->flag & BOARD_MEMBER_READ)
+    if (!(bh->flag & BOARD_MEMBER_READ))
         return -1;
     if (chk_currBM(bh->BM, user))
         return 1;

@@ -1488,7 +1488,7 @@ int read_showauthor(struct _select_def* conf, struct fileheader* fh, void* extra
     if (!member_read_perm(currboard, fh, getCurrentUser())) {
         clear();
         move(3, 10);
-        prints("本版为驻版可读，非驻版用户不能查看文章作者！");
+        prints("本版为驻版可读，非本版驻版用户不能查看文章作者！");
         move(4, 10);
         prints("详情请联系本版版主。");
         pressreturn();

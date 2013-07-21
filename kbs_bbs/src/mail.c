@@ -1507,7 +1507,7 @@ int mail_forward_internal(struct _select_def* conf, struct fileheader *fh, char*
         ret = member_read_perm(currboard, fh, getCurrentUser());
         if (!ret) {
             move(3, 10);
-            prints("本版为驻版可读，非驻版用户不能转寄文章！");
+            prints("本版为驻版可读，非本版驻版用户不能转寄文章！");
             move(4, 10);
             prints("详情请联系本版版主。");
             pressreturn();
@@ -4038,7 +4038,7 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     if (!member_read_perm(board, article, getCurrentUser())) {
         clear();
         move(3, 10);
-        prints("该版为驻版可读，非驻版用户不能查看版面文章！");
+        prints("该版为驻版可读，非该版驻版用户不能查看版面文章！");
         move(4, 10);
         prints("详情请联系该版版主。");
         pressreturn();
