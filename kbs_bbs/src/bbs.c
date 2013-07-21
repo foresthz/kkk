@@ -2765,9 +2765,17 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
                 move(t_lines-1,0);
                 clrtoeol();
                 strcpy(buf,fh->owner);
+#ifdef ENABLE_BOARD_MEMBER
+                if (!member_read_perm(currboard, fh, getCurrentUser()))
+                    strcpy(buf, "************");
+#endif
                 getdata(t_lines-1,0,"您希望查找哪位用户的文章: ",buf,IDLEN+2,DOECHO,NULL,false);
                 if (!buf[0])
                     return FULLUPDATE;
+#ifdef ENABLE_BOARD_MEMBER
+                if (strcasecmp(buf, getCurrentUser()->userid) && !member_read_perm(currboard, NULL, getCurrentUser()))
+                    strcpy(buf, "************");
+#endif
                 break;
             case '6':
                 mode=DIR_MODE_TITLE;
