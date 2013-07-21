@@ -387,6 +387,8 @@ extern long ti;
 #define FILE_FORWARDED  0x40        /* in mail ,added by alex, 96.9.7 */
 #define FILE_IMPORTED   0x80        /* Leeward 98.04.15 */
 
+#define FILE_AWARDED    0x20        /* 奖励过的文章，与mail中FILE_REPLIED相同，jiangjun 20130712 */
+
 #define FILE_CENSOR     0x20        /* for accessed[1], flyriver, 2002.9.29 */
 #define FILE_READ       0x1         /* Ownership flags used in fileheader structure in accessed[1] */
 #define FILE_DEL        0x2         /* In article mode, Sign , Bigman 2000.8.12 ,in accessed[1] */
@@ -424,6 +426,9 @@ extern long ti;
 #define BOARD_CENSOR        0x10000
 #define BOARD_CENSOR_FILTER 0x20000
 #define BOARD_MULTI_MANAGER 0x40000
+#endif
+#ifdef ENABLE_BOARD_MEMBER
+#define BOARD_MEMBER_READ   0x80000 /* 驻版可读 */
 #endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 

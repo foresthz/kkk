@@ -723,6 +723,22 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
     else
         setmailfile(name,getCurrentUser()->userid,info->filename);
     strcpy(quote_title,info->title);
+#ifdef ENABLE_BOARD_MEMBER
+    clear();
+    ret = member_read_perm(currboard, info, getCurrentUser());
+    if (!ret) {
+        move(3, 10);
+        prints("本版为驻版可读，非驻版用户不允许转载本版文章！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressreturn();
+        return FULLUPDATE;
+    } else if (ret==1) {
+        getdata(3, 4, "\033[1;31m本版为驻版可读，转载可能泄露文章内容。确定转载? [y/N]: \033[m", ans, 2, DOECHO, NULL, true);
+        if (toupper(ans[0]) != 'Y')
+            return FULLUPDATE;
+    }
+#endif
     clear(); move(4,0);
     prints("%s","\033[1;33m请注意: \033[1;31m本站站规规定, 同样内容的文章严禁在五个(含)以上讨论区内重复发表，\n\n        \033[1;33m对\033[1;31m违反上述规定者\033[1;33m, 管理人员将依据\033[1;31m本站帐号管理办法中相关条款\033[1;33m进行处理!\n\n        请大家共同维护良好的讨论秩序，节约系统资源, 谢谢合作！\033[m");
 #ifdef REMOTE_CROSS
@@ -1138,6 +1154,13 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     char threadprefix[20];
     char threadprefix1[20];
     char threadsufix[20];
+    char owner[IDLEN+2];
+
+    strcpy(owner, ent->owner);
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, ent, getCurrentUser()))
+        strcpy(owner, "************");
+#endif
 
     /* typesufix = typeprefix = "";*/
     typesufix = "";
@@ -1290,20 +1313,20 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         sprintf(strbuf, "  ");
 
     if ((type=='d')||(type=='D')) { //置顶文章
-        sprintf(buf, " \x1b[1;33m[提示]\x1b[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ", strbuf, ent->owner, date, attachch, TITLE);
+        sprintf(buf, " \x1b[1;33m[提示]\x1b[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ", strbuf, owner, date, attachch, TITLE);
         return buf;
     }
 
     if (toupper(type)=='Y') {
-        sprintf(buf," \033[1;33m[备份]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,ent->owner,date,attachch,TITLE);
+        sprintf(buf," \033[1;33m[备份]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,owner,date,attachch,TITLE);
         return buf;
     }
 
     if (toupper(type)=='E') {
         if (strncmp(ent->title, "Re:", 3))
-            sprintf(buf," \033[1;33m[修改]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,ent->owner,date,attachch,TITLE);
+            sprintf(buf," \033[1;33m[修改]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,owner,date,attachch,TITLE);
         else
-            sprintf(buf," \033[1;33m[修改]\033[m%s %-13.13s%s %s%s ",strbuf,ent->owner,date,attachch,TITLE);
+            sprintf(buf," \033[1;33m[修改]\033[m%s %-13.13s%s %s%s ",strbuf,owner,date,attachch,TITLE);
         return buf;
     }
 
@@ -1353,11 +1376,11 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
 #endif /* ENABLE_LIKE windinsn, 2013-4-12 */
 
 #if defined(COLOR_ONLINE)
-    sprintf(buf, " %s%4d%s %s%c%s \033[1;3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
+    sprintf(buf, " %s%4d%s %s%c%s \033[1;3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(owner), owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
 #elif defined(LOWCOLOR_ONLINE)
-    sprintf(buf, " %s%4d%s %s%c%s \033[3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(ent->owner), ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
+    sprintf(buf, " %s%4d%s %s%c%s \033[3%dm%-13.13s\033[m%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, isonline(owner), owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
 #else
-    sprintf(buf, " %s%4d%s %s%c%s %-13.13s%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, ent->owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
+    sprintf(buf, " %s%4d%s %s%c%s %-13.13s%s%s%s%s%s%s ", threadprefix, num, threadsufix, typeprefix, type, typesufix, owner, date, threadprefix1, attachch, isreply?"":FIRSTARTICLE_SIGN" ", TITLE, threadsufix);
 #endif
 
     return buf;
@@ -1811,6 +1834,16 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
         return DONOTHING;
 
     clear();
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, fileinfo, getCurrentUser())) {
+        move(3, 10);
+        prints("本版为驻版可读，非本版用户不能查看本版文章！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressreturn();
+        return FULLUPDATE;
+    }
+#endif
     strcpy(buf, read_getcurrdirect(conf));
     if ((t = strrchr(buf, '/')) != NULL)
         *t = '\0';
@@ -3415,6 +3448,17 @@ int post_reply(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         pressreturn();
         return FULLUPDATE;
     }
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, fileinfo, getCurrentUser())) {
+        clear();
+        move(3, 10);
+        prints("本版为驻版可读，非驻版用户不能回信给作者！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressreturn();
+        return FULLUPDATE;
+    }
+#endif
 
     modify_user_mode(SMAIL);
 

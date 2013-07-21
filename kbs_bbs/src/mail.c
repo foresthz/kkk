@@ -1500,6 +1500,26 @@ int mail_forward_internal(struct _select_def* conf, struct fileheader *fh, char*
         return FULLUPDATE;
     }
 
+#ifdef ENABLE_BOARD_MEMBER
+    if (!inmail) {
+        int ret;
+        clear();
+        ret = member_read_perm(currboard, fh, getCurrentUser());
+        if (!ret) {
+            move(3, 10);
+            prints("本版为驻版可读，非驻版用户不能转寄文章！");
+            move(4, 10);
+            prints("详情请联系本版版主。");
+            pressreturn();
+            return FULLUPDATE;
+        } else if (ret==1) {
+            char ans[4];
+            getdata(3, 4, "\033[1;31m本版为驻版可读，转寄可能泄露文章内容。确定转寄? [y/N]: \033[m", ans, 2, DOECHO, NULL, true);
+            if (toupper(ans[0]) != 'Y')
+                return FULLUPDATE;
+        }
+    }
+#endif
     if (!HAS_PERM(getCurrentUser(), PERM_BASIC) || !HAS_PERM(getCurrentUser(),PERM_LOGINOK)) {
         return DONOTHING;
     }
@@ -4014,7 +4034,18 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
         pressreturn();
         return FULLUPDATE;
     }
-    
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(board, article, getCurrentUser())) {
+        clear();
+        move(3, 10);
+        prints("该版为驻版可读，非驻版用户不能查看版面文章！");
+        move(4, 10);
+        prints("详情请联系该版版主。");
+        pressreturn();
+        return FULLUPDATE;
+    }
+#endif
+
     setbfile(buf, board->filename, article->filename);
 #ifdef NOREPLY
     key=ansimore_withzmodem(buf, true, article->title); 

@@ -795,7 +795,7 @@ int m_editbrd(void)
 int modify_board(int bid)
 {
 #ifdef NEWSMTH
-#define MB_ITEMS 29
+#define MB_ITEMS 30
 #else
 #define MB_ITEMS 26
 #endif
@@ -817,11 +817,11 @@ int modify_board(int bid)
         "[L]权限限制  :","[M]身份限制  :","[N]积分限制  :",
         "[O]版面积分  :","[P]强制模板  :",
 #ifdef NEWSMTH		
-		"[Q]先审后发  :","[R]待审版面  :",
-        "[S]多个版主  :",
-		"[T][退出]    :"
+        "[Q]先审后发  :","[R]待审版面  :",
+        "[S]多个版主  :","[T]驻版可读  :",
+        "[U][退出]    :"
 #else
-		"[Q][退出]    :"
+        "[Q][退出]    :"
 #endif
         
     };
@@ -877,16 +877,22 @@ int modify_board(int bid)
 			sel[i].x=2;
             sel[i].y=19;
 		} else if (i==26) {
-			sel[i].x=28;
+			sel[i].x=42;
             sel[i].y=19;
         } else if (i==27) {
-            sel[i].x=54;
-            sel[i].y=19;
-        }
-#endif		
-		else if (i==MB_ITEMS-1) {
             sel[i].x=2;
             sel[i].y=20;
+        } else if (i==28) {
+            sel[i].x=42;
+            sel[i].y=20;
+        } else if (i==MB_ITEMS-1) {
+            sel[i].x=2;
+            sel[i].y=21;
+#else
+        else if (i==MB_ITEMS-1) {
+            sel[i].x=2;
+            sel[i].y=19;
+#endif
         } else {
             sel[i].x=2;
             sel[i].y=i-4;
@@ -1012,10 +1018,13 @@ int modify_board(int bid)
     /* 多个版主 */
     sel[27].hotkey='S';
 	sprintf(menustr[27],"%-15s%s",menuldr[27],(bh.flag&BOARD_MULTI_MANAGER)?"是":"否");
+    /* 驻版可读 */
+    sel[28].hotkey='T';
+	sprintf(menustr[28],"%-15s%s",menuldr[28],(bh.flag&BOARD_MEMBER_READ)?"是":"否");
 #endif	
     /*退出*/
 #ifdef NEWSMTH
-	sel[MB_ITEMS-1].hotkey='T';
+	sel[MB_ITEMS-1].hotkey='U';
 #else	
     sel[MB_ITEMS-1].hotkey='Q';
 #endif
@@ -1783,6 +1792,17 @@ int modify_board(int bid)
                 } else {
                     sprintf(menustr[27],"%s",orig[27]);
                     change&=~(1<<27);
+                }
+				break;
+            /* 驻版可读 */
+            case 28:
+                newbh.flag^=BOARD_MEMBER_READ;
+                if ((bh.flag&BOARD_MEMBER_READ)^(newbh.flag&BOARD_MEMBER_READ)) {
+                    sprintf(menustr[28],"%-15s\033[1;32m%s\033[m",menuldr[28],(newbh.flag&BOARD_MEMBER_READ)?"是":"否");
+                    change|=(1<<28);
+                } else {
+                    sprintf(menustr[28],"%s",orig[28]);
+                    change&=~(1<<28);
                 }
 				break;
 #endif

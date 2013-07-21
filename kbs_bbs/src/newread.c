@@ -1278,10 +1278,18 @@ int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
 
     if (fh==NULL) return DONOTHING;
     strcpy(currauth, fh->owner);
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, fh, getCurrentUser()))
+        strcpy(currauth, "************");
+#endif
     snprintf(pmt, STRLEN, "%s搜寻作者: ", up ?  "↑" : "↓");
     move(t_lines - 1, 0);
     clrtoeol();
     getdata(t_lines - 1, 0, pmt, currauth, IDLEN + 1, DOECHO, NULL, false);   /*Haohmaru.98.09.29.修正作者查找只能11位ID的错误 */
+#ifdef ENABLE_BOARD_MEMBER
+    if (strcasecmp(currauth, getCurrentUser()->userid) && !member_read_perm(currboard, NULL, getCurrentUser()))
+        strcpy(currauth, "************");
+#endif
     if (currauth[0] != '\0') {
         if (1 == read_search_articles(conf, currauth, up, 1)) {
             ret = SELCHANGE;
@@ -1476,6 +1484,17 @@ int read_showauthor(struct _select_def* conf, struct fileheader* fh, void* extra
 {
     if (!fh)
         return DONOTHING;
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, fh, getCurrentUser())) {
+        clear();
+        move(3, 10);
+        prints("本版为驻版可读，非驻版用户不能查看文章作者！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressreturn();
+        return FULLUPDATE;
+    }
+#endif
     t_query(fh->owner);
     return FULLUPDATE;
 }
