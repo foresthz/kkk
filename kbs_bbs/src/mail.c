@@ -1659,7 +1659,7 @@ static int user_thread_mail(struct _select_def* conf, struct fileheader* fh,int 
     int no_ref=0, ret=APPLY_CONTINUE;
 
 #ifdef ENABLE_BOARD_MEMBER
-    if (!member_read_perm(currboard, fh, getCurrentUser()))\
+    if (!member_read_perm(currboard, fh, getCurrentUser()))
         return ret;
 #endif
     if (extraarg)

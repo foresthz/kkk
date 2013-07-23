@@ -1063,6 +1063,17 @@ int super_filter(struct _select_def* conf,struct fileheader* curfh,void* extraar
 
 #ifdef ENABLE_BOARD_MEMBER
     struct board_member member;
+
+    if (!member_read_perm(currboard, NULL, getCurrentUser())) {
+        clear();
+        move(3, 10);
+        prints("本版为驻版可读，非本版驻版用户不能使用超级文章选择功能！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressreturn();
+        return FULLUPDATE;
+    }
+
     bzero(&member, sizeof(struct board_member));
 #endif
 
