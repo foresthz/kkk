@@ -387,7 +387,7 @@ extern long ti;
 #define FILE_FORWARDED  0x40        /* in mail ,added by alex, 96.9.7 */
 #define FILE_IMPORTED   0x80        /* Leeward 98.04.15 */
 
-#define FILE_AWARDED    0x20        /* 奖励过的文章，与mail中FILE_REPLIED相同，jiangjun 20130712 */
+#define FILE_AWARDED    0x20        /* 奖励过的文章，accessed[0], 与mail中FILE_REPLIED相同，jiangjun 20130712 */
 
 #define FILE_CENSOR     0x20        /* for accessed[1], flyriver, 2002.9.29 */
 #define FILE_READ       0x1         /* Ownership flags used in fileheader structure in accessed[1] */
@@ -428,7 +428,7 @@ extern long ti;
 #define BOARD_MULTI_MANAGER 0x40000
 #endif
 #ifdef ENABLE_BOARD_MEMBER
-#define BOARD_MEMBER_READ   0x80000 /* 驻版可读 */
+#define BOARD_MEMBER_READ   0x80000 /* 驻版可读, jiangjun, 20130721 */
 #endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 
@@ -573,6 +573,9 @@ extern int KEY_ESC_arg;
 #define FILE_MODMISC_FLAG   0x8000 /* 回文转寄，转信以及TeX */
 #if defined(NEWSMTH) && !defined(SECONDSITE)
 #define FILE_EDIT_FLAG      0x10000 /* 修改文章标记 */
+#endif
+#ifdef HAVE_USERSCORE
+#define FILE_AWARD_FLAG     0x20000 /* 发积分标记, jiangjun, 20130723 */
 #endif
 
 /* 0-1 locks used sem count, @author kxn */

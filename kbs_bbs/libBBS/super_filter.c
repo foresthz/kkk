@@ -206,6 +206,11 @@ static int sffn_asize(struct super_filter_args *arg)
 #ifdef HAVE_USERSCORE
 static int sffn_award(struct super_filter_args *arg)
 {
+    return (arg->ptr->accessed[0]&FILE_AWARDED);
+}
+
+static int sffn_awardo(struct super_filter_args *arg)
+{
     char sfile[PATHLEN];
     
     setsfile(sfile, arg->boardname, arg->ptr->filename);
@@ -237,6 +242,7 @@ const static struct super_filter_vars varnames[] = {
     SUPER_FILTER_PAIR(asize),       {"总长度", 0, sffn_asize, NULL},
 #ifdef HAVE_USERSCORE
     SUPER_FILTER_PAIR(award),       {"奖励", 0, sffn_award, NULL},
+    SUPER_FILTER_PAIR(awardo),
 #endif
 
     /* 开放 noreply 搜索 - atppp 20060117 */

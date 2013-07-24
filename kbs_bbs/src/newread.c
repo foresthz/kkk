@@ -1807,18 +1807,19 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
     }
     if (done)
         prompt_return("操作成功", 0, 1);
-    if (done && add_award_mark(currboard, fh) && fh->attachment) {  /* 更新带附件帖子的attachment */
+    if (done && add_award_mark(currboard, fh) && (fh->attachment || !(fh->accessed[0]&FILE_AWARDED))) {  /* 更新带附件帖子的attachment及award flag */
         unsigned int attachpos;
 
         setbfile(buf, currboard->filename, fh->filename);
         get_effsize_attach(buf, (unsigned int*)&attachpos);
-        if (fh->attachment!=attachpos) {
+        if (fh->attachment!=attachpos || !(fh->accessed[0]&FILE_AWARDED)) {
             struct read_arg* arg=(struct read_arg*) conf->arg;
             struct write_dir_arg dirarg;
             struct fileheader xfh;
             int edit_top=0;
 
             fh->attachment=attachpos;
+            fh->accessed[0] |= FILE_AWARDED;
             memcpy(&xfh, fh, sizeof(struct fileheader));
             init_write_dir_arg(&dirarg);
             /* 添加奖励记录，置底文章时，通过 change_post_flag 更新置底的fh，并通过其更新原文fh */
@@ -1833,7 +1834,7 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
                 dirarg.ent = conf->pos;
             }
             change_post_flag(&dirarg, edit_top?DIR_MODE_ZHIDING:arg->mode, currboard,
-                    &xfh, FILE_ATTACHPOS_FLAG, fh, isbm, getSession());
+                    &xfh, FILE_ATTACHPOS_FLAG | FILE_AWARD_FLAG, fh, isbm, getSession());
             free_write_dir_arg(&dirarg);
             if (edit_top)
                 board_update_toptitle(arg->bid, true);

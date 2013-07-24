@@ -2901,6 +2901,9 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
 #if defined(NEWSMTH) && !defined(SECONDSITE)
             && !(flag&FILE_EDIT_FLAG)
 #endif
+#ifdef HAVE_USERSCORE
+            && !(flag&FILE_AWARD_FLAG)
+#endif
             )
         /*
          * 置顶的文章不能做操作
@@ -3084,6 +3087,17 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
             }
         }
     }
+    /*
+     * 发积分
+     */
+#ifdef HAVE_USERSCORE
+    if (flag & FILE_AWARD_FLAG) {
+        if (data->accessed[0] & FILE_AWARDED)
+            originFh->accessed[0] |= FILE_AWARDED;
+        else
+            originFh->accessed[0] &= ~FILE_AWARDED;
+    }
+#endif
     /*
      * 修改标题
      */
