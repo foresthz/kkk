@@ -1258,6 +1258,10 @@ int post_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     int up = (int)(flag&0x1);
     int inmail = (int)(flag&0x2);
 
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, NULL, getCurrentUser()))
+        return DONOTHING;
+#endif
     strncpy(ans, query, STRLEN);
     snprintf(pmt, STRLEN, "%sËÑÑ°ÄÚÈÝ: ", up ? "¡ü" : "¡ý");
     move(t_lines - 1, 0);
