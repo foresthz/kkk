@@ -4045,7 +4045,7 @@ int refer_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
         prints("该版为驻版可读，非该版驻版用户不能查看版面文章！");
         move(4, 10);
         prints("详情请联系该版版主。");
-        pressreturn();
+        pressanykey();
         return FULLUPDATE;
     }
 #endif
@@ -4514,7 +4514,7 @@ void refer_title(struct _select_def* conf) {
 }
 char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, struct _select_def* conf) {
     char *date;
-    char c1[8],c2[8];
+    char c1[8],c2[8],user[IDLEN+2];
     int same=false, orig=0;
 
     date=ctime(&ent->time)+4;
@@ -4530,7 +4530,13 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
     if (strncmp(ent->title, "Re: ", 4))
         orig=1;
 
-    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", ent->user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
+    strcpy(user, ent->user);
+#ifdef ENABLE_BOARD_MEMBER
+    struct boardheader *board;
+    if ((board=getbcache(ent->board))!=NULL && !member_read_perm(board, NULL, getCurrentUser()))
+            strcpy(user, "************");
+#endif
+    sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
     return buf;
 }
