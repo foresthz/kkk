@@ -387,7 +387,9 @@ extern long ti;
 #define FILE_FORWARDED  0x40        /* in mail ,added by alex, 96.9.7 */
 #define FILE_IMPORTED   0x80        /* Leeward 98.04.15 */
 
+#ifdef HAVE_USERSCORE
 #define FILE_AWARDED    0x20        /* 奖励过的文章，accessed[0], 与mail中FILE_REPLIED相同，jiangjun 20130712 */
+#endif
 
 #define FILE_CENSOR     0x20        /* for accessed[1], flyriver, 2002.9.29 */
 #define FILE_READ       0x1         /* Ownership flags used in fileheader structure in accessed[1] */
