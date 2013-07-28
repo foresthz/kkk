@@ -280,14 +280,14 @@ int gen_usage(char *buf, char *buf1, char *buf2, char *buf3)
     strcpy(st[numboards].expname, "总平均");
     numboards++;
 
-    fprintf(op, "名次 %-15.15s%-25.25s %5s %8s %10s\n", "讨论区名称", "中文叙述", "人次", "累积时间", "平均时间");
+    fprintf(op, "名次 %-18.18s %-25.25s %5s %8s %10s\n", "讨论区名称", "中文叙述", "人次", "累积时间", "平均时间");
     fprintf(op3, "      \033[37m1 \033[m\033[34m%2s\033[37m= %d (总人次) \033[37m1 \033[m\033[32m%2s\033[37m= %s (累积总时数) \033[37m1 \033[m\033[31m%2s\033[37m= %d 秒(平均时数)\n\n",
             blk[9], c[0], blk[9], timetostr(c[1]), blk[9], c[2]);
 
     for (i = 0; i < numboards; i++) {
 
         /* generate 0Announce/bbslists/board2 file */
-        fprintf(op, "%4d\033[m %-15.15s%-25.25s %5d %-.8s %10d\n", i + 1, st[i].boardname, st[i].expname, st[i].times, timetostr(st[i].sum), st[i].times == 0 ? 0 : st[i].sum / st[i].times);
+        fprintf(op, "%4d\033[m %-18.18s %-25.25s %5d %-.8s %10d\n", i + 1, st[i].boardname, st[i].expname, st[i].times, timetostr(st[i].sum), st[i].times == 0 ? 0 : st[i].sum / st[i].times);
 
         /* 生成 board1, 图表 */
         fprintf(op3, "      \033[37m第\033[31m%3d \033[37m名 讨论区名称：\033[31m%s \033[35m%s\033[m\n", i + 1, st[i].boardname, st[i].expname);
@@ -315,16 +315,16 @@ int gen_usage(char *buf, char *buf1, char *buf2, char *buf3)
 
     /*生成 总时间排序的 */
     qsort(st, numboards - 1, sizeof(st[0]), total_cmp);
-    fprintf(op1, "名次 %-15.15s%-25.25s %8s %5s %10s\n", "讨论区名称", "中文叙述", "累积时间", "人次", "平均时间");
+    fprintf(op1, "名次 %-18.18s %-25.25s %8s %5s %10s\n", "讨论区名称", "中文叙述", "累积时间", "人次", "平均时间");
     for (i = 0; i < numboards; i++)
-        fprintf(op1, "%4d %-15.15s%-25.25s %-.8s %5d %10d\n", i + 1, st[i].boardname, st[i].expname, timetostr(st[i].sum), st[i].times, st[i].times == 0 ? 0 : st[i].sum / st[i].times);
+        fprintf(op1, "%4d %-18.18s %-25.25s %-.8s %5d %10d\n", i + 1, st[i].boardname, st[i].expname, timetostr(st[i].sum), st[i].times, st[i].times == 0 ? 0 : st[i].sum / st[i].times);
     fclose(op1);
 
     /* 生成 平均时间排序的 */
     qsort(st, numboards - 1, sizeof(st[0]), average_cmp);
-    fprintf(op2, "名次 %-15.15s%-25.25s %10s %5s %8s\n", "讨论区名称", "中文叙述", "平均时间", "累积时间", "人次");
+    fprintf(op2, "名次 %-18.18s %-25.25s %10s %5s %8s\n", "讨论区名称", "中文叙述", "平均时间", "累积时间", "人次");
     for (i = 0; i < numboards; i++)
-        fprintf(op2, "%4d %-15.15s%-25.25s %10d %-.8s %5d\n", i + 1, st[i].boardname, st[i].expname, st[i].times == 0 ? 0 : st[i].sum / st[i].times, timetostr(st[i].sum), st[i].times);
+        fprintf(op2, "%4d %-18.18s %-25.25s %10d %-.8s %5d\n", i + 1, st[i].boardname, st[i].expname, st[i].times == 0 ? 0 : st[i].sum / st[i].times, timetostr(st[i].sum), st[i].times);
     fclose(op2);
 
     numboards --;
@@ -390,18 +390,18 @@ int gen_usage_all(struct binfo *s_all, char *buf, char *buf1)
     strcpy(s_all[numboards_all].expname, "总平均");
     numboards_all++;
 
-    fprintf(op, "名次 %-15.15s%-25.25s %5s %8s %10s\n", "讨论区名称", "中文叙述", "人次", "累积时间", "平均时间");
+    fprintf(op, "名次 %-18.18s %-25.25s %5s %8s %10s\n", "讨论区名称", "中文叙述", "人次", "累积时间", "平均时间");
 
     for (i = 0; i < numboards_all; i++) {
-        fprintf(op, "%4d\033[m %-15.15s%-25.25s %5d %-.8s %10d\n", i + 1, s_all[i].boardname, s_all[i].expname, s_all[i].times, timetostr(s_all[i].sum), s_all[i].times == 0 ? 0 : s_all[i].sum / s_all[i].times);
+        fprintf(op, "%4d\033[m %-18.18s %-25.25s %5d %-.8s %10d\n", i + 1, s_all[i].boardname, s_all[i].expname, s_all[i].times, timetostr(s_all[i].sum), s_all[i].times == 0 ? 0 : s_all[i].sum / s_all[i].times);
     }
     fclose(op);
 
     /*生成 总时间排序的 */
     qsort(s_all, numboards_all - 1, sizeof(s_all[0]), total_cmp);
-    fprintf(op1, "名次 %-15.15s%-25.25s %8s %5s %10s\n", "讨论区名称", "中文叙述", "累积时间", "人次", "平均时间");
+    fprintf(op1, "名次 %-18.18s %-25.25s %8s %5s %10s\n", "讨论区名称", "中文叙述", "累积时间", "人次", "平均时间");
     for (i = 0; i < numboards_all; i++)
-        fprintf(op1, "%4d %-15.15s%-25.25s %-.8s %5d %10d\n", i + 1, s_all[i].boardname, s_all[i].expname, timetostr(s_all[i].sum), s_all[i].times, s_all[i].times == 0 ? 0 : s_all[i].sum / s_all[i].times);
+        fprintf(op1, "%4d %-18.18s %-25.25s %-.8s %5d %10d\n", i + 1, s_all[i].boardname, s_all[i].expname, timetostr(s_all[i].sum), s_all[i].times, s_all[i].times == 0 ? 0 : s_all[i].sum / s_all[i].times);
     fclose(op1);
 
     numboards_all --;
