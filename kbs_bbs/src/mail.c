@@ -4534,7 +4534,7 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
 #ifdef ENABLE_BOARD_MEMBER
     struct boardheader *board;
     if ((board=getbcache(ent->board))!=NULL && !member_read_perm(board, NULL, getCurrentUser()))
-            strcpy(user, "************");
+            strcpy(user, MEMBER_POST_OWNER);
 #endif
     sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 

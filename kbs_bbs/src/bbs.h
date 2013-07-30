@@ -434,6 +434,10 @@ extern long ti;
 #endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 
+#ifdef ENABLE_BOARD_MEMBER
+#define MEMBER_POST_OWNER   "************"
+#endif
+
 #ifdef HAVE_USERSCORE
 #define MIN_BOARD_AWARD_SCORE   10
 #define MAX_BOARD_AWARD_SCORE   10000

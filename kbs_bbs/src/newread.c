@@ -1295,7 +1295,7 @@ int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     strcpy(currauth, fh->owner);
 #ifdef ENABLE_BOARD_MEMBER
     if (!member_read_perm(currboard, fh, getCurrentUser()))
-        strcpy(currauth, "************");
+        strcpy(currauth, MEMBER_POST_OWNER);
 #endif
     snprintf(pmt, STRLEN, "%s搜寻作者: ", up ?  "↑" : "↓");
     move(t_lines - 1, 0);
@@ -1303,7 +1303,7 @@ int auth_search(struct _select_def* conf, struct fileheader* fh, void* extraarg)
     getdata(t_lines - 1, 0, pmt, currauth, IDLEN + 1, DOECHO, NULL, false);   /*Haohmaru.98.09.29.修正作者查找只能11位ID的错误 */
 #ifdef ENABLE_BOARD_MEMBER
     if (strcasecmp(currauth, getCurrentUser()->userid) && !member_read_perm(currboard, NULL, getCurrentUser()))
-        strcpy(currauth, "************");
+        strcpy(currauth, MEMBER_POST_OWNER);
 #endif
     if (currauth[0] != '\0') {
         if (1 == read_search_articles(conf, currauth, up, 1)) {

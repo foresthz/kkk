@@ -1159,7 +1159,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
     strcpy(owner, ent->owner);
 #ifdef ENABLE_BOARD_MEMBER
     if (!member_read_perm(currboard, ent, getCurrentUser()))
-        strcpy(owner, "************");
+        strcpy(owner, MEMBER_POST_OWNER);
 #endif
 
     /* typesufix = typeprefix = "";*/
@@ -2767,14 +2767,14 @@ int change_mode(struct _select_def *conf,struct fileheader *fh,int mode)
                 strcpy(buf,fh->owner);
 #ifdef ENABLE_BOARD_MEMBER
                 if (!member_read_perm(currboard, fh, getCurrentUser()))
-                    strcpy(buf, "************");
+                    strcpy(buf, MEMBER_POST_OWNER);
 #endif
                 getdata(t_lines-1,0,"您希望查找哪位用户的文章: ",buf,IDLEN+2,DOECHO,NULL,false);
                 if (!buf[0])
                     return FULLUPDATE;
 #ifdef ENABLE_BOARD_MEMBER
                 if (strcasecmp(buf, getCurrentUser()->userid) && !member_read_perm(currboard, NULL, getCurrentUser()))
-                    strcpy(buf, "************");
+                    strcpy(buf, MEMBER_POST_OWNER);
 #endif
                 break;
             case '6':
