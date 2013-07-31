@@ -672,6 +672,12 @@ int new_msg_send(struct new_msg_handle *sender, struct new_msg_handle *incept, s
 	if (msg->size > NEW_MSG_MAX_SIZE || msg->size <= 0)
 		return -5;
 		
+	// windinsn, 2013.07.26 filter	
+	if(check_badword_str(msg->msg, msg->size, getSession())){
+		newbbslog(BBSLOG_USER, "want to send filtered message to '%s' ", incept->user);	
+		return 0; // 有关键字的直接拦截
+	}
+		
 	flag=0;
 	if (NULL!=attachment) {
 		flag |= NEW_MSG_MESSAGE_ATTACHMENT;
