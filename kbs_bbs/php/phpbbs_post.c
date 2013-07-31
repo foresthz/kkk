@@ -1392,7 +1392,7 @@ PHP_FUNCTION(bbs_dotforward)
     if (!check_read_perm(getCurrentUser(), bh))
         RETURN_LONG(-11); //ÄúÎÞÈ¨ÔÄ¶Á±¾°æ;
 
-    if ((ret=get_thread_forward_mail(board, gid, start, noref, noattach, title))<=0)
+    if ((ret=get_thread_forward_mail(bh, gid, start, noref, noattach, title))<=0)
         RETURN_LONG(-1);
     gettmpfilename(fname, "ut");
     if (!file_exist(fname))

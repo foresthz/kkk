@@ -217,6 +217,7 @@ static int get_seccode_index(char prefix)
 int total_post_top10(unsigned int gid,char *board,char *title)
 {
     struct userec deliveruser;
+    struct boardheader *bh;
     unsigned int start,noref,noattach,ret;
     char ut_file[STRLEN];
     char post_title[ARTICLE_TITLE_LEN];
@@ -227,6 +228,7 @@ int total_post_top10(unsigned int gid,char *board,char *title)
         return -1;
     }
 
+    bh = getbcache(board);
     bzero(&deliveruser, sizeof(struct userec));
     strcpy(deliveruser.userid, "deliver");
     deliveruser.userlevel = -1;
@@ -239,7 +241,7 @@ int total_post_top10(unsigned int gid,char *board,char *title)
     noattach = 0; 
     //accessed[0] |= 0x08;  // m 
     
-    ret=get_thread_forward_mail(board, gid, start, noref, noattach, title);
+    ret=get_thread_forward_mail(bh, gid, start, noref, noattach, title);
     if (ret > 0) {
         gettmpfilename(ut_file, "ut");
         snprintf(post_title, ARTICLE_TITLE_LEN, "[ºÏ¼¯] [%s] %s", board,title);

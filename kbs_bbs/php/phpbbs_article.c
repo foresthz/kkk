@@ -447,6 +447,10 @@ PHP_FUNCTION(bbs_get_threads_from_gid)
         } else {
             memset(flags, 0, sizeof(flags));
         }
+#ifdef ENABLE_BOARD_MEMBER
+        if (!member_read_perm(bp, articles+i, getCurrentUser()))
+            strcpy((articles+i)->owner, MEMBER_POST_OWNER);
+#endif
         bbs_make_article_array(element, articles + i, flags, sizeof(flags));
         zend_hash_index_update(Z_ARRVAL_P(z_threads), i,
                                (void*) &element, sizeof(zval*), NULL);

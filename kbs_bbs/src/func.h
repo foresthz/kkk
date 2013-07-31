@@ -761,7 +761,7 @@ while(0)
     int bbs_sendmail(char *fname, char *title, char *receiver, int isbig5, int noansi,session_t* session);
     int check_query_mail(char *qry_mail_dir, int *total_mail);
     int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref, int no_attach);
-    int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, int no_attach, char *title);
+    int get_thread_forward_mail(const struct boardheader *bh, int gid, int start, int no_ref, int no_attach, char *title);
     int clear_junk_mail(struct userec *user);
     /* convcode.c */
     void conv_init(session_t* session);

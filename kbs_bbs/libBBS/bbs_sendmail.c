@@ -911,7 +911,7 @@ int user_thread_save(const char *board, struct fileheader *fileinfo, int no_ref,
     return 1;
 }
 struct thread_mail_set {
-    char *board;
+    struct boardheader *bh;
     char title[STRLEN];
     int groupid;
     int start;
@@ -935,7 +935,11 @@ static int get_thread_mail(int fd, fileheader_t *base, int ent, int total, bool 
         if (fh[i - 1].groupid == ts->groupid) {
             if (fh[i - 1].id < ts->start)
                 continue;
-            user_thread_save(ts->board, &(fh[i-1]), ts->no_ref, ts->no_attach);
+#ifdef ENABLE_BOARD_MEMBER
+            if (!member_read_perm(ts->bh, &(fh[i-1]), getCurrentUser()))
+                continue;
+#endif
+            user_thread_save(ts->bh->filename, &(fh[i-1]), ts->no_ref, ts->no_attach);
             count++;
             if (count==1) { /* 保留第一篇标题 */
                 if (strncmp(fh[i-1].title, "Re: ", 4)==0)
@@ -951,7 +955,7 @@ static int get_thread_mail(int fd, fileheader_t *base, int ent, int total, bool 
 }
 
 /* web同主题合集转寄专用，用mmap_dir_search获得同主题文章*/
-int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, int no_attach, char *title)
+int get_thread_forward_mail(const struct boardheader *bh, int gid, int start, int no_ref, int no_attach, char *title)
 {
     struct thread_mail_set ts;
     struct fileheader fh;
@@ -960,7 +964,7 @@ int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, i
     char ut_file[STRLEN], ut_attach[STRLEN], fname[STRLEN];
     FILE *fn;
 
-    setbdir(DIR_MODE_NORMAL, fname, board);
+    setbdir(DIR_MODE_NORMAL, fname, bh->filename);
     if ((fd = open(fname, O_RDWR, 0644)) < 0)
         return -1;
     /* 清空临时文件, 防止意外 */
@@ -975,7 +979,7 @@ int get_thread_forward_mail(const char *board, int gid, int start, int no_ref, i
     fclose(fn);
 
     bzero(&ts, sizeof(ts));
-    ts.board = (char*)board;
+    ts.bh = (struct boardheader*)bh;
     ts.groupid = gid;
     ts.start = start;
     ts.no_ref = no_ref;
