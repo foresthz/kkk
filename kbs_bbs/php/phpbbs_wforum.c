@@ -660,7 +660,12 @@ PHP_FUNCTION(bbs_getthreads)
         }
 
 
+#ifdef ENABLE_BOARD_MEMBER
+        ptr1 = (struct wwwthreadheader *)malloc(buf.st_size);
+        memcpy(ptr1, ptr, buf.st_size);
+#else
         ptr1 = (struct wwwthreadheader *) ptr;
+#endif
         /*
          * fetching articles
          */
@@ -686,15 +691,26 @@ PHP_FUNCTION(bbs_getthreads)
             }
             make_article_flag_array(flags, &(ptr1[i].origin), getCurrentUser(), bp, is_bm);
             array_init(columns[0]);
+#ifdef ENABLE_BOARD_MEMBER
+            if (!member_read_perm(bp, &(ptr1[i].origin), getCurrentUser()))
+                strcpy(ptr1[i].origin.owner, MEMBER_POST_OWNER);
+#endif
             bbs_make_article_array(columns[0], &(ptr1[i].origin), flags, sizeof(flags));
 
             make_article_flag_array(flags, &(ptr1[i].lastreply), getCurrentUser(), bp, is_bm);
             array_init(columns[1]);
+#ifdef ENABLE_BOARD_MEMBER
+            if (!member_read_perm(bp, &(ptr1[i].lastreply), getCurrentUser()))
+                strcpy(ptr1[i].lastreply.owner, MEMBER_POST_OWNER);
+#endif
             bbs_make_article_array(columns[1], &(ptr1[i].lastreply), flags, sizeof(flags));
             ZVAL_LONG(columns[2],ptr1[i].articlecount);
 
             zend_hash_index_update(Z_ARRVAL_P(return_value), begin-i, (void *) &element, sizeof(zval *), NULL);
         }
+#ifdef ENABLE_BOARD_MEMBER
+        free(ptr1);
+#endif
     } BBS_CATCH {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
