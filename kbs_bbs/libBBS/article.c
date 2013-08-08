@@ -1236,6 +1236,8 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
         postfile.like=like_count;
         postfile.score=like_score;
     }
+    // 转载的文章不允许like收录
+    postfile.accessed[1] |= FILE_SELENE;
 #endif
     postfile.eff_size = get_effsize_attach(filepath, &postfile.attachment);     /* FreeWizard: get effsize & attachment */
 
