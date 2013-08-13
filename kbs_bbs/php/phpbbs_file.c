@@ -68,7 +68,7 @@ PHP_FUNCTION(bbs_add_like) {
 	const struct boardheader *board;
 	struct fileheader article;
 	char path[MAXPATH];
-	int fd, ret, num;
+	int fd, ret;
 	
 	if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slssl", &board_id, &board_id_len, &article_id, &msg, &msg_len, &tag, &tag_len, &score) == FAILURE) {
         WRONG_PARAM_COUNT;
@@ -78,11 +78,11 @@ PHP_FUNCTION(bbs_add_like) {
 		RETURN_LONG(-101);
 		
 	setbdir(DIR_MODE_NORMAL, path, board->filename);
-	if ((fd=open(path, O_RDONLY, 0))==-1)
+	if ((fd=open(path, O_RDWR, 0644))==-1)
 		RETURN_LONG(-102);
-	ret=get_records_from_id(fd, article_id, &article, 1, &num);
+	ret=get_records_from_id(fd, article_id, &article, 1, NULL);
 	close(fd);
-	if(ret==0 || num!=1)
+	if(ret==0)
 		RETURN_LONG(-103);
 	
 	ret=add_user_like(board, &article, score, msg, tag);
@@ -102,7 +102,7 @@ PHP_FUNCTION(bbs_del_like) {
 	const struct boardheader *board;
 	struct fileheader article;
 	char path[MAXPATH];
-	int fd, ret, num;
+	int fd, ret;
 	
 	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sls", &board_id, &board_id_len, &article_id, &user_id, &user_id_len) == FAILURE) {
         WRONG_PARAM_COUNT;
@@ -115,11 +115,11 @@ PHP_FUNCTION(bbs_del_like) {
 		RETURN_LONG(-102);
 	
 	setbdir(DIR_MODE_NORMAL, path, board->filename);
-	if ((fd=open(path, O_RDONLY, 0))==-1)
+	if ((fd=open(path, O_RDWR, 0644))==-1)
 		RETURN_LONG(-103);
-	ret=get_records_from_id(fd, article_id, &article, 1, &num);
+	ret=get_records_from_id(fd, article_id, &article, 1, NULL);
 	close(fd);
-	if(ret==0 || num!=1)
+	if(ret==0)
 		RETURN_LONG(-104);
 	
 	ret=delete_user_like(board, &article, user);
