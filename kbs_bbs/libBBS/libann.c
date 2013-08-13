@@ -585,6 +585,25 @@ int a_loadnames(MENU *pm,session_t *session)
                 } else
                     continue;
             }
+#ifdef ENABLE_BOARD_MEMBER
+            if ((p=strstr(pm->pool[i]->title, "(BM: MEMBERS)"))) {
+                if (pm->bid) {
+                    const struct boardheader *bh;
+                    struct board_member member;
+                    int status;
+                    bh = getboard(pm->bid);
+                    if (!getbnum_safe(bh->filename, session, 1))
+                        if (!(p-pm->pool[i]->title<38))
+                            continue;
+                    bzero(&member, sizeof(struct board_member));
+                    status = get_board_member(bh->filename, session->currentuser->userid, &member);
+                    if (!chk_currBM(bh->BM, session->currentuser) && status!=BOARD_MEMBER_STATUS_NORMAL && status!=BOARD_MEMBER_STATUS_MANAGER)
+                        if (!(p-pm->pool[i]->title<38))
+                            continue;
+                } else
+                    continue;
+            }
+#endif
             if ((p=strstr(pm->pool[i]->title,"(BM: SYSOPS)"))) {
                 if (!(p-pm->pool[i]->title<38))
                     continue;
