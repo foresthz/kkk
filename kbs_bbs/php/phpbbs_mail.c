@@ -1046,6 +1046,11 @@ PHP_FUNCTION(bbs_load_refer) {
     for (i=0; i<num; i++) {
         MAKE_STD_ZVAL(element);
         array_init(element);
+#ifdef ENABLE_BOARD_MEMBER
+        const struct boardheader *board;
+        if ((board=getbcache((refers+i)->board))!=NULL && !member_read_perm(board, NULL, user))
+            strcpy((refers+i)->user, MEMBER_POST_OWNER);
+#endif
         bbs_make_refer_array(element, refers+i);
         zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);
     }

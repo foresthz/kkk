@@ -4532,7 +4532,7 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
 
     strcpy(user, ent->user);
 #ifdef ENABLE_BOARD_MEMBER
-    struct boardheader *board;
+    const struct boardheader *board;
     if ((board=getbcache(ent->board))!=NULL && !member_read_perm(board, NULL, getCurrentUser()))
             strcpy(user, MEMBER_POST_OWNER);
 #endif

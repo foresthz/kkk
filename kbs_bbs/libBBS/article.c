@@ -4582,7 +4582,7 @@ int member_read_perm(struct boardheader *bh, struct fileheader *fh, struct usere
         return -1;
     if (chk_currBM(bh->BM, user))
         return 1;
-    if (fh!=NULL && (POSTFILE_BASENAME(fh->filename)[0]=='Z' || isowner(user, fh))) /* 置顶或作者 */
+    if (fh!=NULL && (POSTFILE_BASENAME(fh->filename)[0]=='Z' || is_top(fh, bh->filename) || isowner(user, fh))) /* 置顶或作者 */
         return 1;
 
     bzero(&member, sizeof(struct board_member));
