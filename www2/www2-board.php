@@ -234,7 +234,8 @@ $BOARD_FLAGS = array(
 	"CLUBHIDE" => 0x100,
 	"ATTACH" => 0x200,
 	"NOREPLY" => 0x2000,
-	"TMPLPOST" => 0x8000
+	"TMPLPOST" => 0x8000,
+	"MEMBERREAD" => 0x80000
 	);
 
 
@@ -338,7 +339,11 @@ function bbs_is_tmplpost_board($board)
 	return bbs_check_board_flag($board, $BOARD_FLAGS["TMPLPOST"]);
 }
 
-
+function bbs_is_member_read($board)
+{
+	global $BOARD_FLAGS;
+	return bbs_check_board_flag($board, $BOARD_FLAGS["MEMBERREAD"]);
+}
 
 } // !define ('_BBS_WWW2_BOARD_PHP_')
 ?>

@@ -558,5 +558,10 @@ function bbs_get_quote($filename)
     return $str;
 }
 
+function no_member_read_perm($article)
+{
+    return $article["OWNER"]=="************";
+}
+
 } // !define ('_BBS_WWW2_FUNCS_PHP_')
 ?>

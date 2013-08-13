@@ -53,7 +53,7 @@
 		}
 		if ($articles[1]["FLAGS"][2] == 'y')
 			html_error_quit("该文不可回复!");
-		if ($articles[1]["OWNER"] == "************")
+		if (bbs_is_member_read($brdarr) && no_member_read_perm($articles[1]))
 			html_error_quit("本版驻版可读，非本版驻版用户不能回复本版文章！");
 	}
 	$brd_encode = urlencode($board);

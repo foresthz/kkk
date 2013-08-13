@@ -1,5 +1,6 @@
 <?php
 	require("www2-funcs.php");
+	require("www2-board.php");
 	login_init();
 	bbs_session_modify_user_mode(BBS_MODE_READING);
 	assert_login();
@@ -32,6 +33,8 @@
 	$num = bbs_get_records_from_id($brdarr["NAME"], $id, $dir_modes["NORMAL"] , $articles);
 	if($num == 0)
 		html_error_quit("错误的文章号");
+	if(bbs_is_member_read($brdarr) && no_member_read_perm($articles[1]))
+		html_error_quit("本版驻版可读，非本版驻版用户不能转寄本版文章！");
 	$brd_encode = urlencode($board);
 	
 	bbs_board_nav_header($brdarr, "文章转寄");

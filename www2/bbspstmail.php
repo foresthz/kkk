@@ -1,5 +1,6 @@
 <?php
 	require("www2-funcs.php");
+	require("www2-board.php");
 	login_init();
 	bbs_session_modify_user_mode(BBS_MODE_SMAIL);
 	assert_login();
@@ -26,7 +27,7 @@
 		$num = bbs_get_records_from_id($brdarr["NAME"], $id,$dir_modes["NORMAL"],$articles);
 		if ($num <= 0) html_error_quit("错误的文章");
 		$article = $articles[1];
-		if ($articles[1]["OWNER"] == "************")
+		if (bbs_is_member_read($brdarr) && no_member_read_perm($article))
 			html_error_quit("本版驻版可读，非本版驻版用户不能回信本版文章作者！");
 		if(!strncmp($article["TITLE"],"Re: ",4)) $title = $article["TITLE"] . ' ';
 		else $title = "Re: " . $article["TITLE"] . ' ';

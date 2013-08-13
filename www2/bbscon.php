@@ -1,5 +1,6 @@
 <?php
 	require("www2-funcs.php");
+	require("www2-board.php");
 	login_init();
 	bbs_session_modify_user_mode(BBS_MODE_READING);
 	$brdarr = array();
@@ -105,14 +106,14 @@
         $num = bbs_get_records_from_id($brdarr["NAME"], $id, $ftype, $articles);
         if ($num <= 0) html_error_quit("错误的文章号,原文可能已经被删除<script>clearArticleDiv(".$id.");</script>");
         if ($ftype == $dir_modes["ZHIDING"]) $num = 0; // for caching the same url
-        if ($articles[1]["OWNER"]=="************") html_error_quit("本版驻版可读，非本版驻版用户不能查看本版文章！");
+        if (bbs_is_member_read($brdarr) && no_member_read_perm($articles[1])) html_error_quit("本版驻版可读，非本版驻版用户不能查看本版文章！");
         $article = $articles[1];
     } else {
         $num = @intval($_GET["num"]);
         if (($num <= 0) || ($num > $total)) html_error_quit("错误的文章号,原文可能已经被删除");
         if (($articles = bbs_getarticles($brdarr["NAME"], $num, 1, $ftype)) === false) html_error_quit("错误的文章号,原文可能已经被删除");
         if ($id != $articles[0]["ID"]) html_error_quit("错误的文章号,原文可能已经被删除");
-        if ($articles[0]["OWNER"]=="************") html_error_quit("本版驻版可读，非本版驻版用户不能查看本版文章！");
+        if (bbs_is_member_read($brdarr) && no_member_read_perm($articles[0])) html_error_quit("本版驻版可读，非本版驻版用户不能查看本版文章！");
         $article = $articles[0];
     }
 
