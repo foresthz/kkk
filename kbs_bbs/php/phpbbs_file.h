@@ -21,6 +21,7 @@ PHP_FUNCTION(bbs_parse_article);
 PHP_FUNCTION(bbs_load_like);
 PHP_FUNCTION(bbs_add_like);
 PHP_FUNCTION(bbs_del_like);
+PHP_FUNCTION(bbs_like_score);
 
 #define PHP_BBS_FILE_EXPORT_FUNCTIONS_STD \
     PHP_FE(bbs2_readfile, NULL) \
@@ -36,6 +37,7 @@ PHP_FUNCTION(bbs_del_like);
     PHP_FE(bbs_load_like, NULL) \
     PHP_FE(bbs_add_like, NULL) \
     PHP_FE(bbs_del_like, NULL) \
+    PHP_FE(bbs_like_score,NULL) \
      
 #ifdef NFORUM
 #define PHP_BBS_FILE_EXPORT_FUNCTIONS\

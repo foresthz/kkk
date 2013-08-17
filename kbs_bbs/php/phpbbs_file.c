@@ -61,32 +61,32 @@ PHP_FUNCTION(bbs_load_like)
 
 PHP_FUNCTION(bbs_add_like) {
 #ifdef ENABLE_LIKE
-	long article_id, score;
-	char *board_id, *msg, *tag;
-	int board_id_len, msg_len, tag_len;
-	
-	const struct boardheader *board;
-	struct fileheader article;
-	char path[MAXPATH];
-	int fd, ret;
-	
-	if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slssl", &board_id, &board_id_len, &article_id, &msg, &msg_len, &tag, &tag_len, &score) == FAILURE) {
+    long article_id, score;
+    char *board_id, *msg, *tag;
+    int board_id_len, msg_len, tag_len;
+    
+    const struct boardheader *board;
+    struct fileheader article;
+    char path[MAXPATH];
+    int fd, ret;
+    
+    if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slssl", &board_id, &board_id_len, &article_id, &msg, &msg_len, &tag, &tag_len, &score) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
-	
-	if ((board=getbcache(board_id))==NULL)
-		RETURN_LONG(-101);
-		
-	setbdir(DIR_MODE_NORMAL, path, board->filename);
-	if ((fd=open(path, O_RDWR, 0644))==-1)
-		RETURN_LONG(-102);
-	ret=get_records_from_id(fd, article_id, &article, 1, NULL);
-	close(fd);
-	if(ret==0)
-		RETURN_LONG(-103);
-	
-	ret=add_user_like(board, &article, score, msg, tag);
-	RETURN_LONG(ret);
+    
+    if ((board=getbcache(board_id))==NULL)
+        RETURN_LONG(-101);
+        
+    setbdir(DIR_MODE_NORMAL, path, board->filename);
+    if ((fd=open(path, O_RDWR, 0644))==-1)
+        RETURN_LONG(-102);
+    ret=get_records_from_id(fd, article_id, &article, 1, NULL);
+    close(fd);
+    if(ret==0)
+        RETURN_LONG(-103);
+    
+    ret=add_user_like(board, &article, score, msg, tag);
+    RETURN_LONG(ret);
 #else
     RETURN_LONG(-1);
 #endif
@@ -94,38 +94,71 @@ PHP_FUNCTION(bbs_add_like) {
 
 PHP_FUNCTION(bbs_del_like) {
 #ifdef ENABLE_LIKE
-	long article_id;
-	char *board_id, *user_id;
-	int board_id_len, user_id_len;
-	
-	struct userec *user;
-	const struct boardheader *board;
-	struct fileheader article;
-	char path[MAXPATH];
-	int fd, ret;
-	
-	if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sls", &board_id, &board_id_len, &article_id, &user_id, &user_id_len) == FAILURE) {
+    long article_id;
+    char *board_id, *user_id;
+    int board_id_len, user_id_len;
+    
+    struct userec *user;
+    const struct boardheader *board;
+    struct fileheader article;
+    char path[MAXPATH];
+    int fd, ret;
+    
+    if (ZEND_NUM_ARGS()!=3 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sls", &board_id, &board_id_len, &article_id, &user_id, &user_id_len) == FAILURE) {
         WRONG_PARAM_COUNT;
     }
-	
-	if ((board=getbcache(board_id))==NULL)
-		RETURN_LONG(-101);
-		
-	if(!getuser(user_id, &user))
-		RETURN_LONG(-102);
-	
-	setbdir(DIR_MODE_NORMAL, path, board->filename);
-	if ((fd=open(path, O_RDWR, 0644))==-1)
-		RETURN_LONG(-103);
-	ret=get_records_from_id(fd, article_id, &article, 1, NULL);
-	close(fd);
-	if(ret==0)
-		RETURN_LONG(-104);
-	
-	ret=delete_user_like(board, &article, user);
-	RETURN_LONG(ret);
+    
+    if ((board=getbcache(board_id))==NULL)
+        RETURN_LONG(-101);
+        
+    if(!getuser(user_id, &user))
+        RETURN_LONG(-102);
+    
+    setbdir(DIR_MODE_NORMAL, path, board->filename);
+    if ((fd=open(path, O_RDWR, 0644))==-1)
+        RETURN_LONG(-103);
+    ret=get_records_from_id(fd, article_id, &article, 1, NULL);
+    close(fd);
+    if(ret==0)
+        RETURN_LONG(-104);
+    
+    ret=delete_user_like(board, &article, user);
+    RETURN_LONG(ret);
 #else
     RETURN_LONG(-1);
+#endif
+}
+
+PHP_FUNCTION(bbs_like_score) {
+#ifdef ENABLE_LIKE
+    zval *list, *element;
+    int i, max, j;
+    
+    if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &list) == FAILURE) {
+        WRONG_PARAM_COUNT;
+    }
+    if (!PZVAL_IS_REF(list)) {
+        zend_error(E_WARNING, "Parameter wasn't passed by reference");
+        RETURN_FALSE;
+    }
+    
+    if (array_init(list) != SUCCESS)
+        RETURN_FALSE;
+        
+    max=get_like_max_score();
+	j=0;
+    for(i=-max;i<=max;i++){
+        MAKE_STD_ZVAL(element);
+        array_init(element);
+        add_assoc_long(element, "score", i);
+        add_assoc_long(element, "cost", get_like_user_score(i));
+        add_assoc_long(element, "award", get_like_award_score(i));
+        zend_hash_index_update(Z_ARRVAL_P(list), j++, (void *) &element, sizeof(zval*), NULL);
+    }
+    
+    RETURN_TRUE;
+#else
+    RETURN_FALSE;
 #endif
 }
 
