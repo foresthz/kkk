@@ -283,9 +283,9 @@ int send_refer_like_to(struct userec *user, const struct boardheader *board, str
 	struct refer refer;
 	
 	if(like->score>0)
-		sprintf(title, "[\033[1;31m+%d\033[m] %s", like->score, like->msg);
+		sprintf(title, "[+%d] %s", like->score, like->msg);
 	else if(like->score<0)
-		sprintf(title, "[\033[1;32m%d\033[m] %s", like->score, like->msg);
+		sprintf(title, "[%d] %s", like->score, like->msg);
 	else
 		sprintf(title, "%s", like->msg);
 	
