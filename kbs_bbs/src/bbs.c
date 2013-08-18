@@ -1672,7 +1672,7 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
            (isbm && (fileinfo->accessed[0] & FILE_TOTAL)) ? '_' : ' '
           );
 
-    if (HAS_PERM(getCurrentUser(), PERM_ADMIN)) {
+    if (HAS_PERM(getCurrentUser(), PERM_ADMIN)||HAS_PERM(getCurrentUser(), PERM_WELCOME)) {
         move(9,0);
         prints("\033[1;33mfileheaderÐÅÏ¢\033[m\n");
         prints("  filename=%s\n", fileinfo->filename);
