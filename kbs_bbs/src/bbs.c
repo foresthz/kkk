@@ -2083,7 +2083,8 @@ reget:
             break;
 #ifdef ENABLE_LIKE
         case Ctrl('L'): /* like, windinsn, 2013-4-12 */
-            b_like_list(conf, fileinfo, extraarg);
+            if(POSTFILE_BASENAME(fileinfo->filename)[0] != 'Z')
+                b_like_list(conf, fileinfo, extraarg);
             break;
 #endif
         case 'U':  /* pig2532 2005.12.10 */
