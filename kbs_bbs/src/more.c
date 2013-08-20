@@ -659,6 +659,8 @@ struct MemMoreLines {
 #endif
 #ifdef ENABLE_LIKE
     unsigned int like;
+    int like_start_size;
+    int like_end_size;
 #endif
 };
 
@@ -671,7 +673,11 @@ struct MemMoreLines {
   oldty是上一行的type
   *ty返回行的type
 */
+#ifdef ENABLE_LIKE
+int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty, int like_start_size, int like_end_size)
+#else
 int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
+#endif
 {
     int i, w, in_esc = 0, db = 0, space = 0, lastspace = 0, autoline = 1;
     char *p = p0;
@@ -811,7 +817,12 @@ int measure_line(char *p0, int size, int *l, int *s, char oldty, char *ty)
         }
     }
     if (oldty==LINE_LIKE_NAME||oldty==LINE_LIKE_MSG) {
-        if(size<sizeof(struct like) || (size>=strlen("\n") && !memcmp(p0, "\n", strlen("\n")))) {
+        if(size>like_start_size || size<=like_end_size){
+            *s=1;
+            *l=0;
+            *ty=LINE_NORMAL;
+            return 0;
+        } else if(size<sizeof(struct like) || (size>=strlen("\n") && !memcmp(p0, "\n", strlen("\n")))) {
             // Like完毕
         } else {
             *s=sizeof(struct like);
@@ -900,18 +911,41 @@ void init_MemMoreLines(struct MemMoreLines *l, char *ptr, int size)
 #endif
 #ifdef ENABLE_LIKE
     l->like=0;
+    l->like_start_size=0;
+    l->like_end_size=0;
+    
+    char *like_head, *like_tail;
+    off_t like_start, like_end;
+    if ((like_head=memmem(ptr, size, LIKE_PAD, LIKE_PAD_SIZE))!=NULL) {
+        like_start=like_head-ptr;
+        if ((like_tail=memmem(ptr, size, ATTACHMENT_PAD, ATTACHMENT_SIZE))!=NULL) {
+            like_end=like_tail-ptr;
+        } else {
+            like_end=size;
+        }
+        like_start += LIKE_PAD_SIZE;
+        like_end --;
+        if(like_end>like_start) {
+            l->like=(unsigned int)((like_end-like_start)/sizeof(struct like));
+            l->like_start_size = size-like_start;
+            l->like_end_size = size-like_end;
+        }
+    }
 #endif
     effectiveline = 0;
     for (i = 0, p0 = ptr, s = size; i < 50 && s >= 0; i++) {
         u = (l->start + l->num) % 100;
         l->line[u] = p0;
-        if (measure_line(p0, s, &l->len[u], &l->s[u], oldty, &l->ty[u])
-                < 0) {
+        if (
+#ifdef ENABLE_LIKE
+        measure_line(p0, s, &l->len[u], &l->s[u], oldty, &l->ty[u], l->like_start_size, l->like_end_size)
+#else    
+        measure_line(p0, s, &l->len[u], &l->s[u], oldty, &l->ty[u])
+#endif        
+            < 0) {
             break;
         }
-#ifdef ENABLE_LIKE
-        if(l->ty[u]==LINE_LIKE_MSG) l->like++;
-#endif
+
         oldty = l->ty[u];
         s -= l->s[u];
         p0 = l->line[u] + l->s[u];
@@ -955,7 +989,13 @@ int next_MemMoreLines(struct MemMoreLines *l)
         p0 = l->line[n] + l->s[n];
         n = (l->start + l->num) % 100;
         l->line[n] = p0;
-        if (measure_line(p0, l->size - (p0 - l->ptr), &l->len[n], &l->s[n], oldty, &l->ty[n])==-1)
+        if (
+#ifdef ENABLE_LIKE
+            measure_line(p0, l->size - (p0 - l->ptr), &l->len[n], &l->s[n], oldty, &l->ty[n], l->like_start_size, l->like_end_size)
+#else
+            measure_line(p0, l->size - (p0 - l->ptr), &l->len[n], &l->s[n], oldty, &l->ty[n])
+#endif
+            ==-1)
             return -1;
         l->num++;
         if (l->size - (p0 - l->ptr) == l->s[n]) {
