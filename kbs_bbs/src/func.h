@@ -260,6 +260,7 @@ extern "C"
 
     /* xyz.c */
     int prompt_return(char *buf, int mode, int anykey);
+    int disable_sysop_temporary();
 
     /* libbm.c added by jiangjun */
     int get_textfile_string(const char *file, char **ptr, char *result[], int maxcount);
@@ -925,6 +926,7 @@ while(0)
 	int add_member_title(struct board_member_title *title);
 	int remove_member_title(int index);
 	int set_member_title_cache(struct board_member_title *title);
+    int member_read_perm(const struct boardheader *bh, struct fileheader *fh, struct userec *user);
 	
 #endif
 #endif /* ENABLE_BOARD_MEMBER */
