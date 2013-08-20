@@ -8,6 +8,9 @@
 static const char NullChar[] = "";
 static const char EmptyChar[] = "空";
 
+/* 临时禁用站务权限 */
+int disable_sysop = 0;
+
 /* added by bad 2002-08-3 FavBoardDir */
 /* stiger:
    操作的session->favbrd_list其实是一个指针
@@ -1173,6 +1176,9 @@ int chk_currBM(const char *BMstr, const struct userec *user)
  * 根据输入的版主名单 判断user是否有版主 权限
  */
 {
+    if (disable_sysop && !chk_BM_instr(BMstr, user->userid))
+        return false;
+
     if (HAS_PERM(user, PERM_OBOARDS) || HAS_PERM(user, PERM_SYSOP))
         return true;
 

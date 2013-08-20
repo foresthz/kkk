@@ -5,6 +5,8 @@
 
 #include "bbs.h"
 
+extern int disable_sysop;
+
 #ifdef SECONDSITE
 void myexec_cmd(int umode,const char *cmdfile, const char *param);
 #endif
@@ -2348,4 +2350,16 @@ int prompt_return(char *buf, int mode, int anykey)
     else
         WAIT_RETURN;
     return FULLUPDATE;
+}
+
+int disable_sysop_temporary()
+{
+    if (!HAS_PERM(getCurrentUser(), PERM_OBOARDS) && !HAS_PERM(getCurrentUser(), PERM_SYSOP))
+        return 0;
+
+    disable_sysop = !disable_sysop;
+    if (disable_sysop)
+        return prompt_return("临时禁用站务权限", 0, 1);
+    else
+        return prompt_return("恢复使用站务权限", 0, 1);
 }

@@ -165,6 +165,7 @@ static const CMD_LIST CMD[]={
 #ifdef DDD_ACTIVE
     {"DDD",                 ddd_entry,                              0},
 #endif
+    {"DisableSysop",        disable_sysop_temporary,                0},
 
     {NULL,                  NULL,                                  -1}
 };

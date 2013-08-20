@@ -173,6 +173,7 @@ KBS_COMM_LISTS_FUNC_V(smsmsg_read);
 #endif /* HAVE_MYSQL_SMTH+0 == 1 */
 KBS_COMM_LISTS_FUNC_V(unregister_sms);
 KBS_COMM_LISTS_FUNC_V(x_usersmsdef);
+KBS_COMM_LISTS_FUNC_V(disable_sysop_temporary);
 #endif /* SMS_SUPPORT */
 
 #endif /* KBS_COMM_LISTS_H */
