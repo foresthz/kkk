@@ -1685,6 +1685,9 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
             prints("  edittime=%s", ctime(&fileinfo->edittime));
 #endif
         prints("  title=%s\n", fileinfo->title);
+#ifdef ENABLE_LIKE
+        prints("  like=%d, score=%d\n", fileinfo->like, fileinfo->score);
+#endif
 #ifdef HAVE_REPLY_COUNT
         prints("  replycount=%d,  last_owner=%s\n  last_posttime=%s", fileinfo->replycount, fileinfo->last_owner, ctime((time_t *)&fileinfo->last_posttime));
 #endif /* HAVE_REPLY_COUNT */
