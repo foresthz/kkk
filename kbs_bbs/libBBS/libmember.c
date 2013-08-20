@@ -2141,4 +2141,30 @@ int valid_core_member(const char *user_id)
 	return 1;
 }	
 #endif
+
+/*
+  检查用户是否可读驻版可读版面的帖子
+  1: 可读
+  0: 不可读
+  -1: 非驻版可读的版面
+  */
+int member_read_perm(const struct boardheader *bh, struct fileheader *fh, struct userec *user) {
+    struct board_member member;
+    int status;
+
+    if (!(bh->flag & BOARD_MEMBER_READ))
+        return -1;
+    if (chk_currBM(bh->BM, user))
+        return 1;
+    if (fh!=NULL && (POSTFILE_BASENAME(fh->filename)[0]=='Z' || is_top(fh, bh->filename) || isowner(user, fh))) /* 置顶或作者 */
+        return 1;
+
+    bzero(&member, sizeof(struct board_member));
+    status = get_board_member(bh->filename, user->userid, &member);
+    if (status==BOARD_MEMBER_STATUS_NORMAL || status==BOARD_MEMBER_STATUS_MANAGER)
+        return 1;
+
+    return 0;
+}
+
 #endif 
