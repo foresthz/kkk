@@ -22,11 +22,11 @@
 
 int check_board_member_manager_by_name(struct board_member_status *status, char *name, int perm) {
     const struct boardheader *board;
-	
-	if (getbid(name, &board) <= 0)
-		return 0;
-		
-	return check_board_member_manager(status, board, perm);
+    
+    if (getbid(name, &board) <= 0)
+        return 0;
+        
+    return check_board_member_manager(status, board, perm);
 }
 
 int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm) {
@@ -35,8 +35,8 @@ int check_board_member_manager(struct board_member_status *status, const struct 
     if (chk_currBM(board->BM, getSession()->currentuser))
         return 1;
     if (!valid_core_member(getSession()->currentuser->userid))
-		return 0;
-		
+        return 0;
+        
     int bid, flag;
     struct board_member member;
     time_t now;
@@ -62,7 +62,7 @@ int check_board_member_manager(struct board_member_status *status, const struct 
     }
     
     if (member.status!=BOARD_MEMBER_STATUS_MANAGER)
-    	return 0;
+        return 0;
 
     return (member.flag&perm)?1:0;
 }
@@ -102,15 +102,36 @@ char *get_bmp_name(char *name, int bmp) {
         case BMP_THREAD:
             strcpy(name, "主题操作");
             break;
-		case BMP_MODIFY:
-			strcpy(name, "修改文章");
-			break;
-		case BMP_CLUB:
-			strcpy(name, "俱乐部管理");
-			break;
-		case BMP_SELENE:
-			strcpy(name, "收录被Like的文章");
-			break;
+        case BMP_MODIFY:
+            strcpy(name, "修改文章");
+            break;
+        case BMP_CLUB:
+            strcpy(name, "俱乐部管理");
+            break;
+        case BMP_SELENE:
+            strcpy(name, "收录被Like的文章");
+            break;
+        default:
+            strcpy(name, "未定义");
+    }
+    
+    return name;
+}
+
+char *get_member_status_name(char *name, int status) {
+    switch(status){
+        case BOARD_MEMBER_STATUS_CANDIDATE:
+            strcpy(name, "待审批驻版用户");
+            break;
+        case BOARD_MEMBER_STATUS_NORMAL:
+            strcpy(name, "驻版用户");
+            break;
+        case BOARD_MEMBER_STATUS_MANAGER:
+            strcpy(name, "核心驻版用户");
+            break;
+        case BOARD_MEMBER_STATUS_NONE:
+            strcpy(name, "非驻版用户");
+            break;
         default:
             strcpy(name, "未定义");
     }
@@ -151,19 +172,19 @@ int board_member_log(struct board_member *member, char *title, char *log) {
 
 int delete_board_member_record(const char *name, const char *user_id) {
 #ifdef ENABLE_MEMBER_CACHE
-	int i;
-	struct board_member member;
-	
-	i=get_member_index(name, user_id);
-	if (i<=0)
-		return -1;
-	if (remove_member(i)<0)
-		return -2;
-	
-	strncpy(member.user, user_id, IDLEN+1);
-	strncpy(member.board, name, STRLEN);
-	board_member_log(&member, "退出驻版", "退出驻版");	
-	return 0;
+    int i;
+    struct board_member member;
+    
+    i=get_member_index(name, user_id);
+    if (i<=0)
+        return -1;
+    if (remove_member(i)<0)
+        return -2;
+    
+    strncpy(member.user, user_id, IDLEN+1);
+    strncpy(member.board, name, STRLEN);
+    board_member_log(&member, "退出驻版", "退出驻版");    
+    return 0;
 #else
     MYSQL s;
     char sql[200];
@@ -351,7 +372,7 @@ int join_board_member(const char *name) {
     struct board_member_config config;
     int status, user_max, level, count, num;
     char buf[STRLEN];
-#ifndef ENABLE_MEMBER_CACHE	
+#ifndef ENABLE_MEMBER_CACHE    
     MYSQL s;
     char sql[300];
 #endif
@@ -465,8 +486,8 @@ int join_board_member(const char *name) {
     member.user[0]=0;
 
 #ifdef ENABLE_MEMBER_CACHE
-	strncpy(member.board, board->filename, STRLEN);
-	strncpy(member.user, getSession()->currentuser->userid, IDLEN+1);
+    strncpy(member.board, board->filename, STRLEN);
+    strncpy(member.user, getSession()->currentuser->userid, IDLEN+1);
 #else    
     mysql_escape_string(member.board, board->filename, strlen(board->filename));
     mysql_escape_string(member.user, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
@@ -475,11 +496,11 @@ int join_board_member(const char *name) {
     member.status=status;
     member.manager[0]=0;
     member.score=0;
-	member.title=0;
+    member.title=0;
     member.flag=0;
 #ifdef ENABLE_MEMBER_CACHE
-	if (add_member(&member)<0)
-		return -23;
+    if (add_member(&member)<0)
+        return -23;
 #else    
     sprintf(sql,"INSERT INTO `board_user` VALUES (\"%s\", \"%s\", FROM_UNIXTIME(%lu), %d, \"\", %u, %d, %u);", member.board, member.user, member.time, member.status, member.score, member.title, member.flag);
     if (mysql_real_query(&s, sql, strlen(sql))) {
@@ -575,7 +596,7 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
             member->status=atol(row[3]);
             strncpy(member->manager, row[4], IDLEN+1);
             member->score=atol(row[5]);
-			member->title=atol(row[6]);
+            member->title=atol(row[6]);
             member->flag=atol(row[7]);
         }
         
@@ -590,24 +611,24 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
     mysql_free_result(res);
 
     mysql_close(&s);
-	
-	if (!valid_core_member(user_id)) {
-		if (BOARD_MEMBER_STATUS_MANAGER==status)
-			status=BOARD_MEMBER_STATUS_NORMAL;
-		if (NULL!=member) {
-			if (BOARD_MEMBER_STATUS_MANAGER==member->status)
-				member->status=BOARD_MEMBER_STATUS_NORMAL;
-			member->flag=0;
-		}
-	}
-	
+    
+    if (!valid_core_member(user_id)) {
+        if (BOARD_MEMBER_STATUS_MANAGER==status)
+            status=BOARD_MEMBER_STATUS_NORMAL;
+        if (NULL!=member) {
+            if (BOARD_MEMBER_STATUS_MANAGER==member->status)
+                member->status=BOARD_MEMBER_STATUS_NORMAL;
+            member->flag=0;
+        }
+    }
+    
     return status;
 #endif
 }
 
 int load_board_members(const char *board, struct board_member *member, int sort, int start, int num) {
 #ifdef ENABLE_MEMBER_CACHE
-	return load_board_members_cache(board, member, sort, start, num);
+    return load_board_members_cache(board, member, sort, start, num);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -658,7 +679,7 @@ int load_board_members(const char *board, struct board_member *member, int sort,
             break;
         case BOARD_MEMBER_SORT_TITLE_DESC:
             strcpy(qtmp, " `title` DESC ");
-            break;			
+            break;            
         case BOARD_MEMBER_SORT_STATUS_DESC:
             strcpy(qtmp, " `status` DESC ");
             break;        
@@ -693,14 +714,14 @@ int load_board_members(const char *board, struct board_member *member, int sort,
             member[i-1].status=atol(row[3]);
             strncpy(member[i-1].manager, row[4], IDLEN+1);
             member[i-1].score=atol(row[5]);
-			member[i-1].title=atol(row[6]);
+            member[i-1].title=atol(row[6]);
             member[i-1].flag=atol(row[7]);
-			
-			if (!valid_core_member(member[i-1].user)) {
-				if (BOARD_MEMBER_STATUS_MANAGER==member[i-1].status)
-					member[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
-				member[i-1].flag=0;
-			}
+            
+            if (!valid_core_member(member[i-1].user)) {
+                if (BOARD_MEMBER_STATUS_MANAGER==member[i-1].status)
+                    member[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
+                member[i-1].flag=0;
+            }
         }
         row = mysql_fetch_row(res);
     }
@@ -713,7 +734,7 @@ int load_board_members(const char *board, struct board_member *member, int sort,
 
 int load_member_boards(const char *user_id, struct board_member *member, int sort, int start, int num) {
 #ifdef ENABLE_MEMBER_CACHE
-	return load_member_boards_cache(user_id, member, sort, start, num);
+    return load_member_boards_cache(user_id, member, sort, start, num);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -795,14 +816,14 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
             member[i-1].status=atol(row[3]);
             strncpy(member[i-1].manager, row[4], IDLEN+1);
             member[i-1].score=atol(row[5]);
-			member[i-1].title=atol(row[6]);
+            member[i-1].title=atol(row[6]);
             member[i-1].flag=atol(row[7]);
-			
-			if (!valid_core_member(member[i-1].user)) {
-				if (BOARD_MEMBER_STATUS_MANAGER==member[i-1].status)
-					member[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
-				member[i-1].flag=0;
-			}
+            
+            if (!valid_core_member(member[i-1].user)) {
+                if (BOARD_MEMBER_STATUS_MANAGER==member[i-1].status)
+                    member[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
+                member[i-1].flag=0;
+            }
         }
         row = mysql_fetch_row(res);
     }
@@ -814,7 +835,7 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
 }
 int get_board_members(const char *board) {
 #ifdef ENABLE_MEMBER_CACHE
-	return count_board_members_cache(board);
+    return count_board_members_cache(board);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -857,7 +878,7 @@ int get_board_members(const char *board) {
 }
 int get_member_boards(const char *user_id) {
 #ifdef ENABLE_MEMBER_CACHE
-	return count_member_boards_cache(user_id);
+    return count_member_boards_cache(user_id);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -943,20 +964,25 @@ int is_board_member(const char *name, const char *user_id, struct board_member *
 
 int is_board_member_manager(const char *name, const char *user_id, struct board_member *member) {
     if (get_board_member(name, user_id, member)!=BOARD_MEMBER_STATUS_MANAGER)
-		return 0;
-	if (!valid_core_member(user_id))
-		return 0;
-	return 1;
+        return 0;
+    if (!valid_core_member(user_id))
+        return 0;
+    return 1;
 }
     
 int set_board_member_status(const char *name, const char *user_id, int status) {
     const struct boardheader *board;
     struct board_member member;
     int old;
-#ifndef ENABLE_MEMBER_CACHE	
+    
+    char old_name[STRLEN], new_name[STRLEN], mailfile[MAXPATH], title[STRLEN], timebuf[STRLEN];
+    time_t now;
+    FILE *fn;
+    
+#ifndef ENABLE_MEMBER_CACHE    
     MYSQL s;
-	char sql[200];
-	char my_name[STRLEN];
+    char sql[200];
+    char my_name[STRLEN];
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
 #endif
@@ -983,14 +1009,14 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
         default:
             return -7;
     }
-	
-	if (BOARD_MEMBER_STATUS_MANAGER==status&&!valid_core_member(user_id))
-		status=BOARD_MEMBER_STATUS_NORMAL;
+    
+    if (BOARD_MEMBER_STATUS_MANAGER==status&&!valid_core_member(user_id))
+        status=BOARD_MEMBER_STATUS_NORMAL;
 
-#ifdef ENABLE_MEMBER_CACHE		
-	member.status=status;
-	update_member_cache(&member);
-#else	
+#ifdef ENABLE_MEMBER_CACHE        
+    member.status=status;
+    update_member_cache(&member);
+#else    
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
@@ -1013,9 +1039,30 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
     }
 
     mysql_close(&s);
-#endif	
-    sprintf(buf, "原状态: %d\n新状态: %d", old, status);
+#endif    
+    get_member_status_name(old_name, old);
+    get_member_status_name(new_name, status);
+    
+    sprintf(buf, "原状态: %s (%d)\n新状态: %s (%d)", old_name, old, new_name, status);
     board_member_log(&member, "设置驻版状态", buf);
+    
+    now=time(NULL);
+    sprintf(title, "[%s] 调整驻版状态", board->filename);
+    gettmpfilename(mailfile, "set_member_status.%d", getpid());
+    fn=fopen(mailfile, "w+");
+    fprintf(fn, "寄信人: %s \n", getSession()->currentuser->userid);
+    fprintf(fn, "标  题: %s\n", title);
+    fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
+    fprintf(fn, "来  源: %s \n", SHOW_USERIP(getSession()->currentuser, getSession()->fromhost));
+    fprintf(fn, "\n");
+    fprintf(fn, "您在 \033[4m%s\033[m 版的驻版状态由 \033[4m%s\033[m 调整为 \033[4m%s\033[m。\n", board->filename, old_name, new_name);
+    fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
+    fprintf(fn, "                              %s\n", ctime_r(&now, timebuf));
+    fclose(fn);
+    
+    mail_file(DELIVER, mailfile, member.user, title, 0, NULL);
+    
+    unlink(mailfile);
     
     return 0;
 }    
@@ -1027,14 +1074,14 @@ int set_board_member_flag(struct board_member *member) {
     char my_user_id[STRLEN];
     char my_manager_id[STRLEN];
     char sql[200];
-#endif	
-	char buf[1024];
+#endif    
+    char buf[1024];
     const struct boardheader *board;
     int i, flag, o_set, n_set, sysop;
-	struct board_member old;
-	char path[PATHLEN], name[STRLEN];
-	FILE *handle;
-	time_t time;
+    struct board_member old;
+    char path[PATHLEN], name[STRLEN];
+    FILE *handle;
+    time_t time;
     
     board=getbcache(member->board);
     if (0==board)
@@ -1043,14 +1090,14 @@ int set_board_member_flag(struct board_member *member) {
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-	if (get_board_member(board->filename, member->user, &old)<0)
-		return -4;
-	if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
-		return -5;
-	if (!valid_core_member(member->user)) 
-		member->flag=0;
-	
-	member->status=BOARD_MEMBER_STATUS_NORMAL;
+    if (get_board_member(board->filename, member->user, &old)<0)
+        return -4;
+    if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
+        return -5;
+    if (!valid_core_member(member->user)) 
+        member->flag=0;
+    
+    member->status=BOARD_MEMBER_STATUS_NORMAL;
     for (i=0;i<BMP_COUNT;i++) {
         flag=get_bmp_value(i);
         if (member->flag&flag) {
@@ -1058,16 +1105,16 @@ int set_board_member_flag(struct board_member *member) {
             break;
         }
     }
-	
-	if (old.status == member->status && old.flag == member->flag)
-		return 0;
+    
+    if (old.status == member->status && old.flag == member->flag)
+        return 0;
  
 #ifdef ENABLE_MEMBER_CACHE 
-	update_member_cache(member);
+    update_member_cache(member);
 #else
-	my_name[0]=0;
-	my_user_id[0]=0;
-	my_manager_id[0]=0;
+    my_name[0]=0;
+    my_user_id[0]=0;
+    my_manager_id[0]=0;
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
@@ -1089,122 +1136,122 @@ int set_board_member_flag(struct board_member *member) {
     mysql_close(&s);
 #endif
     
-	gettmpfilename(path, "board.member.flag.log");
-	if ((handle = fopen(path, "w")) != NULL) { 
-		if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
-				&& !chk_BM_instr(board->BM, getSession()->currentuser->userid))
-			sysop = 1;
-		else 
-			sysop = 0;
-		time=time(0);
-		
-		if (sysop)
-		fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
-		else
-		fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
-		fprintf(handle, "  \033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
-		
-		fprintf(handle, "\n  \033[1;33m原驻版身份\033[m: \033[1;32m%s\033[m\n", (old.status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
-		if (old.status == BOARD_MEMBER_STATUS_MANAGER) {
-			for (i=0;i<BMP_COUNT;i++) {
-				flag=get_bmp_value(i);
-				get_bmp_name(name, flag);
-				fprintf(handle, "      [%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
-			}
-		}
-		
-		fprintf(handle, "\n  \033[1;33m新驻版身份\033[m: \033[1;32m%s\033[m\n", (member->status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
-		if (member->status == BOARD_MEMBER_STATUS_MANAGER) {
-			for (i=0;i<BMP_COUNT;i++) {
-				flag=get_bmp_value(i);
-				get_bmp_name(name, flag);
-				
-				n_set=(member->flag&flag)?1:0;
-				o_set=(old.flag&flag)?1:0;
-				
-				fprintf(handle, "      [%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
-			}
-		}
-		
-		if (sysop)
-			fprintf(handle, "\n\n                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, getSession()->currentuser->userid);
-		else
-			fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
-		
-		fprintf(handle, "                              %s\n\n", ctime_r(&time, buf));
-		fclose(handle);
-		
-		sprintf(buf, "调整 %s 的驻版权限", member->user);
-		post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
-		sprintf(buf, "调整 %s#%s 的驻版权限", member->user, board->filename);
-		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());		
-		
-		mail_file(DELIVER, path, member->user, buf, 0, NULL);
-		
-		unlink(path);
-	} else {
-		sprintf(buf, "权限: %d", member->flag);
-		board_member_log(member, "设置驻版权限", buf);
-	}
-	
+    gettmpfilename(path, "board.member.flag.log");
+    if ((handle = fopen(path, "w")) != NULL) { 
+        if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
+                && !chk_BM_instr(board->BM, getSession()->currentuser->userid))
+            sysop = 1;
+        else 
+            sysop = 0;
+        time=time(0);
+        
+        if (sysop)
+        fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+        else
+        fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+        fprintf(handle, "  \033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
+        
+        fprintf(handle, "\n  \033[1;33m原驻版身份\033[m: \033[1;32m%s\033[m\n", (old.status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
+        if (old.status == BOARD_MEMBER_STATUS_MANAGER) {
+            for (i=0;i<BMP_COUNT;i++) {
+                flag=get_bmp_value(i);
+                get_bmp_name(name, flag);
+                fprintf(handle, "      [%s] %s\n", (old.flag&flag)?"\033[1;32m*\033[m":" ", name);
+            }
+        }
+        
+        fprintf(handle, "\n  \033[1;33m新驻版身份\033[m: \033[1;32m%s\033[m\n", (member->status==BOARD_MEMBER_STATUS_MANAGER)?"核心驻版用户":"驻版用户");
+        if (member->status == BOARD_MEMBER_STATUS_MANAGER) {
+            for (i=0;i<BMP_COUNT;i++) {
+                flag=get_bmp_value(i);
+                get_bmp_name(name, flag);
+                
+                n_set=(member->flag&flag)?1:0;
+                o_set=(old.flag&flag)?1:0;
+                
+                fprintf(handle, "      [%s] %s%s\033[m\n", (member->flag&flag)?"\033[1;32m*\033[m":" ", (n_set==o_set)?"":"\033[1;31m", name);
+            }
+        }
+        
+        if (sysop)
+            fprintf(handle, "\n\n                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, getSession()->currentuser->userid);
+        else
+            fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
+        
+        fprintf(handle, "                              %s\n\n", ctime_r(&time, buf));
+        fclose(handle);
+        
+        sprintf(buf, "调整 %s 的驻版权限", member->user);
+        post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
+        sprintf(buf, "调整 %s#%s 的驻版权限", member->user, board->filename);
+        post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());        
+        
+        mail_file(DELIVER, path, member->user, buf, 0, NULL);
+        
+        unlink(path);
+    } else {
+        sprintf(buf, "权限: %d", member->flag);
+        board_member_log(member, "设置驻版权限", buf);
+    }
+    
     update_board_member_manager_file(board);
 
 #ifdef NEWSMTH
-	set_member_manager_level(member->user);
+    set_member_manager_level(member->user);
 #endif
-	
+    
     return 0;
 }
 
 #ifdef NEWSMTH
 int set_member_manager_level(char *user_id) {
 #ifndef ENABLE_MEMBER_CACHE
-	MYSQL s;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
-	char my_user_id[STRLEN];
-	char sql[512];
+    MYSQL s;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char my_user_id[STRLEN];
+    char sql[512];
 #endif
-	struct userec *user;
-	int count;
-	
-	if (!getuser(user_id, &user))
-		return -1;
+    struct userec *user;
+    int count;
+    
+    if (!getuser(user_id, &user))
+        return -1;
 
-#ifdef ENABLE_MEMBER_CACHE		
-	count=get_member_managers_cache(user->userid);
+#ifdef ENABLE_MEMBER_CACHE        
+    count=get_member_managers_cache(user->userid);
 #else
-	mysql_init(&s);
-	if (! my_connect_mysql(&s)) {
+    mysql_init(&s);
+    if (! my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -2;
     }
-	
-	my_user_id[0]=0;
-	mysql_escape_string(my_user_id, user->userid, strlen(user->userid));
-	sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `user`='%s' AND `status`=%d", my_user_id, BOARD_MEMBER_STATUS_MANAGER);
-	if (mysql_real_query(&s, sql, strlen(sql))) {
+    
+    my_user_id[0]=0;
+    mysql_escape_string(my_user_id, user->userid, strlen(user->userid));
+    sprintf(sql,"SELECT COUNT(*) FROM `board_user` WHERE `user`='%s' AND `status`=%d", my_user_id, BOARD_MEMBER_STATUS_MANAGER);
+    if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -3;
     }
-	res = mysql_store_result(&s);
-	row = mysql_fetch_row(res);
-	count=0;
-	if (row != NULL)
-		count=atoi(row[0]);
-	mysql_free_result(res);
-	mysql_close(&s);
+    res = mysql_store_result(&s);
+    row = mysql_fetch_row(res);
+    count=0;
+    if (row != NULL)
+        count=atoi(row[0]);
+    mysql_free_result(res);
+    mysql_close(&s);
 #endif
 
-	if (HAS_PERM(user,PERM_MEMBER_MANAGER) && (count <= 0||!valid_core_member(user_id)))
-		user->userlevel &= ~PERM_MEMBER_MANAGER;
-	else if (!HAS_PERM(user,PERM_MEMBER_MANAGER) && count > 0)
-		user->userlevel |= PERM_MEMBER_MANAGER;
-	else
-		return 0;
+    if (HAS_PERM(user,PERM_MEMBER_MANAGER) && (count <= 0||!valid_core_member(user_id)))
+        user->userlevel &= ~PERM_MEMBER_MANAGER;
+    else if (!HAS_PERM(user,PERM_MEMBER_MANAGER) && count > 0)
+        user->userlevel |= PERM_MEMBER_MANAGER;
+    else
+        return 0;
 
-	return 0;
+    return 0;
 }
 #endif
 
@@ -1221,7 +1268,7 @@ int update_board_member_manager_file(const struct boardheader *board) {
 
 int get_board_member_managers(const struct boardheader *board) {
 #ifdef ENABLE_MEMBER_CACHE
-	return count_member_board_managers_cache(board->filename);
+    return count_member_board_managers_cache(board->filename);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -1262,7 +1309,7 @@ int get_board_member_managers(const struct boardheader *board) {
 
 int load_board_member_managers(const struct boardheader *board, struct board_member *members) {
 #ifdef ENABLE_MEMBER_CACHE
-	return load_board_member_managers_cache(board->filename, members);
+    return load_board_member_managers_cache(board->filename, members);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -1300,14 +1347,14 @@ int load_board_member_managers(const struct boardheader *board, struct board_mem
         members[i-1].status=atol(row[3]);
         strncpy(members[i-1].manager, row[4], IDLEN+1);
         members[i-1].score=atol(row[5]);
-		members[i-1].title=atol(row[6]);
+        members[i-1].title=atol(row[6]);
         members[i-1].flag=atol(row[7]);
 
-		if (!valid_core_member(members[i-1].user)) {
-			members[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
-			members[i-1].flag=0;
-		}
-		
+        if (!valid_core_member(members[i-1].user)) {
+            members[i-1].status=BOARD_MEMBER_STATUS_NORMAL;
+            members[i-1].flag=0;
+        }
+        
         row = mysql_fetch_row(res);
     }
     mysql_free_result(res);
@@ -1373,25 +1420,25 @@ int set_board_member_manager_file(const struct boardheader *board) {
 
 int set_board_member_score(struct board_member *member, int type, int score) {
 #ifdef ENABLE_MEMBER_CACHE
-	if (type==0)
-		member->score = score;
-	else if (type>0)
-		member->score += score;
-	else
-		member->score -= score;
-		
-	if (member->score < 0)
-		member->score = 0;
-		
-	return update_member_cache(member);
+    if (type==0)
+        member->score = score;
+    else if (type>0)
+        member->score += score;
+    else
+        member->score -= score;
+        
+    if (member->score < 0)
+        member->score = 0;
+        
+    return update_member_cache(member);
 #else
     MYSQL s;
     char my_name[STRLEN];
     char my_user_id[STRLEN];
     char sql[200];
     
-	my_name[0]=0;
-	my_user_id[0]=0;
+    my_name[0]=0;
+    my_user_id[0]=0;
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     
@@ -1642,7 +1689,7 @@ int flush_member_board_articles(int mode, const struct userec *user, int force) 
 
 int get_board_member_titles(const char *board) {
 #ifdef ENABLE_MEMBER_CACHE
-	return count_board_titles_cache(board);
+    return count_board_titles_cache(board);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -1686,7 +1733,7 @@ int get_board_member_titles(const char *board) {
 
 int load_board_member_titles(const char *board, struct board_member_title *titles) {
 #ifdef ENABLE_MEMBER_CACHE
-	return load_board_titles_cache(board, titles);
+    return load_board_titles_cache(board, titles);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -1733,24 +1780,24 @@ int load_board_member_titles(const char *board, struct board_member_title *title
 
     mysql_close(&s);
     return i;
-#endif	
+#endif    
 }
 
 int get_board_member_title(const char *board, int id, struct board_member_title *title) {
 #ifdef ENABLE_MEMBER_CACHE
-	return get_board_member_title_cache(board, id, title);
+    return get_board_member_title_cache(board, id, title);
 #else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
     char sql[500];
     char my_board[STRLEN];
-	int not_found=1;
+    int not_found=1;
     
     if (!board[0])
         return -1;
     if (id<=0)
-        return -2;	
+        return -2;    
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -1773,7 +1820,7 @@ int get_board_member_title(const char *board, int id, struct board_member_title 
     
     if (NULL != row) {
         not_found=0;
-			
+            
         if (NULL != title) {
             bzero(title, sizeof(struct board_member_title));
 
@@ -1782,7 +1829,7 @@ int get_board_member_title(const char *board, int id, struct board_member_title 
             strncpy(title->name, row[2], STRLEN-2);
             title->serial=atol(row[3]);
             title->flag=atol(row[4]);
-        }		
+        }        
     }
 
     mysql_free_result(res);
@@ -1790,27 +1837,27 @@ int get_board_member_title(const char *board, int id, struct board_member_title 
 
     if (not_found)
         return 0;
-		
+        
     return 1;
 #endif
 }
 
 int query_board_member_title(const char *board, char *name, struct board_member_title *title) {
 #ifdef ENABLE_MEMBER_CACHE
-	return query_board_member_title_cache(board, name, title);
+    return query_board_member_title_cache(board, name, title);
 #else
     MYSQL s;
     MYSQL_RES *res;
     MYSQL_ROW row;
     char sql[500];
     char my_board[STRLEN];
-    char my_name[STRLEN];	
-	int not_found=1;
+    char my_name[STRLEN];    
+    int not_found=1;
     
     if (!board[0])
         return -1;
     if (!name[0])
-        return -2;	
+        return -2;    
     
     mysql_init(&s);
     if (!my_connect_mysql(&s)) {
@@ -1819,10 +1866,10 @@ int query_board_member_title(const char *board, char *name, struct board_member_
     }
     
     my_board[0]=0;
-	my_name[0]=0;
+    my_name[0]=0;
     mysql_escape_string(my_board, board, strlen(board));
     mysql_escape_string(my_name, name, strlen(name));
-	
+    
     sprintf(sql,"SELECT `id`, `board`, `name`, `serial`, `flag` FROM `board_title` WHERE `name`='%s' AND `board`='%s'", my_name, my_board);
     
     if (mysql_real_query(&s, sql, strlen(sql))) {
@@ -1835,7 +1882,7 @@ int query_board_member_title(const char *board, char *name, struct board_member_
     
     if (NULL != row) {
         not_found=0;
-			
+            
         if (NULL != title) {
             bzero(title, sizeof(struct board_member_title));
 
@@ -1844,7 +1891,7 @@ int query_board_member_title(const char *board, char *name, struct board_member_
             strncpy(title->name, row[2], STRLEN-2);
             title->serial=atol(row[3]);
             title->flag=atol(row[4]);
-        }		
+        }        
     }
 
     mysql_free_result(res);
@@ -1852,7 +1899,7 @@ int query_board_member_title(const char *board, char *name, struct board_member_
 
     if (not_found)
         return 0;
-		
+        
     return 1;
 #endif
 }
@@ -1865,15 +1912,15 @@ int set_board_member_title(struct board_member *member) {
     char my_manager_id[STRLEN];
     char sql[200];
 #endif
-	char buf[1024];
+    char buf[1024];
     const struct boardheader *board;
     int sysop;
-	struct board_member old;
+    struct board_member old;
     struct board_member_title old_title;
     struct board_member_title new_title;
-	char path[PATHLEN];
-	FILE *handle;
-	time_t time;
+    char path[PATHLEN];
+    FILE *handle;
+    time_t time;
     
     board=getbcache(member->board);
     if (0==board)
@@ -1882,25 +1929,25 @@ int set_board_member_title(struct board_member *member) {
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-	if (get_board_member(board->filename, member->user, &old)<0)
-		return -4;
-	if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
-		return -5;
-	
+    if (get_board_member(board->filename, member->user, &old)<0)
+        return -4;
+    if (old.status != BOARD_MEMBER_STATUS_NORMAL && old.status != BOARD_MEMBER_STATUS_MANAGER)
+        return -5;
+    
     if (old.title != 0 && get_board_member_title(board->filename, old.title, &old_title)<=0)
         old.title=0;
-		
-	if (member->title !=0 && get_board_member_title(board->filename, member->title, &new_title)<=0)
-		return -6;
-	
-	if (old.title == member->title)
-		return 0;
+        
+    if (member->title !=0 && get_board_member_title(board->filename, member->title, &new_title)<=0)
+        return -6;
+    
+    if (old.title == member->title)
+        return 0;
 #ifdef ENABLE_MEMBER_CACHE        
-	set_board_member_title_cache(member);
+    set_board_member_title_cache(member);
 #else
-	my_name[0]=0;
-	my_user_id[0]=0;
-	my_manager_id[0]=0;
+    my_name[0]=0;
+    my_user_id[0]=0;
+    my_manager_id[0]=0;
     mysql_escape_string(my_name, member->board, strlen(member->board));
     mysql_escape_string(my_user_id, member->user, strlen(member->user));
     mysql_escape_string(my_manager_id, getSession()->currentuser->userid, strlen(getSession()->currentuser->userid));
@@ -1921,94 +1968,94 @@ int set_board_member_title(struct board_member *member) {
 
     mysql_close(&s);
 #endif    
-	gettmpfilename(path, "board.member.title.log");
-	if ((handle = fopen(path, "w")) != NULL) { 
-		if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
-				&& !chk_BM_instr(board->BM, getSession()->currentuser->userid))
-			sysop = 1;
-		else 
-			sysop = 0;
-		time=time(0);
-		
-		if (sysop)
-		fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
-		else
-		fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
-		fprintf(handle, "  \033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
-		
-		fprintf(handle, "\n  \033[1;33m原驻版称号\033[m: \033[1;32m%s\033[m\n", (old.title==0)?"无":old_title.name);
-		fprintf(handle, "\n  \033[1;33m新驻版称号\033[m: \033[1;32m%s\033[m\n", (member->title==0)?"无":new_title.name);
-		
-		if (sysop)
-			fprintf(handle, "\n\n                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, getSession()->currentuser->userid);
-		else
-			fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
-		
-		fprintf(handle, "                              %s\n\n", ctime_r(&time, buf));
-		fclose(handle);
-		
-		sprintf(buf, "调整 %s 的驻版称号", member->user);
-		post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
-		sprintf(buf, "调整 %s#%s 的驻版称号", member->user, board->filename);
-		post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());		
-		
-		mail_file(DELIVER, path, member->user, buf, 0, NULL);
-		
-		unlink(path);
-	} else {
-		sprintf(buf, "称号: %d", member->title);
-		board_member_log(member, "设置驻版称号", buf);
-	}
-	    
+    gettmpfilename(path, "board.member.title.log");
+    if ((handle = fopen(path, "w")) != NULL) { 
+        if ((HAS_PERM(getSession()->currentuser, PERM_SYSOP) || HAS_PERM(getSession()->currentuser, PERM_OBOARDS))
+                && !chk_BM_instr(board->BM, getSession()->currentuser->userid))
+            sysop = 1;
+        else 
+            sysop = 0;
+        time=time(0);
+        
+        if (sysop)
+        fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BBS_CHINESE NAME_SYSOP_GROUP DENY_NAME_SYSOP "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+        else
+        fprintf(handle, "  \033[1;33m版面\033[m: \033[1;32m%s\033[m                        \033[1;33m" NAME_BM "\033[m: \033[1;32m%s\033[m\n\n", board->filename, getSession()->currentuser->userid);
+        fprintf(handle, "  \033[1;33m驻版用户\033[m: \033[1;31m%s\033[m\n\n", member->user);
+        
+        fprintf(handle, "\n  \033[1;33m原驻版称号\033[m: \033[1;32m%s\033[m\n", (old.title==0)?"无":old_title.name);
+        fprintf(handle, "\n  \033[1;33m新驻版称号\033[m: \033[1;32m%s\033[m\n", (member->title==0)?"无":new_title.name);
+        
+        if (sysop)
+            fprintf(handle, "\n\n                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, getSession()->currentuser->userid);
+        else
+            fprintf(handle, "\n\n                              " NAME_BM ":\x1b[4m%s\x1b[m\n", getSession()->currentuser->userid);
+        
+        fprintf(handle, "                              %s\n\n", ctime_r(&time, buf));
+        fclose(handle);
+        
+        sprintf(buf, "调整 %s 的驻版称号", member->user);
+        post_file(getSession()->currentuser, "", path, board->filename, buf, 0, 1, getSession());
+        sprintf(buf, "调整 %s#%s 的驻版称号", member->user, board->filename);
+        post_file(getSession()->currentuser, "", path, BOARD_MEMBER_LOG_BOARD, buf, 0, 2, getSession());        
+        
+        mail_file(DELIVER, path, member->user, buf, 0, NULL);
+        
+        unlink(path);
+    } else {
+        sprintf(buf, "称号: %d", member->title);
+        board_member_log(member, "设置驻版称号", buf);
+    }
+        
     return 0;
 }
 
 int create_board_member_title(const char *board_name, char *name, int serial) {
 #ifdef ENABLE_MEMBER_CACHE
-	struct board_member_title title;
+    struct board_member_title title;
 #else
     MYSQL s;
-	char my_name[STRLEN];
+    char my_name[STRLEN];
     char my_board[STRLEN];
     char sql[500];
 #endif
-	char buf[300];
-	const struct boardheader *board;
-	
-	board=getbcache(board_name);
+    char buf[300];
+    const struct boardheader *board;
+    
+    board=getbcache(board_name);
     if (0==board)
         return -1;
     if (board->flag&BOARD_GROUP)
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-	
-	if (!name[0])
-		return -4;
-	
-	if (query_board_member_title(board->filename, name, NULL) != 0)
-		return -5;
-#ifdef ENABLE_MEMBER_CACHE	
-	bzero(&title, sizeof(struct board_member_title));
-	strncpy(title.board, board->filename, STRLEN);
-	strncpy(title.name, name, STRLEN);
-	title.serial=serial;
-	title.flag=0;
-	if (add_member_title(&title)<0)
-		return -6;
+    
+    if (!name[0])
+        return -4;
+    
+    if (query_board_member_title(board->filename, name, NULL) != 0)
+        return -5;
+#ifdef ENABLE_MEMBER_CACHE    
+    bzero(&title, sizeof(struct board_member_title));
+    strncpy(title.board, board->filename, STRLEN);
+    strncpy(title.name, name, STRLEN);
+    title.serial=serial;
+    title.flag=0;
+    if (add_member_title(&title)<0)
+        return -6;
 #else
-	my_name[0]=0;
-	my_board[0]=0;
-	mysql_escape_string(my_name, name, strlen(name));
+    my_name[0]=0;
+    my_board[0]=0;
+    mysql_escape_string(my_name, name, strlen(name));
     mysql_escape_string(my_board, board->filename, strlen(board->filename));
     
-	mysql_init(&s);
+    mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -6;
     }
-	sprintf(sql, "INSERT INTO `board_title` (`board`, `name`, `serial`, `flag`) VALUES (\"%s\", \"%s\", %d, %d);", my_board, my_name, serial, 0);
-	if (mysql_real_query(&s, sql, strlen(sql))) {
+    sprintf(sql, "INSERT INTO `board_title` (`board`, `name`, `serial`, `flag`) VALUES (\"%s\", \"%s\", %d, %d);", my_board, my_name, serial, 0);
+    if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -7;
@@ -2017,129 +2064,129 @@ int create_board_member_title(const char *board_name, char *name, int serial) {
     mysql_close(&s);
 #endif
 
-	sprintf(buf, "增加驻版称号#%s: %s", board->filename, name);
-	board_member_log(NULL, buf, buf);
-	
-	return 0;
+    sprintf(buf, "增加驻版称号#%s: %s", board->filename, name);
+    board_member_log(NULL, buf, buf);
+    
+    return 0;
 }
 
 int remove_board_member_title(struct board_member_title *title) {
 #ifndef ENABLE_MEMBER_CACHE
-	MYSQL s;
-	char my_board[STRLEN], sql[500];
+    MYSQL s;
+    char my_board[STRLEN], sql[500];
 #endif
-	const struct boardheader *board;
-	char buf[300];
-	
-	board=getbcache(title->board);
+    const struct boardheader *board;
+    char buf[300];
+    
+    board=getbcache(title->board);
     if (0==board)
         return -1;
     if (board->flag&BOARD_GROUP)
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-		
-	if (title->id <= 0)
-		return -4;
+        
+    if (title->id <= 0)
+        return -4;
 
 #ifdef ENABLE_MEMBER_CACHE
-	if (remove_member_title(title->id)<0)
-		return -5;
-#else		
-    my_board[0]=0;	
-	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
-	sprintf(sql, "DELETE FROM `board_title` WHERE `id`=%d AND `board`='%s';", title->id, my_board);
-	mysql_init(&s);
+    if (remove_member_title(title->id)<0)
+        return -5;
+#else        
+    my_board[0]=0;    
+    mysql_escape_string(my_board, board->filename, strlen(board->filename));    
+    sprintf(sql, "DELETE FROM `board_title` WHERE `id`=%d AND `board`='%s';", title->id, my_board);
+    mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -5;
     }
-	
-	if (mysql_real_query(&s, sql, strlen(sql))) {
+    
+    if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -6;
     }
-	
-	sprintf(sql, "UPDATE `board_user` SET `time`=`time`, `title`=0 WHERE `title`=%d AND `board`='%s';", title->id, my_board);
-	if (mysql_real_query(&s, sql, strlen(sql))) {
+    
+    sprintf(sql, "UPDATE `board_user` SET `time`=`time`, `title`=0 WHERE `title`=%d AND `board`='%s';", title->id, my_board);
+    if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -7;
     }
-	
-	mysql_close(&s);
-#endif	
-	sprintf(buf, "删除驻版称号#%s: [%d]%s", board->filename, title->id, title->name);
-	board_member_log(NULL, buf, buf);
-	
-	return 0;
+    
+    mysql_close(&s);
+#endif    
+    sprintf(buf, "删除驻版称号#%s: [%d]%s", board->filename, title->id, title->name);
+    board_member_log(NULL, buf, buf);
+    
+    return 0;
 }
 
 int modify_board_member_title(struct board_member_title *title) {
 #ifndef ENABLE_MEMBER_CACHE
-	MYSQL s;
-	char my_board[STRLEN];
-	char my_name[STRLEN];
-	char sql[500];
+    MYSQL s;
+    char my_board[STRLEN];
+    char my_name[STRLEN];
+    char sql[500];
 #endif
-	const struct boardheader *board;
-	char buf[300];
-	
-	board=getbcache(title->board);
+    const struct boardheader *board;
+    char buf[300];
+    
+    board=getbcache(title->board);
     if (0==board)
         return -1;
     if (board->flag&BOARD_GROUP)
         return -2;    
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!chk_currBM(board->BM,getSession()->currentuser))    
         return -3;
-		
-	if (title->id <= 0)
-		return -4;
+        
+    if (title->id <= 0)
+        return -4;
 
-	if (!title->name[0])
-		return -5;
-#ifdef ENABLE_MEMBER_CACHE	
-	if (set_member_title_cache(title)<0)
-		return -6;
-#else	
-	my_board[0]=0;
-	my_name[0]=0;
-	mysql_escape_string(my_board, board->filename, strlen(board->filename));	
-	mysql_escape_string(my_name, title->name, strlen(title->name));
-	
-	mysql_init(&s);
+    if (!title->name[0])
+        return -5;
+#ifdef ENABLE_MEMBER_CACHE    
+    if (set_member_title_cache(title)<0)
+        return -6;
+#else    
+    my_board[0]=0;
+    my_name[0]=0;
+    mysql_escape_string(my_board, board->filename, strlen(board->filename));    
+    mysql_escape_string(my_name, title->name, strlen(title->name));
+    
+    mysql_init(&s);
     if (!my_connect_mysql(&s)) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         return -6;
     }
 
-	sprintf(sql, "UPDATE `board_title` SET `name`=\"%s\", serial=%d, flag=%d WHERE `id`=%d AND `board`='%s';", my_name, title->serial, title->flag, title->id, my_board);
-	if (mysql_real_query(&s, sql, strlen(sql))) {
+    sprintf(sql, "UPDATE `board_title` SET `name`=\"%s\", serial=%d, flag=%d WHERE `id`=%d AND `board`='%s';", my_name, title->serial, title->flag, title->id, my_board);
+    if (mysql_real_query(&s, sql, strlen(sql))) {
         bbslog("3system", "mysql error: %s", mysql_error(&s));
         mysql_close(&s);
         return -7;
     }
-	
-	mysql_close(&s);
-#endif	
-	sprintf(buf, "更改驻版称号#%s: [%d]%s", board->filename, title->id, title->name);
-	board_member_log(NULL, buf, buf);
-	
-	return 0;
+    
+    mysql_close(&s);
+#endif    
+    sprintf(buf, "更改驻版称号#%s: [%d]%s", board->filename, title->id, title->name);
+    board_member_log(NULL, buf, buf);
+    
+    return 0;
 }
-	
+    
 int valid_core_member(const char *user_id)
 {
-	struct userec *user;
-	
-	if (!getuser(user_id, &user))
-		return 0;
-	if (HAS_PERM(user, PERM_NOZAP))
-		return 0;
-	
-	return 1;
-}	
+    struct userec *user;
+    
+    if (!getuser(user_id, &user))
+        return 0;
+    if (HAS_PERM(user, PERM_NOZAP))
+        return 0;
+    
+    return 1;
+}    
 #endif
 
 /*

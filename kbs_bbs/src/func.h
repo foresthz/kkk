@@ -886,6 +886,7 @@ while(0)
     int get_board_member_managers(const struct boardheader *board);
     int load_board_member_managers(const struct boardheader *board, struct board_member *members);
     char *get_bmp_name(char *name, int bmp);
+    char *get_member_status_name(char *name, int status);
     int get_bmp_value(int index);
     int check_board_member_manager(struct board_member_status *status, const struct boardheader *board, int perm);
     int check_board_member_manager_by_name(struct board_member_status *status, char *name, int perm);
