@@ -288,50 +288,50 @@ unsigned char    month, day;
 
 #ifdef ENABLE_BOARD_MEMBER
 int display_member_boards(char *uident) {
-	struct board_member *members=NULL;
-	struct board_member_title member_title;
-	int total, i;
-	char color[STRLEN], title[STRLEN], buf[STRLEN];
-	struct boardheader *bh;
+    struct board_member *members=NULL;
+    struct board_member_title member_title;
+    int total, i;
+    char color[STRLEN], title[STRLEN], buf[STRLEN];
+    struct boardheader *bh;
 
-	clear();
-	total=get_member_boards(uident);
-	move(0, 0);
-	prints("  用户 \033[1;33m%s\033[m 的驻版信息", uident);
-	move(2, 0);
-	if (total<=0)
-		prints("该用户尚未入驻版面");
-	else {
-		members=(struct board_member *) malloc(sizeof(struct board_member) * total);
-		bzero(members, sizeof(struct board_member) * total);
-		if (load_member_boards(uident, members, MEMBER_BOARD_SORT_BOARD_ASC, 0, total)<=0) {
-			prints("加载驻版信息出错");
-		} else {
-			prints("\033[1;44m  编号  版名                 驻版称号     驻版积分  驻版时间          \033[m\n");
-			for (i=0;i<total;i++) {
-				if (!(bh=((struct boardheader *)getbcache(members[i].board)))||!check_read_perm(getCurrentUser(),bh))
-                			continue;
-				if (members[i].status==BOARD_MEMBER_STATUS_MANAGER)
-					strcpy(color, "\x1b[1;31m");
-				else if (members[i].status==BOARD_MEMBER_STATUS_NORMAL)
-					strcpy(color, "\x1b[1;32m");
-				else
-					strcpy(color, "\x1b[1;33m");
-				
-				if (members[i].title > 0 && get_board_member_title(members[i].board, members[i].title, &member_title)>=0)
-					strcpy(title, member_title.name);
-				else
-					strcpy(title, "");
-					
-				prints("  %4d  %s%-20s \033[1;36m%-12s\033[m %8d  %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
-			}
-		}
-		free(members);
-		members=NULL;
-	}
-	
-	pressanykey();
-	return 0;
+    clear();
+    total=get_member_boards(uident);
+    move(0, 0);
+    prints("  用户 \033[1;33m%s\033[m 的驻版信息", uident);
+    move(2, 0);
+    if (total<=0)
+        prints("该用户尚未入驻版面");
+    else {
+        members=(struct board_member *) malloc(sizeof(struct board_member) * total);
+        bzero(members, sizeof(struct board_member) * total);
+        if (load_member_boards(uident, members, MEMBER_BOARD_SORT_BOARD_ASC, 0, total)<=0) {
+            prints("加载驻版信息出错");
+        } else {
+            prints("\033[1;44m  编号  版名                 驻版称号     驻版积分  驻版时间          \033[m\n");
+            for (i=0;i<total;i++) {
+                if (!(bh=((struct boardheader *)getbcache(members[i].board)))||!check_read_perm(getCurrentUser(),bh))
+                            continue;
+                if (members[i].status==BOARD_MEMBER_STATUS_MANAGER)
+                    strcpy(color, "\x1b[1;31m");
+                else if (members[i].status==BOARD_MEMBER_STATUS_NORMAL)
+                    strcpy(color, "\x1b[1;32m");
+                else
+                    strcpy(color, "\x1b[1;33m");
+                
+                if (members[i].title > 0 && get_board_member_title(members[i].board, members[i].title, &member_title)>=0)
+                    strcpy(title, member_title.name);
+                else
+                    strcpy(title, "");
+                    
+                prints("  %4d  %s%-20s \033[1;36m%-12s\033[m %8d  %8s\n", i+1, color, members[i].board, title, members[i].score, tt2timestamp(members[i].time, buf));
+            }
+        }
+        free(members);
+        members=NULL;
+    }
+    
+    pressanykey();
+    return 0;
 }
 #endif
 
@@ -497,12 +497,21 @@ int t_query(char* q_id)
         struct user_info *uin;
         move(t_lines - 1, 0);
         if (seecount) {
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+            t1 = "信息[\x1b[1;32mi\x1b[m\x1b[0;44m]";
+#else
             t1 = "聊天[\x1b[1;32mt\x1b[m\x1b[0;44m]";
+#endif
             t2 = "送讯息[\x1b[1;32ms\x1b[m\x1b[0;44m]";
         } else {
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+            t1 = "信息[\x1b[1;32mi\x1b[m\x1b[0;44m]";
+#else
             t1 = "       ";
+#endif
             t2 = "         ";
         }
+
 #ifdef ENABLE_NEW_MSG
             t3 = "短信[\x1b[1;32mw\x1b[m\x1b[0;44m]";   
 #else
@@ -517,7 +526,7 @@ int t_query(char* q_id)
 #endif
 #ifdef ENABLE_BOARD_MEMBER
         prints("\x1b[m\x1b[44m%s 寄信[\x1b[1;32mm\x1b[m\x1b[0;44m] %s 加,减朋友[\x1b[1;32mo,d\x1b[m\x1b[0;44m] 说明档[\x1b[1;32ml\x1b[m\x1b[0;44m] 驻版[\x1b[1;32mk\x1b[m\x1b[0;44m] %s 其它键继续", t1, t2, t3);
-#else		
+#else        
         prints("\x1b[m\x1b[44m%s 寄信[\x1b[1;32mm\x1b[m\x1b[0;44m] %s 加,减朋友[\x1b[1;32mo,d\x1b[m\x1b[0;44m] 查看说明档[\x1b[1;32ml\x1b[m\x1b[0;44m] %s 其它键继续", t1, t2, t3);
 #endif
         clrtoeol();
@@ -599,19 +608,26 @@ int t_query(char* q_id)
                new_msg_do_compose(uident, 0); 
                break;
 #endif
-#ifdef ENABLE_BOARD_MEMBER				
+#ifdef ENABLE_BOARD_MEMBER                
             case 'K':
                 if (!strcmp("guest", getCurrentUser()->userid))
                     break;
                 display_member_boards(uident);
                 break;
 #endif
+#if defined(NEWSMTH) && !defined(SECONDSITE)
+            case 'I':
+                display_user_summary(uident);
+                break;
+#endif
+
         }
     }
     uinfo.destuid = 0;
     modify_user_mode(oldmode);
     return 0;
 }
+
 int count_visible_active(struct user_info *uentp, int *count, int pos)
 {
     if (!uentp->active || !uentp->pid)

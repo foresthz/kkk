@@ -382,5 +382,6 @@ struct b_like_args {
 };
 int b_like(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
 int b_like_list(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg);
+int display_user_summary(char *user_id);
 #endif
 #endif /* _DEFINES_T_H_ */
