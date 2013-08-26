@@ -1962,7 +1962,34 @@ static int get_total(struct fileheader *fh)
     else
         return 0;
 }
+#ifdef ENABLE_LIKE
+static int perm_selene(struct fileheader *fh)
+{
+    return HAS_PERM(getCurrentUser(), PERM_SYSOP);
+}
+static int set_selene(struct fileheader *fh, int i)
+{
+    if (i==0) {
+        fh->accessed[0] &= ~FILE_SELENE;
+    } else {
+        fh->accessed[0] |= FILE_SELENE;
+    }
+    return 1;
+}
+static int get_selene(struct fileheader *fh)
+{
+    if (fh->accessed[0] & FILE_SELENE)
+        return 1;
+    else
+        return 0;
+}
+#endif
+
+#ifdef ENABLE_LIKE
+#define FH_SELECT_NUM 6
+#else
 #define FH_SELECT_NUM 5
+#endif
 static struct _fh_select {
     char *desc;
     int (*have_perm)(struct fileheader *);
@@ -1973,7 +2000,10 @@ static struct _fh_select {
     {"转信发表", perm_innflag, set_innflag, get_innflag},
     {"收精华标记", perm_cancelo, set_cancelo, get_cancelo},
     {"TeX标记", perm_tex, set_tex, get_tex},
-    {"已做合集标记", perm_total, set_total, get_total}
+    {"已做合集标记", perm_total, set_total, get_total},
+#ifdef ENABLE_LIKE
+    {"已收录Selene", perm_selene, set_selene, get_selene},
+#endif
 };
 
 int show_fhselect(struct _select_def *conf, int i)
