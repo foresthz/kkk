@@ -1965,7 +1965,14 @@ static int get_total(struct fileheader *fh)
 #ifdef ENABLE_LIKE
 static int perm_selene(struct fileheader *fh)
 {
-    return HAS_PERM(getCurrentUser(), PERM_SYSOP);
+    const struct boardheader *selene_board;
+    
+    if(HAS_PERM(getCurrentUser(),PERM_SYSOP))
+        return 1;
+    else if(getbid(sysconf_str("SELENE_LOG_BOARD"), &selene_board) && check_board_member_manager(NULL, selene_board, BMP_SELENE))
+        return 1;
+    else
+        return 0;
 }
 static int set_selene(struct fileheader *fh, int i)
 {
