@@ -7,9 +7,9 @@
   *
   * windinsn, 2013-02-03
   */
-#ifdef ENABLE_MEMBER_CACHE
 
 #include "bbs.h"
+#ifdef ENABLE_MEMBER_CACHE
 #include "sys/socket.h"
 #include "netinet/in.h"
 #include <signal.h>
