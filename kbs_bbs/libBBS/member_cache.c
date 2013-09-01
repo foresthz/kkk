@@ -7,13 +7,14 @@
   *
   * windinsn, 2013-02-03
   */
+#ifdef ENABLE_MEMBER_CACHE
+
 #include "bbs.h"
 #include "sys/socket.h"
 #include "netinet/in.h"
 #include <signal.h>
 #include "member_cache.h"
 
-#ifdef ENABLE_MEMBER_CACHE
 
 int member_cache_node_cmp_type=0;
 
