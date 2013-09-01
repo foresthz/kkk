@@ -2187,7 +2187,6 @@ int valid_core_member(const char *user_id)
     
     return 1;
 }    
-#endif
 
 /*
   检查用户是否可读驻版可读版面的帖子
@@ -2217,4 +2216,5 @@ int member_read_perm(const struct boardheader *bh, struct fileheader *fh, struct
     return 0;
 }
 
+#endif
 #endif 
