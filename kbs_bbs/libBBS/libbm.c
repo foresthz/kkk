@@ -1047,8 +1047,8 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
     if ((int)(bh->score) < score)
         return -1;
 
-    if (user->score_user + score < 0) {
-        score = -user->score_user;
+    if ((int)user->score_user + score < 0) {
+        score = -((int)user->score_user);
         insufficient = 1;
     }
 
