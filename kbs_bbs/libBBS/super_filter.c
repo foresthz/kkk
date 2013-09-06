@@ -218,6 +218,18 @@ static int sffn_awardo(struct super_filter_args *arg)
 }
 #endif
 
+#ifdef ENABLE_LIKE
+static int sffn_like(struct super_filter_args *arg)
+{
+    return (arg->ptr->like);
+}
+
+static int sffn_score(struct super_filter_args *arg)
+{
+    return (arg->ptr->score);
+}
+#endif
+
 const static struct super_filter_vars varnames[] = {
     SUPER_FILTER_PAIR(cid),
     SUPER_FILTER_PAIR(creid),
@@ -243,6 +255,10 @@ const static struct super_filter_vars varnames[] = {
 #ifdef HAVE_USERSCORE
     SUPER_FILTER_PAIR(award),       {"½±Àø", 0, sffn_award, NULL},
     SUPER_FILTER_PAIR(awardo),
+#endif
+#ifdef ENABLE_LIKE
+    SUPER_FILTER_PAIR(like),
+    SUPER_FILTER_PAIR(score),
 #endif
 
     /* ¿ª·Å noreply ËÑË÷ - atppp 20060117 */
