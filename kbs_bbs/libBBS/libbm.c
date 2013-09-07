@@ -1011,14 +1011,15 @@ void bcache_setreadonly(int readonly);
 int award_score_from_user(struct boardheader *bh, struct userec *from, struct userec *user, struct fileheader *fh, int score)
 {
     char buf[STRLEN*2];
+    int tmp;
 
     if ((int)(from->score_user) < score)
         return -1;
 
-    AO_int_fetch_and_add(&(from->score_user), -score);
-    AO_int_fetch_and_add(&(user->score_user), score * 8 / 10);
+    tmp = AO_int_fetch_and_add(&(from->score_user), -score);
+    tmp = AO_int_fetch_and_add(&(user->score_user), score * 8 / 10);
     bcache_setreadonly(0);
-    AO_int_fetch_and_add(&(bh->score), score / 5);
+    tmp = AO_int_fetch_and_add(&(bh->score), score / 5);
     bcache_setreadonly(1);
 
     sprintf(buf, "%s 版 %s 奖励个人积分 <%s>", bh->filename, from->userid, fh->title);
@@ -1042,7 +1043,7 @@ int award_score_from_user(struct boardheader *bh, struct userec *from, struct us
 int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score)
 {
     char buf[STRLEN*2];
-    int insufficient=0, os=score;
+    int insufficient=0, os=score, tmp;
 
     if ((int)(bh->score) < score)
         return -1;
@@ -1052,9 +1053,9 @@ int award_score_from_board(struct boardheader *bh, struct userec *opt, struct us
         insufficient = 1;
     }
 
-    AO_int_fetch_and_add(&(user->score_user), score);
+    tmp = AO_int_fetch_and_add(&(user->score_user), score);
     bcache_setreadonly(0);
-    AO_int_fetch_and_add(&(bh->score), -score);
+    tmp = AO_int_fetch_and_add(&(bh->score), -score);
     bcache_setreadonly(1);
 
     sprintf(buf, "%s 版 %s %s版面积分 <%s>", bh->filename, opt->userid, score>0?"奖励":"扣还", fh->title);
