@@ -231,7 +231,7 @@ static int sffn_score(struct super_filter_args *arg)
 
 static int sffn_selene(struct super_filter_args *arg)
 {
-    return (arg->ptr->accessed[1]&FILE_SELENE);
+    return (arg->ptr->accessed[1]&FILE_SELENE && arg->ptr->like);
 }
 #endif
 
