@@ -228,6 +228,11 @@ static int sffn_score(struct super_filter_args *arg)
 {
     return (arg->ptr->score);
 }
+
+static int sffn_selene(struct super_filter_args *arg)
+{
+    return (arg->ptr->accessed[1]&FILE_SELENE);
+}
 #endif
 
 const static struct super_filter_vars varnames[] = {
@@ -258,7 +263,8 @@ const static struct super_filter_vars varnames[] = {
 #endif
 #ifdef ENABLE_LIKE
     SUPER_FILTER_PAIR(like),
-    SUPER_FILTER_PAIR(score),
+    SUPER_FILTER_PAIR(score),       {"评分", 0, sffn_score, NULL},
+    SUPER_FILTER_PAIR(selene),      {"收录", 0, sffn_selene, NULL},
 #endif
 
     /* 开放 noreply 搜索 - atppp 20060117 */

@@ -1085,8 +1085,8 @@ int super_filter(struct _select_def* conf,struct fileheader* curfh,void* extraar
     prints("                  超强文章选择\n\n");
     move(4,0);
     prints("变量: no(文章号) m(保留) g(文摘) b(m&&g) noreply(不可回复) sign(标记)\n"
-           "      del(删除) \033[1;31ma(附件)\033[0m unread(未读) percent(百分号)\n"
-           "      title(标题) author(作者) total(合集) award(奖励) like(评分)\n"
+           "      del(删除) \033[1;31ma(附件)\033[0m unread(未读) percent(百分号) title(标题)\n"
+           "      author(作者) total(合集) award(奖励) like(评分) selene(收录)\n"
            "信件专用: replied(已回复) forwarded(已转发)\n"
            "函数: sub(s1,s2)第一个字符串在第二个中的位置,如果不存在返回0\n"
            "      len(s)字符串长度\n"
