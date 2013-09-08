@@ -7102,12 +7102,17 @@ static void read_top_title(struct _select_def *conf)
 
 static char* read_top_ent(char *buf,int num,struct fileheader *fh,struct fileheader *read_fh,struct _select_def *conf)
 {
-    char date[8],title[ARTICLE_TITLE_LEN + 30],threadprefix[2][16],threadsuffix[16],*highstr;
+    char date[8],title[ARTICLE_TITLE_LEN + 30],threadprefix[2][16],threadsuffix[16],*highstr, owner[IDLEN+2];
     int type,isreply,isthread,attachch;
     time_t ftime;
     int titlelen = 0;
     struct read_arg * arg=(struct read_arg*)conf->arg;
 
+    strcpy(owner, fh->owner);
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, fh, getCurrentUser()))
+        strcpy(owner, MEMBER_POST_OWNER);
+#endif
     type=get_article_flag(fh,getCurrentUser(),currboard,0,NULL,getSession());
     if ((ftime=get_posttime(fh))>740000000)
         snprintf(date,7,"%s",ctime(&ftime)+4);
@@ -7153,7 +7158,7 @@ static char* read_top_ent(char *buf,int num,struct fileheader *fh,struct filehea
         threadprefix[1][1]=0;
         threadsuffix[0]=0;
     }
-    sprintf(buf," %s%4d%s %c %-13.13s%s%s%c%s%s%s ",threadprefix[0],num,threadsuffix,type,fh->owner,date,
+    sprintf(buf," %s%4d%s %c %-13.13s%s%s%c%s%s%s ",threadprefix[0],num,threadsuffix,type,owner,date,
             threadprefix[1],attachch,(isreply?"":FIRSTARTICLE_SIGN" "),title,threadsuffix);
     return buf;
 }
