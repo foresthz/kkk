@@ -7169,6 +7169,16 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
         return DONOTHING;
     *++p=0;
     clear();
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(currboard, fh, getCurrentUser())) {
+        move(3, 10);
+        prints("本版为驻版可读，非本版驻版用户不能查看本版文章！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressanykey();
+        return FULLUPDATE;
+    }
+#endif
     snprintf(p,(PATHLEN-(p-buf)),"%s",fh->filename);
     snprintf(quote_board,BOARDNAMELEN,"%s",currboard->filename);
     snprintf(quote_title,ARTICLE_TITLE_LEN,"%s",fh->title);
