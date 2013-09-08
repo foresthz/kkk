@@ -949,7 +949,11 @@ void readtitle(struct _select_def* conf)
 #ifdef OPEN_BMONLINE
         if (1)
 #else
-        if (check_board_delete_read_perm(getCurrentUser(),currboard,0))
+        if (check_board_delete_read_perm(getCurrentUser(),currboard,0)
+#ifdef NEWSMTH
+                || check_board_member_manager(&currmember, currboard, 0xFFFF)
+#endif
+                )
 #endif
         {
             char *p1, *p2;
