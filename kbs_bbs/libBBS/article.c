@@ -301,7 +301,7 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
         return -6;
     }
 
-    if (deny_me(session->currentuser->userid, bh->filename) && (!HAS_PERM(session->currentuser, PERM_SYSOP))) {
+    if ((deny_me(session->currentuser->userid, bh->filename) || !(HAS_PERM(session->currentuser, PERM_POST))) && (!HAS_PERM(session->currentuser, PERM_SYSOP))) {
         return -2;
     }
 
