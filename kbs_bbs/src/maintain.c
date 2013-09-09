@@ -795,9 +795,9 @@ int m_editbrd(void)
 int modify_board(int bid)
 {
 #ifdef NEWSMTH
-#define MB_ITEMS 30
+#define MB_ITEMS 31
 #else
-#define MB_ITEMS 26
+#define MB_ITEMS 28
 #endif
     FILE *fp;
     struct _select_item sel[MB_ITEMS+1];
@@ -816,12 +816,12 @@ int modify_board(int bid)
         "[G]不可回复  :","[H]读限制Club:","[I]写限制Club:","[J]隐藏Club  :","[K]精华区位置:",
         "[L]权限限制  :","[M]身份限制  :","[N]积分限制  :",
         "[O]版面积分  :","[P]强制模板  :",
+        "[Q]驻版可读  :","[R]驻版可写  :",
 #ifdef NEWSMTH		
-        "[Q]先审后发  :","[R]待审版面  :",
-        "[S]多个版主  :","[T]驻版可读  :",
-        "[U][退出]    :"
+        "[S]先审后发  :","[T]待审版面  :",
+        "[U]多个版主  :","[V]退出      :",
 #else
-        "[Q][退出]    :"
+        "[S][退出]    :"
 #endif
         
     };
@@ -871,27 +871,30 @@ int modify_board(int bid)
         } else if (i==24) {
             sel[i].x=42;
             sel[i].y=18;
-		}
+        } else if (i==25) {
+            sel[i].x=2;
+            sel[i].y=19;
+        } else if (i==26) {
+            sel[i].x=42;
+            sel[i].y=19;
+        }
 #ifdef NEWSMTH
-		else if (i==25) {
-			sel[i].x=2;
-            sel[i].y=19;
-		} else if (i==26) {
-			sel[i].x=42;
-            sel[i].y=19;
-        } else if (i==27) {
+        else if (i==27) {
             sel[i].x=2;
             sel[i].y=20;
         } else if (i==28) {
             sel[i].x=42;
             sel[i].y=20;
-        } else if (i==MB_ITEMS-1) {
+        } else if (i==29) {
             sel[i].x=2;
+            sel[i].y=21;
+        } else if (i==MB_ITEMS-1) {
+            sel[i].x=42;
             sel[i].y=21;
 #else
         else if (i==MB_ITEMS-1) {
             sel[i].x=2;
-            sel[i].y=19;
+            sel[i].y=20;
 #endif
         } else {
             sel[i].x=2;
@@ -1007,26 +1010,38 @@ int modify_board(int bid)
     sprintf(menustr[24],"%-15s%s",menuldr[24],"无效选项");
 #endif
 
+    /* 驻版可读 */
+    sel[25].hotkey='Q';
+#ifdef ENABLE_BOARD_MEMBER
+    sprintf(menustr[25],"%-15s%s",menuldr[25],(bh.flag&BOARD_MEMBER_READ)?"是":"否");
+#else
+    sprintf(menustr[25],"%-15s%s",menuldr[25],"无效选项");
+#endif
+    /* 驻版可写 */
+    sel[26].hotkey='R';
+#ifdef ENABLE_BOARD_MEMBER
+    sprintf(menustr[26],"%-15s%s",menuldr[26],(bh.flag&BOARD_MEMBER_POST)?"是":"否");
+#else
+    sprintf(menustr[26],"%-15s%s",menuldr[26],"无效选项");
+#endif
+
     /* 先审后发 */
 #ifdef NEWSMTH
-	/* 需要先审后发的版面 */
-	sel[25].hotkey='Q';
-	sprintf(menustr[25],"%-15s%s",menuldr[25],(bh.flag&BOARD_CENSOR)?"是":"否");
-	/* 待审文章版面 */
-	sel[26].hotkey='R';
-	sprintf(menustr[26],"%-15s%s",menuldr[26],(bh.flag&BOARD_CENSOR_FILTER)?"是":"否");
-    /* 多个版主 */
+    /* 需要先审后发的版面 */
     sel[27].hotkey='S';
-	sprintf(menustr[27],"%-15s%s",menuldr[27],(bh.flag&BOARD_MULTI_MANAGER)?"是":"否");
-    /* 驻版可读 */
+    sprintf(menustr[27],"%-15s%s",menuldr[27],(bh.flag&BOARD_CENSOR)?"是":"否");
+    /* 待审文章版面 */
     sel[28].hotkey='T';
-	sprintf(menustr[28],"%-15s%s",menuldr[28],(bh.flag&BOARD_MEMBER_READ)?"是":"否");
+    sprintf(menustr[28],"%-15s%s",menuldr[28],(bh.flag&BOARD_CENSOR_FILTER)?"是":"否");
+    /* 多个版主 */
+    sel[29].hotkey='U';
+    sprintf(menustr[29],"%-15s%s",menuldr[29],(bh.flag&BOARD_MULTI_MANAGER)?"是":"否");
 #endif	
     /*退出*/
 #ifdef NEWSMTH
-	sel[MB_ITEMS-1].hotkey='U';
+	sel[MB_ITEMS-1].hotkey='V';
 #else	
-    sel[MB_ITEMS-1].hotkey='Q';
+    sel[MB_ITEMS-1].hotkey='S';
 #endif
 
     sprintf(menustr[MB_ITEMS-1],"%-15s%s",menuldr[MB_ITEMS-1],change?"\033[1;31m已修改\033[m":"未修改");
@@ -1751,58 +1766,71 @@ int modify_board(int bid)
                 }
 #endif
                 break;
+#ifdef ENABLE_BOARD_MEMBER
+            /* 驻版可读 */
+            case 25:
+                newbh.flag^=BOARD_MEMBER_READ;
+                if ((bh.flag&BOARD_MEMBER_READ)^(newbh.flag&BOARD_MEMBER_READ)) {
+                    sprintf(menustr[25],"%-15s\033[1;32m%s\033[m",menuldr[25],(newbh.flag&BOARD_MEMBER_READ)?"是":"否");
+                    change|=(1<<25);
+                } else {
+                    sprintf(menustr[25],"%s",orig[25]);
+                    change&=~(1<<25);
+                }
+				break;
+            /* 驻版可写 */
+            case 26:
+                newbh.flag^=BOARD_MEMBER_POST;
+                if ((bh.flag&BOARD_MEMBER_POST)^(newbh.flag&BOARD_MEMBER_POST)) {
+                    sprintf(menustr[26],"%-15s\033[1;32m%s\033[m",menuldr[26],(newbh.flag&BOARD_MEMBER_POST)?"是":"否");
+                    change|=(1<<26);
+                } else {
+                    sprintf(menustr[26],"%s",orig[26]);
+                    change&=~(1<<26);
+                }
+				break;
+#endif
 			/* 先审后发设定 */
 #ifdef NEWSMTH
 			/* 先审后发版面 */
-			case 25:
+			case 27:
 				if (newbh.flag&BOARD_CENSOR_FILTER) {
 					// 不能同为待审和审核版面
 				} else {
 					newbh.flag^=BOARD_CENSOR;
 					if ((bh.flag&BOARD_CENSOR)^(newbh.flag&BOARD_CENSOR)) {
-						sprintf(menustr[25],"%-15s\033[1;32m%s\033[m",menuldr[25],(newbh.flag&BOARD_CENSOR)?"是":"否");
-						change|=(1<<25);
+						sprintf(menustr[27],"%-15s\033[1;32m%s\033[m",menuldr[27],(newbh.flag&BOARD_CENSOR)?"是":"否");
+						change|=(1<<27);
 					} else {
-						sprintf(menustr[25],"%s",orig[25]);
-						change&=~(1<<25);
+						sprintf(menustr[27],"%s",orig[25]);
+						change&=~(1<<27);
 					}
 				}
 				break;
 			/* 待审文章版面 */
-			case 26:
+			case 28:
 				if (newbh.flag&BOARD_CENSOR) {
 					// 不能同为待审和审核版面
 				} else {
 					newbh.flag^=BOARD_CENSOR_FILTER;
 					if ((bh.flag&BOARD_CENSOR_FILTER)^(newbh.flag&BOARD_CENSOR_FILTER)) {
-						sprintf(menustr[26],"%-15s\033[1;32m%s\033[m",menuldr[26],(newbh.flag&BOARD_CENSOR_FILTER)?"是":"否");
-						change|=(1<<26);
+						sprintf(menustr[28],"%-15s\033[1;32m%s\033[m",menuldr[28],(newbh.flag&BOARD_CENSOR_FILTER)?"是":"否");
+						change|=(1<<28);
 					} else {
-						sprintf(menustr[26],"%s",orig[26]);
-						change&=~(1<<26);
+						sprintf(menustr[28],"%s",orig[26]);
+						change&=~(1<<28);
 					}
 				}
 				break;
             /* 多个版主 */
-            case 27:
+            case 29:
                 newbh.flag^=BOARD_MULTI_MANAGER;
                 if ((bh.flag&BOARD_MULTI_MANAGER)^(newbh.flag&BOARD_MULTI_MANAGER)) {
-                    sprintf(menustr[27],"%-15s\033[1;32m%s\033[m",menuldr[27],(newbh.flag&BOARD_MULTI_MANAGER)?"是":"否");
-                    change|=(1<<27);
+                    sprintf(menustr[29],"%-15s\033[1;32m%s\033[m",menuldr[29],(newbh.flag&BOARD_MULTI_MANAGER)?"是":"否");
+                    change|=(1<<29);
                 } else {
-                    sprintf(menustr[27],"%s",orig[27]);
-                    change&=~(1<<27);
-                }
-				break;
-            /* 驻版可读 */
-            case 28:
-                newbh.flag^=BOARD_MEMBER_READ;
-                if ((bh.flag&BOARD_MEMBER_READ)^(newbh.flag&BOARD_MEMBER_READ)) {
-                    sprintf(menustr[28],"%-15s\033[1;32m%s\033[m",menuldr[28],(newbh.flag&BOARD_MEMBER_READ)?"是":"否");
-                    change|=(1<<28);
-                } else {
-                    sprintf(menustr[28],"%s",orig[28]);
-                    change&=~(1<<28);
+                    sprintf(menustr[29],"%s",orig[29]);
+                    change&=~(1<<29);
                 }
 				break;
 #endif
@@ -1835,8 +1863,8 @@ int modify_board(int bid)
                                 break;
                         }
                     }
-                    move(20,0); clrtoeol();
-                    getdata(20,2,"\033[1;31m确认修改讨论区属性? [N]: \033[m",buf,2,DOECHO,NULL,true);
+                    move(22,0); clrtoeol();
+                    getdata(22,2,"\033[1;31m确认修改讨论区属性? [N]: \033[m",buf,2,DOECHO,NULL,true);
                     if (buf[0]!='y'&&buf[0]!='Y')
                         break;
                     loop=0;

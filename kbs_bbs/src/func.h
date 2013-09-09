@@ -926,6 +926,7 @@ while(0)
 	int remove_member_title(int index);
 	int set_member_title_cache(struct board_member_title *title);
     int member_read_perm(const struct boardheader *bh, struct fileheader *fh, struct userec *user);
+    int member_post_perm(const struct boardheader *bh, struct userec *user);
 	
 #endif
 #endif /* ENABLE_BOARD_MEMBER */

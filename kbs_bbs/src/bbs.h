@@ -430,7 +430,8 @@ extern long ti;
 #define BOARD_MULTI_MANAGER 0x40000
 #endif
 #ifdef ENABLE_BOARD_MEMBER
-#define BOARD_MEMBER_READ   0x80000 /* 驻版可读, jiangjun, 20130721 */
+#define BOARD_MEMBER_READ   0x80000     /* 驻版可读, jiangjun, 20130721 */
+#define BOARD_MEMBER_POST   0x100000    /* 驻版可写, jiangjun, 20130909 */
 #endif
 /* boardheader.flag 的最高八位留给用户自定义用途: 0xXX000000 */
 

@@ -790,6 +790,18 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         }
 #endif
     }
+
+#ifdef ENABLE_BOARD_MEMBER
+    /* 驻版可写 */
+    if (!member_post_perm(bh, getCurrentUser())) {
+        move(3, 0);
+        clrtobot();
+        prints("\n\n    %s\033[0;33m<enter>\033[m", "目的版面为驻版可写版面，非驻版用户不能转载文章至该版...");
+        WAIT_RETURN;
+        return FULLUPDATE;
+    }
+#endif /* ENABLE_BOARD_MEMBER */
+
 #ifdef HAVE_USERSCORE
     /* 积分限制 */
     if (!check_score_level(getCurrentUser(),bh)) {
@@ -3823,6 +3835,15 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         WAIT_RETURN;
         return FULLUPDATE;
 #endif /* HAVE_USERSCORE */
+#ifdef ENABLE_BOARD_MEMBER
+    } else if (!member_post_perm(currboard, getCurrentUser())) {
+        move(3, 0);
+        clrtobot();
+        prints("\n\n    \033[1;33m%s\033[0;33m<Enter>\033[m",
+               "本版为驻版可写版面，非驻版用户不能发表文章...");
+        WAIT_RETURN;
+        return FULLUPDATE;
+#endif /* ENABLE_BOARD_MEMBER */
     } else if (deny_me(getCurrentUser()->userid, currboard->filename)) { /* 版主禁止POST 检查 */
         if (!HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
             move(3, 0);

@@ -2306,6 +2306,14 @@ EXPRESS:                 /* Leeward 98.09.13 */
                             WAIT_RETURN;
                             break;
                         }
+#ifdef ENABLE_BOARD_MEMBER
+                        /* 驻版可写 */
+                        if (!member_post_perm(bh, getCurrentUser())) {
+                            prints("\n\n    %s\033[0;33m<enter>\033[m", "目的版面为驻版可写版面，非驻版用户不能转载文章至该版...");
+                            WAIT_RETURN;
+                            break;
+                        }
+#endif /* ENABLE_BOARD_MEMBER */
                         sprintf(genbuf,"确认转载至 %s 版 %s(L)站内发表 (A)取消操作 [A]: ",bh->filename,
                                 (!(bh->flag&BOARD_OUTFLAG)?"":"(S)转信发表 "));
                         clrtoeol();

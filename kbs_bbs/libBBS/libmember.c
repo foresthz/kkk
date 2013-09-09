@@ -2216,5 +2216,27 @@ int member_read_perm(const struct boardheader *bh, struct fileheader *fh, struct
     return 0;
 }
 
+/*
+  检察用户是否有驻版可写版面的写权限
+  1: 可写
+  0: 不可写
+  -1:非驻版可写版面
+  */
+int member_post_perm(const struct boardheader *bh, struct userec *user) {
+    struct board_member member;
+    int status;
+
+    if (!(bh->flag & BOARD_MEMBER_POST))
+        return -1;
+    if (chk_currBM(bh->BM, user))
+        return 1;
+
+    bzero(&member, sizeof(struct board_member));
+    status = get_board_member(bh->filename, user->userid, &member);
+    if (status==BOARD_MEMBER_STATUS_NORMAL || status==BOARD_MEMBER_STATUS_MANAGER)
+        return 1;
+
+    return 0;
+}
 #endif
 #endif 
