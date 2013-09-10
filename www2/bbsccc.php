@@ -85,6 +85,9 @@ if (isset($_GET['do'])) {
 		case -21:
 			html_error_quit("您的积分不符合 ".$target." 讨论区的设定, 暂时无法发表文章...");
 			break;
+		case -22:
+			html_error_quit($target." 版为驻版可写版面，非驻版用户不能发表文章。");
+			break;
 		default:
 	}
 	html_error_quit("系统错误，请联系管理员");

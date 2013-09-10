@@ -1521,6 +1521,12 @@ PHP_FUNCTION(bbs_docross)
     }
 #endif /* HAVE_USERSCORE */
 
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_post_perm(dst_bp, getCurrentUser())) {
+        RETURN_LONG(-22);
+    }
+#endif /* ENABLE_BOARD_MEMBER */
+
     if (check_last_post_time(getSession()->currentuinfo)) {
         RETURN_LONG(-10);
     }

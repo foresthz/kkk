@@ -31,6 +31,7 @@ PHP_FUNCTION(bbs_modify_board_member_title);
 PHP_FUNCTION(bbs_view_member_managers);
 PHP_FUNCTION(bbs_load_ar_timeline);
 PHP_FUNCTION(bbs_load_ar_attachment);
+PHP_FUNCTION(bbs_member_post_perm);
 
 #define PHP_BBS_MEMBER_EXPORT_FUNCTIONS \
     PHP_FE(bbs_load_board_member_config, NULL) \
@@ -59,7 +60,8 @@ PHP_FUNCTION(bbs_load_ar_attachment);
 	PHP_FE(bbs_modify_board_member_title, NULL) \
 	PHP_FE(bbs_view_member_managers, NULL) \
 	PHP_FE(bbs_load_ar_timeline, NULL) \
-	PHP_FE(bbs_load_ar_attachment, NULL)
+	PHP_FE(bbs_load_ar_attachment, NULL) \
+	PHP_FE(bbs_member_post_perm, NULL)
 
 #endif // ENABLE_BOARD_MEMBER	
 #endif //PHP_BBS_MEMBER_H

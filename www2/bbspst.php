@@ -29,6 +29,9 @@
 		html_error_quit("您被管理员取消了本版的发文权限");
 	if (bbs_is_readonly_board($brdarr))
 		html_error_quit("不能在只读讨论区发表文章");
+	if (bbs_member_post_perm($usernum, $brdnum) == 0) {
+		html_error_quit("本版为驻版可写版面，非驻版用户不能发表文章");
+	}
 	if (isset($_GET["reid"]))
 	{
 		$reid = $_GET["reid"];

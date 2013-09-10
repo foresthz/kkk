@@ -802,4 +802,22 @@ PHP_FUNCTION(bbs_load_ar_attachment)
 }
 #endif
 
+PHP_FUNCTION(bbs_member_post_perm)
+{
+    long user_num, boardnum;
+    struct userec *user;
+    const struct boardheader *bh;
+
+    if (zend_parse_parameters(2 TSRMLS_CC, "ll", &user_num, &boardnum) != SUCCESS)
+        WRONG_PARAM_COUNT;
+    user = getuserbynum(user_num);
+    if (user == NULL)
+        RETURN_LONG(0);
+    bh=getboard(boardnum);
+    if (bh==0) {
+        RETURN_LONG(0);
+    }
+    RETURN_LONG(member_post_perm(bh, user));
+}
+
 #endif // ENABLE_BOARD_MEMBER
