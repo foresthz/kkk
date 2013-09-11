@@ -724,19 +724,21 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         setmailfile(name,getCurrentUser()->userid,info->filename);
     strcpy(quote_title,info->title);
 #ifdef ENABLE_BOARD_MEMBER
-    clear();
-    ret = member_read_perm(currboard, info, getCurrentUser());
-    if (!ret) {
-        move(3, 10);
-        prints("本版为驻版可读，非本版驻版用户不允许转载本版文章！");
-        move(4, 10);
-        prints("详情请联系本版版主。");
-        pressreturn();
-        return FULLUPDATE;
-    } else if (ret==1) {
-        getdata(3, 4, "\033[1;31m本版为驻版可读，转载可能泄露文章内容。确定转载? [y/N]: \033[m", ans, 2, DOECHO, NULL, true);
-        if (toupper(ans[0]) != 'Y')
+    if(!inmail) {
+        ret = member_read_perm(currboard, info, getCurrentUser());
+        if (!ret) {
+            clear();
+            move(3, 10);
+            prints("本版为驻版可读，非本版驻版用户不允许转载本版文章！");
+                move(4, 10);
+            prints("详情请联系本版版主。");
+            pressreturn();
             return FULLUPDATE;
+        } else if (ret==1) {
+            getdata(3, 4, "\033[1;31m本版为驻版可读，转载可能泄露文章内容。确定转载? [y/N]: \033[m", ans, 2, DOECHO, NULL, true);
+            if (toupper(ans[0]) != 'Y')
+                return FULLUPDATE;
+        }
     }
 #endif
     clear(); move(4,0);
