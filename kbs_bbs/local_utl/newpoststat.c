@@ -455,6 +455,10 @@ int get_top(int type)
             }
             if (!normal_board(bh->filename))
                 continue;
+#ifdef ENABLE_BOARD_MEMBER
+            if (bh->flag & BOARD_MEMBER_READ)
+                continue;
+#endif
 #ifdef BLESS_BOARD
             if (type==0 || type == 5) {
                 if (! strcasecmp(row[0], BLESS_BOARD)) {
