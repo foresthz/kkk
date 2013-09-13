@@ -4533,8 +4533,12 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
     strcpy(user, ent->user);
 #ifdef ENABLE_BOARD_MEMBER
     const struct boardheader *board;
-    if ((board=getbcache(ent->board))!=NULL && !member_read_perm(board, NULL, getCurrentUser()))
-            strcpy(user, MEMBER_POST_OWNER);
+    if ((board=getbcache(ent->board))!=NULL && (board->flag&BOARD_MEMBER_READ)) {
+        struct fileheader fh;
+        if (get_ent_from_id_ext(DIR_MODE_NORMAL, ent->groupid, board->filename, &fh))
+            if (!member_read_perm(board, &fh, getCurrentUser()))
+                strcpy(user, MEMBER_POST_OWNER);
+    }
 #endif
     sprintf(buf, " %s%4d %s %-12.12s %6.6s  %-12.12s %s%s\033[m", same?(ent->id==ent->groupid?c1:c2):"", num, (ent->flag&FILE_READ)?" ":"*", user, date, ent->board, orig?FIRSTARTICLE_SIGN" ":"", ent->title);
 
