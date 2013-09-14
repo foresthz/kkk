@@ -1048,8 +1048,12 @@ PHP_FUNCTION(bbs_load_refer) {
         array_init(element);
 #ifdef ENABLE_BOARD_MEMBER
         const struct boardheader *board;
-        if ((board=getbcache((refers+i)->board))!=NULL && !member_read_perm(board, NULL, user))
-            strcpy((refers+i)->user, MEMBER_POST_OWNER);
+        if ((board=getbcache((refers+i)->board))!=NULL && (board->flag&BOARD_MEMBER_READ)) {
+            struct fileheader fh;
+            bzero(&fh, sizeof(struct fileheader));
+            if (get_ent_from_id_ext(DIR_MODE_NORMAL, (refers+i)->groupid, board->filename, &fh)<=0 || !member_read_perm(board, &fh, user))
+                strcpy((refers+i)->user, MEMBER_POST_OWNER);
+        }
 #endif
         bbs_make_refer_array(element, refers+i);
         zend_hash_index_update(Z_ARRVAL_P(list), i, (void *) &element, sizeof(zval*), NULL);

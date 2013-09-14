@@ -4535,6 +4535,7 @@ char *referdoent(char *buf, int num, struct refer *ent, struct refer *readfh, st
     const struct boardheader *board;
     if ((board=getbcache(ent->board))!=NULL && (board->flag&BOARD_MEMBER_READ)) {
         struct fileheader fh;
+        bzero(&fh, sizeof(struct fileheader));
         if (get_ent_from_id_ext(DIR_MODE_NORMAL, ent->groupid, board->filename, &fh)<=0 || !member_read_perm(board, &fh, getCurrentUser()))
             strcpy(user, MEMBER_POST_OWNER);
     }
