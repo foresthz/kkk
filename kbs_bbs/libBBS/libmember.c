@@ -2206,7 +2206,7 @@ int member_read_perm(const struct boardheader *bh, struct fileheader *fh, struct
     if (fh!=NULL && (POSTFILE_BASENAME(fh->filename)[0]=='Z' || is_top(fh, bh->filename) || isowner(user, fh))) /* 置顶或作者 */
         return 1;
     bzero(&orig, sizeof(struct fileheader));
-    if (fh!=NULL && get_ent_from_id_ext(DIR_MODE_NORMAL, fh->groupid, bh->filename, &orig)>0 && isowner(user, &orig)) /* 楼主 */
+    if (fh!=NULL && fh->id!=fh->groupid && get_ent_from_id_ext(DIR_MODE_NORMAL, fh->groupid, bh->filename, &orig)>0 && isowner(user, &orig)) /* 楼主 */
         return 1;
 
     bzero(&member, sizeof(struct board_member));
