@@ -1051,6 +1051,7 @@ PHP_FUNCTION(bbs_load_refer) {
         if ((board=getbcache((refers+i)->board))!=NULL && (board->flag&BOARD_MEMBER_READ)) {
             struct fileheader fh;
             bzero(&fh, sizeof(struct fileheader));
+            /* 此处refers+i作者肯定不是当前用户，因此直接找该文章的主题文章，减少member_read_perm里相同的调用 */
             if (get_ent_from_id_ext(DIR_MODE_NORMAL, (refers+i)->groupid, board->filename, &fh)<=0 || !member_read_perm(board, &fh, user))
                 strcpy((refers+i)->user, MEMBER_POST_OWNER);
         }
