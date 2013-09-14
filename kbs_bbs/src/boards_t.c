@@ -306,8 +306,15 @@ int show_boardinfo(const char *bname)
 #endif
     show_board_keyword(bp->des);
     //prints("\033[1;33m版面关键字\033[m: %s \n\n", bp->des);
-    prints("\033[1;31m%s\033[m记文章数 \033[1;31m%s\033[m统计十大\n",
-           (bp->flag & BOARD_JUNK) ? "不" : "", (bp->flag & BOARD_POSTSTAT) ? "不" : "");
+    prints("\033[1;31m%s\033[m记文章数 \033[1;31m%s\033[m统计十大 \033[33m%s %s\033[m\n",
+           (bp->flag & BOARD_JUNK) ? "不" : "", (bp->flag & BOARD_POSTSTAT) ? "不" : "",
+#ifdef ENABLE_BOARD_MEMBER
+           (bp->flag & BOARD_MEMBER_READ) ? "驻版可读":"",
+           (bp->flag & BOARD_MEMBER_POST) ? "驻版可写":""
+#else
+           "", ""
+#endif
+           );
     prints("\033[1;31m%s\033[m可向外转信 \033[1;31m%s\033[m可粘贴附件 \033[1;31m%s\033[m可re文\n\n",
            (bp->flag & BOARD_OUTFLAG) ? "" : "不",
            (bp->flag & BOARD_ATTACH) ? "" : "不",
