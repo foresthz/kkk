@@ -534,7 +534,11 @@ int do_commend(struct _select_def* conf,struct fileheader *fileinfo,void* extraa
         pressreturn();
         return FULLUPDATE;
     }
+#ifdef NEW_BOARD_ACCESS
+    if (new_deny_me(&uinfo, getbid(COMMEND_ARTICLE, NULL), NBA_MODE_DENY)) {
+#else
     if (deny_me(getCurrentUser()->userid, COMMEND_ARTICLE)) {
+#endif /* NEW_BOARD_ACCESS */
         clear();
         move(1, 0);
         prints("对不起，您被停止了推荐的权力");
@@ -831,7 +835,11 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         cut_attach=info->attachment;
     }
     /* 已被封禁 */
+#ifdef NEW_BOARD_ACCESS
+    if (new_deny_me(&uinfo, getbid(board, NULL), NBA_MODE_DENY)) {
+#else
     if (deny_me(getCurrentUser()->userid,board)) {
+#endif /* NEW_BOARD_ACCESS */
         move(3,0); clrtobot();
         if (HAS_PERM(getCurrentUser(),PERM_SYSOP)) {
             getdata(5,0,"您已被取消在目的版面的发文权限, 是否强制转载? [y/N]: ",ans,2,DOECHO,NULL,true);
@@ -3846,7 +3854,11 @@ int post_article(struct _select_def* conf,char *q_file, struct fileheader *re_fi
         WAIT_RETURN;
         return FULLUPDATE;
 #endif /* ENABLE_BOARD_MEMBER */
+#ifdef NEW_BOARD_ACCESS
+    } else if (new_deny_me(&uinfo, currboardent, NBA_MODE_DENY)) {
+#else
     } else if (deny_me(getCurrentUser()->userid, currboard->filename)) { /* 版主禁止POST 检查 */
+#endif /* NEW_BOARD_ACCESS */
         if (!HAS_PERM(getCurrentUser(), PERM_SYSOP)) {
             move(3, 0);
             clrtobot();

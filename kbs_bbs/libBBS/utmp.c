@@ -896,4 +896,99 @@ void get_telnet_sessionid(char* buf,int unum)
     buf[9]=0;
 }
 
+#ifdef NEW_BOARD_ACCESS
+const unsigned int nba_flag[NBA_NUM]={NBA_FLAG_DENY, NBA_FLAG_BLKLST, NBA_FLAG_MEMBLKLST, NBA_FLAG_CLUBREAD, NBA_FLAG_CLUBWRITE};
 
+/* 初始化，生成文件并填充0 */
+int init_nba_status(char *filename)
+{
+    int fd;
+
+    fd = open(filename, O_RDWR|O_CREAT, 0600);
+    ftruncate(fd, NBA_SIZE);
+    close(fd);
+    return 0;
+}
+
+/* 根据uinfo及userec的uptime来确定load版面访问数据 */
+int load_nba_status(struct user_info *uinfo)
+{
+    char filename[STRLEN];
+    char *ptr;
+    off_t size;
+
+    if (getCurrentUser()->nba_uptime > uinfo->nba_uptime) {
+        sethomefile(filename, getCurrentUser()->userid, NBA_FILE);
+        BBS_TRY {
+            if (!safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL))
+                BBS_RETURN(-1);
+            memcpy(uinfo->nba_st, ptr, NBA_SIZE);
+        }
+        BBS_CATCH {
+        }
+        BBS_END;
+        end_mmapfile(ptr, size, -1);
+        uinfo->nba_uptime = time(0);
+    }
+    return 0;
+}
+
+/* 在封禁、黑名单、俱乐部操作后设置版面访问数据 */
+int set_nba_status(struct userec *user, int bid, int mode, int set)
+{
+    char filename[STRLEN];
+    unsigned int *nba_st;
+    char *ptr;
+    off_t size;
+    struct stat st;
+
+    sethomefile(filename, user->userid, NBA_FILE);
+    if (stat(filename, &st)==-1 || st.st_size<NBA_SIZE)
+        init_nba_status(filename);
+    BBS_TRY {
+        if (!safe_mmapfile(filename, O_RDWR|O_CREAT, PROT_READ|PROT_WRITE, MAP_SHARED, &ptr, &size, NULL))
+            BBS_RETURN(-1);
+        nba_st = (unsigned int*)ptr;
+        if (set)
+            nba_st[bid-1] |= nba_flag[mode];
+        else
+            nba_st[bid-1] &= ~nba_flag[mode];
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    end_mmapfile(ptr, size, -1);
+
+    user->nba_uptime = time(0);
+    return 0;
+}
+
+/* 检查uinfo中版面访问数据 */
+int check_nba_status(struct user_info *uinfo, int bid, int mode)
+{
+    load_nba_status(uinfo);
+    return uinfo->nba_st[bid-1] & nba_flag[mode];
+}
+
+/* 检查userec中版面访问数据 */
+int check_nba_data(struct userec *user, int bid, int mode)
+{
+    unsigned nba_data[MAXBOARD];
+    char filename[STRLEN];
+    char *ptr;
+    off_t size;
+
+    sethomefile(filename, user->userid, NBA_FILE);
+    BBS_TRY {
+        if (!safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &size, NULL))
+            BBS_RETURN(-1);
+        memcpy(nba_data, ptr, NBA_SIZE);
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    end_mmapfile(ptr, size, -1);
+
+    return nba_data[bid-1] & nba_flag[mode];
+}
+#endif

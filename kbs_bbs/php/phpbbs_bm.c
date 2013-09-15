@@ -332,7 +332,7 @@ PHP_FUNCTION(bbs_denyadd)
     char *board,*userid,*exp;
     int  board_len,userid_len,exp_len;
     long  denyday,manual_deny;
-    int autofree;
+    int bid, autofree;
     const struct boardheader *brd;
     struct userec *lookupuser;
     char buf[256], denystr[32];
@@ -346,7 +346,7 @@ PHP_FUNCTION(bbs_denyadd)
         if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &board, &board_len, &userid ,&userid_len ,&exp ,&exp_len ,&denyday ,&manual_deny) == FAILURE)
             WRONG_PARAM_COUNT;
 
-    if (getbid(board, &brd) == 0)
+    if ((bid=getbid(board, &brd)) == 0)
         RETURN_LONG(-1);
     if (!check_read_perm(getCurrentUser(), brd))
         RETURN_LONG(-1);
@@ -376,7 +376,11 @@ PHP_FUNCTION(bbs_denyadd)
     strcpy(userid,lookupuser->userid);
     if (!haspostperm(lookupuser, brd -> filename))
         RETURN_LONG(-7);
+#ifdef NEW_BOARD_ACCESS
+    if (!new_deny_user(lookupuser, bid, NBA_MODE_DENY))
+#else
     if (deny_me(userid, board))
+#endif /* NEW_BOARD_ACCESS */
         RETURN_LONG(-4);
 
     process_control_chars(exp,NULL);
@@ -409,6 +413,9 @@ PHP_FUNCTION(bbs_denyadd)
 
     setbfile(path, board, "deny_users");
     if (addtofile(path, buf) == 1) {
+#ifdef NEW_BOARD_ACCESS
+        set_nba_status(lookupuser, bid, NBA_MODE_DENY, 1);
+#endif
 #ifdef RECORD_DENY_FILE
         deny_announce(userid,brd,denystr,denyday,getCurrentUser(),time(0),0,(fh.id)?&fh:NULL,0);
 #else
@@ -518,7 +525,7 @@ PHP_FUNCTION(bbs_denymod)
     char *board,*userid,*exp;
     int  board_len,userid_len,exp_len;
     long  denyday,manual_deny;
-    int autofree,minday;
+    int bid,autofree,minday;
     const struct boardheader *brd;
     struct userec *lookupuser;
     char buf[256], denystr[32];
@@ -530,7 +537,7 @@ PHP_FUNCTION(bbs_denymod)
     if (ac != 5 || zend_parse_parameters(5 TSRMLS_CC, "sssll", &board, &board_len, &userid ,&userid_len ,&exp ,&exp_len ,&denyday ,&manual_deny) == FAILURE)
         WRONG_PARAM_COUNT;
 
-    if (getbid(board, &brd) == 0)
+    if ((bid=getbid(board, &brd)) == 0)
         RETURN_LONG(-1);
     if (!check_read_perm(getCurrentUser(), brd))
         RETURN_LONG(-1);
@@ -546,7 +553,11 @@ PHP_FUNCTION(bbs_denymod)
     strcpy(userid,lookupuser->userid);
     if (!haspostperm(lookupuser, brd -> filename))
         RETURN_LONG(-7);
+#ifdef NEW_BOARD_ACCESS
+    if (!new_deny_user(lookupuser, bid, NBA_MODE_DENY))
+#else
     if (!deny_me(userid, board))
+#endif /* NEW_BOARD_ACCESS */
         RETURN_LONG(-4);
     setbfile(path, board, "deny_users");
     if (!seek_in_file(path, userid, buf))

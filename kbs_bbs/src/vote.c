@@ -1549,7 +1549,11 @@ int b_vote(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
     int oldhelpmode = helpmode;
 #endif
 
+#ifdef NEW_BOARD_ACCESS
+    if (!HAS_PERM(getCurrentUser(), PERM_LOGINOK) || new_deny_me(&uinfo, currboardent, NBA_MODE_DENY))
+#else
     if (!HAS_PERM(getCurrentUser(), PERM_LOGINOK) || deny_me(getCurrentUser()->userid, currboard->filename))
+#endif /* NEW_BOARD_ACCESS */
         return 0;               /* Leeward 98.05.15 */
     setcontrolfile();
     num_of_vote = get_num_records(controlfile, sizeof(struct votebal));

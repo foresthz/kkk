@@ -1097,7 +1097,19 @@ int deny_me(const char *user,const char *board)
     return seek_in_file(buf, user, NULL);
 }
 
+#ifdef NEW_BOARD_ACCESS
+/* 通过在线用户的uinfo的nba数据判断是否具有版面的access权限 */
+int new_deny_me(struct user_info *u, int bid, int mode)
+{
+    return check_nba_status(u, bid, mode);
+}
 
+/* 通过用户的userec数据判断是否具有版面的access权限 */
+int new_deny_user(struct userec *user, int bid, int mode)
+{
+    return check_nba_data(user, bid, mode);
+}
+#endif
 
 int haspostperm(const struct userec *user,const char *bname)
 {                               /* 判断在 bname版 是否有post权 */
@@ -1361,6 +1373,10 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only, int
         board_security_report(filename, user, buffer, board, 0);
         unlink(filename);
     }
+#endif
+#ifdef NEW_BOARD_ACCESS
+    if (lookupuser)
+        set_nba_status(lookupuser, getbid(board, NULL), NBA_MODE_DENY, 0);
 #endif
     if (notice_only)
         return 1;

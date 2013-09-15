@@ -2301,7 +2301,11 @@ EXPRESS:                 /* Leeward 98.09.13 */
                             break;
                         }
 #endif /* HAVE_USERSCORE */
+#ifdef NEW_BOARD_ACCESS
+                        if (!HAS_PERM(getCurrentUser(),PERM_SYSOP)&&new_deny_me(&uinfo, getbid(bname, NULL), NBA_MODE_DENY)) {
+#else
                         if (!HAS_PERM(getCurrentUser(),PERM_SYSOP)&&deny_me(getCurrentUser()->userid,bname)) {
+#endif /* NEW_BOARD_ACCESS */
                             prints("\n\n    \033[1;33m%s\033[0;33m<Enter>\033[m","您已被管理人员取消在目的版面的发文权限...");
                             WAIT_RETURN;
                             break;

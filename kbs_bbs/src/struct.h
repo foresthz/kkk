@@ -138,6 +138,10 @@ struct user_info {              /* Structure used in UTMP file */
     time_t ri_updatetime[REFER_MODES];
 #undef REFER_MODES
 #endif
+#ifdef NEW_BOARD_ACCESS
+    time_t nba_uptime;
+    unsigned int nba_st[MAXBOARD];
+#endif
 };
 
 struct usermemo {

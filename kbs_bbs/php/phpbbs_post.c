@@ -382,7 +382,7 @@ PHP_FUNCTION(bbs_postarticle)
     long local_save, outgo, anony;
     struct fileheader post_file, oldxx;
     char filepath[MAXPATH];
-    int anonyboard, color;
+    int bid, anonyboard, color;
     int retvalue;
     FILE *fp;
     int NBUser = 0;
@@ -430,7 +430,7 @@ PHP_FUNCTION(bbs_postarticle)
 
     NBUser = HAS_PERM(getCurrentUser(), PERM_SYSOP);
 
-    brd = getbcache(boardName);
+    bid = getbid(boardName, &brd);
     if (getCurrentUser() == NULL) {
         RETURN_FALSE;
     }
@@ -453,8 +453,12 @@ PHP_FUNCTION(bbs_postarticle)
     }
 #endif /* HAVE_USERSCORE */
 
+#ifdef NEW_BOARD_ACCESS
+    if (new_deny_me(getSession()->currentuinfo, bid, NBA_MODE_DENY) && !NBUser)
+#else
     if (deny_me(getCurrentUser()->userid, board) && !NBUser)
         RETURN_LONG(-5); //很抱歉, 你被版务人员停止了本版的post权利.
+#endif /* NEW_BOARD_ACCESS */
 
     if (!NBUser && check_last_post_time(getSession()->currentuinfo)) {
         RETURN_LONG(-6); // 两次发文间隔过密, 请休息几秒后再试
@@ -1466,7 +1470,7 @@ PHP_FUNCTION(bbs_docross)
     const struct boardheader *src_bp;
     const struct boardheader *dst_bp;
     struct fileheader f;
-    int  ent;
+    int  bid, ent;
     int  fd;
 	int ret;
     struct userec *u = NULL;
@@ -1494,7 +1498,7 @@ PHP_FUNCTION(bbs_docross)
             RETURN_LONG(-1);
     }
 
-    dst_bp = getbcache(target);
+    bid = getbid(target, &dst_bp);
     if (dst_bp == NULL)
         RETURN_LONG(-2);
     strcpy(target, dst_bp->filename);
@@ -1511,7 +1515,11 @@ PHP_FUNCTION(bbs_docross)
     if (!HAS_PERM(u,PERM_SYSOP)) { //权限检查
         if (!haspostperm(u, target))
             RETURN_LONG(-4);
+#ifdef NEW_BOARD_ACCESS
+        if (new_deny_me(getSession()->currentuinfo, bid, NBA_MODE_DENY))
+#else
         if (deny_me(u->userid, target))
+#endif /* NEW_BOARD_ACCESS */
             RETURN_LONG(-5);
     }
 
@@ -1600,7 +1608,7 @@ PHP_FUNCTION(bbs_docommend)
     struct userec *u;
     const struct boardheader *src_bp, *commend_bp;
     struct fileheader fileinfo;
-    int  ent;
+    int  bid, ent;
     int  fd;
     char path[256];
 
@@ -1631,7 +1639,7 @@ PHP_FUNCTION(bbs_docommend)
     }
     close(fd);
 
-    commend_bp = getbcache(COMMEND_ARTICLE);
+    bid = getbid(COMMEND_ARTICLE, &commend_bp);
     if (commend_bp == NULL) {
         RETURN_LONG(-7);
     }
@@ -1648,7 +1656,11 @@ PHP_FUNCTION(bbs_docommend)
     if (! normal_board(board)) {
         RETURN_LONG(-5);
     }
+#ifdef NEW_BOARD_ACCESS
+    if (new_deny_me(getSession()->currentuinfo, bid, NBA_MODE_DENY)) {
+#else
     if (deny_me(u->userid, COMMEND_ARTICLE)) {
+#endif /* NEW_BOARD_ACCESS */
         RETURN_LONG(-6);
     }
     if (confirmed) {

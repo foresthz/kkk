@@ -215,9 +215,9 @@ int set_denymsg(const char *boardname, char *denymsg)
 
 #ifdef RECORD_DENY_FILE
 /* 记录封禁原文，jiangjun， 20120321 */
-int addtodeny(const struct boardheader *bh, char *uident, const struct fileheader *fh, int filtermode)
+int addtodeny(const struct boardheader *bh, struct userec *user, const struct fileheader *fh, int filtermode)
 #else
-int addtodeny(const struct boardheader *bh, char *uident)
+int addtodeny(const struct boardheader *bh, struct userec *user)
 #endif
 {                               /* 添加 禁止POST用户 */
     char /*buf2[50], */strtosave[256], date[STRLEN] = "0";
@@ -240,7 +240,7 @@ int addtodeny(const struct boardheader *bh, char *uident)
     now = time(0);
     strncpy(date, ctime(&now) + 4, 7);
     setbfile(genbuf, bh->filename, "deny_users");
-    if (seek_in_file(genbuf, uident, NULL) || !strcmp(bh->filename, "denypost"))
+    if (seek_in_file(genbuf, user->userid, NULL) || !strcmp(bh->filename, "denypost"))
         return -1;
     /*
     if (HAS_PERM(getCurrentUser(), PERM_SYSOP) || HAS_PERM(getCurrentUser(), PERM_OBOARDS))
@@ -251,7 +251,7 @@ int addtodeny(const struct boardheader *bh, char *uident)
 
     *denymsg = 0;
     move(2, 0);
-    prints("增加 \033[31m%s\033[m 至 \033[33m%s\033[m 版封禁名单", uident, bh->filename);
+    prints("增加 \033[31m%s\033[m 至 \033[33m%s\033[m 版封禁名单", user->userid, bh->filename);
     /* 选择封禁理由new */
     if (set_denymsg(bh->filename, denymsg)==0)
         return 0;
@@ -397,13 +397,13 @@ int addtodeny(const struct boardheader *bh, char *uident)
 
         tmtime = localtime(&undenytime);
 
-        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);   /*Haohmaru 98,09,25,显示是谁什么时候封的 */
+        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日解\x1b[%lum%lum", user->userid, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);   /*Haohmaru 98,09,25,显示是谁什么时候封的 */
     } else {
         struct tm *tmtime;
         time_t undenytime = now + denyday * 24 * 60 * 60;
 
         tmtime = localtime(&undenytime);
-        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum%lum", uident, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);
+        sprintf(strtosave, "%-12.12s %-30.30s%-12.12s %2d月%2d日后\x1b[%lum%lum", user->userid, denymsg, getCurrentUser()->userid, tmtime->tm_mon + 1, tmtime->tm_mday, undenytime, now);
     }
 
     if (addtofile(genbuf, strtosave) == 1) {
@@ -533,18 +533,28 @@ int addtodeny(const struct boardheader *bh, char *uident)
         post_file(getCurrentUser(), "", filename, "denypost", buffer, 0, -1, getSession());
         unlink(filename);
 #endif
+#ifdef NEW_BOARD_ACCESS
+        if (set_nba_status(user, currboardent, NBA_MODE_DENY, 1)<0) {
+            move(13, 0);
+            prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+            WAIT_RETURN;
+            return 0;
+        }
+#endif
         /* 使用封禁模版功能 */
 #ifdef RECORD_DENY_FILE
-        if (deny_announce(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,fh, filtermode)<0 ||
-            deny_mailuser(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
+        if (deny_announce(user->userid,bh,denymsg,denyday,getCurrentUser(),time(0),0,fh, filtermode)<0 ||
+            deny_mailuser(user->userid,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+            WAIT_RETURN;
         }
 #else
-        if (deny_announce(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
-            deny_mailuser(uident,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
+        if (deny_announce(user->userid,bh,denymsg,denyday,getCurrentUser(),time(0),0)<0 ||
+            deny_mailuser(user->userid,bh,denymsg,denyday,getCurrentUser(),time(0),0,autofree)<0) {
             move(13, 0);
             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
+            WAIT_RETURN;
         }
 #endif
         bmlog(getCurrentUser()->userid, bh->filename, 10, 1);
@@ -936,9 +946,9 @@ Here:
 
             if (*uident != '\0') {
 #ifdef RECORD_DENY_FILE
-                addtodeny(bh, uident, (denyfile)?fileinfo:NULL, filtermode);
+                addtodeny(bh, denyuser, (denyfile)?fileinfo:NULL, filtermode);
 #else
-                addtodeny(bh, uident);
+                addtodeny(bh, denyuser);
 #endif
             }
         } else if ((*ans == 'M') && count) {

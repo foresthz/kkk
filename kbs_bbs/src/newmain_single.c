@@ -1396,6 +1396,10 @@ void user_login()
 #endif
 #endif
 
+#ifdef NEW_BOARD_ACCESS
+    load_nba_status(&uinfo);
+#endif
+
 #ifndef SSHBBS
     if (
 #ifdef SECONDSITE
