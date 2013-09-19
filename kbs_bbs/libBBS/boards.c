@@ -1769,7 +1769,7 @@ int club_maintain_send_mail(const char *userid,const char *comment,int type,int 
 int clear_board_deny_user(struct boardheader *bh)
 {
     FILE *fn;
-    char file[STRLEN], buf[STRLEN*2], userid[IDLEN+2];
+    char file[STRLEN], buf[STRLEN*2], userid[IDLEN+2], *ptr;
     struct userec *user;
 
     setbfile(file, bh->filename, "deny_users");
@@ -1777,7 +1777,7 @@ int clear_board_deny_user(struct boardheader *bh)
         return -1;
 
     while(fgets(buf, 2*STRLEN, fn)!=NULL) {
-        strtok(buf, " ");
+        strtok_r(buf, " \t\n", &ptr);
         strcpy(userid, buf);
         if (!getuser(userid, &user))
             continue;
