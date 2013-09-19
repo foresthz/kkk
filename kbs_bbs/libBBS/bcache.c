@@ -432,6 +432,9 @@ int delete_board(int bid, session_t* session)
 #ifdef RECORDMAXONLINE
     brdshm->bstatus[bid-1].maxonline = 0;
 #endif
+#ifdef NEW_BOARD_ACCESS
+    clear_board_deny_user(bcache[bid-1]);
+#endif
 
     /* 上面锁住了，不需要单独为它设个锁了 */
     fixFavBoard(NULL);

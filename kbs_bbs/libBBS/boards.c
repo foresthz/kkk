@@ -1765,3 +1765,26 @@ int club_maintain_send_mail(const char *userid,const char *comment,int type,int 
     return 0;
 }
 
+#ifdef NEW_BOARD_ACCESS
+int clear_board_deny_user(struct boardheader *bh)
+{
+    FILE *fn;
+    char file[STRLEN], buf[STRLEN*2], userid[IDLEN+2];
+    struct userec *user;
+
+    setbfile(file, bh->filename, "deny_users");
+    if (!dashf(file) || (fn=fopen(file, "r"))==NULL)
+        return -1;
+
+    while(fgets(buf, 2*STRLEN, fn)!=NULL) {
+        strtok(buf, " ");
+        strcpy(userid, buf);
+        if (!getuser(userid, &user))
+            continue;
+        set_nba_status(user, getbid(bh->filename, NULL), NBA_MODE_DENY, 0);
+    }
+    fclose(fn);
+
+    return 0;
+}
+#endif

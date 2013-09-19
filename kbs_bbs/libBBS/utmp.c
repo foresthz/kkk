@@ -897,7 +897,7 @@ void get_telnet_sessionid(char* buf,int unum)
 }
 
 #ifdef NEW_BOARD_ACCESS
-const unsigned int nba_flag[NBA_NUM]={NBA_FLAG_DENY, NBA_FLAG_BLKLST, NBA_FLAG_MEMBLKLST, NBA_FLAG_CLUBREAD, NBA_FLAG_CLUBWRITE};
+extern const unsigned int nba_flag[NBA_NUM];
 
 /* 初始化，生成文件并填充0 */
 int init_nba_status(char *filename)
