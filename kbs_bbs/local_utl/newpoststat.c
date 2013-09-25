@@ -217,7 +217,7 @@ static int get_seccode_index(char prefix)
 int total_post_top10(unsigned int gid,char *board,char *title)
 {
     struct userec deliveruser;
-    struct boardheader *bh;
+    const struct boardheader *bh;
     unsigned int start,noref,noattach,ret;
     char ut_file[STRLEN];
     char post_title[ARTICLE_TITLE_LEN];
@@ -381,7 +381,7 @@ int get_top(int type)
     char title[81];
     char filename[FILENAME_LEN+1];
     char userid[IDLEN+1];
-    int m,n;
+    int m,n,is_sectop;
 #ifdef BLESS_BOARD
     const struct boardheader *bh;
 #endif
@@ -487,25 +487,29 @@ int get_top(int type)
                 strncpy(userid, row[5], IDLEN);
                 userid[IDLEN]=0;
             }
-            /**一个版面最多3个十大**/
+            /**一个版面最多1个十大**/
             if (type==0) {
                 m = 0;
-                for (n = 0; n < topnum; n++) {
-                    if (!strcmp(row[0], top[n].board))
-                        m++;
-                }
-                if (m>0)
-                    continue;
-
-                /***分区十大里一个版面也最多3个***/
-                if (secid!=-1) {
-                    m = 0;
-                    for (n = 0; n < sectopnum[secid]; n++) {
-                        if (!strcmp(row[0], sectop[secid][n].board))
+                is_sectop = 0;
+                if (topnum<mytop[type]) {   // 当全站十大不满时，不考虑分区十大
+                   for (n = 0; n < topnum; n++) {
+                        if (!strcmp(row[0], top[n].board))
                             m++;
                     }
                     if (m>0)
                         continue;
+                } else {
+                    /***分区十大里一个版面也最多1个***/
+                    if (secid!=-1) {
+                        m = 0;
+                        for (n = 0; n < sectopnum[secid]; n++) {
+                        if (!strcmp(row[0], sectop[secid][n].board))
+                            m++;
+                        }
+                        if (m>0)
+                            continue;
+                        is_sectop = 1;
+                    }
                 }
             }
 
@@ -530,7 +534,7 @@ int get_top(int type)
             }
 
             /***计算分区十大***/
-            if (type==0) {
+            if (type==0 && is_sectop) {  // 当全站十大满了后，再考虑分区十大
 
                 i=secid;
                 if (i!=-1) {
