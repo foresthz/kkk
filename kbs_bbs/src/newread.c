@@ -1794,6 +1794,11 @@ int award_author_score(struct _select_def* conf, struct fileheader* fh, void* ex
         conf->show_endline(conf);
         return DONOTHING;
     }
+    sprintf(buf, "确认奖励 \033[1;32m%s \033[31m%d\033[m %s积分", user->userid, score, isbm?"版面":"个人");
+    if (askyn(buf, 0)==0) {
+        conf->show_endline(conf);
+        return DONOTHING;
+    }
     if (isbm) {
         if ((score>0 && score<MIN_BOARD_AWARD_SCORE) || score>max || score<(max-MAX_BOARD_AWARD_SCORE))
             prompt_return("输入错误", 2, 0);
