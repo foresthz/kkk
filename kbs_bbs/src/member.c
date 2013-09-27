@@ -44,6 +44,7 @@ struct board_member_title *b_titles = NULL;
 int board_member_titles=0;
 int board_member_sort=BOARD_MEMBER_SORT_DEFAULT;
 int board_member_status=BOARD_MEMBER_STATUS_NONE;
+int board_member_approve;
 int board_member_is_manager, board_member_is_joined;
 static const char *b_member_item_prefix[10]={
     "是否审核","最大成员","登 录 数","发 文 数","用户积分",
@@ -737,7 +738,7 @@ static int b_member_title(struct _select_def *conf) {
             strcpy(tmp, "[查看方式: \033[1;31m待审批\033[m]");
             break;
         case BOARD_MEMBER_STATUS_NORMAL:
-            strcpy(tmp, "[查看方式: \033[1;31m已通过\033[m]");
+            strcpy(tmp, "[查看方式: \033[1;31m普通\033[m]");
             break;
         case BOARD_MEMBER_STATUS_MANAGER:
             strcpy(tmp, "[查看方式: \033[1;31m核心\033[m]");
@@ -914,7 +915,10 @@ static int b_member_key(struct _select_def *conf, int key) {
             return SHOW_DIRCHANGE;
         case 'f':
         case 'F':
-            board_member_status=(board_member_status+1)%BOARD_MEMBER_STATUS_TYPES;
+            board_member_status++;
+            if (!board_member_approve && board_member_status == BOARD_MEMBER_STATUS_CANDIDATE)
+                board_member_status++;
+            board_member_status=board_member_status % BOARD_MEMBER_STATUS_TYPES;
             conf->item_count = get_board_members(currboard->filename, board_member_status);
             return SHOW_DIRCHANGE;
         case 'y': // 通过申请
@@ -1055,12 +1059,15 @@ static int b_member_key(struct _select_def *conf, int key) {
 int t_board_members(void) {
     struct _select_def group_conf;
     struct board_member mine;
+    struct board_member_config config;
     POINT *pts;
     int i;
     
     board_member_is_manager=(!HAS_PERM(getCurrentUser(),PERM_SYSOP)&&!chk_currBM(currboard->BM,getCurrentUser()))?0:1;
     board_member_is_joined=is_board_member(currboard->filename, getCurrentUser()->userid, &mine);
     board_member_status=BOARD_MEMBER_STATUS_NONE;
+    load_board_member_config(currboard->filename, &config);
+    board_member_approve=config.approve;
     b_members=(struct board_member *) malloc(sizeof(struct board_member) * BBS_PAGESIZE);
 	bzero(&group_conf, sizeof(struct _select_def));
 	
