@@ -701,7 +701,7 @@ static int b_member_show(struct _select_def *conf, int i) {
             case BOARD_MEMBER_STATUS_MANAGER:
                 strcpy(color, "\x1b[1;31m");
                 break;
-            case BOARD_MEMBER_STATUS_BLKLST:
+            case BOARD_MEMBER_STATUS_BLACK:
                 strcpy(color, "\x1b[1;30m");
                 break;
             case BOARD_MEMBER_STATUS_CANDIDATE:
@@ -730,13 +730,31 @@ static int b_member_title(struct _select_def *conf) {
         strcat(buf, tmp);
     }
     
-    strcpy(tmp, "其他操作请通过[\x1b[1;32mh\x1b[m]查看帮助");
+    strcpy(tmp, "帮助[\x1b[1;32mh\x1b[m] ");
+    strcat(buf, tmp);
+    switch (board_member_status) {
+        case BOARD_MEMBER_STATUS_CANDIDATE:
+            strcpy(tmp, "[查看方式: \033[1;31m待审批\033[m]");
+            break;
+        case BOARD_MEMBER_STATUS_NORMAL:
+            strcpy(tmp, "[查看方式: \033[1;31m已通过\033[m]");
+            break;
+        case BOARD_MEMBER_STATUS_MANAGER:
+            strcpy(tmp, "[查看方式: \033[1;31m核心\033[m]");
+            break;
+        case BOARD_MEMBER_STATUS_BLACK:
+            strcpy(tmp, "[查看方式: \033[1;31m黑名单\033[m]");
+            break;
+        default:
+            strcpy(tmp, "[查看方式: \033[1;31m所有\033[m]");
+            break;
+    }
     strcat(buf, tmp);
     
     docmdtitle("[驻版用户列表]", buf);
     move(2, 0);
     clrtobot();
-    prints("\033[0;1;44m  %-4s %-12s %-12s %8s %8s %8s %10s %-8s \033[m", "编号", "用户ID",  "驻版称号", "驻版积分", "上站数", "发文数", "用户积分", "驻版时间");    
+    prints("\033[0;1;44m  %-4s %-12s %-12s %8s %8s %8s %10s %-8s \033[K\033[m", "编号", "用户ID",  "驻版称号", "驻版积分", "上站数", "发文数", "用户积分", "驻版时间");    
     update_endline();
 
     return 0;
@@ -918,7 +936,7 @@ static int b_member_key(struct _select_def *conf, int key) {
         case Ctrl('D'):
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
-            if (b_members[conf->pos-conf->page_pos].status == BOARD_MEMBER_STATUS_BLKLST)
+            if (b_members[conf->pos-conf->page_pos].status == BOARD_MEMBER_STATUS_BLACK)
                 return SHOW_CONTINUE;
             move(t_lines-1, 0);
             clrtoeol();
@@ -1042,6 +1060,7 @@ int t_board_members(void) {
     
     board_member_is_manager=(!HAS_PERM(getCurrentUser(),PERM_SYSOP)&&!chk_currBM(currboard->BM,getCurrentUser()))?0:1;
     board_member_is_joined=is_board_member(currboard->filename, getCurrentUser()->userid, &mine);
+    board_member_status=BOARD_MEMBER_STATUS_NONE;
     b_members=(struct board_member *) malloc(sizeof(struct board_member) * BBS_PAGESIZE);
 	bzero(&group_conf, sizeof(struct _select_def));
 	

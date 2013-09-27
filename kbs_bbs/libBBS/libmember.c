@@ -129,6 +129,9 @@ char *get_member_status_name(char *name, int status) {
         case BOARD_MEMBER_STATUS_MANAGER:
             strcpy(name, "核心驻版用户");
             break;
+        case BOARD_MEMBER_STATUS_BLACK:
+            strcpy(name, "驻版黑名单");
+            break;
         case BOARD_MEMBER_STATUS_NONE:
             strcpy(name, "非驻版用户");
             break;
@@ -529,7 +532,7 @@ int approve_board_member(const char *name, const char *user_id) {
 }
 
 int black_board_member(const char *name, const char *user_id) {
-    return set_board_member_status(name, user_id, BOARD_MEMBER_STATUS_BLKLST);
+    return set_board_member_status(name, user_id, BOARD_MEMBER_STATUS_BLACK);
 }
 
 int remove_board_member(const char *name, const char *user_id) {
@@ -1009,7 +1012,7 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
         case BOARD_MEMBER_STATUS_CANDIDATE:
         case BOARD_MEMBER_STATUS_NORMAL:
         case BOARD_MEMBER_STATUS_MANAGER:
-        case BOARD_MEMBER_STATUS_BLKLST:
+        case BOARD_MEMBER_STATUS_BLACK:
             break;
         default:
             return -7;
