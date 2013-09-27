@@ -873,7 +873,7 @@ static int b_member_key(struct _select_def *conf, int key) {
     char path[PATHLEN];
     int del;
     
-    if (conf->item_count<=0 && 'v'!=key && 'j'!=key && 'e'!=key) {
+    if (conf->item_count<=0 && 'v'!=key && 'j'!=key && 'e'!=key && 'f'!=key) {
         return SHOW_CONTINUE;
     }
     
