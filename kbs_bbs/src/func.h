@@ -865,9 +865,9 @@ while(0)
     int approve_board_member(const char *name, const char *user_id);
     int remove_board_member(const char *name, const char *user_id);
     int get_board_member(const char *name, const char *user_id, struct board_member *member);
-    int load_board_members(const char *board, struct board_member *members, int sort, int start, int num);
+    int load_board_members(const char *board, struct board_member *members, int sort, int start, int num, int status);
     int load_member_boards(const char *user_id, struct board_member *members, int sort, int start, int num);
-    int get_board_members(const char *board);
+    int get_board_members(const char *board, int status);
     int get_member_boards(const char *user_id);
     int load_board_member_request(const char *name, struct board_member_config *mine);
     int is_board_member(const char *name, const char *user_id, struct board_member *member);
@@ -909,9 +909,9 @@ while(0)
 	int remove_member(int index);
 	int add_member(struct board_member *member);
 	int get_member_cache(const char *name, const char *user_id, struct board_member *member);
-	int load_board_members_cache(const char *board, struct board_member *members, int sort, int start, int num);
+	int load_board_members_cache(const char *board, struct board_member *members, int sort, int start, int num, int status);
 	int load_member_boards_cache(const char *user_id, struct board_member *members, int sort, int start, int num);
-	int count_board_members_cache(const char *name);
+	int count_board_members_cache(const char *name, int status);
 	int count_member_boards_cache(const char *user_id);
 	int update_member_cache(struct board_member *member);
 	int get_member_managers_cache(char *user_id);

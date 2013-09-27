@@ -286,6 +286,8 @@ extern long ti;
 #define BOARD_MEMBER_STATUS_CANDIDATE  1
 #define BOARD_MEMBER_STATUS_NORMAL     2
 #define BOARD_MEMBER_STATUS_MANAGER    3
+
+#define BOARD_MEMBER_STATUS_TYPES      4
 /*
  * 以下是struct board_member.flag中的位定义，用于细分版主权限
  * 核心驻版用户本身无任何特殊权限，需要追加定义方有部分管理功能

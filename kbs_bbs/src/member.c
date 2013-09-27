@@ -43,6 +43,7 @@ struct board_member *b_members = NULL;
 struct board_member_title *b_titles = NULL;
 int board_member_titles=0;
 int board_member_sort=BOARD_MEMBER_SORT_DEFAULT;
+int board_member_status=BOARD_MEMBER_STATUS_NONE;
 int board_member_is_manager, board_member_is_joined;
 static const char *b_member_item_prefix[10]={
     "是否审核","最大成员","登 录 数","发 文 数","用户积分",
@@ -786,14 +787,14 @@ static int b_member_getdata(struct _select_def *conf, int pos, int len) {
     int i;
 
     bzero(b_members, sizeof(struct board_member) * BBS_PAGESIZE);
-    i=load_board_members(currboard->filename, b_members, board_member_sort, conf->page_pos-1, BBS_PAGESIZE);
+    i=load_board_members(currboard->filename, b_members, board_member_sort, conf->page_pos-1, BBS_PAGESIZE, board_member_status);
 
     if (i < 0)
         return SHOW_QUIT;
 
     if (i == 0 && conf->pos>1) {
         conf->pos = 1;
-        i = load_board_members(currboard->filename, b_members, board_member_sort, 0, BBS_PAGESIZE);
+        i = load_board_members(currboard->filename, b_members, board_member_sort, 0, BBS_PAGESIZE, board_member_status);
         if (i < 0)
             return SHOW_QUIT;
     }
@@ -890,6 +891,11 @@ static int b_member_key(struct _select_def *conf, int key) {
         case 'C':
             board_member_sort=(board_member_sort+1)%BOARD_MEMBER_SORT_TYPES;
             return SHOW_DIRCHANGE;
+        case 'f':
+        case 'F':
+            board_member_status=(board_member_status+1)%BOARD_MEMBER_STATUS_TYPES;
+            conf->item_count = get_board_members(currboard->filename, board_member_status);
+            return SHOW_DIRCHANGE;
         case 'y': // 通过申请
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
@@ -926,7 +932,7 @@ static int b_member_key(struct _select_def *conf, int key) {
             if (ans[0] != 'y' && ans[0]!='Y') 
                 return SHOW_REFRESH;
             else if (remove_board_member(currboard->filename, b_members[conf->pos-conf->page_pos].user)>=0) {
-                conf->item_count = get_board_members(currboard->filename);
+                conf->item_count = get_board_members(currboard->filename, board_member_status);
                 if (0==strncasecmp(getCurrentUser()->userid,b_members[conf->pos-conf->page_pos].user, IDLEN)) {
                     board_member_is_joined=0;
                     b_member_title(conf);
@@ -939,7 +945,7 @@ static int b_member_key(struct _select_def *conf, int key) {
                 return SHOW_CONTINUE;
             if (b_member_join(conf)>0) {
                 board_member_is_joined=1;
-                conf->item_count = get_board_members(currboard->filename);
+                conf->item_count = get_board_members(currboard->filename, board_member_status);
                 b_member_title(conf);
                 return SHOW_DIRCHANGE;
             } else
@@ -955,7 +961,7 @@ static int b_member_key(struct _select_def *conf, int key) {
                 return SHOW_REFRESH;
             else if (leave_board_member(currboard->filename)>=0) {
                 board_member_is_joined=0;
-                conf->item_count = get_board_members(currboard->filename);
+                conf->item_count = get_board_members(currboard->filename, board_member_status);
                 b_member_title(conf);
                 return SHOW_DIRCHANGE;
             } else
@@ -1041,7 +1047,7 @@ int t_board_members(void) {
     group_conf.pos = 1;
     group_conf.page_pos = 1;
 
-    group_conf.item_count = get_board_members(currboard->filename);
+    group_conf.item_count = get_board_members(currboard->filename, board_member_status);
     group_conf.show_data = b_member_show;
     group_conf.show_title = b_member_title;
     group_conf.pre_key_command = b_member_prekey;

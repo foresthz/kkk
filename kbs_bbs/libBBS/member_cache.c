@@ -387,7 +387,7 @@ int get_board_titles_cache(const char *name, struct MEMBER_TITLE_CONTAINER *titl
 int count_board_titles_cache(const char *name) {
 	return get_board_titles_cache(name, NULL, 0);
 }
-int get_board_members_cache(const char *name, struct MEMBER_CACHE_CONTAINER *members, int size)
+int get_board_members_cache(const char *name, struct MEMBER_CACHE_CONTAINER *members, int size, int status)
 {
 	int bid, i, ret, j;
 	struct MEMBER_CACHE_NODE *node;
@@ -413,11 +413,12 @@ int get_board_members_cache(const char *name, struct MEMBER_CACHE_CONTAINER *mem
 			break;
 		
 		if (is_valid_member(getuserbynum(node->uid), board)) {
-			if (NULL!=members && size>0 && ret<size)
-				members[ret].node=&(membershm->nodes[i-1]);
-			
+			if (status==0||status==node->status) {
+				if (NULL!=members && size>0 && ret<size)
+					members[ret].node=&(membershm->nodes[i-1]);
+				ret++;
+			}
 			i=node->board_next;
-			ret++;
 		} else {
 			j=node->board_next;
 			remove_member(i);
@@ -426,8 +427,8 @@ int get_board_members_cache(const char *name, struct MEMBER_CACHE_CONTAINER *mem
 	}
 	return ret;
 }
-int count_board_members_cache(const char *name) {
-	return get_board_members_cache(name, NULL, 0);
+int count_board_members_cache(const char *name, int status) {
+	return get_board_members_cache(name, NULL, 0, status);
 }
 int add_member_title(struct board_member_title *title) {
 	struct MEMBER_CACHE_TITLE *t, *p;
@@ -854,19 +855,19 @@ int load_board_titles_cache(const char *board, struct board_member_title *titles
 	
 	return total;
 }
-int load_board_members_cache(const char *board, struct board_member *members, int sort, int start, int num)
+int load_board_members_cache(const char *board, struct board_member *members, int sort, int start, int num, int status)
 {
 	int total, i, j;
 	struct MEMBER_CACHE_CONTAINER *container;
 	
-	total=get_board_members_cache(board, NULL, 0);
+	total=get_board_members_cache(board, NULL, 0, status);
 	if (start<0 || start>=total)
 		return 0;
 	
 	container=(struct MEMBER_CACHE_CONTAINER *)malloc(sizeof(struct MEMBER_CACHE_CONTAINER)*total);
 	if (NULL==container)
 		return -2;
-	get_board_members_cache(board, container, total);
+	get_board_members_cache(board, container, total, status);
 	
 	switch(sort) {
 		case BOARD_MEMBER_SORT_TIME_DESC:

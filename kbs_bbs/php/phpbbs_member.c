@@ -298,7 +298,7 @@ PHP_FUNCTION(bbs_load_board_members)
 		RETURN_LONG(-4);
 		
 	bzero(members, sizeof(struct board_member)*count);
-	ret=load_board_members(board->filename, members, sort, start, count);
+	ret=load_board_members(board->filename, members, sort, start, count, 0);
 	
 	for (i=0;i<ret;i++) {
 		MAKE_STD_ZVAL(element);
@@ -379,7 +379,7 @@ PHP_FUNCTION(bbs_get_board_members)
 	if (!check_read_perm(getCurrentUser(), board))
 		RETURN_LONG(-2);
 		
-	count=get_board_members(board->filename);
+	count=get_board_members(board->filename, 0);
 	if (count<0)
 		RETURN_LONG(-3);
 		

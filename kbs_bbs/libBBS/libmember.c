@@ -432,7 +432,7 @@ int join_board_member(const char *name) {
     
     count=0;
     if (config.max_members>0) {
-        count=get_board_members(board->filename);
+        count=get_board_members(board->filename, 0);
         if (count<0)
             return -18;
         if (count>=config.max_members)
@@ -626,9 +626,9 @@ int get_board_member(const char *name, const char *user_id, struct board_member 
 #endif
 }
 
-int load_board_members(const char *board, struct board_member *member, int sort, int start, int num) {
+int load_board_members(const char *board, struct board_member *member, int sort, int start, int num, int status) {
 #ifdef ENABLE_MEMBER_CACHE
-    return load_board_members_cache(board, member, sort, start, num);
+    return load_board_members_cache(board, member, sort, start, num, status);
 #else
     MYSQL s;
     MYSQL_RES *res;
@@ -833,9 +833,9 @@ int load_member_boards(const char *user_id, struct board_member *member, int sor
     return i;
 #endif
 }
-int get_board_members(const char *board) {
+int get_board_members(const char *board, int status) {
 #ifdef ENABLE_MEMBER_CACHE
-    return count_board_members_cache(board);
+    return count_board_members_cache(board, status);
 #else
     MYSQL s;
     MYSQL_RES *res;

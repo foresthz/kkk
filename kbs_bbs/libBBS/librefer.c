@@ -409,7 +409,7 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
         return 0;
     if (!HAS_PERM(getSession()->currentuser,PERM_SYSOP)&&!check_board_member_manager(NULL, to_board, BMP_REFER))
 		return 0;
-    total=get_board_members(to_board->filename);
+    total=get_board_members(to_board->filename, 0);
     if (total<0)
         return -1;
     if (total==0)
@@ -417,7 +417,7 @@ int send_refer_msg_to_board(struct boardheader *to_board, const struct boardhead
 
     b_members=(struct board_member *) malloc(sizeof(struct board_member) * total);
     bzero(b_members, sizeof(struct board_member) * total);
-    num=load_board_members(to_board->filename, b_members, BOARD_MEMBER_SORT_DEFAULT, 0, total);
+    num=load_board_members(to_board->filename, b_members, BOARD_MEMBER_SORT_DEFAULT, 0, total, 0);
 
     for (i=0;i<num;i++) {
         if (b_members[i].status != BOARD_MEMBER_STATUS_NORMAL && b_members[i].status != BOARD_MEMBER_STATUS_MANAGER)
