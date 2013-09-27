@@ -286,8 +286,9 @@ extern long ti;
 #define BOARD_MEMBER_STATUS_CANDIDATE  1
 #define BOARD_MEMBER_STATUS_NORMAL     2
 #define BOARD_MEMBER_STATUS_MANAGER    3
+#define BOARD_MEMBER_STATUS_BLKLST     4
 
-#define BOARD_MEMBER_STATUS_TYPES      4
+#define BOARD_MEMBER_STATUS_TYPES      5
 /*
  * 以下是struct board_member.flag中的位定义，用于细分版主权限
  * 核心驻版用户本身无任何特殊权限，需要追加定义方有部分管理功能
@@ -628,6 +629,9 @@ enum BBS_DIR_MODE {
     DIR_MODE_REFER,                 /* @/回文提醒模式, added by windinsn, Jan 28,2012 */
     DIR_MODE_MEMBER_ARTICLE,        /* 驻版阅读模式, added by windinsn, Sep 20, 2012 */
     DIR_MODE_LIKE,                  /* Like, added by windinsn, 2013-4-12 */
+#ifdef NEW_BOARD_ACCESS
+    DIR_MODE_BLKLST,                /* 版面黑名单, jiangjun, 20130921 */
+#endif
     DIR_MODE_UNKNOWN                /* 未知模式 */
 };
 

@@ -701,6 +701,9 @@ static int b_member_show(struct _select_def *conf, int i) {
             case BOARD_MEMBER_STATUS_MANAGER:
                 strcpy(color, "\x1b[1;31m");
                 break;
+            case BOARD_MEMBER_STATUS_BLKLST:
+                strcpy(color, "\x1b[1;30m");
+                break;
             case BOARD_MEMBER_STATUS_CANDIDATE:
             default:
                 strcpy(color, "\x1b[1;33m");
@@ -909,6 +912,22 @@ static int b_member_key(struct _select_def *conf, int key) {
             if (ans[0] != 'y' && ans[0]!='Y') 
                 return SHOW_REFRESH;
             else if (approve_board_member(currboard->filename, b_members[conf->pos-conf->page_pos].user)>=0) {
+                return SHOW_DIRCHANGE;
+            } else
+                return SHOW_REFRESH;
+        case Ctrl('D'):
+            if (!board_member_is_manager)
+                return SHOW_CONTINUE;
+            if (b_members[conf->pos-conf->page_pos].status == BOARD_MEMBER_STATUS_BLKLST)
+                return SHOW_CONTINUE;
+            move(t_lines-1, 0);
+            clrtoeol();
+            ans[0]=0;
+            sprintf(buf, "您确定要将%s加入驻版黑名单吗?(Y/N) [N]:", b_members[conf->pos-conf->page_pos].user);
+            getdata(t_lines-1, 0, buf, ans, 3, DOECHO, NULL, true);
+            if (ans[0] != 'y' && ans[0]!='Y') 
+                return SHOW_REFRESH;
+            else if (black_board_member(currboard->filename, b_members[conf->pos-conf->page_pos].user)>=0) {
                 return SHOW_DIRCHANGE;
             } else
                 return SHOW_REFRESH;

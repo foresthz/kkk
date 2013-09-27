@@ -528,6 +528,10 @@ int approve_board_member(const char *name, const char *user_id) {
     return set_board_member_status(name, user_id, BOARD_MEMBER_STATUS_NORMAL);
 }
 
+int black_board_member(const char *name, const char *user_id) {
+    return set_board_member_status(name, user_id, BOARD_MEMBER_STATUS_BLKLST);
+}
+
 int remove_board_member(const char *name, const char *user_id) {
     const struct boardheader *board;
     int ret;
@@ -1005,6 +1009,7 @@ int set_board_member_status(const char *name, const char *user_id, int status) {
         case BOARD_MEMBER_STATUS_CANDIDATE:
         case BOARD_MEMBER_STATUS_NORMAL:
         case BOARD_MEMBER_STATUS_MANAGER:
+        case BOARD_MEMBER_STATUS_BLKLST:
             break;
         default:
             return -7;
