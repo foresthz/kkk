@@ -302,7 +302,7 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
     }
 
 #ifdef NEW_BOARD_ACCESS
-    if ((new_deny_user(session->currentuser, getbid(bh->filename, NULL), NBA_MODE_DENY) || !(HAS_PERM(session->currentuser, PERM_POST))) && (!HAS_PERM(session->currentuser, PERM_SYSOP))) {
+    if ((new_deny_user(session->currentuser, getbid(bh->filename, NULL), NBA_MODE_DENY)>0 || !(HAS_PERM(session->currentuser, PERM_POST))) && (!HAS_PERM(session->currentuser, PERM_SYSOP))) {
 #else
     if ((deny_me(session->currentuser->userid, bh->filename) || !(HAS_PERM(session->currentuser, PERM_POST))) && (!HAS_PERM(session->currentuser, PERM_SYSOP))) {
 #endif /* NEW_BOARD_ACCESS */

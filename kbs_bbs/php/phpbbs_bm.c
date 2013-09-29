@@ -377,7 +377,7 @@ PHP_FUNCTION(bbs_denyadd)
     if (!haspostperm(lookupuser, brd -> filename))
         RETURN_LONG(-7);
 #ifdef NEW_BOARD_ACCESS
-    if (!new_deny_user(lookupuser, bid, NBA_MODE_DENY))
+    if (new_deny_user(lookupuser, bid, NBA_MODE_DENY)>0)
 #else
     if (deny_me(userid, board))
 #endif /* NEW_BOARD_ACCESS */
@@ -554,7 +554,7 @@ PHP_FUNCTION(bbs_denymod)
     if (!haspostperm(lookupuser, brd -> filename))
         RETURN_LONG(-7);
 #ifdef NEW_BOARD_ACCESS
-    if (!new_deny_user(lookupuser, bid, NBA_MODE_DENY))
+    if (new_deny_user(lookupuser, bid, NBA_MODE_DENY)<=0)
 #else
     if (!deny_me(userid, board))
 #endif /* NEW_BOARD_ACCESS */
