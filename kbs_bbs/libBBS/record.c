@@ -714,12 +714,11 @@ int reverse_record(char *filename, int size)
             BBS_RETURN(-1);
         ret = 0;
         count = filesize / size;
-        tptr = (char *)malloc(size);
-        for (i=1;i<count;i++) {
-            memcpy(tptr, ptr + (count - 1) * size, size);
-            memmove(ptr + i * size, ptr + (i - 1) * size, (count - i) * size);
-            memcpy(ptr + (i - 1) * size, tptr, size);
+        tptr = (char *)malloc(filesize);
+        for (i=0;i<count;i++) {
+            memcpy(tptr + i * size, ptr + (count - i - 1) * size, size);
         }
+        memcpy(ptr, tptr, filesize);
         free(tptr);
     }
     BBS_CATCH {
