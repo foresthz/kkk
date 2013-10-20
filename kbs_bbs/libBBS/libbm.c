@@ -182,6 +182,13 @@ time_t get_undeny_time(const char *buf)
     return undenytime;
 }
 
+/* 热点版面 */
+int is_hot_board(const char *board)
+{
+    return seek_in_file("etc/hotboards", board, NULL);
+}
+
+
 /* 使用模板发布封禁公告
  * mode:
  *      0:添加
@@ -199,6 +206,9 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 #ifdef MEMBER_MANAGER
 	int core_member=0;
 #endif	
+#ifdef NEWSMTH
+    int score = 0;
+#endif
 
     gettmpfilename(postfile, "ann_deny.%d", getpid());
     sprintf(tmplfile, "etc/denypost_template");
@@ -276,6 +286,21 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 #else
     post_file(operator, "", postfile, bh->filename, title, 0, 2, getSession());
 #endif
+
+/* 热点版面14d自动扣积分 */
+#ifdef NEWSMTH
+    if (mode==0 && day>=14 && is_hot_board(bh->filename)) {
+        int tmp;
+        char buf[STRLEN];
+
+        score = lookupuser->score_user>2000?2000:lookupuser->score_user;
+        tmp = AO_int_fetch_and_add(&(lookupuser->score_user), -score);
+
+        sprintf(buf, "%s 版封禁自动扣分", bh->filename);
+        score_change_mail(lookupuser, lookupuser->score_user+score, lookupuser->score_user, 0, 0, buf);
+    }
+#endif
+
 #ifdef RECORD_DENY_FILE
     if (fh) {
         char bname[STRLEN], filebuf[STRLEN], filestr[256];
@@ -330,6 +355,10 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     fprintf(fn, "\033[33m封禁用户: \033[4;32m%s\033[m\n", uident);
     fprintf(fn, "\033[33m封禁原因: \033[4;32m%s\033[m\n", reason);
     fprintf(fn, "\033[33m封禁天数: \033[4;32m %d 天\033[m\n", day);
+#ifdef NEWSMTH
+    if (score)
+        fprintf(fn, "\033[33m扣除积分: \033[4;32m%d\033[m\n", score);
+#endif
     fclose(fn);
     sprintf(title, "%s封禁%s", mode?"修改":"", uident);
 #ifdef RECORD_DENY_FILE
