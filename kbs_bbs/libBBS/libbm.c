@@ -290,14 +290,39 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 /* 热点版面14d自动扣积分 */
 #ifdef NEWSMTH
     if (mode==0 && day>=14 && is_hot_board(bh->filename)) {
+        char scoretitle[STRLEN], strbuf[STRLEN], filebuf[STRLEN];
+        FILE *fn, *fn2;
         int tmp;
-        char buf[STRLEN];
+        time_t current=time(NULL);
 
         score = lookupuser->score_user>2000?2000:lookupuser->score_user;
         tmp = AO_int_fetch_and_add(&(lookupuser->score_user), -score);
 
-        sprintf(buf, "%s 版封禁自动扣分", bh->filename);
-        score_change_mail(lookupuser, lookupuser->score_user+score, lookupuser->score_user, 0, 0, buf);
+        /* 积分变更通知 */
+        sprintf(scoretitle, "%s 版封禁自动扣分", bh->filename);
+        score_change_mail(lookupuser, lookupuser->score_user+score, lookupuser->score_user, 0, 0, scoretitle);
+
+        /* score公告 */
+        sprintf(scoretitle, "[公告] 扣除 %s 积分 %d 分", lookupuser->userid, score);
+        gettmpfilename(filebuf, "deny_score");
+        if ((fn=fopen(filebuf, "w"))!=NULL) {
+            fprintf(fn, "说明：\n"
+                        "\t依据积分使用项目 008 号\n\n"
+                        "附件：\n\n");
+            /* 只能手动添加信头了 */
+            fprintf(fn,"发信人: %s (自动发信系统), 信区: %s\n", DELIVER, bh->filename);
+            fprintf(fn,"标  题: %s\n",title);
+            fprintf(fn,"发信站: %s自动发信系统 (%24.24s)\n\n",BBS_FULL_NAME,ctime_r(&current, strbuf));
+
+            if ((fn2=fopen(postfile, "r"))!=NULL) {
+                while (fgets(strbuf, 256, fn2)!=NULL)
+                    fprintf(fn, "%s", strbuf);
+                fclose(fn2);
+            }
+            fclose(fn);
+        }
+        post_file(operator, "", filebuf, "Score", scoretitle, 0, 1, getSession());
+        unlink(filebuf);
     }
 #endif
 
@@ -346,6 +371,17 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
             fprintf(fn, "\033[1;33;45m全文结束.\033[K\033[m\n");
         }
         fclose(fn);
+    }
+#endif
+
+/* 热点版面14d自动扣积分 */
+#ifdef NEWSMTH
+    if (score) {
+        char strbuf[STRLEN];
+
+        /* denypost标题 */
+        sprintf(strbuf, " [-%d]", score);
+        strcat(title1, strbuf);
     }
 #endif
     post_file(operator, "", postfile, "denypost", title1, 0, -1, getSession());
