@@ -4613,7 +4613,13 @@ int del_ding(struct _select_def *conf,struct fileheader *info,void *varg)
 {
     struct read_arg *arg=(struct read_arg*)conf->arg;
     char ans[4];
-    if (arg->mode!=DIR_MODE_NORMAL||!chk_currBM(currBM,getCurrentUser()))
+    if (arg->mode!=DIR_MODE_NORMAL
+#ifdef MEMBER_MANAGER
+            || !(check_board_member_manager(&currmember, currboard, BMP_RECOMMEND))
+#else
+            || !(chk_currBM(currBM, getCurrentUser()))
+#endif
+            )
         return DONOTHING;
     getdata((t_lines-1),0,"删除置底文章, 确认操作 (Y/N) [N]: ",ans,2,DOECHO,NULL,true);
     if (toupper(ans[0])!='Y')
