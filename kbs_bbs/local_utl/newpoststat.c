@@ -131,6 +131,10 @@ static char * get_file_info(char *boardname, int threadid, char *title, char *us
     }
 #endif /* NEWSMTH */
 
+    /* 不统计deliver和SYSOP的帖子 */
+    if (strcmp(fh.owner, "deliver")==0 || strcmp(fh.owner, "SYSOP")==0)
+        return NULL;
+
     if (pic) {
         if (!fh.attachment) {
             return NULL;
