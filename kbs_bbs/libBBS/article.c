@@ -2648,7 +2648,7 @@ int get_effsize_attach(char *ffn, unsigned int *att)
     if (att) *att = 0;
     if (j) {
         k = fsize;
-        while (k) {
+        while (k>0) {
             if (NULL != (checkattach(p, k, &attach_len, &attach))) {
                 if (att && !*att)
                     *att = p - op;
