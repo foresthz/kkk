@@ -727,11 +727,11 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
     else
         setmailfile(name,getCurrentUser()->userid,info->filename);
     strcpy(quote_title,info->title);
+    clear();
 #ifdef ENABLE_BOARD_MEMBER
     if(!inmail) {
         ret = member_read_perm(currboard, info, getCurrentUser());
         if (!ret) {
-            clear();
             move(3, 10);
             prints("本版为驻版可读，非本版驻版用户不允许转载本版文章！");
                 move(4, 10);
@@ -745,7 +745,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         }
     }
 #endif
-    clear(); move(4,0);
+    move(4,0);
     prints("%s","\033[1;33m请注意: \033[1;31m本站站规规定, 同样内容的文章严禁在五个(含)以上讨论区内重复发表，\n\n        \033[1;33m对\033[1;31m违反上述规定者\033[1;33m, 管理人员将依据\033[1;31m本站帐号管理办法中相关条款\033[1;33m进行处理!\n\n        请大家共同维护良好的讨论秩序，节约系统资源, 谢谢合作！\033[m");
 #ifdef REMOTE_CROSS
     move(2, 0);
@@ -945,6 +945,11 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
 #endif
     if (need_unlink)
         unlink(name);
+#ifdef ENABLE_REFER
+    /* 转载提醒，被审核的无法提醒 */
+    if (!in_mail)
+        send_refer_cross_to(bh, info, ret);
+#endif
     move(3,0); clrtoeol();
     prints("\033[1;32m%s\033[0;33m<Enter>\033[m","转载成功!");
     WAIT_RETURN;

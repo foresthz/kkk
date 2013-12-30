@@ -1567,6 +1567,10 @@ PHP_FUNCTION(bbs_docross)
                 RETURN_LONG(-11);
                 break;
         }
+#ifdef ENABLE_REFER
+        /* зЊдиЬсаб */
+        send_refer_cross_to(dst_bp, &f, ret);
+#endif
     } else if (ac == 6) {
         setmailfile(path, getCurrentUser()->userid, filename);
         ret = post_cross(u, dst_bp, target, title, path, 0, 1, ispost[0], 0, getSession());

@@ -344,6 +344,48 @@ int send_refer_reply_to(struct userec *user, const struct boardheader *board, st
 
     return 0;
 }
+/* 发送转载提醒 */
+int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, int postid) {
+    struct userec *user;
+
+    if (0==getuser(fh->owner, &user))
+        return -1;
+    if (0==strcmp(user->userid, "guest")||0==strcmp(user->userid, "SYSOP"))
+        return -2;
+    if (!DEFINE(user, DEF_REPLY))
+        return -3;
+    if (0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
+        return -4;
+    if (!check_read_perm(user,board))
+        return -5;
+    if (0!=check_mail_perm(getSession()->currentuser, user))
+        return -6;
+
+    char buf[255];
+    struct refer refer;
+
+    memset(&refer, 0, sizeof(refer));
+
+    strncpy(refer.board, board->filename, STRLEN);
+    strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+    strncpy(buf, fh->title, ARTICLE_TITLE_LEN-10);
+    sprintf(refer.title, "%s%s", "[转载提醒]", buf);
+    refer.id=postid;
+    refer.groupid=postid;
+    refer.reid=postid;
+    refer.flag=0;
+    refer.time=time(NULL);
+
+    sethomefile(buf, user->userid, REFER_DIR);
+    if (-1==append_record(buf, &refer, sizeof(refer)))
+        return -7;
+
+    setmailcheck(user->userid);
+    newbbslog(BBSLOG_USER, "sent cross refer '%s' to '%s'", fh->title, user->userid);
+
+    return 0;
+}
+
 int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile) {
     int i, uid;
 
