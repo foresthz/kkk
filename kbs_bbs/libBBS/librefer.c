@@ -345,7 +345,7 @@ int send_refer_reply_to(struct userec *user, const struct boardheader *board, st
     return 0;
 }
 /* 发送转载提醒 */
-int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, int postid) {
+int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, int postid, int anony) {
     struct userec *user;
 
     if (0==getuser(fh->owner, &user))
@@ -360,6 +360,8 @@ int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, 
         return -5;
     if (0!=check_mail_perm(getSession()->currentuser, user))
         return -6;
+    if (0>=postid)
+        return -7;
 
     char buf[255];
     struct refer refer;
@@ -367,7 +369,10 @@ int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, 
     memset(&refer, 0, sizeof(refer));
 
     strncpy(refer.board, board->filename, STRLEN);
-    strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
+    if (anony)
+        strcpy(refer.user, "deliver");
+    else
+        strncpy(refer.user, getSession()->currentuser->userid, IDLEN);
     strncpy(buf, fh->title, ARTICLE_TITLE_LEN-10);
     sprintf(refer.title, "%s%s", "[转载提醒]", buf);
     refer.id=postid;
