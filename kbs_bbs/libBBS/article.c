@@ -1196,7 +1196,7 @@ int post_commend(struct userec *user, const char *fromboard, struct fileheader *
 
 /* Add by SmallPig */
 /* 注意此函数不检查权限，caller 须保证发帖的合法性 */
-int post_cross(struct userec *user, const struct boardheader *toboard, const char *fromboard, const char *title, const char *filename, int Anony, int in_mail, char islocal, int mode, session_t* session)
+int post_cross(struct userec *user, const struct boardheader *toboard, const char *fromboard, const char *title, const char *filename, int Anony, int in_mail, char islocal, int mode, int bid, int id, session_t* session)
 {                               /* (自动生成文件名) 转贴或自动发信 */
     struct fileheader postfile;
     char filepath[STRLEN];
@@ -1223,6 +1223,11 @@ int post_cross(struct userec *user, const struct boardheader *toboard, const cha
         strcpy(whopost, DELIVER);     /* mode==1为自动发信 */
     else
         strcpy(whopost, user->userid);
+
+    if (bid && id) {
+        postfile.o_bid = bid;
+        postfile.o_id = postfile.o_groupid = postfile.o_reid = id;
+    }
 
     strncpy(postfile.owner, whopost, OWNER_LEN);
     postfile.owner[OWNER_LEN - 1] = '\0';
@@ -1315,7 +1320,7 @@ int post_file(struct userec *user, const char *fromboard, const char *filename, 
     if (getbid(nboard, &toboard) <= 0) {       /* 搜索要POST的版 ,判断是否存在该版 */
         return -1;
     }
-    return post_cross(user, toboard, fromboard, posttitle, filename, Anony, false, 'l', mode, session);  /* post 文件 */
+    return post_cross(user, toboard, fromboard, posttitle, filename, Anony, false, 'l', mode, 0, 0, session);  /* post 文件 */
 }
 
 

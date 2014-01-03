@@ -1558,7 +1558,7 @@ PHP_FUNCTION(bbs_docross)
             RETURN_LONG(-9);
 
         setbfile(path, board, f.filename);
-        ret = post_cross(u, dst_bp, board, f.title, path, 0, 0, ispost[0], 0, getSession());
+        ret = post_cross(u, dst_bp, board, f.title, path, 0, 0, ispost[0], 0, bid, id, getSession());
         switch (ret) {
             case -1:
                 RETURN_LONG(-10);
@@ -1573,7 +1573,7 @@ PHP_FUNCTION(bbs_docross)
 #endif
     } else if (ac == 6) {
         setmailfile(path, getCurrentUser()->userid, filename);
-        ret = post_cross(u, dst_bp, target, title, path, 0, 1, ispost[0], 0, getSession());
+        ret = post_cross(u, dst_bp, target, title, path, 0, 1, ispost[0], 0, 0, 0, getSession());
         switch (ret) {
             case -1:
                 RETURN_LONG(-10);

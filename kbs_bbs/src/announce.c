@@ -2341,7 +2341,7 @@ EXPRESS:                 /* Leeward 98.09.13 */
                             WAIT_RETURN;
                             break;
                         }
-                        ret = post_cross(getCurrentUser(),bh,"",M_ITEM(&me, me.now)->title,fname,0,false,ans[0],5,getSession());
+                        ret = post_cross(getCurrentUser(),bh,"",M_ITEM(&me, me.now)->title,fname,0,false,ans[0],5,0,0,getSession());
                         switch (ret) {
                             case -1:
                                 prints("\033[1;33m%s\033[0;33m<Enter>\033[m", "转载过程中发生错误 ...");

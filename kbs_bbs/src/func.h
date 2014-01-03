@@ -579,7 +579,7 @@ while(0)
     int after_post(struct userec *user, struct fileheader *fh, const char *boardname, struct fileheader *re, int poststat, session_t* session);
     int post_file(struct userec *user, const char *fromboard, const char *filename, const char *nboard, const char *posttitle, int Anony, int mode, session_t* session);
     int post_file_alt(const char *filename, struct userec *user, const char *title, const char *to_board, const char *from_board, unsigned char mode, const unsigned char accessed[2]);
-    int post_cross(struct userec *user, const struct boardheader *toboard, const char *fromboard, const char *title, const char *filename, int Anony, int in_mail, char islocal, int mode, session_t* session);   /* (自动生成文件名) 转贴或自动发信 */
+    int post_cross(struct userec *user, const struct boardheader *toboard, const char *fromboard, const char *title, const char *filename, int Anony, int in_mail, char islocal, int mode, int bid, int id, session_t* session);   /* (自动生成文件名) 转贴或自动发信 */
 
     int change_post_flag(struct write_dir_arg* dirarg,int currmode, const struct boardheader*board,
                          struct fileheader *fileinfo, int flag,struct fileheader * data,bool dobmlog, session_t* session);
@@ -835,6 +835,7 @@ while(0)
     int send_refer_msg(const char *boardname, struct fileheader *fh, struct fileheader *re, char *tmpfile);
     int send_refer_msg_to(struct userec *user, const struct boardheader *board, struct fileheader *fh, char *tmpfile);
     int send_refer_reply_to(struct userec *user, const struct boardheader *board, struct fileheader *fh);
+    int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, int postid, int anony);
     int refer_remove(char *dir, int ent, struct refer *refer);
     int refer_cmp(struct refer *r1, struct refer *r2);
     int refer_get_refer_count(struct userec *user);
@@ -966,6 +967,7 @@ while(0)
 #ifdef HAVE_USERSCORE
     /* 积分奖励相关 */
     void setsfile(char *file, char *board, char *filename);
+    int can_award_score(struct userec *user, int bm);
     int award_score_from_user(struct boardheader *bh, struct userec *from, struct userec *user, struct fileheader *fh, int score);
     int award_score_from_board(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score);
     int view_score_award_record(struct boardheader *bh, struct fileheader *fh);

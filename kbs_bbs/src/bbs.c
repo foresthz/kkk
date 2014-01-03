@@ -899,7 +899,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
             WAIT_RETURN;
             return FULLUPDATE;
     }
-    if ((ret = post_cross(getCurrentUser(),bh,currboard->filename,quote_title,name,Anony,inmail,ans[0],mode,getSession()))==-1) {
+    if ((ret = post_cross(getCurrentUser(),bh,currboard->filename,quote_title,name,Anony,inmail,ans[0],mode,currboardent,info->id,getSession()))==-1) {
         if (need_unlink)
             unlink(name);
         move(3,0); clrtoeol();
