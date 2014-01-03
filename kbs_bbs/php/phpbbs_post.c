@@ -1470,7 +1470,7 @@ PHP_FUNCTION(bbs_docross)
     const struct boardheader *src_bp;
     const struct boardheader *dst_bp;
     struct fileheader f;
-    int  bid, ent;
+    int  o_bid, bid, ent;
     int  fd;
 	int ret;
     struct userec *u = NULL;
@@ -1497,6 +1497,8 @@ PHP_FUNCTION(bbs_docross)
         if (!check_read_perm(u, src_bp))
             RETURN_LONG(-1);
     }
+
+    o_bid = getbid(board, NULL);
 
     bid = getbid(target, &dst_bp);
     if (dst_bp == NULL)
@@ -1558,7 +1560,7 @@ PHP_FUNCTION(bbs_docross)
             RETURN_LONG(-9);
 
         setbfile(path, board, f.filename);
-        ret = post_cross(u, dst_bp, board, f.title, path, 0, 0, ispost[0], 0, bid, id, getSession());
+        ret = post_cross(u, dst_bp, board, f.title, path, 0, 0, ispost[0], 0, o_bid, id, getSession());
         switch (ret) {
             case -1:
                 RETURN_LONG(-10);
