@@ -1644,6 +1644,51 @@ int view_security_report_origin(struct _select_def *conf, struct fileheader *fh,
 }
 #endif
 
+/* 通过o_bid、 o_id跳转至原版面的原文 */
+int jump_origin_post(struct _select_def *conf, struct fileheader *fh)
+{
+    struct read_arg *arg=conf->arg;
+    int fd, pos;
+    struct boardheader *bh;
+    struct fileheader article[1];
+    char buf[STRLEN];
+
+    if (fh==NULL || fh->o_bid==0 || fh->o_id==0)
+        return FULLUPDATE;
+
+    if ((bh=(struct boardheader *)getboard(fh->o_bid))==NULL || bh->flag&BOARD_GROUP || !check_read_perm(getCurrentUser(), bh))
+        return prompt_return("错误的版面", 2, 0);
+
+    setbdir(DIR_MODE_NORMAL, buf, bh->filename);
+    pos=-1;
+    if ((fd=open(buf, O_RDWR, 0644))<0)
+        return prompt_return("错误的版面", 2, 0);
+    
+    get_records_from_id(fd, fh->o_id, article, 1, &pos);
+    close(fd);
+
+    if (pos<=0)
+        return prompt_return("错误的文章（原文可能被删除）", 2, 0);
+    
+    savePos(DIR_MODE_NORMAL, NULL, pos, bh);
+    lastboard = currboard;
+    board_setcurrentuser(uinfo.currentboard, -1);
+
+    uinfo.currentboard = fh->o_bid;
+    UPDATE_UTMP(currentboard, uinfo);
+    board_setcurrentuser(uinfo.currentboard, 1);
+    currboardent = fh->o_bid;
+    currboard = bh;
+
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(getCurrentUser()->userid, bh->filename,getSession());
+#endif
+
+    arg->newmode = DIR_MODE_NORMAL;
+    setbdir(arg->newmode, arg->direct, bh->filename);
+    return NEWDIRECT;
+}
+
 int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
 {
     char slink[256];
@@ -1727,20 +1772,21 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
 #if defined(BOARD_SECURITY_LOG) || defined(HAVE_USERSCORE)
     if (arg->mode <= DIR_MODE_ZHIDING) {
         int k;
-        move(t_lines - 1, 10);
-        prints("%s%s", 
+        move(t_lines - 1, 4);
+
+        prints("%s%s%s", 
 #ifdef BOARD_SECURITY_LOG
-                isbm?" <\033[1;31mQ\033[m>查看对本文的操作记录":""
+                isbm?" <\033[1;31mQ\033[m>查看本文操作记录":""
 #else
                 ""
 #endif
                 ,
 #ifdef HAVE_USERSCORE
-               " <\033[1;31mA\033[m>查看对本文的积分奖励记录"
+               " <\033[1;31mA\033[m>查看本文积分奖励记录"
 #else
                ""
 #endif
-                );
+               , (fileinfo->o_bid && fileinfo->o_id)?" <\033[1;31mT\033[m>跳转原文":"");
         k = igetkey();
 #ifdef BOARD_SECURITY_LOG
         if (isbm && toupper(k) == 'Q')
@@ -1750,6 +1796,8 @@ int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg
         if (toupper(k) == 'A')
             return view_score_award_record(currboard, fileinfo);
 #endif
+        if (toupper(k) == 'T')
+            return jump_origin_post(conf, fileinfo);
         return FULLUPDATE;
     }
 #endif
