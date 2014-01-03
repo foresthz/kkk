@@ -84,7 +84,7 @@ int b_rules_edit()
     char oldrules[STRLEN];
 #endif
 
-#ifdef MEMBER_MANAGER
+#ifdef MEMBER_MANAGER_0
 	if (!check_board_member_manager(&currmember, currboard, BMP_NOTE)) {
 #else
     if (!chk_currBM(currBM, getCurrentUser())) {
