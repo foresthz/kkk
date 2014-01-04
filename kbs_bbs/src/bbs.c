@@ -717,6 +717,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
 {
     const struct boardheader *bh;
     char board[STRLEN],name[STRLEN],ans[4];
+    struct read_arg *arg = conf->arg;
     int inmail=(((struct read_arg*)conf->arg)->mode==DIR_MODE_MAIL),mode,need_unlink=0;
     unsigned int cut_attach=0;
     int ret;
@@ -951,8 +952,37 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         send_refer_cross_to(bh, info, ret, Anony);
 #endif
     move(3,0); clrtoeol();
-    prints("\033[1;32m%s\033[0;33m<Enter>\033[m","转载成功!");
-    WAIT_RETURN;
+    prints("\033[1;32m转载成功! \033[37m<\033[31mT\033[37m跳转至转载后文章，其他键返回本版>");
+    int ch = igetkey();
+    if (toupper(ch)=='T') {
+        char buf[STRLEN];
+        struct fileheader article[1];
+        int fd, pos;
+
+        setbdir(DIR_MODE_NORMAL, buf, bh->filename);
+        if ((fd=open(buf, O_RDWR, 0644))<0)
+            return prompt_return("打开文章列表错误", 2, 0);
+        get_records_from_id(fd, ret, article, 1, &pos);
+        close(fd);
+        savePos(DIR_MODE_NORMAL, NULL, pos, (struct boardheader *)bh);
+
+        lastboard = currboard;
+        board_setcurrentuser(uinfo.currentboard, -1);
+
+        currboardent = getbid(bh->filename, NULL);
+        currboard = (struct boardheader *)bh;
+        uinfo.currentboard = currboardent;
+        UPDATE_UTMP(currentboard, uinfo);
+        board_setcurrentuser(uinfo.currentboard, 1);
+
+#ifdef HAVE_BRC_CONTROL
+        brc_initial(getCurrentUser()->userid, bh->filename,getSession());
+#endif
+        
+        arg->newmode = DIR_MODE_NORMAL;
+        setbdir(arg->newmode, arg->direct, bh->filename);
+        return NEWDIRECT;
+    }
     return FULLUPDATE;
 }
 
