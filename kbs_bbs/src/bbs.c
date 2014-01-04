@@ -1648,7 +1648,7 @@ int view_security_report_origin(struct _select_def *conf, struct fileheader *fh,
 int jump_origin_post(struct _select_def *conf, struct fileheader *fh)
 {
     struct read_arg *arg=conf->arg;
-    int fd, pos;
+    int fd, pos, isbm, del=0;
     struct boardheader *bh;
     struct fileheader article[1];
     char buf[STRLEN];
@@ -1662,15 +1662,32 @@ int jump_origin_post(struct _select_def *conf, struct fileheader *fh)
     setbdir(DIR_MODE_NORMAL, buf, bh->filename);
     pos=-1;
     if ((fd=open(buf, O_RDWR, 0644))<0)
-        return prompt_return("错误的版面", 2, 0);
+        return prompt_return("打开版面索引错误", 2, 0);
     
     get_records_from_id(fd, fh->o_id, article, 1, &pos);
     close(fd);
 
-    if (pos<=0)
-        return prompt_return("错误的文章（原文可能被删除）", 2, 0);
+#ifdef NEWSMTH
+    isbm = check_board_delete_read_perm(getCurrentUser(), bh, 0);
+#else
+    isbm = chk_currBM(bh->BM, getCurrentUser());
+#endif
+
+    if (pos<=0) {
+        if (!isbm)
+            return prompt_return("错误的文章（原文可能被删除）", 2, 0);
+        else {
+            setbdir(DIR_MODE_DELETED, buf, bh->filename);
+            if ((fd=open(buf, O_RDWR, 0644))<0)
+                return prompt_return("打开版面删除区索引错误", 2, 0);
+            get_records_from_id(fd, fh->o_id, article, 1, &pos);
+            if (pos<=0)
+                return prompt_return("错误的文章（原文可能被清除）", 2, 0);
+            del = 1;
+        }
+    }
     
-    savePos(DIR_MODE_NORMAL, NULL, pos, bh);
+    savePos(del?DIR_MODE_DELETED:DIR_MODE_NORMAL, NULL, pos, bh);
     lastboard = currboard;
     board_setcurrentuser(uinfo.currentboard, -1);
 
@@ -1684,7 +1701,7 @@ int jump_origin_post(struct _select_def *conf, struct fileheader *fh)
     brc_initial(getCurrentUser()->userid, bh->filename,getSession());
 #endif
 
-    arg->newmode = DIR_MODE_NORMAL;
+    arg->newmode = del?DIR_MODE_DELETED:DIR_MODE_NORMAL;
     setbdir(arg->newmode, arg->direct, bh->filename);
     return NEWDIRECT;
 }
