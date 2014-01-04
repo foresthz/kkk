@@ -651,6 +651,36 @@ int delete_record(char *filename, int size, int id, RECORD_FUNC_ARG filecheck, v
     return ret;
 }
 
+int range_delete_records(char *filename, int size, int from, int to, void *arg)
+{
+    int fdr;
+    off_t filesize;
+    char *ptr;
+    int ret;
+
+    if (from<=0 || from>to)
+        return 0;
+    BBS_TRY {
+        if (safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &filesize, &fdr) == 0)
+            BBS_RETURN(-1);
+        ret = 0;
+        if (to * size > filesize)
+            ret = -2;
+        else 
+            memmove(ptr + (from - 1) * size, ptr + to * size, filesize - to * size);
+    }
+    BBS_CATCH {
+        ret = -3;
+    }
+    BBS_END;
+    end_mmapfile(ptr, filesize, -1);
+    if (ret == 0)
+        ftruncate(fdr, filesize - (to - from + 1) * size);
+    close(fdr);
+
+    return ret;
+}
+
 int move_record(char *filename, int size, int id, int toid, RECORD_FUNC_ARG filecheck, void *arg)
 {
     int fdr;
