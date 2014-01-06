@@ -4285,6 +4285,145 @@ int refer_del(struct _select_def* conf, struct refer *refer, void* extraarg) {
     clear();
     return FULLUPDATE;
 }
+#define KEY_BS 8
+int get_field_input_number(int y, int x, int num, int total, int fw){
+    char buf[STRLEN];
+    int ch;
+
+    while(1) {
+        if (num)
+            sprintf(buf, "%*d", fw, num);
+        else
+            sprintf(buf, "%*s", fw, " ");
+        move(y, x+1);
+        prints("\033[32;41;4m%s\033[m", buf);
+        move(y, x+fw);
+        ch = igetkey();
+        if (ch==KEY_BS || ch==KEY_DEL)
+            num = num / 10;
+        else if (ch=='\r')
+            break;
+        else if (ch<'0' || ch>'9')
+            continue;
+        else {
+           sprintf(buf, "%d", num);
+           if (strlen(buf)<fw)
+               num = num * 10 + ch - '0';
+        }
+    }
+    if (num==0 || num>total)
+        return -1;
+    return num;
+}
+#undef KEY_BS
+int select_refer_del_range(int total, int fw, int *from, int *to){
+    char buf[STRLEN];
+    int start, end;
+
+    sprintf(buf, "[ \033[32;41;4m%*s\033[m - \033[32;41;4m%*s\033[m ]", fw, " ", fw, " ");
+    move(5, 21);
+    prints(buf);
+
+    start = end = 0;
+    if ((start=get_field_input_number(5, 22, start, total, fw))<0)
+        return -1;
+    if ((end=get_field_input_number(5, 25+fw, end, total, fw))<0 || end<start)
+        return -1;
+    *from = start;
+    *to = end;
+    return 0;
+}
+int refer_range_del(struct _select_def* conf, struct refer *refer, void* extraarg) {
+    int fw, ch, sel, newsel, ent, total, from, to;
+    struct read_arg *arg=conf->arg;
+    char buf[STRLEN];
+
+    if (refer==NULL)
+        return DONOTHING;
+    if (arg->mode!=DIR_MODE_REFER)
+        return DONOTHING;
+
+    ent = conf->pos;
+    total = arg->filecount;
+    from = to = 0;
+
+    move(0,0);
+    clrtobot();
+    prints("\033[1;32m[区段删除选单] \033[33m<Enter>键选择/<Esc/Q/←>键退出\033[m");
+
+    sprintf(buf, "%d", total);
+    fw = strlen(buf);
+
+    sprintf(buf, "[\033[36m0\033[m] 全部         [ \033[31m%*d\033[m - \033[31m%*d\033[m ]", fw, 1, fw, total);
+    move(2, 4);prints(buf);
+    sprintf(buf, "[\033[36m1\033[m] 当前位置向前 [ \033[31m%*d\033[m - \033[31m%*d\033[m ]", fw, 1, fw, ent);
+    move(3, 4);prints(buf);
+    sprintf(buf, "[\033[36m2\033[m] 当前位置向后 [ \033[31m%*d\033[m - \033[31m%*d\033[m ]", fw, ent, fw, total);
+    move(4, 4);prints(buf);
+    sprintf(buf, "[\033[36m3\033[m] 指定删除区域");
+    move(5, 4);prints(buf);
+    move(sel+2, 2);prints("◇");
+    newsel = sel;
+
+    while(1) {
+        ch = igetkey();
+        switch (ch) {
+            case KEY_UP:
+                newsel--;
+                if (newsel<0)
+                    newsel = 3;
+                break;
+            case KEY_DOWN:
+                newsel++;
+                if (newsel>3)
+                    newsel = 0;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+                newsel = ch - '0';
+                break;
+            case KEY_ESC:
+            case KEY_LEFT:
+            case 'q':
+            case 'Q':
+                return FULLUPDATE;
+            case '\r':
+                if (sel == 0) {
+                    from = 1;
+                    to = total;
+                } else if (sel == 1) {
+                    from = 1;
+                    to = ent;
+                } else if (sel == 2) {
+                    from = ent;
+                    to = total;
+                } else {
+                    if (select_refer_del_range(total, fw, &from, &to)<0) {
+                        prompt_return("指定区域输入错误", 2, 0);
+                        move(5, 21);clrtobot();move(5, 4);
+                        break;
+                    }
+                }
+                move(7, 4);
+                sprintf(buf, "区段删除 \033[31m%d\033[m - \033[31m%d\033[m，确认操作", from, to);
+                if (askyn(buf, 1)==1)
+                    prompt_return("删除完成", 0, 1);
+                else
+                    prompt_return("放弃删除", 1, 1);
+                return DIRCHANGED;
+            default:
+                break;
+        }
+        if (sel!=newsel) {
+            move(sel+2, 2);prints("  ");
+            sel = newsel;
+            move(sel+2, 2);prints("◇");
+        }
+    }
+    return FULLUPDATE;
+}
 int refer_set_read(struct _select_def* conf, struct refer *refer, void* extraarg) {
     struct read_arg *arg=conf->arg;
 
@@ -4485,6 +4624,7 @@ struct key_command refer_comms[]={
     {'r', (READ_KEY_FUNC)refer_read, NULL},
     {'s', (READ_KEY_FUNC)refer_board, NULL},
     {'d', (READ_KEY_FUNC)refer_del, NULL},
+    {'D', (READ_KEY_FUNC)refer_range_del, NULL},
     {'f', (READ_KEY_FUNC)refer_set_read, NULL},
     {',', (READ_KEY_FUNC)read_splitscreen,NULL},
     {'a', (READ_KEY_FUNC)refer_action, (void*)REFER_ACTION_AUTH_SEARCH_NEXT},    
