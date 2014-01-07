@@ -4307,7 +4307,7 @@ int get_field_input_number(int y, int x, int num, int total, int fw){
             continue;
         else {
            sprintf(buf, "%d", num);
-           if (strlen(buf)<fw)
+           if (num==0 || strlen(buf)<fw)
                num = num * 10 + ch - '0';
         }
     }
