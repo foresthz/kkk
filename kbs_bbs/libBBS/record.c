@@ -636,7 +636,7 @@ int delete_record(char *filename, int size, int id, RECORD_FUNC_ARG filecheck, v
             }
         }
         if (ret == 0) {
-            memcpy(ptr + (id - 1) * size, ptr + id * size, filesize - size * id);
+            memmove(ptr + (id - 1) * size, ptr + id * size, filesize - size * id);
         }
     }
     BBS_CATCH {
@@ -659,7 +659,7 @@ int range_delete_records(char *filename, int size, int from, int to, void *arg)
     int ret;
 
     if (from<=0 || from>to)
-        return 0;
+        return -1;
     BBS_TRY {
         if (safe_mmapfile(filename, O_RDWR, PROT_READ | PROT_WRITE, MAP_SHARED, &ptr, &filesize, &fdr) == 0)
             BBS_RETURN(-1);

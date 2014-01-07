@@ -4408,9 +4408,11 @@ int refer_range_del(struct _select_def* conf, struct refer *refer, void* extraar
                 }
                 move(7, 4);
                 sprintf(buf, "区段删除 \033[31m%d\033[m - \033[31m%d\033[m，确认操作", from, to);
-                if (askyn(buf, 1)==1)
+                if (askyn(buf, 0)==1) {
+                    if (range_delete_records(arg->direct, sizeof(struct refer), from, to, NULL)!=0)
+                        return prompt_return("删除失败", 2, 0);
                     prompt_return("删除完成", 0, 1);
-                else
+                } else
                     prompt_return("放弃删除", 1, 1);
                 return DIRCHANGED;
             default:
