@@ -4346,6 +4346,7 @@ int refer_range_del(struct _select_def* conf, struct refer *refer, void* extraar
     ent = conf->pos;
     total = arg->filecount;
     from = to = 0;
+    newsel = sel = 0;
 
     move(0,0);
     clrtobot();
@@ -4363,7 +4364,6 @@ int refer_range_del(struct _select_def* conf, struct refer *refer, void* extraar
     sprintf(buf, "[\033[36m3\033[m] Ö¸¶¨É¾³ýÇøÓò");
     move(5, 4);prints(buf);
     move(sel+2, 2);prints("¡ó");
-    newsel = sel;
 
     while(1) {
         ch = igetkey();
