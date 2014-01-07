@@ -287,7 +287,7 @@ int set_board_member_title_cache(struct board_member *member) {
 	node=get_member_by_index(i);
 	if (NULL==node)
 		return 0;
-	if (get_board_member_title_cache(member->board, member->title, NULL)<=0)
+	if (member->title>0 && get_board_member_title_cache(member->board, member->title, NULL)<=0)
 		return 0;
 	node->title=member->title;
 	return 1;
