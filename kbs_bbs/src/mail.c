@@ -4264,7 +4264,13 @@ int refer_board(struct _select_def* conf, struct refer *refer, void* extraarg) {
     uinfo.currentboard=save_uinfo_currentboard;
     currboardent=save_currboardent;
     currboard=((struct boardheader*)getboard(save_currboardent));
+    UPDATE_UTMP(currentboard, uinfo);
+    board_setcurrentuser(uinfo.currentboard, 1);
     
+#ifdef HAVE_BRC_CONTROL
+    brc_initial(getCurrentUser()->userid, currboard->filename, getSession());
+#endif
+
     return DOQUIT;
 }
 int refer_del(struct _select_def* conf, struct refer *refer, void* extraarg) {
