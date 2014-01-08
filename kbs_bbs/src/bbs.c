@@ -952,9 +952,9 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
         send_refer_cross_to(bh, info, ret, Anony);
 #endif
     move(3,0); clrtoeol();
-    prints("\033[1;32m转载成功! \033[37m<\033[31mT\033[37m跳转至转载后文章，其他键返回本版>");
+    prints("\033[1;32m转载成功! %s", in_mail?"\033[33m<Enter>\033[m":"\033[37m<\033[31mT\033[37m跳转至转载后文章，其他键返回本版>");
     int ch = igetkey();
-    if (toupper(ch)=='T') {
+    if (!in_mail && toupper(ch)=='T') {
         char buf[STRLEN];
         struct fileheader article[1];
         int fd, pos;
@@ -978,7 +978,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
 #ifdef HAVE_BRC_CONTROL
         brc_initial(getCurrentUser()->userid, bh->filename,getSession());
 #endif
-        
+
         arg->newmode = DIR_MODE_NORMAL;
         setbdir(arg->newmode, arg->direct, bh->filename);
         return NEWDIRECT;
