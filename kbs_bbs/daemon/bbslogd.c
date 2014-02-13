@@ -2,6 +2,73 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <signal.h>
+
+#define BBSLOG_APNS
+
+#ifdef BBSLOG_APNS
+static int udpserver_sockfd = -1;
+static struct sockaddr_in dest_addr;
+
+static void udpsock_exit()
+{
+    if(udpserver_sockfd >= 0){
+        close(udpserver_sockfd);
+        udpserver_sockfd = -1;
+    }
+}
+
+static int udpsock_init()
+{
+    if(udpserver_sockfd >= 0){
+        return 0;
+    }
+
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    dest_addr.sin_port = htons(2195);
+
+    udpserver_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(udpserver_sockfd < 0){
+        return -1;
+    }
+
+    return 0;
+}
+
+static int udpsock_send(const void *data, int len)
+{
+    if(udpserver_sockfd < 0){
+        return -1;
+    }
+
+    int val = sendto(udpserver_sockfd, data, len, 0,(struct sockaddr *)&dest_addr, sizeof(struct sockaddr));
+
+    return val;
+}
+
+static int apns_udp_send(char * userid, unsigned char type)
+{
+    unsigned char buf[32];
+    memset(buf, 0, 32);
+
+        //UDP packet format:
+        //0~3: magic: 0x45891267
+        //4~19: userid
+        //20: type: 1:refer, 2:at, 3:mail
+        //30~31: crc16, not used because it's loopback now.
+    buf[0] = 0x45;
+    buf[1] = 0x89;
+    buf[2] = 0x12;
+    buf[3] = 0x67;
+    strncpy(&(buf[4]), userid, 15);
+    buf[20] = type;
+
+    int ret = udpsock_send(buf, 32);
+
+    return ret;
+}
+#endif
+
 struct bbs_msgbuf *rcvlog(int msqid)
 {
     static char buf[1024];
@@ -236,6 +303,68 @@ static void writelog(struct bbs_msgbuf *msg)
 
 #endif
 
+#ifdef BBSLOG_APNS
+    //stiger: 20140128, send to daemon_apns
+    //reply: newbbslog(BBSLOG_USER, "sent reply refer '%s' to '%s'", fh->title, user->userid);
+    //refer: newbbslog(BBSLOG_USER, "sent refer '%s' to '%s'", fh->title, user->userid);
+    //mail www: newbbslog(BBSLOG_USER, "mailed(www) %s %s", targetID, mail_title);
+    //mail backup: newbbslog(BBSLOG_USER, "mailed(www) %s ", targetID);
+    //mail : newbbslog(BBSLOG_USER, "mailed %s %s", targetID, mail_title);
+    if(msg->mtype == BBSLOG_USER){
+        unsigned char action = 0;
+        char dest_userid[16];
+        dest_userid[0] = '\0';
+		if(!strncmp(msg->mtext, "sent reply ", strlen("sent reply "))){
+            action = 1;
+        }
+		if(!strncmp(msg->mtext, "sent refer ", strlen("sent refer "))){
+            action = 2;
+        }
+		if(!strncmp(msg->mtext, "mailed(www) ", strlen("mailed(www) "))){
+            action = 3;
+        }
+		if(!strncmp(msg->mtext, "mailed ", strlen("mailed "))){
+            action = 3;
+        }
+        if(action == 1 || action == 2){
+            char * c_end = msg->mtext + strlen(msg->mtext) - 1;
+            int q_cnt = 0;
+            while(q_cnt < 2 && c_end > msg->mtext){
+                if(c_end[0] == '\''){
+                    q_cnt ++;
+                }
+                c_end --;
+            }
+            if(q_cnt == 2){
+                c_end ++;
+                c_end ++;
+                strncpy(dest_userid, c_end, 16);
+                c_end = strchr(dest_userid, '\'');
+                if(c_end){
+                    c_end[0] = '\0';
+                }
+            }
+        }
+        if(action == 3){
+            char * c_end = strchr(msg->mtext, ' ');
+            if(c_end){
+                char * sec_end = strchr(c_end + 1, ' ');
+                if(sec_end && sec_end[1] != '\0'){
+                    strncpy(dest_userid, c_end + 1, 16);
+                    c_end = strchr(dest_userid, ' ');
+                    if(c_end){
+                        c_end[0] = '\0';
+                    }
+                }
+            }
+        }
+        if(action && dest_userid[0]){
+            int ret = apns_udp_send(dest_userid, action);
+            //TODO: no error handler.
+        }
+    }
+#endif
+
     if ((msg->mtype < 0) || (msg->mtype > sizeof(logconfig) / sizeof(struct taglogconfig)))
         return;
     pconf = &logconfig[msg->mtype-1];
@@ -285,6 +414,9 @@ static void flushlog(int signo)
     if (signo==-1) return;
 #if defined(NEWPOSTLOG) || defined(NEWBMLOG)
 	closenewpostlog();
+#endif
+#ifdef BBSLOG_APNS
+    udpsock_exit();
 #endif
     exit(0);
 }
@@ -421,6 +553,10 @@ int main()
     msqid = init_bbslog();
     if (msqid < 0)
         return -1;
+
+#ifdef BBSLOG_APNS
+	udpsock_init();
+#endif
 
     gb_trunclog=false;
     truncboard=false;
