@@ -981,7 +981,7 @@ int do_cross(struct _select_def *conf,struct fileheader *info,void *varg)
 
         arg->newmode = DIR_MODE_NORMAL;
         setbdir(arg->newmode, arg->direct, bh->filename);
-        return NEWDIRECT;
+        return CHANGEMODE;
     }
     return FULLUPDATE;
 }
@@ -1733,7 +1733,7 @@ int jump_origin_post(struct _select_def *conf, struct fileheader *fh)
 
     arg->newmode = del?DIR_MODE_DELETED:DIR_MODE_NORMAL;
     setbdir(arg->newmode, arg->direct, bh->filename);
-    return NEWDIRECT;
+    return CHANGEMODE;
 }
 
 int showinfo(struct _select_def* conf,struct fileheader *fileinfo,void* extraarg)
