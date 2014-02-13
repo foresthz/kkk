@@ -315,6 +315,8 @@ int display_member_boards(char *uident) {
                     strcpy(color, "\x1b[1;31m");
                 else if (members[i].status==BOARD_MEMBER_STATUS_NORMAL)
                     strcpy(color, "\x1b[1;32m");
+                else if (members[i].status==BOARD_MEMBER_STATUS_BLACK)
+                    strcpy(color, "\x1b[1;30m");
                 else
                     strcpy(color, "\x1b[1;33m");
                 
