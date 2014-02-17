@@ -4,6 +4,12 @@
 #include <signal.h>
 
 #define BBSLOG_APNS
+#define BBSLOG_UPDATE_AR
+/* stiger: 20140217: format to update AR:
+   TCP socket dport: 5111
+   256 bytes for one update: struct fileheader, except:
+   byte 222~251: 30bytes boardname, (it's unused[] in fileheader_t).
+*/
 
 #ifdef BBSLOG_APNS
 static int udpserver_sockfd = -1;
@@ -159,6 +165,39 @@ static void closenewpostlog()
 }
 #endif
 
+#ifdef BBSLOG_UPDATE_AR
+static int updatear_fd = -1;
+static time_t updatear_retrytime=0;
+
+static void open_updatear()
+{
+	updatear_retrytime=time(0);
+
+	struct sockaddr_in araddr;
+	updatear_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(updatear_fd < 0){
+		return;
+	}
+	memset(&araddr, 0, sizeof(struct sockaddr));
+	araddr.sin_family = AF_INET;
+	araddr.sin_port = htons(5111);
+	araddr.sin_addr.s_addr = inet_addr("10.0.4.236");
+	if(connect(updatear_fd, (struct sockaddr *)&araddr, sizeof(struct sockaddr)) < 0){
+		bbslog("3system","update_ar connect fail");
+		close(updatear_fd);
+		updatear_fd = -1;
+		return;
+	}
+}
+
+static void close_updatear()
+{
+    close(updatear_fd);
+    updatear_fd = -1;
+	updatear_retrytime=time(0);
+}
+#endif
+
 static void openbbslog(int first)
 {
     int i;
@@ -182,6 +221,11 @@ static void openbbslog(int first)
 		opennewpostlog();
 #endif
 
+#ifdef BBSLOG_UPDATE_AR
+    if(first || updatear_fd < 0){
+        open_updatear();
+    }
+#endif
 }
 static void writelog(struct bbs_msgbuf *msg)
 {
@@ -193,6 +237,12 @@ static void writelog(struct bbs_msgbuf *msg)
 #if defined(NEWPOSTLOG) || defined(NEWBMLOG)
 	if(!postlog_start && mysqlclosetime && time(0)-mysqlclosetime>600)
 		opennewpostlog();
+#endif
+
+#ifdef BBSLOG_UPDATE_AR
+    if(updatear_fd < 0 && updatear_retrytime && (time(0) - updatear_retrytime > 60)){
+        open_updatear();
+    }
 #endif
 
 #ifdef NEWBMLOG
@@ -235,6 +285,32 @@ static void writelog(struct bbs_msgbuf *msg)
 
 		return;
 	}
+#endif
+
+#ifdef BBSLOG_UPDATE_AR
+	if (msg->mtype == BBSLOG_POST && updatear_fd >= 0){
+		struct _new_postlog * ppl = (struct _new_postlog *) ( &msg->mtext[1]) ;
+
+        struct fileheader fh;
+        char path[STRLEN];
+        int fd;
+
+        bzero(&fh, sizeof(struct fileheader));
+        setbdir(DIR_MODE_NORMAL, path, ppl->boardname);
+        if ((fd = open(path, O_RDWR, 0644)) >= 0) {
+            get_records_from_id(fd, ppl->articleid, &fh, 1, NULL);
+            close(fd);
+        }
+
+        if(fh.id){
+            strncpy(((unsigned char *)(&fh)) + 222, ppl->boardname, 30);
+
+            ssize_t n = write(updatear_fd, &fh, 256);
+            if(n != 256){
+                close_updatear();
+            }
+        }
+    }
 #endif
 
 #ifdef NEWPOSTLOG
@@ -414,6 +490,9 @@ static void flushlog(int signo)
     if (signo==-1) return;
 #if defined(NEWPOSTLOG) || defined(NEWBMLOG)
 	closenewpostlog();
+#endif
+#ifdef BBSLOG_UPDATE_AR
+    close_updatear();
 #endif
 #ifdef BBSLOG_APNS
     udpsock_exit();
