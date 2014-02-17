@@ -491,20 +491,33 @@ int get_top(int type)
                 strncpy(userid, row[5], IDLEN);
                 userid[IDLEN]=0;
             }
+            /* 所有正常十大的is_sectop均为0 */
+            is_sectop = 0;
             /**一个版面最多1个十大**/
             if (type==0) {
                 m = 0;
-                is_sectop = 0;
                 if (topnum<mytop[type]) {   // 当全站十大不满时，不考虑分区十大
+                   /*这里不对，同一个版面里第二篇够上十大的帖子会丢失，因此用is_sectop作为标识，全站十大未满时，同一版面的第二篇全站十大记为分区十大 */
                    for (n = 0; n < topnum; n++) {
                         if (!strcmp(row[0], top[n].board))
                             m++;
                     }
-                    if (m>0)
-                        continue;
+                    if (m>0) {
+                        if (secid!=-1 && sectopnum[secid]<SECTOPCOUNT) { /* 分区十大满了就不再统计了 */
+                            m = 0;
+                            for (n = 0; n < sectopnum[secid]; n++) {
+                            if (!strcmp(row[0], sectop[secid][n].board))
+                                m++;
+                            }
+                            if (m>0)
+                                continue;
+                            is_sectop = 1;
+                        } else
+                            continue;
+                    }
                 } else {
                     /***分区十大里一个版面也最多1个***/
-                    if (secid!=-1) {
+                    if (secid!=-1 && sectopnum[secid]<SECTOPCOUNT) { /* 分区十大满了就不再统计了 */
                         m = 0;
                         for (n = 0; n < sectopnum[secid]; n++) {
                         if (!strcmp(row[0], sectop[secid][n].board))
@@ -519,7 +532,7 @@ int get_top(int type)
 
 
             /***先记录正常十大的值***/
-            if (topnum < mytop[type]) {
+            if (topnum < mytop[type] && !is_sectop) {
 
                 strncpy(top[topnum].board, row[0], BOARDNAMELEN);
                 top[topnum].board[BOARDNAMELEN-1]='\0';
