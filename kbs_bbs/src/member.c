@@ -890,10 +890,11 @@ static int b_member_join(struct _select_def *conf) {
 }
 
 static int b_member_key(struct _select_def *conf, int key) {
-    char ans[4];
+    char ans[20];
     char buf[STRLEN];
     char path[PATHLEN];
-    int del;
+    int i, del, ent;
+    struct board_member *query_member;
     
     if (conf->item_count<=0 && 'v'!=key && 'j'!=key && 'e'!=key && 'f'!=key) {
         return SHOW_CONTINUE;
@@ -921,6 +922,27 @@ static int b_member_key(struct _select_def *conf, int key) {
             board_member_status=board_member_status % BOARD_MEMBER_STATUS_TYPES;
             conf->item_count = get_board_members(currboard->filename, board_member_status);
             return SHOW_DIRCHANGE;
+        case '/':
+            sprintf(buf, "输入要查找的ID: ");
+            getdata(t_lines-1, 0, buf, ans, 13, DOECHO, NULL, true);
+            if (ans[0]=='\0')
+                return SHOW_REFRESH;
+            query_member = (struct board_member*)malloc(sizeof(struct board_member) * conf->item_count);
+            i = load_board_members(currboard->filename, query_member, board_member_sort, 0, conf->item_count, board_member_status);
+            if (i<=0) {
+                free(query_member);
+                return SHOW_REFRESH;
+            }
+            for (ent=0;ent<conf->item_count;ent++) {
+                if (strcasecmp(ans, query_member[ent].user)==0) {
+                    conf->new_pos = ent+1;
+                    update_endline();
+                    free(query_member);
+                    return SHOW_SELCHANGE;
+                }
+            }
+            free(query_member);
+            return SHOW_REFRESH;
         case 'y': // 通过申请
             if (!board_member_is_manager)
                 return SHOW_CONTINUE;
