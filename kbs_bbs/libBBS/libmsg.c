@@ -20,6 +20,11 @@ int canmsg(struct userec *fromuser, struct user_info *uin)
 {
     if (uin->mode == BBSNET || uin->mode == TETRIS || uin->mode==WINMINE)
         return false;
+#ifdef HAVE_USERSCORE
+    /* 积分低于2k，不允许给非粉丝发消息 */
+    if (fromuser->score_user<2000 && !hisfriend(searchuser(fromuser->userid), uin))
+        return false;
+#endif
     if ((uin->pager & ALLMSG_PAGER) || HAS_PERM(fromuser, PERM_SYSOP))
         return true;
     if ((uin->pager & FRIENDMSG_PAGER)) {

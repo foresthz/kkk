@@ -938,6 +938,14 @@ int canIsend2(struct userec *src, const char *userid)
     sethomefile(path, userid, "ignores");
     if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, src->userid))
         return false;
+#ifdef HAVE_USERSCORE
+    /* 积分低于2k，不允许给非粉丝发信 */
+    if (src->score_user<2000 && strcasecmp(userid, "SYSOP")) {
+        sethomefile(path, userid, "friends");
+        if (!search_record(path, buf, sizeof(struct friends), (RECORD_FUNC_ARG)cmpfnames, src->userid))
+            return false;
+    }
+#endif
     /*
      * sethomefile(path, userid, "/bads");
      * if (search_record(path, buf, IDLEN + 1, (RECORD_FUNC_ARG) cmpinames, session->getCurrentUser()->userid))
