@@ -348,6 +348,12 @@ static int www_generateOriginIndex(const char* board)
             AVL_Insert(&root, &(bs->topfh[i]), FILE_ON_TOP, &temp);
             if (temp == NULL) { //malloc failure, impossible?
                 clearWWWThreadList(tail);
+                ldata2.l_type = F_UNLCK;
+                fcntl(fd2, F_SETLKW, &ldata2);
+                close(fd2);
+                ldata.l_type = F_UNLCK;
+                fcntl(fd, F_SETLKW, &ldata);
+                close(fd);
                 BBS_RETURN(-5);
             }
             tail = temp;
@@ -359,6 +365,12 @@ static int www_generateOriginIndex(const char* board)
             AVL_Insert(&root, &(ptr1[i]), 0, &temp);
             if (temp == NULL) { //malloc failure, impossible?
                 clearWWWThreadList(tail);
+                ldata2.l_type = F_UNLCK;
+                fcntl(fd2, F_SETLKW, &ldata2);
+                close(fd2);
+                ldata.l_type = F_UNLCK;
+                fcntl(fd, F_SETLKW, &ldata);
+                close(fd);
                 BBS_RETURN(-5);
             }
             tail = temp;
@@ -473,6 +485,9 @@ PHP_FUNCTION(bbs_searchtitle)
 
     resultList  = emalloc(maxreturn * sizeof(struct wwwthreadheader *));
     if (resultList == NULL) {
+        ldata.l_type = F_UNLCK;
+        fcntl(fd, F_SETLKW, &ldata);
+        close(fd);
         RETURN_LONG(-211);
     }
 
@@ -489,6 +504,9 @@ PHP_FUNCTION(bbs_searchtitle)
          * fetching articles
          */
         if (array_init(return_value) == FAILURE) {
+            ldata.l_type = F_UNLCK;
+            fcntl(fd, F_SETLKW, &ldata);
+            close(fd);
             BBS_PHPLIB_RETURN_LONG(-210);
         }
 #ifdef HAVE_BRC_CONTROL
