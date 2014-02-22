@@ -80,6 +80,23 @@ int chkusermail(struct userec *user)
     return 0;
 }
 
+#ifdef HAVE_USERSCORE
+/* 积分低于2k，不允许给非粉丝发信 */
+int sufficient_score_sendmsg(struct userec *fromuser, const char *userid) {
+    char path[STRLEN];
+
+    if (HAS_PERM(fromuser, PERM_BMAMANGER) || fromuser->score_user>=2000)
+        return 1;
+    if (!userid)
+        return 0;
+    if (strcasecmp(userid, "SYSOP") && strcasecmp(userid, "Arbitrator")) {
+        sethomefile(path, userid, "friends");
+        if (!search_record(path, NULL, sizeof(struct friends), (RECORD_FUNC_ARG)cmpfnames, fromuser->userid))
+            return 0;
+    }
+    return 1;
+}
+#endif
 
 /*
  * 检查发信权限。

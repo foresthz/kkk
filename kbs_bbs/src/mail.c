@@ -441,6 +441,13 @@ int do_send(char *userid, char *title, char *q_file)
     if (!strchr(userid, '@')) {
         if (getuser(userid, &user) == 0)
             return -1;
+#ifdef HAVE_USERSCORE
+        /* 直接发信或版面回信需要进行积分检查 */
+        if ((*q_file=='\0' || strncmp(q_file, "mail", 4)) && !sufficient_score_sendmsg(getCurrentUser(), user->userid)) {
+            prints("\033[1m\033[33m您积分不足，不能给 %s 发信。\033[m\n\n", user->userid);
+            return -2;
+        }
+#endif
         /* fancyrabbit Sep 14 2007, fixed replied mail lost bug after modifying ID-case */
         sprintf(userid, user -> userid);
         ret = check_mail_perm(getCurrentUser(), user);
@@ -478,6 +485,12 @@ int do_send(char *userid, char *title, char *q_file)
          * else
          * strcat(userid,".edu.tw");}
          */
+#ifdef HAVE_USERSCORE
+        if (!sufficient_score_sendmsg(getCurrentUser(), NULL)) {
+            prints("\033[1m\033[33m您积分不足，不能给 %s 发信。\033[m\n\n", userid);
+            return -2;
+        }
+#endif
         switch (check_mail_perm(getCurrentUser(), NULL)) {
             case 5:
             case 6:
@@ -684,6 +697,14 @@ redo:
                     noansi = 1;
 
                 prints("请稍候, 信件传递中...\n");
+#ifdef HAVE_USERSCORE
+                if (!sufficient_score_sendmsg(getCurrentUser(), NULL)) {
+                    prints("\033[1m\033[33m很抱歉∶系统无法发出此信．因为您的积分不足．\033[m\033[m\n\n");
+                    sprintf(save_title, "退信∶信件发送失败．");
+                    mail_file(getCurrentUser()->userid, filepath, getCurrentUser()->userid, save_title, BBSPOST_MOVE, NULL);
+                    return -2;
+                }
+#endif
                 res = bbs_sendmail(tmp_fname, title, userid, isbig5, noansi,getSession());
                 if (res) {
                     res = -1;
@@ -720,6 +741,15 @@ redo:
          * }
          */
 
+#ifdef HAVE_USERSCORE
+        /* 直接发信或版面回信需要进行积分检查 */
+        if ((*q_file=='\0' || strncmp(q_file, "mail", 4)) && !sufficient_score_sendmsg(getCurrentUser(), userid)) {
+            prints("\033[1m\033[33m很抱歉∶系统无法发出此信．因为您的积分不足．\033[m\033[m\n\n");
+            sprintf(save_title, "退信∶信件发送失败．");
+            mail_file(getCurrentUser()->userid, filepath, getCurrentUser()->userid, save_title, BBSPOST_MOVE, NULL);
+            return -2;
+        }
+#endif
         if (false == canIsend2(getCurrentUser(), userid)) {  /* Leeward 98.04.10 */
             prints("\033[1m\033[33m很抱歉∶系统无法发出此信．因为 %s 拒绝接收您的信件．\033[m\033[m\n\n", userid);
             sprintf(save_title, "退信∶ %s 拒绝接收您的信件．", userid);
