@@ -82,7 +82,7 @@ int chkusermail(struct userec *user)
 
 #ifdef HAVE_USERSCORE
 /* 积分低于2k，不允许给非粉丝发信 */
-int sufficient_score_sendmsg(struct userec *fromuser, const char *userid) {
+int sufficient_score_to_sendmail(struct userec *fromuser, const char *userid) {
     char path[STRLEN];
 
     if (HAS_PERM(fromuser, PERM_BMAMANGER) || fromuser->score_user>=2000)

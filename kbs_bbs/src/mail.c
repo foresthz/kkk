@@ -443,7 +443,7 @@ int do_send(char *userid, char *title, char *q_file)
             return -1;
 #ifdef HAVE_USERSCORE
         /* 直接发信或版面回信需要进行积分检查 */
-        if ((*q_file=='\0' || strncmp(q_file, "mail", 4)) && !sufficient_score_sendmsg(getCurrentUser(), user->userid)) {
+        if ((*q_file=='\0' || strncmp(q_file, "mail", 4)) && !sufficient_score_to_sendmail(getCurrentUser(), user->userid)) {
             prints("\033[1m\033[33m您积分不足，不能给 %s 发信。\033[m\n\n", user->userid);
             return -2;
         }
@@ -486,7 +486,7 @@ int do_send(char *userid, char *title, char *q_file)
          * strcat(userid,".edu.tw");}
          */
 #ifdef HAVE_USERSCORE
-        if (!sufficient_score_sendmsg(getCurrentUser(), NULL)) {
+        if (!sufficient_score_to_sendmail(getCurrentUser(), NULL)) {
             prints("\033[1m\033[33m您积分不足，不能给 %s 发信。\033[m\n\n", userid);
             return -2;
         }
@@ -698,7 +698,7 @@ redo:
 
                 prints("请稍候, 信件传递中...\n");
 #ifdef HAVE_USERSCORE
-                if (!sufficient_score_sendmsg(getCurrentUser(), NULL)) {
+                if (!sufficient_score_to_sendmail(getCurrentUser(), NULL)) {
                     prints("\033[1m\033[33m很抱歉∶系统无法发出此信．因为您的积分不足．\033[m\033[m\n\n");
                     sprintf(save_title, "退信∶信件发送失败．");
                     mail_file(getCurrentUser()->userid, filepath, getCurrentUser()->userid, save_title, BBSPOST_MOVE, NULL);
@@ -743,7 +743,7 @@ redo:
 
 #ifdef HAVE_USERSCORE
         /* 直接发信或版面回信需要进行积分检查 */
-        if ((*q_file=='\0' || strncmp(q_file, "mail", 4)) && !sufficient_score_sendmsg(getCurrentUser(), userid)) {
+        if ((*q_file=='\0' || strncmp(q_file, "mail", 4)) && !sufficient_score_to_sendmail(getCurrentUser(), userid)) {
             prints("\033[1m\033[33m很抱歉∶系统无法发出此信．因为您的积分不足．\033[m\033[m\n\n");
             sprintf(save_title, "退信∶信件发送失败．");
             mail_file(getCurrentUser()->userid, filepath, getCurrentUser()->userid, save_title, BBSPOST_MOVE, NULL);
