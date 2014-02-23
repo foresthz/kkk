@@ -332,7 +332,10 @@ PHP_FUNCTION(bbs_sufficient_score_to_sendmail)
     if (ac!=1 || zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &ulen)==FAILURE) {
         WRONG_PARAM_COUNT;
     }
-    ret = sufficient_score_to_sendmail(getCurrentUser(), userid);
+    if (strchr(userid, "@"))
+        ret = sufficient_score_to_sendmail(getCurrentUser(), NULL);
+    else
+        ret = sufficient_score_to_sendmail(getCurrentUser(), userid);
     RETURN_LONG(ret);
 #else
     RETURN_LONG(1);
