@@ -87,7 +87,7 @@ int sufficient_score_to_sendmail(struct userec *fromuser, const char *userid) {
 
     if (HAS_PERM(fromuser, PERM_BMAMANGER) || fromuser->score_user>=2000)
         return 1;
-    if (!userid)
+    if (!userid || strchr(userid, '@'))
         return 0;
     if (strcasecmp(userid, "SYSOP") && strcasecmp(userid, "Arbitrator")) {
         sethomefile(path, userid, "friends");

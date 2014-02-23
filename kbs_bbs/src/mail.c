@@ -2596,6 +2596,12 @@ int doforward(struct _select_def* conf, char *direct, struct fileheader *fh)
     /*
      * 确认地址是否正确 added by dong, 1998.10.1
      */
+#ifdef HAVE_USERSCORE
+    if (!sufficient_score_to_sendmail(getCurrentUser(), address)) {
+        prints("\033[1m\033[33m您积分不足，不能给 %s 发信。\033[m\n\n", address);
+        return -7;
+    }
+#endif
     sprintf(genbuf, "确定将文章寄给 %s 吗? (Y/N) [Y]: ", address);
     gdataret = getdata(3, 0, genbuf, receiver, 3, DOECHO, NULL, true);
     if (gdataret == -1 || receiver[0] == 'n' || receiver[0] == 'N')
