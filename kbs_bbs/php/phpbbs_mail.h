@@ -11,6 +11,7 @@ PHP_FUNCTION(bbs_getmails);
 PHP_FUNCTION(bbs_getmailusedspace);
 PHP_FUNCTION(bbs_is_save2sent);
 PHP_FUNCTION(bbs_can_send_mail);
+PHP_FUNCTION(bbs_sufficient_score_to_sendmail);
 PHP_FUNCTION(bbs_loadmaillist);
 PHP_FUNCTION(bbs_changemaillist);
 
@@ -51,6 +52,7 @@ PHP_FUNCTION(bbs_new_msg_get_size);
     PHP_FE(bbs_getmailusedspace, NULL) \
     PHP_FE(bbs_is_save2sent, NULL) \
     PHP_FE(bbs_can_send_mail, NULL) \
+    PHP_FE(bbs_sufficient_score_to_sendmail, NULL) \
     PHP_FE(bbs_loadmaillist, NULL) \
     PHP_FE(bbs_changemaillist, NULL) \
     PHP_FE(bbs_postmail, NULL) \
