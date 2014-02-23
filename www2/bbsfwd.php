@@ -70,6 +70,9 @@ if ($articles[1]["ATTACHPOS"]) {
 		if($target == "")
 			html_error_quit("请指定对象");
 
+		if(!bbs_sufficient_score_to_sendmail($target))
+			html_error_quit("积分不足，不能转寄信件给".$target);
+
 		if( isset($_POST["big5"]) )
 			$big5 = $_POST["big5"];
 		else
