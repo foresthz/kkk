@@ -25,6 +25,8 @@ if($mailfile == "")		// if not reply
 	
 	if (!strcasecmp($incept,'guest'))
 		html_error_quit("不能发信给guest");
+	if (!bbs_sufficient_score_to_sendmail($incept))
+		html_error_quit("您积分不足，不能给 ".$incept." 发信！");
 }
 
 $title = trim(@$_POST["title"]);

@@ -42,11 +42,13 @@
 		$destuserid = isset($_GET["userid"])?$_GET["userid"]:'';
 	}
 	
-	if(isset($_GET["userid"]))
+	if($destuserid)
 	{
 		$lookupuser = array();
 		if (!bbs_getuser($destuserid, $lookupuser))
 			html_error_quit("错误的收件人ID");
+        if (isset($board) && !bbs_sufficient_score_to_sendmail($lookupuser["userid"]))
+            html_error_quit("您积分不足，不能给 ".$lookupuser["userid"]." 发信！");
 	}
 
 	//system mailboxs

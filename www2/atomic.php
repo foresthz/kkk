@@ -775,6 +775,8 @@ function atomic_mailpost() {
 			$incept = $lookupuser['userid'];
 		
 			if (!strcasecmp($incept,'guest')) atomic_error("不能发信给guest");
+		
+			if (!bbs_sufficient_score_to_sendmail($incept)) atomic_error("积分不足，不能发信给".$incept);
 			
 			$ret = bbs_postmail($incept,$title,$content,$sig,$backup);
 		}
