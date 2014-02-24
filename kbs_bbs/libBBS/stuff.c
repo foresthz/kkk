@@ -739,6 +739,7 @@ void bbssettime(time_t now)
 #ifdef HAVE_USERSCORE
             int score;
             get_scorelimit_to_sendmail(&score);
+            publicshm->sendmailscorelimit = score;
 #endif
             /*
              * 开始的sysconf.img版本号为0
