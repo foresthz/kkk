@@ -3693,3 +3693,56 @@ int edit_board_delete_read_perm(void)
     }
     return 0;
 }
+
+#ifdef HAVE_USERSCORE
+int manage_scorelimit_to_sendmail() {
+    int score, new;
+    char ans[16];
+
+    modify_user_mode(ADMIN);
+    if (!check_systempasswd())
+        return -1;
+    get_scorelimit_to_sendmail(&score);
+
+    move(0, 0);
+    clear();
+    prints("\033[1;36m[设定发送信件最低积分要求]\033[m\n\n");
+    sprintf(ans, "%d", score);
+    prints("目前发送信件最低积分要求为: \033[1;32m%d\033[m", score);
+    move(4, 0);
+    prints("<\033[31m^C\033[m>取消修改");
+    getdata(3, 0, "请输入新的最低积分要求: ", ans, 6, DOECHO, NULL, false);
+    move(4, 0);
+    if (!ans[0]) {
+        prints("\033[33m取消...<Enter>\033[m");
+        WAIT_RETURN;
+        return -1;
+    }
+    new = atoi(ans);
+    if (new<=0) {
+        prints("\033[31m输入错误...\033[33m<enter>\033[m");
+        WAIT_RETURN;
+        return -1;
+    } else if (new==score) {
+        prints("\033[33m发送信件最低积分要求未发生变化...\033[33m<Enter>\033[m");
+        WAIT_RETURN;
+        return -1;
+    }
+    if (askyn("确定修改发送信件最低积分要求", 0)==0) {
+        prints("\033[33m取消...<Enter>\033[m");
+        WAIT_RETURN;
+        return -1;
+    } else if (set_scorelimit_to_sendmail(new)<0) {
+        prints("\033[31m发生错误, 请报告技术站务...\033[33m<Enter>\033[m");
+        WAIT_RETURN;
+        return -1;
+    } else {
+        char title[STRLEN];
+        prints("发送信件最低积分要求已设置为 \033[32m%d \033[33m<Enter>\033[m", new);
+        sprintf(title, "调整发送信件最低积分要求 %d->%d", score, new);
+        securityreport(title, NULL, NULL, getSession());
+    }
+    WAIT_RETURN;
+    return 0;
+}
+#endif

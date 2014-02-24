@@ -81,11 +81,29 @@ int chkusermail(struct userec *user)
 }
 
 #ifdef HAVE_USERSCORE
+#define DEFAULT_SCORE_LIMIT 2000
+#define SCORE_LIMIT_FILE "etc/sendmail_score_limit"
+int set_scorelimit_to_sendmail(int score) {
+    return write_integer_to_file(SCORE_LIMIT_FILE, score);
+}
+
+int get_scorelimit_to_sendmail(int *score) {
+    if (read_integer_from_file(SCORE_LIMIT_FILE, score)<0) {
+        *score = DEFAULT_SCORE_LIMIT;
+        set_scorelimit_to_sendmail(*score);
+    }
+    return 0;
+}
+#undef DEFAULT_SCORE_LIMIT
+#undef SCORE_LIMIT_FILE
+
 /* 积分低于2k，不允许给非粉丝发信 */
 int sufficient_score_to_sendmail(struct userec *fromuser, const char *userid) {
     char path[STRLEN];
+    int score;
 
-    if (HAS_PERM(fromuser, PERM_BMAMANGER) || fromuser->score_user>=2000)
+    get_scorelimit_to_sendmail(&score);
+    if (HAS_PERM(fromuser, PERM_BMAMANGER) || fromuser->score_user>=score)
         return 1;
     if (!userid || strchr(userid, '@'))
         return 0;

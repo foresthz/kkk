@@ -76,6 +76,9 @@ KBS_COMM_LISTS_FUNC_V(m_stoplogin);
 KBS_COMM_LISTS_FUNC_V(m_trace);
 KBS_COMM_LISTS_FUNC_V(m_unregister);
 KBS_COMM_LISTS_FUNC_V(m_vote);
+#ifdef HAVE_USERSCORE
+KBS_COMM_LISTS_FUNC_V(manage_scorelimit_to_sendmail);
+#endif
 KBS_COMM_LISTS_FUNC_V(New);
 KBS_COMM_LISTS_FUNC_V(ov_send);
 KBS_COMM_LISTS_FUNC_V(Post);

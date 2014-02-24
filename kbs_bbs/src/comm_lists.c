@@ -56,6 +56,9 @@ static const CMD_LIST CMD[]={
     {"SetTrace",            m_trace,                                0},
     {"RevokeForm",          m_unregister,                           0},
     {"OpenVote",            m_vote,                                 0},
+#ifdef HAVE_USERSCORE
+    {"ScoreLimit",          manage_scorelimit_to_sendmail,          0},
+#endif
     {"BoardsNew",           New,                                    0},
     {"OverrideSend",        ov_send,                                0},
     {"PostArticle",         Post,                                   0},

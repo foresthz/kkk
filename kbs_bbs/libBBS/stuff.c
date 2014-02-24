@@ -595,6 +595,46 @@ int seek_in_file(const char* filename, const char* seekstr, char *result)
     return retv;
 }
 
+/* 从二进制文件中读一个整数 */
+int read_integer_from_file(char *filename, int *value)
+{
+    char *ptr;
+    off_t filesize;
+    int ret=0, n;
+
+    BBS_TRY {
+        if (safe_mmapfile(filename, O_RDONLY, PROT_READ, MAP_SHARED, &ptr, &filesize, NULL) == 0)
+            BBS_RETURN(-1);
+        if (filesize == sizeof(int)) {
+            memcpy(&n, ptr, sizeof(int));
+            if (value)
+                *value = n;
+        } else
+            ret = -1;
+    }
+    BBS_CATCH {
+    }
+    BBS_END;
+    end_mmapfile((void *)ptr, filesize, -1);
+    return ret;
+}
+
+/* 写一个整数到二进制文件 */
+int write_integer_to_file(char *filename, int value)
+{
+    int fd;
+
+    if ((fd = open(filename, O_WRONLY | O_CREAT, 0664)) == -1)
+        return -1;
+    writew_lock(fd, 0, SEEK_SET, 0);
+    lseek(fd, 0, SEEK_SET);
+    safewrite(fd, &value, sizeof(int));
+    un_lock(fd, 0, SEEK_SET, 0);
+    ftruncate(fd, sizeof(int));
+    close(fd);
+    return 0;
+}
+
 struct public_data *get_publicshm() {
     int iscreate;
 
