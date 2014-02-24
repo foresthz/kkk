@@ -736,6 +736,10 @@ void bbssettime(time_t now)
 #ifdef TITLEKEYWORD
             load_title_key(1, 0, NULL);
 #endif
+#ifdef HAVE_USERSCORE
+            int score;
+            get_scorelimit_to_sendmail(&score);
+#endif
             /*
              * 开始的sysconf.img版本号为0
              */

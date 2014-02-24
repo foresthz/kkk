@@ -3719,7 +3719,7 @@ int manage_scorelimit_to_sendmail() {
         return -1;
     }
     new = atoi(ans);
-    if (new<=0) {
+    if (new<0) {
         prints("\033[31m输入错误...\033[33m<enter>\033[m");
         WAIT_RETURN;
         return -1;
@@ -3742,6 +3742,9 @@ int manage_scorelimit_to_sendmail() {
         sprintf(title, "调整发送信件最低积分要求 %d->%d", score, new);
         securityreport(title, NULL, NULL, getSession());
     }
+    setpublicshmreadonly(0);
+    publicshm->sendmailscorelimit = new;
+    setpublicshmreadonly(1);
     WAIT_RETURN;
     return 0;
 }

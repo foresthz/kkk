@@ -307,7 +307,12 @@ struct public_data {
     struct top_header sectop[SECNUM][10];
 #endif
 
+#ifdef HAVE_USERSCORE
+    int sendmailscorelimit;
+    char unused[708];
+#else
     char unused[712];
+#endif
 
 #ifdef FLOWBANNER
     int bannercount;
