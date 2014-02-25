@@ -386,6 +386,7 @@ static void writelog(struct bbs_msgbuf *msg)
     //mail www: newbbslog(BBSLOG_USER, "mailed(www) %s %s", targetID, mail_title);
     //mail backup: newbbslog(BBSLOG_USER, "mailed(www) %s ", targetID);
     //mail : newbbslog(BBSLOG_USER, "mailed %s %s", targetID, mail_title);
+    //mail backup: newbbslog(BBSLOG_USER, "mailed %s ", targetID);
     if(msg->mtype == BBSLOG_USER){
         unsigned char action = 0;
         char dest_userid[16];
@@ -425,7 +426,7 @@ static void writelog(struct bbs_msgbuf *msg)
             char * c_end = strchr(msg->mtext, ' ');
             if(c_end){
                 char * sec_end = strchr(c_end + 1, ' ');
-                if(sec_end && sec_end[1] != '\0'){
+                if(sec_end && sec_end[1] != '\0' && sec_end[1] != '\n' && sec_end[1] != '\r'){
                     strncpy(dest_userid, c_end + 1, 16);
                     c_end = strchr(dest_userid, ' ');
                     if(c_end){
