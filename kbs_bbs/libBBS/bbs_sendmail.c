@@ -100,9 +100,10 @@ int get_scorelimit_to_sendmail(int *score) {
 /* 积分低于2k，不允许给非粉丝发信 */
 int sufficient_score_to_sendmail(struct userec *fromuser, const char *userid) {
     char path[STRLEN];
-    int score;
 
-    if (HAS_PERM(fromuser, PERM_BMAMANGER) || fromuser->score_user>=publicshm->sendmailscorelimit)
+    if (HAS_PERM(fromuser, PERM_BMAMANGER) || HAS_PERM(fromuser, PERM_SYSOP)
+            || HAS_PERM(fromuser, PERM_ADMIN) || HAS_PERM(formuser, PERM_JURY)
+            || fromuser->score_user>=publicshm->sendmailscorelimit)
         return 1;
     if (!userid || strchr(userid, '@'))
         return 0;
