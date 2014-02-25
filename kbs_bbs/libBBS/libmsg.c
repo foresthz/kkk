@@ -16,6 +16,21 @@ int write_peer(bbsmsg_t * msgbuf)
 }
 */
 
+#ifdef HAVE_USERSCORE
+/* 积分低于2k，不允许给非粉丝发信息 */
+int sufficient_score_to_sendmsg(struct userec *fromuser, struct user_info *uin) {
+    if (HAS_PERM(fromuser, PERM_BMAMANGER) || HAS_PERM(fromuser, PERM_SYSOP)
+            || HAS_PERM(fromuser, PERM_ADMIN) || HAS_PERM(fromuser, PERM_JURY)
+            || fromuser->score_user>=publicshm->sendmailscorelimit)
+        return 1;
+    if (strcasecmp(uin->userid, "SYSOP") && strcasecmp(uin->userid, "Arbitrator")) {
+        if (!hisfriend(searchuser(fromuser->userid), uin))
+            return 0;
+    }
+    return 1;
+}
+#endif
+
 int canmsg(struct userec *fromuser, struct user_info *uin)
 {
     if (uin->mode == BBSNET || uin->mode == TETRIS || uin->mode==WINMINE)

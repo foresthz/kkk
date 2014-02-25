@@ -102,7 +102,7 @@ int sufficient_score_to_sendmail(struct userec *fromuser, const char *userid) {
     char path[STRLEN];
 
     if (HAS_PERM(fromuser, PERM_BMAMANGER) || HAS_PERM(fromuser, PERM_SYSOP)
-            || HAS_PERM(fromuser, PERM_ADMIN) || HAS_PERM(formuser, PERM_JURY)
+            || HAS_PERM(fromuser, PERM_ADMIN) || HAS_PERM(fromuser, PERM_JURY)
             || fromuser->score_user>=publicshm->sendmailscorelimit)
         return 1;
     if (!userid || strchr(userid, '@'))

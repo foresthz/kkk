@@ -130,6 +130,17 @@ int mode;
             inremsg = false;
             return -1;
         }
+#ifdef HAVE_USERSCORE
+        if (!sufficient_score_to_sendmsg(getCurrentUser(), uin)) {
+            move(2, 0);
+            prints("您积分不足，不能给 %s 发送消息...", uident);
+            pressreturn();
+            move(2, 0);
+            clrtoeol();
+            inremsg = false;
+            return -1;
+        }
+#endif
         if (!canmsg(getCurrentUser(), uin)) {
             move(2, 0);
             prints("对方已经关闭接受讯息的呼叫器...");
