@@ -275,6 +275,26 @@ int new_msg_get_capacity(struct userec *user) {
 		
 	return NEW_MSG_CAPACITY;
 }
+
+#ifdef HAVE_USERSCORE
+/* 积分低于2k，不允许给非粉丝发短信息 */
+int sufficient_score_to_sendnewmsg(struct userec *fromuser, struct userec *touser) {
+    char path[STRLEN];
+
+    if (HAS_PERM(fromuser, PERM_BMAMANGER) || HAS_PERM(fromuser, PERM_SYSOP)
+            || HAS_PERM(fromuser, PERM_ADMIN) || HAS_PERM(fromuser, PERM_JURY)
+            || fromuser->score_user>=publicshm->sendmailscorelimit)
+        return 1;
+    if (!touser)
+        return 0;
+    if (strcasecmp(touser->userid, "SYSOP") && strcasecmp(touser->userid, "Arbitrator")) {
+        sethomefile(path, touser->userid, "friends");
+        if (!search_record(path, NULL, sizeof(struct friends), (RECORD_FUNC_ARG)cmpfnames, fromuser->userid))
+            return 0;
+    }
+    return 1;
+}
+#endif
 /**
   * 检查发送权限
   * @return 0: 没有问题
@@ -325,6 +345,10 @@ int new_msg_check(struct userec *from, struct userec *to) {
 	if (!canIsend2(from, to->userid))
 		return -7;
 	
+#ifdef HAVE_USERSCORE
+    if (!sufficient_score_to_sendnewmsg(from, to))
+        return -13;
+#endif
 	size=new_msg_get_capacity(from);
 	if (size!=0) {
 		used=new_msg_get_size(from);

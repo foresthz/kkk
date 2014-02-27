@@ -219,6 +219,11 @@ int new_msg_write(struct userec *incept, int mode) {
 			case -12:
 				strcpy(buf, "guest不能使用短信息功能，请登录后发送");
 				break;
+#ifdef HAVE_USERSCORE
+            case -13:
+                sprintf(buf, "您积分不足，不能给 %s 发送短消息", incept->userid);
+                break;
+#endif
 			case -1:
 			case -2:
 			default:
