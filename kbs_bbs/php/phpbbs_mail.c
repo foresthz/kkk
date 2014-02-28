@@ -43,7 +43,7 @@ void bbs_make_new_msg_message_array(zval *array, struct new_msg_message *msg) {
 	add_assoc_string(array, "MSG", (&(msg->msg))->msg , 1);
 	add_assoc_long(array, "ATTACHMENT_SIZE", (&(msg->attachment))->size);
 	add_assoc_string(array, "ATTACHMENT_NAME", (&(msg->attachment))->name, 1);
-	add_assoc_string(array, "ATTACHMENT_TYPE", (&(msg->attachment))->type, 1);	
+	add_assoc_string(array, "ATTACHMENT_TYPE", (&(msg->attachment))->type, 1);
 }
 #endif
 
@@ -910,7 +910,7 @@ PHP_FUNCTION(bbs_sendmail)
     long noansi;
 
     int ret;
-    
+
     if (ZEND_NUM_ARGS() != 6 || zend_parse_parameters(6 TSRMLS_CC, "ssssll", &fromid, &fromid_len, &fname, &fname_len, &title, &title_len, &receiver, &receiver_len, &isbig5, &noansi) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
@@ -931,7 +931,7 @@ PHP_FUNCTION(bbs_sendmail)
  * bool bbs_get_refer(string userid, long mode, long &total_num, long &new_num)
  *
  * @param string userid
- * @param long mode:  
+ * @param long mode:
  *         1: refer
  *         2: reply
  *         others: invalid mode
@@ -952,13 +952,16 @@ PHP_FUNCTION(bbs_get_refer) {
     struct userec *user;
     int total_count=0,new_count=0;
 
+    MAKE_STD_ZVAL(total_num);
+    MAKE_STD_ZVAL(new_num);
+
     if (ZEND_NUM_ARGS()!=4 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slzz", &userid, &userid_len, &mode, &total_num, &new_num)==FAILURE)
         WRONG_PARAM_COUNT;
 
-    if (!PZVAL_IS_REF(total_num)||!PZVAL_IS_REF(new_num)) {
+    /*if (!PZVAL_IS_REF(total_num)||!PZVAL_IS_REF(new_num)) {
         zend_error(E_WARNING, "Parameter wasn't passed by reference");
         RETURN_FALSE;
-    }
+    }*/
 
     if (userid_len>IDLEN)
         RETURN_FALSE;
@@ -970,7 +973,7 @@ PHP_FUNCTION(bbs_get_refer) {
         zend_error(E_WARNING, "Invalid refer mode");
         RETURN_FALSE;
     }
-	
+
     total_count=refer_get_count(user, filename);
     new_count=refer_get_new(user, filename);
 
@@ -980,7 +983,7 @@ PHP_FUNCTION(bbs_get_refer) {
     RETURN_TRUE;
 #else
     RETURN_FALSE;
-#endif    
+#endif
 }
 /**
  * Load user refers array
@@ -1024,16 +1027,17 @@ PHP_FUNCTION(bbs_load_refer) {
     struct userec *user;
     char filename[STRLEN];
     char buf[STRLEN];
-    int total, num, i;    
-    struct refer *refers;    
+    int total, num, i;
+    struct refer *refers;
 
+    MAKE_STD_ZVAL(list);
     if (ZEND_NUM_ARGS()!=5 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "slllz", &userid, &userid_len, &mode, &start, &count, &list)==FAILURE)
         WRONG_PARAM_COUNT;
 
-    if (!PZVAL_IS_REF(list)) {
+    /*if (!PZVAL_IS_REF(list)) {
         zend_error(E_WARNING, "Parameter wasn't passed by reference");
         RETURN_LONG(-1);
-    }
+    }*/
 
     if (userid_len>IDLEN)
         RETURN_LONG(-2);
@@ -1065,8 +1069,7 @@ PHP_FUNCTION(bbs_load_refer) {
     if (NULL==refers)
         RETURN_LONG(-4);
 
-    
-    sethomefile(buf, user->userid, filename); 
+    sethomefile(buf, user->userid, filename);
     num=get_records(buf, refers, sizeof(struct refer), start, count);
 
     for (i=0; i<num; i++) {
@@ -1139,7 +1142,7 @@ PHP_FUNCTION(bbs_read_refer)
     total=refer_get_count(user, buf);
     if (pos<0||pos>=total)
         RETURN_FALSE;
-    
+
     offset=(int)((char *) &(refer.flag)-(char *) &(refer));
     sethomefile(path, user->userid, buf);
     if ((fd=open(path, O_RDWR))==-1)
@@ -1151,9 +1154,9 @@ PHP_FUNCTION(bbs_read_refer)
         ch |= FILE_READ;
         lseek(fd, -1, SEEK_CUR);
         write(fd, &ch, 1);
-  
+
         setmailcheck(user->userid);
-    }    
+    }
     close(fd);
 
     RETURN_TRUE;
@@ -1174,10 +1177,10 @@ PHP_FUNCTION(bbs_read_refer)
  *                 refer index position, from 0
  *
  * @return TRUE on success, FALSE on failure
- * 
+ *
  * @author: windinsn, Jan 29, 2012
  */
-PHP_FUNCTION(bbs_delete_refer) 
+PHP_FUNCTION(bbs_delete_refer)
 {
 #ifdef ENABLE_REFER
     char *userid;
@@ -1206,7 +1209,7 @@ PHP_FUNCTION(bbs_delete_refer)
         RETURN_FALSE;
 
     sethomefile(path, user->userid, buf);
-    if (get_record(path, &refer, sizeof(refer), pos+1)!=0) 
+    if (get_record(path, &refer, sizeof(refer), pos+1)!=0)
         RETURN_FALSE;
 
     if (0!=delete_record(path, sizeof(refer), pos+1, (RECORD_FUNC_ARG)refer_cmp, &refer))
@@ -1221,7 +1224,7 @@ PHP_FUNCTION(bbs_delete_refer)
 #endif
 }
 /**
- * Read all refers 
+ * Read all refers
  * bool bbs_read_all_refer(string userid, long mode)
  *
  * @param string userid
@@ -1243,7 +1246,7 @@ PHP_FUNCTION(bbs_read_all_refer)
     struct userec *user;
     char filename[STRLEN];
     char path[STRLEN];
- 
+
     if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sl", &userid, &userid_len, &mode)==FAILURE)
         WRONG_PARAM_COUNT;
 
@@ -1258,10 +1261,10 @@ PHP_FUNCTION(bbs_read_all_refer)
         RETURN_FALSE;
     }
 
-    sethomefile(path, user->userid, filename);    
+    sethomefile(path, user->userid, filename);
     refer_read_all(path);
     setmailcheck(user->userid);
-    RETURN_TRUE; 
+    RETURN_TRUE;
 #else
     RETURN_FALSE;
 #endif
@@ -1308,7 +1311,7 @@ PHP_FUNCTION(bbs_truncate_refer)
     sethomefile(path, user->userid, filename);
     refer_truncate(path);
     setmailcheck(user->userid);
-    
+
     RETURN_TRUE;
 #else
     RETURN_FALSE;
@@ -1323,7 +1326,7 @@ PHP_FUNCTION(bbs_new_msg_get_message)
 	struct new_msg_handle handle;
 	struct new_msg_message msg;
 	long i;
-	
+
 	if (ZEND_NUM_ARGS()!=2 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "lz", &id, &message)==FAILURE)
         	WRONG_PARAM_COUNT;
 	if (!PZVAL_IS_REF(message)) {
@@ -1333,23 +1336,23 @@ PHP_FUNCTION(bbs_new_msg_get_message)
 
 	if (strcasecmp(getCurrentUser()->userid, "guest")==0)
 		RETURN_LONG(-2);
-	
+
 	new_msg_init(&handle, getCurrentUser());
 	if (new_msg_open(&handle)<0)
 		RETURN_LONG(-3);
-	
+
 	bzero(&msg, sizeof(struct new_msg_message));
 	i=new_msg_get_message(&handle, id, &msg);
 	new_msg_close(&handle);
-	
+
 	if (i<0)
 		RETURN_LONG(-4);
 	if (i==0)
 		RETURN_LONG(0);
-		
+
 	if (array_init(message)!=SUCCESS)
 		RETURN_LONG(-5);
-		
+
 	bbs_make_new_msg_message_array(message, &msg);
 	RETURN_LONG(msg.id);
 #else
@@ -1369,10 +1372,10 @@ PHP_FUNCTION(bbs_new_msg_get_attachment)
 
 	if (ZEND_NUM_ARGS()!=1 || zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &id)==FAILURE)
 		WRONG_PARAM_COUNT;
-		
+
 	if (strcasecmp(getCurrentUser()->userid, "guest")==0)
 		RETURN_FALSE;
-	
+
 	new_msg_init(&handle, getCurrentUser());
 	if (new_msg_open(&handle)<0)
 		RETURN_FALSE;
@@ -1383,13 +1386,13 @@ PHP_FUNCTION(bbs_new_msg_get_attachment)
 		new_msg_close(&handle);
 		RETURN_FALSE;
 	}
-	
+
 	size=msg.attachment.size;
 	if (size<=0) {
 		new_msg_close(&handle);
 		RETURN_FALSE;
 	}
-		
+
 	output=(char *)emalloc(size);
 	if (!output) {
 		new_msg_close(&handle);
@@ -1832,7 +1835,7 @@ PHP_FUNCTION(bbs_new_msg_get_capacity)
 #else
 	RETURN_LONG(0);
 #endif
-} 
+}
 PHP_FUNCTION(bbs_new_msg_get_size)
 {
 #ifdef ENABLE_NEW_MSG
