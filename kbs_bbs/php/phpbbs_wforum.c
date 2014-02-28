@@ -466,8 +466,15 @@ PHP_FUNCTION(bbs_searchtitle)
         RETURN_LONG(-2); //ÄúÎÞÈ¨ÔÄ¶Á±¾°æ;
     is_bm = is_BM(bh, getCurrentUser());
     setcachebdir(DIR_MODE_WEB_THREAD, dirpath, bh->filename);
+
+    resultList  = emalloc(maxreturn * sizeof(struct wwwthreadheader *));
+    if (resultList == NULL) {
+        RETURN_LONG(-211);
+    }
+
     if ((fd = open(dirpath, O_RDONLY, 0)) == -1)
         RETURN_LONG(-3);
+
     ldata.l_type = F_RDLCK;
     ldata.l_whence = 0;
     ldata.l_len = 0;
@@ -483,13 +490,6 @@ PHP_FUNCTION(bbs_searchtitle)
         RETURN_LONG(-201);
     }
 
-    resultList  = emalloc(maxreturn * sizeof(struct wwwthreadheader *));
-    if (resultList == NULL) {
-        ldata.l_type = F_UNLCK;
-        fcntl(fd, F_SETLKW, &ldata);
-        close(fd);
-        RETURN_LONG(-211);
-    }
 
     total = buf.st_size / sizeof(struct wwwthreadheader);
 
