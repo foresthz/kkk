@@ -3,8 +3,11 @@
 #include <sys/msg.h>
 #include <signal.h>
 
+#ifdef NEWSMTH
 #define BBSLOG_APNS
 #define BBSLOG_UPDATE_AR
+#endif
+
 /* stiger: 20140217: format to update AR:
    TCP socket dport: 5111
    256 bytes for one update: struct fileheader, except:
