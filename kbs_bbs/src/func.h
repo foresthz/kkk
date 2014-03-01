@@ -437,7 +437,14 @@ while(0)
     int haspostperm(const struct userec *user,const char *bname);  /* 判断在 bname版 是否有post权 */
 #ifdef HAVE_USERSCORE
     int check_score_level(const struct userec *user,const struct boardheader *bh);
+    int get_scorelimit_to_sendmail(int *score);
+    int set_scorelimit_to_sendmail(int score);
+    int sufficient_score_to_sendmail(struct userec *fromuser, const char *userid);
+    int sufficient_score_to_sendmsg(struct userec *fromuser, struct user_info *uin); 
+    int sufficient_score_to_sendnewmsg(struct userec *fromuser, struct userec *touser);
 #endif /* HAVE_USERSCORE */
+    int read_integer_from_file(char *filename, int *value);
+    int write_integer_to_file(char *filename, int value);
     int chk_BM_instr(const char *BMstr, const char *bmname);       /*查询字符串中是否包含 bmname */
     int chk_currBM(const char *BMstr, const struct userec *user);  /* 根据输入的版主名单 判断user是否有版主 权限 */
     int chk_BM(const char *bname, const struct userec *user); /* 根据版面名称判断 user 是否有版主权限 ... */
@@ -659,6 +666,7 @@ while(0)
                            void *farg,  /* additional param to call fptr() / original record */
                            void *rptr,  /* record data buffer to be used for reading idx file */
                            int sorted); /* if records in file are sorted */
+    int range_delete_records(char *filename, int size, int from, int to, void *arg);
     int reverse_record(char *filename, int size);
     void load_mail_list(struct userec *user, struct _mail_list *mail_list);
     void save_mail_list(struct _mail_list *mail_list,session_t* session);
@@ -865,6 +873,7 @@ while(0)
     int leave_board_member(const char *name);
     int approve_board_member(const char *name, const char *user_id);
     int remove_board_member(const char *name, const char *user_id);
+    int black_board_member(const char *name, const char *user_id);
     int get_board_member(const char *name, const char *user_id, struct board_member *member);
     int load_board_members(const char *board, struct board_member *members, int sort, int start, int num, int status);
     int load_member_boards(const char *user_id, struct board_member *members, int sort, int start, int num);
