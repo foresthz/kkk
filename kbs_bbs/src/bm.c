@@ -720,7 +720,7 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                     prints("%s确定解封？[N]", (undenytime>time(0))?"该用户封禁时限未到，":"");
                     ch = igetkey();
                     if (toupper(ch)=='Y') {
-                        if (deldeny(getCurrentUser(), bh->filename, (char *)uident, 0, 1, getSession())<0) {
+                        if (deldeny(getCurrentUser(), (char *)bh->filename, (char *)uident, 0, 1, getSession())<0) {
                             move(15, 0);
                             prints("\033[31m解封时发生错误 <Enter>");
                             WAIT_RETURN;
@@ -1039,7 +1039,7 @@ Here:
             move(1, 0);
             clrtoeol();
             if (uident[0] != '\0') {
-                if (deldeny(getCurrentUser(), bh->filename, uident, 0, (ldenytime > now) ? 1 : 0, getSession())) {
+                if (deldeny(getCurrentUser(), (char *)bh->filename, uident, 0, (ldenytime > now) ? 1 : 0, getSession())) {
                 }
             }
         } else if (count > 20 && isdigit(ans[0])) {
