@@ -4807,7 +4807,7 @@ void clear_refer_info(int mode)
    改进：只load所有未读记录，并将最后一篇放到refer_head（不管是否已读） */
 int load_refer_info(int mode, int init)
 {
-    int i, bid, count;
+    int i, count;
     char buf[STRLEN], filename[STRLEN];
     struct refer *rf;
     struct refer_info *p;
@@ -4829,10 +4829,10 @@ int load_refer_info(int mode, int init)
         count = size / sizeof(struct refer);
         rf = (struct refer *)ptr;
         for (i=0;i<count;i++) {
-            if ((bid=getbid(rf[i].board, NULL))==0 || (rf[i].flag&FILE_READ && i<count-1))
+            if (rf[i].flag&FILE_READ && i<count-1)
                 continue;
             p = (struct refer_info*)malloc(sizeof(struct refer_info));
-            p->bid = bid;
+            strcpy(p->board, rf[i].board);
             p->id = rf[i].id;
             p->flag = rf[i].flag;
             p->next = uinfo.refer_head[mode-1];
@@ -4871,12 +4871,11 @@ int load_refer_info(int mode, int init)
 /* 从uinfo中获得对应的refer状态 */
 int get_refer_info(struct refer *rf, int mode)
 {
-    int bid;
     struct refer_info *p;
 
     p = uinfo.refer_head[mode-1];
     while(p!=NULL) {
-        if (p->bid == (bid=getbid(rf->board, NULL)) && p->id == rf->id) {
+        if (strcasecmp(p->board,rf->board)==0 && p->id == rf->id) {
             rf->flag |= p->flag;
             if (p->next==NULL) /* 最后一个了 */
                 return 2;
@@ -4905,8 +4904,8 @@ int sync_refer_info(int mode, int reload)
     sethomefile(filename, getCurrentUser()->userid, buf);
     if (stat(filename, &st)==-1)
         return -1;
-    if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
-        reload = 0;
+    //if (reload && uinfo.ri_loadedtime[mode-1]>=st.st_mtime)
+    //    reload = 0;
 
     if (uinfo.ri_updatetime[mode-1]>uinfo.ri_loadedtime[mode-1]) {
         /* 使用mmap同步写入，不用再判断记录位置啥的了 */
@@ -4952,13 +4951,13 @@ int sync_refer_info(int mode, int reload)
     return 0;
 }
 
-int set_refer_info(int bid, int id, int mode)
+int set_refer_info(char *board, int id, int mode)
 {
     struct refer_info *p;
 
     p = uinfo.refer_head[mode-1];
     while (p!=NULL) {
-        if (p->bid==bid && p->id==id && !(p->flag&FILE_READ)) {
+        if (strcasecmp(p->board, board)==0 && p->id==id && !(p->flag&FILE_READ)) {
             p->flag |= FILE_READ;
             uinfo.ri_updatetime[mode-1]=time(0);
             if(p==uinfo.refer_head[mode-1])

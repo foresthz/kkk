@@ -188,7 +188,7 @@ int refer_search(struct _select_def* conf, char *query, bool up, int mode);
 int load_refer_info(int mode, int init);
 int sync_refer_info(int mode, int reload);
 int check_refer_info(int mode);
-int set_refer_info(int bid, int id, int mode);
+int set_refer_info(char *board, int id, int mode);
 void clear_refer_info(int mode);
 #endif
 

@@ -815,7 +815,7 @@ extern struct sms_shm_head *head;
 #define REFER_MODE_LIKE  3
 
 struct refer_info {
-    int bid;
+    char board[STRLEN];
     int id;
     unsigned int flag;
     struct refer_info *next;

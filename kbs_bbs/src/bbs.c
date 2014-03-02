@@ -2002,10 +2002,10 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 #endif
 #ifdef ENABLE_REFER
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboardent, fileinfo->id, REFER_MODE_AT);
-    set_refer_info(currboardent, fileinfo->id, REFER_MODE_REPLY);
+    set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_AT);
+    set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_REPLY);
 #ifdef ENABLE_REFER_LIKE
-    set_refer_info(currboardent, fileinfo->id, REFER_MODE_LIKE);
+    set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_LIKE);
 #endif
 #endif
 #ifndef NOREPLY
@@ -7344,10 +7344,10 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
 #endif /* HAVE_BRC_CONTROL */
 #ifdef ENABLE_REFER
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboardent, fh->id, REFER_MODE_AT);
-    set_refer_info(currboardent, fh->id, REFER_MODE_REPLY);
+    set_refer_info(currboard->filename, fh->id, REFER_MODE_AT);
+    set_refer_info(currboard->filename, fh->id, REFER_MODE_REPLY);
 #ifdef ENABLE_REFER_LIKE
-    set_refer_info(currboardent, fh->id, REFER_MODE_LIKE);
+    set_refer_info(currboard->filename, fh->id, REFER_MODE_LIKE);
 #endif
 #endif
     arg=(struct read_arg*)conf->arg;
