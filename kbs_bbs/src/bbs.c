@@ -1953,7 +1953,7 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 {
     char *t;
     char buf[512];
-    int ch;
+    int ch, unread=1;
     int ent=conf->pos;
     struct board_attach_link_info bali;
     struct read_arg* arg=conf->arg;
@@ -1998,15 +1998,19 @@ int read_post(struct _select_def* conf,struct fileheader *fileinfo,void* extraar
 #endif
     register_attach_link(NULL,NULL);
 #ifdef HAVE_BRC_CONTROL
+    unread = brc_unread(fileinfo->id, getSession());
     brc_add_read(fileinfo->id,currboardent,getSession());
 #endif
 #ifdef ENABLE_REFER
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_AT);
-    set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_REPLY);
+    /* 如果文章已读，就不更新了，假定不出现超过brc限制出现的那种实际未读但没有标记的文章 */
+    if (unread) {
+        set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_AT);
+        set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_REPLY);
 #ifdef ENABLE_REFER_LIKE
-    set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_LIKE);
+        set_refer_info(currboard->filename, fileinfo->id, REFER_MODE_LIKE);
 #endif
+    }
 #endif
 #ifndef NOREPLY
     move(t_lines - 1, 0);
@@ -7312,7 +7316,7 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
 {
     struct read_arg *arg;
     char buf[PATHLEN],*p;
-    int key,repeat,ret;
+    int key,repeat,ret,unread=1;
     struct board_attach_link_info bali;
     snprintf(buf,PATHLEN,"%s",read_getcurrdirect(conf));
     if (!(p=strrchr(buf,'/')))
@@ -7340,15 +7344,19 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
     key=ansimore_withzmodem(buf,false,fh->title);
     register_attach_link(NULL,NULL);
 #ifdef HAVE_BRC_CONTROL
+    unread = brc_unread(fileinfo->id, getSession());
     brc_add_read(fh->id,currboardent,getSession());
 #endif /* HAVE_BRC_CONTROL */
 #ifdef ENABLE_REFER
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboard->filename, fh->id, REFER_MODE_AT);
-    set_refer_info(currboard->filename, fh->id, REFER_MODE_REPLY);
+    /* 如果文章已读，就不更新了，假定不出现超过brc限制出现的那种实际未读但没有标记的文章 */
+    if (unread) {
+        set_refer_info(currboard->filename, fh->id, REFER_MODE_AT);
+        set_refer_info(currboard->filename, fh->id, REFER_MODE_REPLY);
 #ifdef ENABLE_REFER_LIKE
-    set_refer_info(currboard->filename, fh->id, REFER_MODE_LIKE);
+        set_refer_info(currboard->filename, fh->id, REFER_MODE_LIKE);
 #endif
+    }
 #endif
     arg=(struct read_arg*)conf->arg;
     move(t_lines-1,0);

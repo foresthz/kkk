@@ -1331,7 +1331,7 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
     struct read_arg *arg;
     struct boardheader *board;
     char buf[PATHLEN];
-    int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update;
+    int fd, num, retnum, key, save_currboardent, save_uinfo_currentboard, ret, repeat, force_update, unread=1;
     fileheader_t post[1];
     struct member_board_article_attach_link_info bali;
     
@@ -1386,15 +1386,19 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
 
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
+    unread = brc_unread(fileinfo->id, getSession());
     brc_add_read(post->id, currboardent, getSession());
 #endif
 #ifdef ENABLE_REFER
     /* 应该是不管用户是否启用，都去更新一下uinfo的记录 */
-    set_refer_info(currboard->filename, post->id, REFER_MODE_AT);
-    set_refer_info(currboard->filename, post->id, REFER_MODE_REPLY);
+    /* 如果文章已读，就不更新了，假定不出现超过brc限制出现的那种实际未读但没有标记的文章 */
+    if (unread) {
+        set_refer_info(currboard->filename, post->id, REFER_MODE_AT);
+        set_refer_info(currboard->filename, post->id, REFER_MODE_REPLY);
 #ifdef ENABLE_REFER_LIKE
-    set_refer_info(currboard->filename, post->id, REFER_MODE_LIKE);
+        set_refer_info(currboard->filename, post->id, REFER_MODE_LIKE);
 #endif
+    }
 #endif
 
     if (arg->readdata==NULL)
