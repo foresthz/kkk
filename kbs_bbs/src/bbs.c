@@ -7344,7 +7344,7 @@ static int read_top_post(struct _select_def *conf,struct fileheader *fh,void *va
     key=ansimore_withzmodem(buf,false,fh->title);
     register_attach_link(NULL,NULL);
 #ifdef HAVE_BRC_CONTROL
-    unread = brc_unread(fileinfo->id, getSession());
+    unread = brc_unread(fh->id, getSession());
     brc_add_read(fh->id,currboardent,getSession());
 #endif /* HAVE_BRC_CONTROL */
 #ifdef ENABLE_REFER

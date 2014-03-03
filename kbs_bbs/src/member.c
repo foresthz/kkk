@@ -1386,7 +1386,7 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
 
 #ifdef HAVE_BRC_CONTROL
     brc_initial(getCurrentUser()->userid, board->filename, getSession());
-    unread = brc_unread(fileinfo->id, getSession());
+    unread = brc_unread(post->id, getSession());
     brc_add_read(post->id, currboardent, getSession());
 #endif
 #ifdef ENABLE_REFER
