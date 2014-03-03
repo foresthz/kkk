@@ -1792,10 +1792,9 @@ void update_endline()
 #ifndef FB2KENDLINE
     char buf[STRLEN];
 #endif
-    char stitle[256];
+    char stitle[256], mailflag[16];
     time_t now;
-    int allstay;
-    int colour;
+    int allstay, colour, mailcheck;
 
     if (DEFINE(getCurrentUser(), DEF_TITLECOLOR)) {
         colour = 4;
@@ -1810,6 +1809,30 @@ void update_endline()
         return;
     }
     now = time(0);
+    mailcheck = chkmail();
+    switch(mailcheck) {
+        case 2:
+            sprintf(mailflag, "\033[5;31mF\033[33m");
+            break;
+        case 1:
+            sprintf(mailflag, "\033[36mM\033[33m");
+            break;
+        case 3:
+            sprintf(mailflag, "\033[36m@\033[33m");
+            break;
+        case 4:
+            sprintf(mailflag, "\033[36mR\033[33m");
+            break;
+        case 6:
+            sprintf(mailflag, "\033[36mL\033[33m");
+            break;
+        case 5:
+            sprintf(mailflag, "\033[36mS\033[33m");
+            break;
+        default:
+            sprintf(mailflag, " ");
+            break;
+    }
 #ifdef FLOWBANNER
     allstay = (DEFINE(getCurrentUser(), DEF_SHOWBANNER)) ? (time(0) % 3) : 0;
     if (allstay) {
@@ -1844,11 +1867,11 @@ void update_endline()
         sprintf(buf, "[\033[36m%.12s\033[33m]", getCurrentUser()->userid);
         if (DEFINE(getCurrentUser(), DEF_NOTMSGFRIEND)) {
             if (DEFINE(getCurrentUser(),DEF_HIGHCOLOR))
-                sprintf(stitle, "\033[1;4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%3s：一般:%3s] 使用者%s", colour, ctime(&now) + 4,
-                        (!(uinfo.pager & FRIEND_PAGER)) ? "NO " : "YES", (uinfo.pager & ALL_PAGER) ? "YES" : "NO ", buf);
+                sprintf(stitle, "\033[1;4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%1s  一般:%1s] 使用者%s [%s]", colour, ctime(&now) + 4,
+                        (!(uinfo.pager & FRIEND_PAGER)) ? "N" : "Y", (uinfo.pager & ALL_PAGER) ? "Y" : "N", buf, mailflag);
             else
-                sprintf(stitle, "\033[4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%3s：一般:%3s] 使用者%s", colour, ctime(&now) + 4,
-                        (!(uinfo.pager & FRIEND_PAGER)) ? "NO " : "YES", (uinfo.pager & ALL_PAGER) ? "YES" : "NO ", buf);
+                sprintf(stitle, "\033[4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%1s  一般:%1s] 使用者%s [%s]", colour, ctime(&now) + 4,
+                        (!(uinfo.pager & FRIEND_PAGER)) ? "N" : "Y", (uinfo.pager & ALL_PAGER) ? "Y" : "N", buf, mailflag);
         } else {
 #ifdef HAVE_FRIENDS_NUM
             num_alcounter();
@@ -1856,11 +1879,11 @@ void update_endline()
                     ctime(&now)+4,count_users,count_friends,(uinfo.pager&ALL_PAGER)?'Y':'N',(!(uinfo.pager&FRIEND_PAGER))?'N':'Y',buf);
 #else
         if (DEFINE(getCurrentUser(),DEF_HIGHCOLOR))
-            sprintf(stitle, "\x1b[1;4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数 [ %3d ] [%c：%c] 使用者%s", colour,
-                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf);
+            sprintf(stitle, "\x1b[1;4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数[ %3d ] [%c：%c] 使用者%s [%s]", colour,
+                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf, mailflag);
         else
-            sprintf(stitle, "\x1b[4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数 [ %3d ] [%c：%c] 使用者%s", colour,
-                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf);
+            sprintf(stitle, "\x1b[4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数[ %3d ] [%c：%c] 使用者%s [%s]", colour,
+                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf, mailflag);
 #endif //HAVE_FRIENDS_NUM
         }
 #endif //FB2KENDLINE
