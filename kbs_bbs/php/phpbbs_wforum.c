@@ -728,11 +728,16 @@ PHP_FUNCTION(bbs_getthreads)
         }
 #ifdef ENABLE_BOARD_MEMBER
         efree(ptr1);
+        ptr1 = NULL;
 #endif
     } BBS_CATCH {
         ldata.l_type = F_UNLCK;
         fcntl(fd, F_SETLKW, &ldata);
         close(fd);
+#ifdef ENABLE_BOARD_MEMBER
+        if (ptr1)
+            efree(ptr1);
+#endif
         BBS_PHPLIB_RETURN_LONG(-2);
     } BBS_END;
     end_mmapfile((void *) ptr, buf.st_size, -1);
