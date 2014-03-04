@@ -679,7 +679,7 @@ PHP_FUNCTION(bbs_getthreads)
 
 
 #ifdef ENABLE_BOARD_MEMBER
-        ptr1 = (struct wwwthreadheader *)malloc(buf.st_size);
+        ptr1 = (struct wwwthreadheader *)emalloc(buf.st_size);
         memcpy(ptr1, ptr, buf.st_size);
 #else
         ptr1 = (struct wwwthreadheader *) ptr;
@@ -727,7 +727,7 @@ PHP_FUNCTION(bbs_getthreads)
             zend_hash_index_update(Z_ARRVAL_P(return_value), begin-i, (void *) &element, sizeof(zval *), NULL);
         }
 #ifdef ENABLE_BOARD_MEMBER
-        free(ptr1);
+        efree(ptr1);
 #endif
     } BBS_CATCH {
         ldata.l_type = F_UNLCK;
