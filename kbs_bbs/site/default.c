@@ -127,6 +127,10 @@ const char * const mailbox_prop_str[] = {
     "删除信件时不保存到垃圾箱",
     "版面按 'v' 时进入: 收件箱(OFF) / 信箱主界面(ON)",
     "自动删除过期垃圾邮件",
+    "新收邮件不进行顶部闪烁提醒",
+#ifdef HAVE_USERSCORE
+    "积分变更不进行信件通知",
+#endif
 };
 #endif
 
