@@ -1740,6 +1740,20 @@ struct user_info *urec;
     return (unum == urec->uid);
 }
 
+int check_mailbox_prop(struct userec *user, unsigned int flag)
+{
+    char filename[256];
+    unsigned int prop = MBP_DEFAULT;
+    int fd;
+
+    sethomefile(filename, user->userid, ".mailbox.prop");
+    if ((fd = open(filename, O_RDONLY, 0644)) > 0) {
+        read(fd, &prop, sizeof(prop));
+        close(fd);
+    }
+    return prop & flag;
+}
+
 unsigned int load_mailbox_prop(char *userid)
 {
     char filename[256];
@@ -3688,6 +3702,8 @@ int score_change_mail(struct userec *user, unsigned int os, unsigned int ns, uns
     int ds, dm;
     FILE *fn;
 
+    if (check_mailbox_prop(user, MBP_NOSCOREMAIL))
+        return 0;
     ds = ns - os;
     dm = nm - om;
     if (ds==0 && dm==0)

@@ -310,6 +310,7 @@ int sufficient_score_to_sendnewmsg(struct userec *fromuser, struct userec *touse
   *        -10: 不能发给SYSOP
   *        -11: 不能发给guest
   *        -12: guest不能发
+  *        -13: 积分不足 //#ifdef HAVE_USERSCORE
   *        
   */
 int new_msg_check(struct userec *from, struct userec *to) {
