@@ -346,7 +346,8 @@ MENU *pm;
     int chkmailflag = 0;
 
     clear();
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag = chkmail();
 
     if (chkmailflag == 2) {     /*Haohmaru.99.4.4.对收信也加限制 */
         prints("\033[5m");

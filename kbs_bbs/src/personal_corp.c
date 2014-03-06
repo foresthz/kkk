@@ -1178,9 +1178,10 @@ static int pc_add_a_node(unsigned long nid)
 
 static int pc_dir_title(struct _select_def *conf)
 {
-    int chkmailflag;
+    int chkmailflag=0;
 
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+       chkmailflag = chkmail();
 
     clear();
     move(0, 0);
@@ -1814,9 +1815,10 @@ static int pc_add_a_com(unsigned long nid)
 
 static int pc_com_title(struct _select_def *conf)
 {
-    int chkmailflag;
+    int chkmailflag=0;
 
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag = chkmail();
 
     clear();
     move(0, 0);

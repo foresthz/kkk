@@ -600,8 +600,8 @@ edit_mail_file:
         /*
          * Leeward 98.09.24 add: viewing signature(s) while setting post head
          */
-        sprintf(buf2, "按 \033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m改标题，\033[1;32mEnter\033[m接受所有设定: ", getSession()->currentmemo->ud.signum,
-                (replymode) ? "，\033[1;32mY\033[m/\033[1;32mN\033[m/\033[1;32mR\033[m/\033[1;32mA\033[m改引言模式" : "");
+        sprintf(buf2, "按 \033[1;32m0\033[m~\033[1;32m%d/V/L\033[m选/看/随机签名档%s，\033[1;32mT\033[m标题，\033[1;32mQ\033[m取消，\033[1;32mEnter\033[m接受所有设定: ", getSession()->currentmemo->ud.signum,
+                (replymode) ? "，\033[1;32mY\033[m/\033[1;32mN\033[m/\033[1;32mR\033[m/\033[1;32mA\033[m引言模式" : "");
         gdataret = getdata(t_lines - 1, 0, buf2, ans, 3, DOECHO, NULL, true);
         if (gdataret == -1) return -2;
         ans[0] = toupper(ans[0]);       /* Leeward 98.09.24 add; delete below toupper */
@@ -612,6 +612,8 @@ edit_mail_file:
             include_mode = ans[0];
         } else if (ans[0] == 'T') {
             buf4[0] = '\0';
+        } else if (ans[0] == 'Q') {
+            return -2;
         } else if (ans[0] == 'S') {
             savesent = !savesent;
         } else if (ans[0] == 'L') {
@@ -4776,7 +4778,7 @@ int refer_list(char filename[STRLEN], int mode) {
 
 
 /*
- * 将refer信息放入uinfo中，jiangju，20120212
+ * 将refer信息放入uinfo中，jiangjun，20120212
  */
 
 void init_refer_info(int mode)
@@ -4965,6 +4967,29 @@ int set_refer_info(char *board, int id, int mode)
             return 0;
         }
         p = p->next;
+    }
+    return 0;
+}
+
+int set_board_refer_info(char *board, int mode)
+{
+    struct refer_info *p;
+    int found=0, ishead=0;
+
+    p = uinfo.refer_head[mode-1];
+    while (p!=NULL) {
+        if (strcasecmp(p->board, board)==0 && !(p->flag&FILE_READ)) {
+            p->flag |= FILE_READ;
+            found = 1;
+            if (p==uinfo.refer_head[mode-1])
+                ishead = 1;
+        }
+        p = p->next;
+    }
+    if (found) {
+        uinfo.ri_updatetime[mode-1] = time(0);
+        if (ishead)
+            setmailcheck(getCurrentUser()->userid);
     }
     return 0;
 }

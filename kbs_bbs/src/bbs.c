@@ -1051,7 +1051,8 @@ void readtitle(struct _select_def* conf)
             sprintf(header, "版主: %s", currBM);
         }
     }
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag = chkmail();
     if (chkmailflag == 2)       /*Haohmaru.99.4.4.对收信也加限制 */
         strcpy(title, "[您的信箱超过容量,不能再收信!]");
 #ifdef ENABLE_REFER
@@ -5373,7 +5374,15 @@ int clear_all_new_flag(struct _select_def* conf,struct fileheader *fileinfo,void
 {
 #ifdef HAVE_BRC_CONTROL
     brc_clear(currboardent,getSession());
-#endif
+#ifdef ENABLE_REFER
+    /* 清除版面未读标记时，检查一下refer_info记录是否包含该版的帖子 */
+    set_board_refer_info(currboard->filename, REFER_MODE_AT);
+    set_board_refer_info(currboard->filename, REFER_MODE_REPLY);
+#ifdef ENABLE_REFER_LIKE
+    set_board_refer_info(currboard->filename, REFER_MODE_LIKE);
+#endif /* ENABLE_REFER_LIKE */
+#endif /* ENABLE_REFER */
+#endif /* HAVE_BRC_CONTROL */
     return FULLUPDATE;
 }
 
@@ -7152,7 +7161,7 @@ static void read_top_title(struct _select_def *conf)
 {
     struct BoardStatus *bs;
     char header[PATHLEN],title[STRLEN],BM[BM_LEN],*p,*q;
-    int chkmailflag,bid,online;
+    int chkmailflag=0,bid,online;
     if (!(bid=getbid(currboard->filename,NULL))||!(bs=getbstatus(bid)))
         return;
     if (!(currboard->BM[0]))
@@ -7189,7 +7198,8 @@ static void read_top_title(struct _select_def *conf)
         } else
             sprintf(header,"版主: %s",BM);
     }
-    chkmailflag=chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag=chkmail();
     if (chkmailflag==2)
         sprintf(title,"%s","[您的信箱超过容量,不能再收信!]");
 #ifdef ENABLE_REFER

@@ -189,6 +189,7 @@ int load_refer_info(int mode, int init);
 int sync_refer_info(int mode, int reload);
 int check_refer_info(int mode);
 int set_refer_info(char *board, int id, int mode);
+int set_board_refer_info(char *board, int mode);
 void clear_refer_info(int mode);
 #endif
 

@@ -1139,7 +1139,8 @@ void member_board_article_title(struct _select_def* conf) {
     char title[STRLEN];
     int chkmailflag = 0;
     
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag = chkmail();
     if (chkmailflag == 2)       /*Haohmaru.99.4.4.对收信也加限制 */
         strcpy(title, "[您的信箱超过容量,不能再收信!]");
 #ifdef ENABLE_REFER

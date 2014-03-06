@@ -1812,22 +1812,22 @@ void update_endline()
     mailcheck = chkmail();
     switch(mailcheck) {
         case 2:
-            sprintf(mailflag, "\033[5;31mF\033[33m");
+            sprintf(mailflag, "\033[5;31mF");
             break;
         case 1:
-            sprintf(mailflag, "\033[36mM\033[33m");
+            sprintf(mailflag, "\033[36mM");
             break;
         case 3:
-            sprintf(mailflag, "\033[36m@\033[33m");
+            sprintf(mailflag, "\033[36m@");
             break;
         case 4:
-            sprintf(mailflag, "\033[36mR\033[33m");
+            sprintf(mailflag, "\033[36mR");
             break;
         case 6:
-            sprintf(mailflag, "\033[36mL\033[33m");
+            sprintf(mailflag, "\033[36mL");
             break;
         case 5:
-            sprintf(mailflag, "\033[36mS\033[33m");
+            sprintf(mailflag, "\033[36mS");
             break;
         default:
             sprintf(mailflag, " ");
@@ -1867,11 +1867,11 @@ void update_endline()
         sprintf(buf, "[\033[36m%.12s\033[33m]", getCurrentUser()->userid);
         if (DEFINE(getCurrentUser(), DEF_NOTMSGFRIEND)) {
             if (DEFINE(getCurrentUser(),DEF_HIGHCOLOR))
-                sprintf(stitle, "\033[1;4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%1s  一般:%1s] 使用者%s [%s]", colour, ctime(&now) + 4,
-                        (!(uinfo.pager & FRIEND_PAGER)) ? "N" : "Y", (uinfo.pager & ALL_PAGER) ? "Y" : "N", buf, mailflag);
+                sprintf(stitle, "\033[1;4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%1s  一般:%1s] 使用者%s [%s\033[0;1;33;4%dm]", colour, ctime(&now) + 4,
+                        (!(uinfo.pager & FRIEND_PAGER)) ? "N" : "Y", (uinfo.pager & ALL_PAGER) ? "Y" : "N", buf, mailflag, colour);
             else
-                sprintf(stitle, "\033[4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%1s  一般:%1s] 使用者%s [%s]", colour, ctime(&now) + 4,
-                        (!(uinfo.pager & FRIEND_PAGER)) ? "N" : "Y", (uinfo.pager & ALL_PAGER) ? "Y" : "N", buf, mailflag);
+                sprintf(stitle, "\033[4%dm\033[33m时间[\033[36m%12.12s\033[33m] 呼叫器[好友:%1s  一般:%1s] 使用者%s [%s\033[0;33;4%dm]", colour, ctime(&now) + 4,
+                        (!(uinfo.pager & FRIEND_PAGER)) ? "N" : "Y", (uinfo.pager & ALL_PAGER) ? "Y" : "N", buf, mailflag, colour);
         } else {
 #ifdef HAVE_FRIENDS_NUM
             num_alcounter();
@@ -1879,11 +1879,11 @@ void update_endline()
                     ctime(&now)+4,count_users,count_friends,(uinfo.pager&ALL_PAGER)?'Y':'N',(!(uinfo.pager&FRIEND_PAGER))?'N':'Y',buf);
 #else
         if (DEFINE(getCurrentUser(),DEF_HIGHCOLOR))
-            sprintf(stitle, "\x1b[1;4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数[ %3d ] [%c：%c] 使用者%s [%s]", colour,
-                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf, mailflag);
+            sprintf(stitle, "\x1b[1;4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数[ %3d ] [%c：%c] 使用者%s [%s\033[0;1;33;4%dm]", colour,
+                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf, mailflag, colour);
         else
-            sprintf(stitle, "\x1b[4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数[ %3d ] [%c：%c] 使用者%s [%s]", colour,
-                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf, mailflag);
+            sprintf(stitle, "\x1b[4%dm\x1b[33m时间[\x1b[36m%12.12s\x1b[33m] 总人数[ %3d ] [%c：%c] 使用者%s [%s\033[0;33;4%dm]", colour,
+                    ctime(&now) + 4, get_utmp_number() + getwwwguestcount(), (uinfo.pager & ALL_PAGER) ? 'Y' : 'N', (!(uinfo.pager & FRIEND_PAGER)) ? 'N' : 'Y', buf, mailflag, colour);
 #endif //HAVE_FRIENDS_NUM
         }
 #endif //FB2KENDLINE
@@ -2017,7 +2017,8 @@ void docmdtitle(const char *title,const char *prompt)
     int chkmailflag = 0;
     int chksmsmsg = 0;
 
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag = chkmail();
 #ifdef SMS_SUPPORT
     chksmsmsg = chk_smsmsg(0, getSession());
 #endif

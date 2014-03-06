@@ -1559,7 +1559,8 @@ char *modestr;
     if (RMSG != true) {         /*如果收到 Msg 第一行不显示。 */
         move(0, 0);
         clrtoeol();
-        chkmailflag = chkmail();
+        if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+            chkmailflag = chkmail();
         if (chkmailflag == 2)
             /*
              * Haohmaru.99.4.4.对收信也加限制
@@ -1852,7 +1853,8 @@ void friend_title(struct _select_def* conf)
 {
     int chkmailflag = 0;
 
-    chkmailflag = chkmail();
+    if (!HAS_MAILBOX_PROP(&uinfo, MBP_NOMAILNOTICE))
+        chkmailflag = chkmail();
     if (chkmailflag == 2)
         /*
          * Haohmaru.99.4.4.对收信也加限制
