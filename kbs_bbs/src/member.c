@@ -1366,6 +1366,18 @@ int member_board_article_read(struct _select_def* conf, struct member_board_arti
         return FULLUPDATE;
     }
 
+#ifdef ENABLE_BOARD_MEMBER
+    if (!member_read_perm(board, post, getCurrentUser())) {
+        clear();
+        move(3, 10);
+        prints("本版为驻版可读，非本版驻版用户不能查看本版文章！");
+        move(4, 10);
+        prints("详情请联系本版版主。");
+        pressanykey();
+        return FULLUPDATE;
+    }
+#endif
+
     save_currboardent=currboardent;
     save_uinfo_currentboard=uinfo.currentboard;
 

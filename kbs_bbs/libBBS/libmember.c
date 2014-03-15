@@ -1658,6 +1658,10 @@ int load_member_board_articles(char *path, enum BBS_DIR_MODE mode, const struct 
             article.s_groupid=board_posts[i].o_groupid;
             article.s_reid=board_posts[i].o_reid;
             strncpy(article.owner, board_posts[i].owner, OWNER_LEN);
+#ifdef ENABLE_BOARD_MEMBER
+            if (!member_read_perm(bh, &board_posts[i], (struct userec*)user))
+                strncpy(article.owner, MEMBER_POST_OWNER, OWNER_LEN);
+#endif
             article.eff_size=board_posts[i].eff_size;
             article.posttime=board_posts[i].posttime;
             article.attachment=board_posts[i].attachment;
