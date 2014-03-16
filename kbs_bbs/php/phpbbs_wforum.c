@@ -554,10 +554,18 @@ PHP_FUNCTION(bbs_searchtitle)
             }
             make_article_flag_array(flags, &(resultList[i]->origin), getCurrentUser(), bh, is_bm);
             array_init(columns[0]);
+#ifdef ENABLE_BOARD_MEMBER
+            if (!member_read_perm(bp, &(resultList[i].origin), getCurrentUser()))
+                strcpy(resultList[i].origin.owner, MEMBER_POST_OWNER);
+#endif
             bbs_make_article_array(columns[0], &(resultList[i]->origin), flags, sizeof(flags));
 
             make_article_flag_array(flags, &(resultList[i]->lastreply), getCurrentUser(), bh, is_bm);
             array_init(columns[1]);
+#ifdef ENABLE_BOARD_MEMBER
+            if (!member_read_perm(bp, &(resultList[i].lastreply), getCurrentUser()))
+                strcpy(resultList[i].lastreply.owner, MEMBER_POST_OWNER);
+#endif
             bbs_make_article_array(columns[1], &(resultList[i]->lastreply), flags, sizeof(flags));
             ZVAL_LONG(columns[2],resultList[i]->articlecount);
 
