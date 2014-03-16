@@ -634,6 +634,7 @@ PHP_FUNCTION(bbs_search_articles)
     struct stat buf;
     struct flock ldata;
     struct fileheader *ptr1;
+    struct fileheader fh;
     char* ptr;
     int total,i;
     zval * element;
@@ -737,7 +738,12 @@ PHP_FUNCTION(bbs_search_articles)
         MAKE_STD_ZVAL(element);
         array_init(element);
         make_article_flag_array(flags, ptr1+i , getCurrentUser(), bh, is_bm);
-        bbs_make_article_array(element, ptr1+i, flags, sizeof(flags));
+        memcpy(&fh, ptr1+i, sizeof(struct fileheader));
+#ifdef ENABLE_BOARD_MEMBER
+        if (!member_read_perm(bh, &fh, getCurrentUser()))
+            strcpy(fh.owner, MEMBER_POST_OWNER);
+#endif
+        bbs_make_article_array(element, &fh, flags, sizeof(flags));
         add_assoc_long(element, "NUM",i);
         zend_hash_index_update(Z_ARRVAL_P(return_value),found, (void *) &element, sizeof(zval *), NULL);
         found++;
