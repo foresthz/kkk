@@ -1020,6 +1020,7 @@ int clean_cachedata(const char* userid,int unum)
     } else logincount=0;
     if (logincount==0) {
         setcachehomefile(path1, userid, -1, "entry");
+#ifdef HAVE_BRC_CONTROL
         if (strcmp(userid,"guest")){
             //if tmpfs/brc newer than home/brc, then sync brc
             sethomefile(path2, userid, BRCFILE);
@@ -1035,6 +1036,7 @@ int clean_cachedata(const char* userid,int unum)
                 brc_update(userid, &ss);
             }
         }
+#endif
         unlink(path1);
         setcachehomefile(path1, userid, -1, NULL);
         f_rm(path1);
