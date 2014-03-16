@@ -1020,6 +1020,21 @@ int clean_cachedata(const char* userid,int unum)
     } else logincount=0;
     if (logincount==0) {
         setcachehomefile(path1, userid, -1, "entry");
+        if (strcmp(userid,"guest")){
+            //if tmpfs/brc newer than home/brc, then sync brc
+            sethomefile(path2, userid, BRCFILE);
+            struct stat tmpst;
+            struct stat homest;
+            int tmp_ret, home_ret;
+            tmp_ret = stat(path1, &tmpst);
+            home_ret = stat(path2, &homest);
+            if(tmp_ret ==0 && home_ret == 0 && (tmpst.st_mtime - homest.st_mtime) > 0){
+                session_t ss;
+                memset(&ss, 0, sizeof(ss));
+                init_brc_cache(userid, 0, &ss);
+                brc_update(userid, &ss);
+            }
+        }
         unlink(path1);
         setcachehomefile(path1, userid, -1, NULL);
         f_rm(path1);
