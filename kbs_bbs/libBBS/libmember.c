@@ -406,31 +406,8 @@ int join_board_member(const char *name) {
         return -9;
     
     sprintf(log, "%s 在版面 %s 的详细信息\n\n", getSession()->currentuser->userid, board->filename);
-    num=getSession()->currentuser->numlogins;
-    if (config.logins>0 && num<config.logins)
-        return -10;
-    sprintf(buf, "登录数: %d / %d\n", num, config.logins);    
-    strcat(log, buf);
     
-    num=getSession()->currentuser->numposts;
-    if (config.posts>0 && num<config.posts)
-        return -11;
-    sprintf(buf, "发文数: %d / %d\n", num, config.posts);    
-    strcat(log, buf);
     
-#if defined(NEWSMTH) && !defined(SECONDSITE)
-    level=uvaluetochar(buf, getSession()->currentuser);  
-        num=getSession()->currentuser->score_user;
-    if (config.score>0 && num<config.score)
-        return -12;
-    sprintf(buf, "用户积分: %d / %d\n", num, config.score);    
-    strcat(log, buf);
-    
-    if (config.level>0 && level<config.level) 
-        return -13;   
-    sprintf(buf, "用户等级: %d / %d\n", level, config.level);    
-    strcat(log, buf);
-#endif    
     user_max=get_user_max_member_boards(getCurrentUser());
     
     count=0;
@@ -450,30 +427,6 @@ int join_board_member(const char *name) {
     if (count>=user_max)
         return -21;
     sprintf(buf, "用户版面数: %d / %d\n", count, user_max);    
-    strcat(log, buf);
-    
-    num=board_regenspecial(board->filename, DIR_MODE_AUTHOR, getSession()->currentuser->userid);
-    if (config.board_posts>0 && num<config.board_posts) 
-        return -14;   
-    sprintf(buf, "版面发文数: %d / %d\n", num, config.board_posts);    
-    strcat(log, buf);
-    
-    num=board_regenspecial(board->filename, DIR_MODE_ORIGIN_AUTHOR, getSession()->currentuser->userid);
-    if (config.board_origins>0 && num<config.board_origins) 
-        return -15;
-    sprintf(buf, "版面原创数: %d / %d\n", num, config.board_origins);    
-    strcat(log, buf);
-    
-    num=board_regenspecial(board->filename, DIR_MODE_MARK_AUTHOR, getSession()->currentuser->userid);
-    if (config.board_marks>0 && num<config.board_marks) 
-        return -16;
-    sprintf(buf, "版面M文数: %d / %d\n", num, config.board_marks);    
-    strcat(log, buf);
-    
-    num=board_regenspecial(board->filename, DIR_MODE_DIGEST_AUTHOR, getSession()->currentuser->userid);
-    if (config.board_digests>0 && num<config.board_digests) 
-        return -17;
-    sprintf(buf, "版面G文数: %d / %d\n", num, config.board_digests);    
     strcat(log, buf);
     
     status=(config.approve>0)?BOARD_MEMBER_STATUS_CANDIDATE:BOARD_MEMBER_STATUS_NORMAL;
