@@ -320,6 +320,7 @@ void newbbslog(int type, const char *fmt, ...)
 }
 
 #ifdef NEWPOSTLOG
+//title == NULL means delete article
 void newpostlog(const char *userid, const char *boardname, const char *title, int groupid, int id)
 {
     char buf[512];
@@ -338,7 +339,11 @@ void newpostlog(const char *userid, const char *boardname, const char *title, in
         }
     }
 
-    msg->mtype = BBSLOG_POST;
+    if(title == NULL){
+        msg->mtype = BBSLOG_UNLINK;
+    }else{
+        msg->mtype = BBSLOG_POST;
+    }
     msg->pid = getpid();
     msg->msgtime = time(0);
     strncpy(msg->userid, userid, IDLEN);
@@ -347,8 +352,12 @@ void newpostlog(const char *userid, const char *boardname, const char *title, in
     ppostlog->boardname[BOARDNAMELEN-1]='\0';
     ppostlog->threadid = groupid;
     ppostlog->articleid = id;
-    strncpy(ppostlog->title, title, 80);
-    ppostlog->title[80]='\0';
+    if(title == NULL){
+        ppostlog->title[0] = '\0';
+    }else{
+        strncpy(ppostlog->title, title, 80);
+        ppostlog->title[80]='\0';
+    }
 #ifdef NEWSMTH
     ppostlog->ip[0] = 0;
     if (getSession()->fromhost[0]) {

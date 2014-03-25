@@ -642,7 +642,8 @@ enum BBSLOG_TYPE {
     BBSLOG_SMS          = 4,
     BBSLOG_DEBUG        = 5,
     BBSLOG_POST         = 6,
-    BBSLOG_BM           = 7
+    BBSLOG_BM           = 7,
+    BBSLOG_UNLINK       = 8,
 };
 
 enum BBSPOST_MODE {
