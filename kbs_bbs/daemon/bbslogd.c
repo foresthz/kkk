@@ -6,6 +6,7 @@
 #ifdef NEWSMTH
 #define BBSLOG_APNS
 #define BBSLOG_UPDATE_AR
+#define BBSLOG_UPDATE_STIGERTEST
 #endif
 
 /* stiger: 20140217: format to update AR:
@@ -201,6 +202,49 @@ static void close_updatear()
 }
 #endif
 
+#ifdef BBSLOG_UPDATE_STIGERTEST
+static int stserver_sockfd = -1;
+static struct sockaddr_in stdest_addr;
+
+static void stsock_exit()
+{
+    if(stserver_sockfd >= 0){
+        close(stserver_sockfd);
+        stserver_sockfd = -1;
+    }
+}
+
+static int stsock_init()
+{
+    if(stserver_sockfd >= 0){
+        return 0;
+    }
+
+    stdest_addr.sin_family = AF_INET;
+    stdest_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    stdest_addr.sin_port = htons(5222);
+
+    stserver_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(stserver_sockfd < 0){
+        return -1;
+    }
+
+    return 0;
+}
+
+static int stsock_send(const void *data, int len)
+{
+    if(stserver_sockfd < 0){
+        return -1;
+    }
+
+    int val = sendto(stserver_sockfd, data, len, 0,(struct sockaddr *)&stdest_addr, sizeof(struct sockaddr));
+
+    return val;
+}
+
+#endif
+
 static void openbbslog(int first)
 {
     int i;
@@ -291,7 +335,7 @@ static void writelog(struct bbs_msgbuf *msg)
 #endif
 
 #ifdef BBSLOG_UPDATE_AR
-	if (msg->mtype == BBSLOG_POST && updatear_fd >= 0){
+	if ((msg->mtype == BBSLOG_POST || msg->mtype == BBSLOG_UNLINK) && updatear_fd >= 0){
 		struct _new_postlog * ppl = (struct _new_postlog *) ( &msg->mtext[1]) ;
 
         struct fileheader fh;
@@ -299,10 +343,17 @@ static void writelog(struct bbs_msgbuf *msg)
         int fd;
 
         bzero(&fh, sizeof(struct fileheader));
-        setbdir(DIR_MODE_NORMAL, path, ppl->boardname);
-        if ((fd = open(path, O_RDWR, 0644)) >= 0) {
-            get_records_from_id(fd, ppl->articleid, &fh, 1, NULL);
-            close(fd);
+
+        if(msg->mtype == BBSLOG_UNLINK){
+            fh.filename[0] = '\0';
+            fh.id = ppl->articleid;
+            fh.groupid = ppl->threadid;
+        }else{
+            setbdir(DIR_MODE_NORMAL, path, ppl->boardname);
+            if ((fd = open(path, O_RDWR, 0644)) >= 0) {
+                get_records_from_id(fd, ppl->articleid, &fh, 1, NULL);
+                close(fd);
+            }
         }
 
         if(fh.id){
@@ -314,6 +365,13 @@ static void writelog(struct bbs_msgbuf *msg)
             }
         }
     }
+#endif
+
+#ifdef BBSLOG_UPDATE_STIGERTEST
+	if(msg->mtype == BBSLOG_POST || msg->mtype == BBSLOG_UNLINK){
+		struct _new_postlog * ppl = (struct _new_postlog *) ( &msg->mtext[1]) ;
+        stsock_send(ppl, sizeof(struct _new_postlog));
+	}
 #endif
 
 #ifdef NEWPOSTLOG
@@ -501,6 +559,9 @@ static void flushlog(int signo)
 #ifdef BBSLOG_APNS
     udpsock_exit();
 #endif
+#ifdef BBSLOG_UPDATE_STIGERTEST
+	stsock_exit();
+#endif
     exit(0);
 }
 
@@ -639,6 +700,9 @@ int main()
 
 #ifdef BBSLOG_APNS
 	udpsock_init();
+#endif
+#ifdef BBSLOG_UPDATE_STIGERTEST
+	stsock_init();
 #endif
 
     gb_trunclog=false;
