@@ -96,6 +96,7 @@ KBS_COMM_LISTS_FUNC_V(set_ip_acl);
 #endif
 KBS_COMM_LISTS_FUNC_V(set_rcmdbrd);
 KBS_COMM_LISTS_FUNC_V(setsystempasswd);
+KBS_COMM_LISTS_FUNC_V(set_board_createtime);
 KBS_COMM_LISTS_FUNC_V(show_allmsgs);
 KBS_COMM_LISTS_FUNC_V(shownotepad);
 KBS_COMM_LISTS_FUNC_V(ShowWeather);

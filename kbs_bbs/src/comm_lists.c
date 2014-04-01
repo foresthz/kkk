@@ -76,6 +76,7 @@ static const CMD_LIST CMD[]={
 #endif
     {"SetRcmdBrd",          set_rcmdbrd,                            0},
     {"Setsyspass",          setsystempasswd,                        0},
+    {"SetBrdCreateTime",    set_board_createtime,                   0},
     {"ShowMsg",             show_allmsgs,                           0},
     {"Notepad",             shownotepad,                            0},
     {"ReadWeather",         ShowWeather,                            0},
