@@ -3749,3 +3749,84 @@ int manage_scorelimit_to_sendmail() {
     return 0;
 }
 #endif
+
+int set_board_createtime()
+{
+    char bname[STRLEN], genbuf[1024], file[STRLEN], title[STRLEN];
+    int pos;
+    struct boardheader bh;
+    struct tm *ct;
+    time_t ot, nt;
+    FILE *fp;
+
+    modify_user_mode(ADMIN);
+    if (!check_systempasswd()) {
+        return -1;
+    }
+    clear();
+    stand_title("修改版面创建时间");
+    move(1,0);
+    make_blist(0, 1);
+    namecomplete("输入讨论区名称: ",bname);
+    if (!*bname) {
+        move(2,0);
+        prints("取消...");
+        WAIT_RETURN;
+        return -1;
+    }
+    pos=getboardnum(bname,&bh);
+    if (!pos) {
+        move(2,0);
+        prints("错误的讨论区名称");
+        WAIT_RETURN;
+        return -1;
+    }
+
+    move(1,0);
+    clrtoeol();
+    prints("讨论区名称: %s\n", bh.filename);
+    ot = bh.createtime;
+    ct = localtime(&ot);
+    sprintf(genbuf, "创建时间  : %4d-%2d-%2d %02d:%02d:%02d\n", ct->tm_year+1900, ct->tm_mon+1, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec);
+    prints(genbuf);
+    nt = time(0);
+    ct = localtime(&nt);
+    sprintf(genbuf, "当前时间  : %4d-%2d-%2d %02d:%02d:%02d\n", ct->tm_year+1900, ct->tm_mon+1, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec);
+    prints(genbuf);
+    nt = set_date_time(5, "请输入需要设置的日期: ", nt);
+    move(6, 0);
+    if (nt==0) {
+        prints("\033[33m取消...\033[m");
+        WAIT_RETURN;
+        return -1;
+    } else if (nt==-1) {
+        prints("\033[31m输入时间错误...\033[m");
+        WAIT_RETURN;
+        return -1;
+    }
+    if (askyn("确定修改", 1)==0) {
+        prints("\033[33m取消...\033[m");
+        WAIT_RETURN;
+        return -1;
+    }
+    bh.createtime = nt;
+    set_board(pos, &bh, NULL);
+
+    gettmpfilename(file, "set_board_createtime");
+    if ((fp=fopen(file, "w"))!=NULL) {
+        sprintf(title, "修改讨论区属性: %s", bh.filename);
+        write_header(fp, getCurrentUser(), 0, "syssecurity", title, 0, 0, getSession());
+        fprintf(fp,"\033[1;33m[讨论区 <id=%d> 属性修改明细]\033[m\n\n", pos);
+        ct = localtime(&ot);
+        fprintf(fp, "    创建时间  : %4d-%2d-%2d %02d:%02d:%02d\n", ct->tm_year+1900, ct->tm_mon+1, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec);
+        ct = localtime(&nt);
+        fprintf(fp, "    \033[32m创建时间  : %4d-%2d-%2d %02d:%02d:%02d\033[m\n", ct->tm_year+1900, ct->tm_mon+1, ct->tm_mday, ct->tm_hour, ct->tm_min, ct->tm_sec);
+        fclose(fp);
+        post_file(getCurrentUser(), "", file, "syssecurity", title, 0, -1, getSession());
+        unlink(file);
+    }
+
+    prints("\033[32m修改成功!\033[m");
+    WAIT_RETURN;
+    return 0;
+}

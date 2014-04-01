@@ -2400,3 +2400,142 @@ int disable_sysop_temporary()
     else
         return prompt_return("恢复使用站务权限", 0, 1);
 }
+
+/* 是否闰年 */
+int leap_year(int year)
+{
+    if (year%100==0)
+        return year%400==0;
+    return year%4==0;
+}
+
+/* 每个月的天数 */
+int day_of_month(int leap_year, int month)
+{
+    switch(month) {
+        case 1:
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+        case 10:
+        case 12:
+            return 31;
+            break;
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            return 30;
+            break;
+        default:
+            if (leap_year)
+                return 29;
+            else
+                return 28;
+            break;
+    }
+    return 0;
+}
+
+/* 时间转换 */
+time_t make_time(int year, int month, int day, int hour, int min, int sec)
+{
+    struct tm tms;
+    bzero(&tms, sizeof(struct tm));
+    tms.tm_year = year - 1900;
+    tms.tm_mon = month - 1;
+    tms.tm_mday = day;
+    tms.tm_hour = hour;
+    tms.tm_min = min;
+    tms.tm_sec = sec;
+    return mktime(&tms);
+}
+
+/* 设定日期和时间 */
+time_t set_date_time(int y, char *prompt, time_t now)
+{
+    int year, month, day, hour, min, sec, maxday, len, leap, s, ch;
+    struct tm *t;
+    int x[6] = {4, 7, 10, 13, 16, 19};
+    char buf[160];
+
+    t = localtime(&now);
+    year = t->tm_year + 1900;
+    month = t->tm_mon + 1;
+    day = t->tm_mday;
+    hour = t->tm_hour;
+    min = t->tm_min;
+    sec = t->tm_sec;
+    len = strlen(prompt);
+    s = 0;
+
+    leap = leap_year(year);
+    maxday = day_of_month(leap, month);
+    move(y, 0);
+    prints("%s", prompt);
+    while(1) {
+        move(y, len);
+        sprintf(buf, " \033[4;32;41m%4d\033[m-\033[4;32;41m%2d\033[m-\033[4;32;41m%2d\033[m \033[4;32;41m%02d\033[m:\033[4;32;41m%02d\033[m:\033[4;32;41m%02d\033[m",
+                year, month, day, hour, min, sec);
+        prints(buf);
+        move(y, len + x[s]);
+        ch = igetkey();
+        if (ch==KEY_TAB || ch==KEY_RIGHT || ch=='\r' || ch==Ctrl('Q')) {
+            if ((ch=='\r' && s==5) || ch==Ctrl('Q')) {
+                return make_time(year, month, day, hour, min, sec);
+            }
+            s++;
+            s = s%6;
+        } else if (ch==Ctrl('C')) {
+            return 0;
+        } else if (ch==KEY_LEFT) {
+            s--;
+            s = (s+6)%6;
+        } else if (ch==KEY_UP || ch==KEY_DOWN) {
+            if (s==0) {
+                (ch==KEY_UP)?year++:year--;
+                if (year==2038)
+                    year = 1970;
+                if (year==1969)
+                    year = 2037;
+                leap = leap_year(year);
+                if (!leap && month==2 && day>28)
+                    day = 28;
+            } else if (s==1) {
+                (ch==KEY_UP)?month++:month--;
+                if (month>12)
+                    month = 1;
+                if (month==0)
+                    month = 12;
+                maxday = day_of_month(leap, month);
+                if (day>maxday)
+                    day = maxday;
+            } else if (s==2) {
+                (ch==KEY_UP)?day++:day--;
+                if (day>maxday)
+                    day = 1;
+                if (day==0)
+                    day = maxday;
+            } else if (s==3) {
+                (ch==KEY_UP)?hour++:hour--;
+                if (hour>23)
+                    hour = 0;
+                if (hour<0)
+                    hour = 23;
+            } else if (s==4) {
+                (ch==KEY_UP)?min++:min--;
+                if (min>59)
+                    min = 0;
+                if (min<0)
+                    min = 59;
+            } else if (s==5) {
+                (ch==KEY_UP)?sec++:sec--;
+                if (sec>59)
+                    sec = 0;
+                if (sec<0)
+                    sec = 59;
+            }
+        }
+    }
+}
