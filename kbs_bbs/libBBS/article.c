@@ -289,6 +289,13 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
         return -4;
 #endif
 
+#ifdef NEWSMTH
+    /* SYSOP和deliver的帖子不允许修改 */
+    if ((strcasecmp(fileinfo->owner, "SYSOP")==0 || strcasecmp(fileinfo->owner, DELIVER)==0)
+            && !HAS_PERM(session->currentuser, PERM_SYSOP) && !HAS_PERM(session->currentuser, PERM_OBOARDS))
+        return -5;
+#endif
+
     if (checkreadonly(bh->filename))      /* Leeward 98.03.28 */
         return -5;
 
@@ -324,6 +331,12 @@ int deny_del_article(const struct boardheader *bh,const struct fileheader *filei
         return -3;
     if (HAS_PERM(session->currentuser,PERM_SYSOP))
         return 0;
+#ifdef NEWSMTH
+    /* SYSOP的帖子一个月内不允许删除 */
+    if (fileinfo)
+        if (strcasecmp(fileinfo->owner, "SYSOP")==0 && !HAS_PERM(session->currentuser, PERM_SYSOP) && (time(0)-fileinfo->posttime)<2592000/*30*24*3600*/)
+            return -6;
+#endif
 #ifdef MEMBER_MANAGER
     if (check_board_member_manager(status, bh, BMP_DELETE)||check_board_member_manager(status, bh, BMP_RANGE)||check_board_member_manager(status, bh, BMP_THREAD))
 #else
@@ -2952,6 +2965,13 @@ int change_post_flag(struct write_dir_arg *dirarg, int currmode, const struct bo
          */
         return 1;
 
+#ifdef NEWSMTH
+    /* 不能修改SYSOP的帖子的某些flag */
+    if ((flag == FILE_MARK_FLAG || flag == FILE_DIGEST_FLAG || flag == FILE_DELETE_FLAG || flag == FILE_NOREPLY_FLAG)
+            && strcasecmp(fileinfo->owner, "SYSOP")==0 && !HAS_PERM(session->currentuser, PERM_SYSOP) && !HAS_PERM(session->currentuser, PERM_OBOARDS))
+        return 1;
+#endif
+
     if ((flag == FILE_MARK_FLAG || flag == FILE_DELETE_FLAG) && (!strcmp(board->filename, "syssecurity")
             || !strcmp(board->filename, FILTER_BOARD)))
         /*
@@ -3821,6 +3841,11 @@ int delete_range_base(
 #define DRBP_CHK_T      (vmode&DELETE_RANGE_BASE_MODE_TOKEN)
 #define DRBP_CHK_F      (DELETE_RANGE_BASE_MODE_TOKEN|DELETE_RANGE_BASE_MODE_MPDEL)
 #define DRBP_CHK_M      (!((vmode&DELETE_RANGE_BASE_MODE_OVERM)&&(vmode&DRBP_CHK_F)))
+#ifdef NEWSMTH /* 区段删除不删SYSOP的一个月之内的帖子 */
+#define DRBP_SYSOP(f,u) (strcasecmp((f)->owner, "SYSOP") || (time(0)-(f)->posttime)>2592000 || HAS_PERM(u, PERM_SYSOP))
+#else
+#define DRBP_SYSOP(f,u) (1)
+#endif
 #define DRBP_UNDEL(f)   ((DRBP_CHK_T&&!DRBP_TOKEN(f))||(DRBP_CHK_M&&DRBP_MARKS(f)))
 #define DRBP_TSET(n)    do{tab[((n)>>3)]|=(1<<((n)&0x07));}while(0)
 #define DRBP_TGET(n)    (tab[((n)>>3)]&(1<<((n)&0x07)))
@@ -3934,7 +3959,7 @@ int delete_range_base(
                 if (!DRBP_MAIL) {
                     if (DRBP_DST)
                         for (i=0;i<count;i++) {
-                            if (DRBP_UNDEL(&src[i]))
+                            if (DRBP_UNDEL(&src[i]) || !DRBP_SYSOP(&src[i], getCurrentUser()))
                                 continue;
                             delete_range_cancel_post_mv(videntity,&src[i]);
                             DRBP_TSET(i);
@@ -3942,7 +3967,7 @@ int delete_range_base(
                         }
                     else
                         for (i=0;i<count;i++) {
-                            if (DRBP_UNDEL(&src[i]))
+                            if (DRBP_UNDEL(&src[i]) || !DRBP_SYSOP(&src[i], getCurrentUser()))
                                 continue;
                             delete_range_cancel_post_del(videntity,&src[i]);
                             DRBP_TSET(i);
@@ -4116,11 +4141,17 @@ int delete_range_base(
             if (!func) {
                 if (!DRBP_MAIL) {
                     if (DRBP_DST)
-                        for (i=0;i<count;i++)
+                        for (i=0;i<count;i++) {
+                            if (!DRBP_SYSOP(&src[i], getCurrentUser()))
+                                break;
                             delete_range_cancel_post_mv(videntity,&src[i]);
+                        }
                     else
-                        for (i=0;i<count;i++)
+                        for (i=0;i<count;i++) {
+                            if (!DRBP_SYSOP(&src[i], getCurrentUser()))
+                                break;
                             delete_range_cancel_post_del(videntity,&src[i]);
+                        }
                 } else {
                     if (DRBP_DST)
                         for (i=0;i<count;i++)
@@ -4139,6 +4170,11 @@ int delete_range_base(
             } else
                 for (i=0;i<count;i++)
                     func(videntity,&src[i]);
+            /* 删除到第一篇版主不能删除的SYSOP的帖子 */
+            if (i!=count) {
+                count = i;
+                reserved = total - count - id_from;
+            }
             if (DRBP_DST) {
                 for (p=src,len=count*sizeof(struct fileheader),ret=0;len>0&&ret!=-1;vpm(p,ret),len-=ret)
                     ret=write(fd_dst,p,len);
@@ -4214,7 +4250,7 @@ int delete_range_base(
             return 0x00;
         case DELETE_RANGE_BASE_MODE_MPDEL:                  /* 区段标记拟删 */
             for (i=0;i<count;i++)
-                !DRBP_UNDEL(&src[i])?(src[i].accessed[1]|=FILE_DEL):(src[i].accessed[1]&=~FILE_DEL);
+                (!DRBP_UNDEL(&src[i]) && DRBP_SYSOP(&src[i], getCurrentUser()))?(src[i].accessed[1]|=FILE_DEL):(src[i].accessed[1]&=~FILE_DEL);
 #ifdef BOARD_SECURITY_LOG
             if (!DRBP_MAIL) {
                 char filename[STRLEN], title[STRLEN], date[8];
@@ -4224,7 +4260,7 @@ int delete_range_base(
                     fprintf(fn, "\033[45;33m区段标记拟删文章列表\033[K\033[m\n");
                     fprintf(fn, "\033[44m文章ID号 作者         日期    标题\033[K\033[m\n");
                     for (i=0;i<count;i++) {
-                        if (!DRBP_UNDEL(&src[i])) {
+                        if (!DRBP_UNDEL(&src[i]) && DRBP_SYSOP(&src[i], getCurrentUser())) {
                             strncpy(date, ctime((time_t *)&src[i].posttime) + 4, 6);
                             date[6] = '\0';
                             fprintf(fn, "%8d %-12s %6s  %s%s\n", src[i].id, src[i].owner, date, src[i].id==src[i].groupid?"● ":"", src[i].title);
@@ -4281,6 +4317,7 @@ int delete_range_base(
 #undef DRBP_CHK_T
 #undef DRBP_CHK_F
 #undef DRBP_CHK_M
+#undef DRBP_SYSOP
 #undef DRBP_UNDEL
 #undef DRBP_TSET
 #undef DRBP_TGET
