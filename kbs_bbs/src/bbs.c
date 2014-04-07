@@ -6365,9 +6365,10 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
 {
     struct read_arg* arg=(struct read_arg*)conf->arg;
     struct BMFunc_arg* func_arg=(struct BMFunc_arg*)extraarg;
-    int ret=APPLY_CONTINUE;
+    int res, ret=APPLY_CONTINUE;
 #ifdef BOARD_SECURITY_LOG
     struct fileheader xfh;
+    int failed=0;
     memcpy(&xfh, fh, sizeof(struct fileheader));
 #endif
 
@@ -6378,11 +6379,24 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
     switch (func_arg->action) {
         case BM_DELETE:
             if (!(fh->accessed[0] & (FILE_MARKED | FILE_PERCENT))) {
-                if (del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG))==DIRCHANGED)
+                res = del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG));
+#ifdef BOARD_SECURITY_LOG
+                if (res==DONOTHING) {
+                    failed = 1;
+                    break;
+                }
+#endif
+                if (res==DIRCHANGED)
                     ret=APPLY_REAPPLY;
             }
             break;
         case BM_MARK:
+#ifdef BOARD_SECURITY_LOG
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
+                failed = 1;
+                break;
+            }
+#endif
             if (func_arg->setflag)
                 fh->accessed[0] |= FILE_MARKED;
             else
@@ -6407,6 +6421,12 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             }
             break;
         case BM_MARKDEL:
+#ifdef BOARD_SECURITY_LOG
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
+                failed = 1;
+                break;
+            }
+#endif
             if (func_arg->setflag) {
                 if (!(fh->accessed[0] & (FILE_MARKED | FILE_PERCENT))) {
                     fh->accessed[1] |= FILE_DEL;
@@ -6415,6 +6435,12 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
                 fh->accessed[1] &= ~FILE_DEL;
             break;
         case BM_NOREPLY:
+#ifdef BOARD_SECURITY_LOG
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
+                failed = 1;
+                break;
+            }
+#endif
             if (func_arg->setflag)
                 fh->accessed[1] |= FILE_READ;
             else
@@ -6459,7 +6485,7 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
         char date[8];
         strncpy(date, ctime((time_t *)&xfh.posttime) + 4, 6);
         date[6] = '\0';
-        fprintf(func_arg->fn, "%8d %-12s %6s  %s%s\n", xfh.id, xfh.owner, date, xfh.id==xfh.groupid?"¡ñ ":"", xfh.title);
+        fprintf(func_arg->fn, "%s%8d %-12s %6s  %s%s%s\n", failed?"\033[31m":"", xfh.id, xfh.owner, date, xfh.id==xfh.groupid?"¡ñ ":"", xfh.title, failed?"\033[m":"");
     }
 #endif
     return ret;
