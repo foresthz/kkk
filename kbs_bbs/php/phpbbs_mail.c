@@ -66,6 +66,27 @@ PHP_FUNCTION(bbs_checknewmail)
 
 }
 
+PHP_FUNCTION(bbs_mail_get_limit)
+{
+    char *userid;
+    int userid_len, space, num;
+    struct userec *user;
+
+    if (zend_parse_parameters(1 TSRMLS_CC, "s", &userid, &userid_len) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    if (userid_len > IDLEN)
+        RETURN_FALSE;
+    if (!getuser(userid, &user))
+        RETURN_FALSE;
+    get_mail_limit(user, &space, &num);
+    if (array_init(return_value) == FAILURE) {
+        RETURN_FALSE;
+    }
+    add_assoc_long(return_value, "space", space);
+    add_assoc_long(return_value, "num", num);
+}
+
 PHP_FUNCTION(bbs_mail_get_num)
 {
     char *userid;

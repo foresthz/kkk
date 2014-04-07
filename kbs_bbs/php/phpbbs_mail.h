@@ -4,6 +4,7 @@
 /* 信件相关 */
 
 PHP_FUNCTION(bbs_checknewmail);
+PHP_FUNCTION(bbs_mail_get_limit);
 PHP_FUNCTION(bbs_mail_get_num);
 PHP_FUNCTION(bbs_getmailnum);
 PHP_FUNCTION(bbs_getmailnum2);
