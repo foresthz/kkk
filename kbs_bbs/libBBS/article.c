@@ -293,7 +293,7 @@ int deny_modify_article(const struct boardheader *bh, const struct fileheader *f
     /* SYSOP和deliver的帖子不允许修改 */
     if ((strcasecmp(fileinfo->owner, "SYSOP")==0 || strcasecmp(fileinfo->owner, DELIVER)==0)
             && !HAS_PERM(session->currentuser, PERM_SYSOP) && !HAS_PERM(session->currentuser, PERM_OBOARDS))
-        return -5;
+        return -4;
 #endif
 
     if (checkreadonly(bh->filename))      /* Leeward 98.03.28 */
