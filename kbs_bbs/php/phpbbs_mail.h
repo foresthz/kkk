@@ -46,6 +46,7 @@ PHP_FUNCTION(bbs_new_msg_get_size);
 
 #define PHP_BBS_MAIL_EXPORT_FUNCTIONS \
     PHP_FE(bbs_checknewmail, NULL) \
+    PHP_FE(bbs_mail_get_limit, NULL) \
     PHP_FE(bbs_mail_get_num, NULL) \
     PHP_FE(bbs_getmailnum, third_arg_force_ref_011) \
     PHP_FE(bbs_getmailnum2, NULL) \
