@@ -352,7 +352,7 @@ int send_refer_cross_to(const struct boardheader *board, struct fileheader *fh, 
         return -1;
     if (0==strcmp(user->userid, "guest")||0==strcmp(user->userid, "SYSOP"))
         return -2;
-    if (!DEFINE(user, DEF_REPLY))
+    if (!DEFINE(user, DEF_REFER))
         return -3;
     if (0==strncasecmp(getSession()->currentuser->userid,user->userid, IDLEN))
         return -4;
