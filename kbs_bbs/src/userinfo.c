@@ -1375,6 +1375,12 @@ int modify_userinfo(int uid,int mode)
                     } else
                         MU_PUT(MU_CURR_ROW,MU_MSG(C, "一般不要在水木二站修改密码"));
 #endif
+#ifdef HAVE_STRICT_USERINFO
+                    if (mode && !strcmp(ouser.userid, "SYSOP")) {
+                        MU_PUT(MU_CURR_ROW,MU_MSG(C, "系统禁止修改 SYSOP 的密码, " NAME_POLICE "正在来的路上 :)"));
+                        break;
+                    }
+#endif
                     if (!mode) {
                         MU_GETPWD(MU_CURR_ROW,MU_MSG(Y,"请输入原密码: "),&buf[40],38);
                         if (!buf[40])
