@@ -825,6 +825,9 @@ struct refer_info {
 
 #if defined(NEWSMTH) && !defined(SECONDSITE)
 #include "ar.h"
+#endif
+
+#if defined(NEWSMTH)
 #include "extra.h"
 #endif
 
