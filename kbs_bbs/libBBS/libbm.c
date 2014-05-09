@@ -214,7 +214,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     sprintf(tmplfile, "etc/denypost_template");
 
     /* bm优先级最高，core次之，最后是站务 */
-    if (HAS_PERM(operator, PERM_BOARDS) && chk_currBM(bh->BM, operator))
+    if (HAS_PERM(operator, PERM_BOARDS) && chk_BM_instr(bh->BM, operator->userid))
         bm = 1;
     else {
 #ifdef MEMBER_MANAGER
