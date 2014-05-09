@@ -6380,9 +6380,11 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
         case BM_DELETE:
             if (!(fh->accessed[0] & (FILE_MARKED | FILE_PERCENT))) {
                 res = del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG));
-#ifdef BOARD_SECURITY_LOG
+#ifdef NEWSMTH
                 if (res==DONOTHING) {
+#ifdef BOARD_SECURITY_LOG
                     failed = 1;
+#endif
                     break;
                 }
 #endif
@@ -6391,9 +6393,11 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             }
             break;
         case BM_MARK:
+#ifdef NEWSMTH
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS) && (time(0)-fh->posttime)<2592000/*30*24*3600*/) {
 #ifdef BOARD_SECURITY_LOG
-            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
                 failed = 1;
+#endif
                 break;
             }
 #endif
@@ -6412,6 +6416,14 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
 #endif
             break;
         case BM_DELMARKDEL: /* etnlegend, 2005.11.28, 同主题标记删除 */
+#ifdef NEWSMTH
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS) && (time(0)-fh->posttime)<2592000/*30*24*3600*/) {
+#ifdef BOARD_SECURITY_LOG
+                failed = 1;
+#endif
+                break;
+            }
+#endif
             if (fh->accessed[1]&FILE_DEL) {
                 if (!(fh->accessed[0]&(FILE_MARKED|FILE_PERCENT))) {
                     if (del_post(conf,fh,(void*)(ARG_BMFUNC_FLAG|ARG_NOPROMPT_FLAG))==DIRCHANGED)
@@ -6421,9 +6433,11 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
             }
             break;
         case BM_MARKDEL:
+#ifdef NEWSMTH
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS) && (time(0)-fh->posttime)<2592000/*30*24*3600*/) {
 #ifdef BOARD_SECURITY_LOG
-            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
                 failed = 1;
+#endif
                 break;
             }
 #endif
@@ -6435,9 +6449,11 @@ static int BM_thread_func(struct _select_def* conf, struct fileheader* fh,int en
                 fh->accessed[1] &= ~FILE_DEL;
             break;
         case BM_NOREPLY:
+#ifdef NEWSMTH
+            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS) && (time(0)-fh->posttime)<2592000/*30*24*3600*/) {
 #ifdef BOARD_SECURITY_LOG
-            if (strcasecmp(fh->owner, "SYSOP")==0 && !HAS_PERM(getCurrentUser(), PERM_SYSOP) && !HAS_PERM(getCurrentUser(), PERM_OBOARDS)) {
                 failed = 1;
+#endif
                 break;
             }
 #endif
