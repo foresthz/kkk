@@ -132,7 +132,7 @@ static int denyreason_key(struct _select_def *conf,int key)
 }
 int select_deny_reason(char reason[][STRLEN], char *denymsg, int count)
 {
-    struct _select_item sel[count+2];
+    struct _select_item sel[count+3];
     struct _select_def conf;
     struct _simple_select_arg arg;
     POINT pts[count+2];
