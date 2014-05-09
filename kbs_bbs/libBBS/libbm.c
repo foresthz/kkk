@@ -202,7 +202,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], postfile[STRLEN], title[STRLEN], title1[STRLEN], timebuf[STRLEN];
-    int sysop;
+    int bm=0;
 #ifdef MEMBER_MANAGER
 	int core_member=0;
 #endif	
@@ -213,17 +213,16 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     gettmpfilename(postfile, "ann_deny.%d", getpid());
     sprintf(tmplfile, "etc/denypost_template");
 
-    if ((HAS_PERM(operator, PERM_SYSOP) || HAS_PERM(operator, PERM_OBOARDS))
-            && !chk_BM_instr(bh->BM, operator->userid))
-        sysop = 1;
+    /* bm优先级最高，core次之，最后是站务 */
+    if (HAS_PERM(operator, PERM_BOARDS) && chk_currBM(bh->BM, operator))
+        bm = 1;
     else {
-        sysop = 0;
 #ifdef MEMBER_MANAGER
-		if (!HAS_PERM(operator, PERM_SYSOP)&&!chk_currBM(bh->BM, operator))
-			core_member=1;
-#endif		
-	}
-	
+		if (!HAS_PERM(operator, PERM_SYSOP) && !HAS_PERM(operator, PERM_OBOARDS))
+			core_member = 1;
+#endif
+    }
+
     getuser(uident, &lookupuser);
     if (mode==0) {
         sprintf(title, "%s被取消在%s版的发文权限", uident, bh->filename);
@@ -241,14 +240,14 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     if (dashf(tmplfile)) {
         char daystr[4], opbuf[STRLEN];
         sprintf(daystr, "%d", day);
-        if (sysop)
-            sprintf(opbuf, "%s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m",  NAME_BBS_CHINESE, operator->userid);
+        if (bm)
+            sprintf(opbuf, NAME_BM ":\x1b[4m%s\x1b[m", operator->userid);
 #ifdef MEMBER_MANAGER
 		else if (core_member)
 			sprintf(opbuf, NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m", operator->userid);
 #endif
 		else
-            sprintf(opbuf, NAME_BM ":\x1b[4m%s\x1b[m", operator->userid);
+            sprintf(opbuf, "%s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m",  NAME_BBS_CHINESE, operator->userid);
         if (write_formatted_file(tmplfile, postfile, "ssssss",
                     uident, bh->filename, reason, daystr, opbuf, ctime_r(&time, timebuf))<0)
             return -1;
@@ -267,16 +266,16 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 #ifdef ZIXIA
         GetDenyPic(fn, DENYPIC, ndenypic, dpcount);
 #endif 
-        if (sysop) {
-            fprintf(fn, "                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, operator->userid);
+        if (bm) {
+            fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", operator->userid);
         }
 #ifdef MEMBER_MANAGER
 		else if (core_member) {
 			fprintf(fn, "                              " NAME_CORE_MEMBER ":\x1b[4m%s\x1b[m\n", operator->userid);
 		}
-#endif		
+#endif
 		else {
-            fprintf(fn, "                              " NAME_BM ":\x1b[4m%s\x1b[m\n", operator->userid);
+            fprintf(fn, "                            %s" NAME_SYSOP_GROUP DENY_NAME_SYSOP "：\x1b[4m%s\x1b[m\n", NAME_BBS_CHINESE, operator->userid);
         }
         fprintf(fn, "                              %s\n", ctime_r(&time, timebuf));
         fclose(fn);
