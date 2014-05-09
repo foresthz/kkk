@@ -204,7 +204,8 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     char tmplfile[STRLEN], postfile[STRLEN], title[STRLEN], title1[STRLEN], timebuf[STRLEN];
     int bm=0;
 #ifdef MEMBER_MANAGER
-	int core_member=0;
+    int core_member=0;
+    struct board_member member;
 #endif	
 #ifdef NEWSMTH
     int score = 0;
@@ -218,7 +219,8 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         bm = 1;
     else {
 #ifdef MEMBER_MANAGER
-		if (!HAS_PERM(operator, PERM_SYSOP) && !HAS_PERM(operator, PERM_OBOARDS))
+        bzero(&member, sizeof(struct board_member));
+        if(get_board_member(bh->filename, operator->userid, &member)==BOARD_MEMBER_STATUS_MANAGER && member.flag&BMP_DENY)
 			core_member = 1;
 #endif
     }
