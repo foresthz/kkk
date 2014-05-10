@@ -418,10 +418,9 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
-    int bm=0;
+    int bm=0, core_member=0;
 
 #ifdef MEMBER_MANAGER
-    int core_member=0;
     struct board_member member;
 #endif
 	
