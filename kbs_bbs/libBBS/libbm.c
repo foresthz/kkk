@@ -418,26 +418,27 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
 {
     struct userec *lookupuser;
     char tmplfile[STRLEN], mailfile[STRLEN], title[STRLEN], timebuf[STRLEN];
-    int sysop;
+    int bm=0;
 
 #ifdef MEMBER_MANAGER
-	int core_member=0;
+    int core_member=0;
+    struct board_member member;
 #endif
 	
     gettmpfilename(mailfile, "mail_deny.%d", getpid());
     sprintf(tmplfile, "etc/denymail_template");
 
-    if ((HAS_PERM(operator, PERM_SYSOP) || HAS_PERM(operator, PERM_OBOARDS))
-            && !chk_BM_instr(bh->BM, operator->userid))
-        sysop = 1;
+    /* bm优先级最高，core次之，最后是站务 */
+    if (HAS_PERM(operator, PERM_BOARDS) && chk_BM_instr(bh->BM, operator->userid))
+        bm = 1;
     else {
-        sysop = 0;
 #ifdef MEMBER_MANAGER
-		if (!HAS_PERM(operator, PERM_SYSOP)&&!chk_currBM(bh->BM, operator))
-			core_member=1;
-#endif	
-	}
-	
+        bzero(&member, sizeof(struct board_member));
+        if(get_board_member(bh->filename, operator->userid, &member)==BOARD_MEMBER_STATUS_MANAGER && member.flag&BMP_DENY)
+            core_member = 1;
+#endif
+    }
+
     getuser(uident, &lookupuser);
     if (mode==0) {
         sprintf(title, "%s被取消在%s版的发文权限", uident, bh->filename);
@@ -451,7 +452,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
             sprintf(replyhint, "，到期后请回复\n此信申请恢复权限");
         else
             replyhint[0] = '\0';
-        if (sysop) {
+        if (!bm && !core_member) {
             sprintf(sender, "SYSOP (%s) ", NAME_SYSOP);
             sprintf(sitename, "%s (%24.24s)", BBS_FULL_NAME, ctime_r(&time, timebuf));
             sprintf(opfrom, "%s", NAME_BBS_ENGLISH);
@@ -473,7 +474,7 @@ int deny_mailuser(char *uident, const struct boardheader *bh, char *reason, int 
     } else {
         FILE *fn;
         fn = fopen(mailfile, "w+");
-        if (sysop) {
+        if (!bm && !core_member) {
             fprintf(fn, "寄信人: SYSOP (%s) \n", NAME_SYSOP);
             fprintf(fn, "标  题: %s\n", title);
             fprintf(fn, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime_r(&time, timebuf));

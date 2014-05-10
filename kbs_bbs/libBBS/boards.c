@@ -1305,6 +1305,23 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only, int
     char timebuf[STRLEN];
     time_t now;
     struct userec *lookupuser;
+    const struct boardheader *bh;
+    int bm=0, core_member=0;
+#ifdef MEMBER_MANAGER
+    struct board_member member;
+#endif
+
+    bh = getbcache(board);
+    /* bm优先级最高，core次之，最后是站务 */
+    if (HAS_PERM(user, PERM_BOARDS) && chk_BM_instr(bh->BM, user->userid))
+        bm = 1;
+    else {
+#ifdef MEMBER_MANAGER
+        bzero(&member, sizeof(struct board_member));
+        if(get_board_member(board, user->userid, &member)==BOARD_MEMBER_STATUS_MANAGER && member.flag&BMP_DENY)
+            core_member = 1;
+#endif
+    }
 
     now = time(0);
     setbfile(fn, board, "deny_users");
@@ -1313,7 +1330,7 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only, int
      */
     gettmpfilename(filename, "deny");
     fn1 = fopen(filename, "w");
-    if (HAS_PERM(user, PERM_SYSOP) || HAS_PERM(user, PERM_OBOARDS)) {
+    if (!bm && !core_member) {
         sprintf(buffer, "[通知]");
         fprintf(fn1, "寄信人: %s \n", user->userid);
         fprintf(fn1, "标  题: %s\n", buffer);
@@ -1331,7 +1348,7 @@ int deldeny(struct userec *user, char *board, char *uident, int notice_only, int
         fprintf(fn1, "发信站: %s (%24.24s)\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
         fprintf(fn1, "来  源: %s \n", SHOW_USERIP(NULL, session->fromhost));
         fprintf(fn1, "\n");
-        fprintf(fn1, "您被 %s 版版主 %s 解除封禁\n", board, user->userid);
+        fprintf(fn1, "您被 %s 版%s %s 解除封禁\n", board, bm?"版主":"核心驻版用户", user->userid);
     }
     fclose(fn1);
 
