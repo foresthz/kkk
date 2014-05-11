@@ -579,29 +579,32 @@ static int mk_result(int num)
         f_cp(record_file, vote_file, 0);
         write_vote_record(vote_file, 0);
     }   
-    sprintf(title, "[公告] %s 版的投票结果", currboard->filename);
+    sprintf(title, "[公告] %s 投票结果: %s", currboard->filename, currvote.title);
     mail_file("deliver", nname, currvote.userid, title, 0, NULL);
     if (normal_board(currboard->filename)) {
         post_file(getCurrentUser(), "", nname, "vote", title, 0, 1, getSession());
     }
+    sprintf(title, "[公告] 投票结果: %s", currvote.title);
     post_file(getCurrentUser(), "", nname, currboard->filename, title, 0, 1, getSession());
     if (currvote.type != VOTE_ASKING && (currvote.flag & VOTE_TRUE_FLAG)) {
-        sprintf(title, "[公告] %s 版的投票结果(明细)", currboard->filename);
+        sprintf(title, "[公告] %s 投票结果(明细): %s", currboard->filename, currvote.title);
         mail_file("deliver", vote_file, currvote.userid, title, 0, NULL);
         if (normal_board(currboard->filename)) {
             post_file(getCurrentUser(), "", vote_file, "vote", title, 0, 1, getSession());
-        }           
+        }
+        sprintf(title, "[公告] 投票结果(明细): %s", currvote.title);
         post_file(getCurrentUser(), "", vote_file, currboard->filename, title, 0, 1, getSession());
         /* 如果记录IP，则按IP排序 */
         if (currvote.flag & VOTE_IP_FLAG) {
             f_cp(record_file, vote_file, 0);
             sort_vote_record();
             write_vote_record(vote_file, 1);
-            sprintf(title, "[公告] %s 版的投票结果(IP序)", currboard->filename);
+            sprintf(title, "[公告] %s 投票结果(IP序): %s", currboard->filename, currvote.title);
             mail_file("deliver", vote_file, currvote.userid, title, 0, NULL);
             if (normal_board(currboard->filename)) {
                 post_file(getCurrentUser(), "", vote_file, "vote", title, 0, 1, getSession());
             }
+            sprintf(title, "[公告] 投票结果(IP序): %s", currvote.title);
             post_file(getCurrentUser(), "", vote_file, currboard->filename, title, 0, 1, getSession());
         }
         unlink(record_file);
@@ -684,7 +687,7 @@ int check_result(int num)
         dump_vote_record();
         write_vote_record(nname, 0);
     }
-    sprintf(title, "[检查] %s 版的投票结果", currboard->filename);
+    sprintf(title, "[检查] %s 投票结果: %s", currboard->filename, currvote.title);
     mail_file(getCurrentUser()->userid, nname, getCurrentUser()->userid, title, BBSPOST_MOVE, NULL);
     return 0;
 }
@@ -923,7 +926,6 @@ char *bname;
         gettmpfilename(votename, "votetmp");
         //sprintf(votename, "tmp/votetmp.%d", getpid());
         if ((sug = fopen(votename, "w")) != NULL) {
-            sprintf(buf, "[通知] %s 举办投票：%s", bname, ball->title);
             get_result_title();
             if (ball->type != VOTE_ASKING && ball->type != VOTE_VALUE) {
                 fprintf(sug, "\n【选项如下】\n");
@@ -935,8 +937,10 @@ char *bname;
             fclose(sug);
             sug = NULL;
             if (normal_board(bname)) {
+                sprintf(buf, "[通知] %s 举办投票：%s", bname, ball->title);
                 post_file(getCurrentUser(), "", votename, "vote", buf, 0, 1, getSession());
             }
+            sprintf(buf, "[通知] 举办投票：%s", ball->title);
             post_file(getCurrentUser(), "", votename, bname, buf, 0, 1, getSession());
 #ifdef BOARD_SECURITY_LOG
             sprintf(buf, "开启投票 <%s>", ball->title);
