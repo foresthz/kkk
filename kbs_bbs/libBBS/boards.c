@@ -793,8 +793,10 @@ void free_brc_cache(char *userid,session_t* session)
 {
 
     if (strcmp(userid ,"guest")) {
-        if (session->brc_cache_entry)
+        if (session->brc_cache_entry){
             munmap((void *)session->brc_cache_entry,BRC_CACHE_NUM*sizeof(struct _brc_cache_entry));
+            session->brc_cache_entry = NULL;
+        }
     }
 }
 

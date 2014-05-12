@@ -1034,6 +1034,7 @@ int clean_cachedata(const char* userid,int unum)
                 memset(&ss, 0, sizeof(ss));
                 init_brc_cache(userid, 0, &ss);
                 brc_update(userid, &ss);
+                free_brc_cache(userid, &ss);
             }
         }
 #endif
