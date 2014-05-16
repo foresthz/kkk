@@ -192,7 +192,8 @@ int is_hot_board(const char *board)
 /* 使用模板发布封禁公告
  * mode:
  *      0:添加
- *      1:修改
+ *      1:修改原因
+ *      2:修改时间
  */
 #ifdef RECORD_DENY_FILE
 int deny_announce(char *uident, const struct boardheader *bh, char *reason, int day, struct userec *operator, time_t time, int mode, const struct fileheader *fh, int filtermode)
@@ -290,7 +291,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 
 /* 热点版面14d自动扣积分 */
 #ifdef NEWSMTH
-    if (mode==0 && day>=14 && is_hot_board(bh->filename)) {
+    if (mode!=1 && day>=14 && is_hot_board(bh->filename)) {
         char scoretitle[STRLEN], strbuf[STRLEN], filebuf[STRLEN];
         FILE *fn, *fn2;
         int tmp;

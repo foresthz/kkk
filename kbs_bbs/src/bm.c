@@ -769,13 +769,13 @@ int modify_user_deny(const struct boardheader *bh, char *uident, char *denystr)
                             WAIT_RETURN;
                         }
 #ifdef RECORD_DENY_FILE
-                        if (deny_announce(uident,bh,newmsg,newday,getCurrentUser(),time(0),1,NULL,0)<0 ||
+                        if (deny_announce(uident,bh,newmsg,newday,getCurrentUser(),time(0),flag&MOD_DENY_TIME?2:1,NULL,0)<0 ||
                             deny_mailuser(uident,bh,newmsg,newday,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
                         }
 #else
-                        if (deny_announce(uident,bh,newmsg,newday,getCurrentUser(),time(0),1)<0 ||
+                        if (deny_announce(uident,bh,newmsg,newday,getCurrentUser(),time(0),flag&MOD_DENY_TIME?2:1)<0 ||
                             deny_mailuser(uident,bh,newmsg,newday,getCurrentUser(),time(0),1,newfree)<0) {
                             move(13, 0);
                             prints("\033[31m发生错误, 请报告至sysop版面 <Enter>");
