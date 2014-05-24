@@ -470,9 +470,8 @@ int get_result_title()
     }
     if (currvote.type < 1 || currvote.type > 5)
         currvote.type = 1;
-    fprintf(sug, "⊙ 投票开启于：%.24s  类别：%s\n",
-            ctime(&currvote.opendate)
-            , vote_type[currvote.type - 1]);
+    fprintf(sug, "⊙ 投票开启于：%.24s  时长：%d天  类别：%s\n",
+            ctime(&currvote.opendate), currvote.maxdays, vote_type[currvote.type - 1]);
     fprintf(sug, "⊙ 主题：%s\n", currvote.title);
     if (currvote.type == VOTE_VALUE)
         fprintf(sug, "⊙ 此次投票的值不可超过：%d\n", currvote.maxtkt);
@@ -648,7 +647,7 @@ int check_result(int num)
         prints("Error: 结束投票错误...\n");
     }
     get_result_title();
-    fprintf(sug, "** 投票结果:\n\n");
+    fprintf(sug, "\n** 投票结果:\n");
     if (currvote.type == VOTE_VALUE) {
         total = result[64];
         for (i = 0; i < 10; i++) {
@@ -1394,6 +1393,10 @@ int allnum, pagenum;
 {
     int deal = 0, ans;
     char buf[STRLEN];
+#ifdef BOARD_SECURITY_LOG
+    char sugname[STRLEN];
+    int i;
+#endif
 
     switch (ch) {
         case 'v':
@@ -1448,10 +1451,16 @@ int allnum, pagenum;
                 break;
             }
 #ifdef BOARD_SECURITY_LOG
-            char sugname[STRLEN];
             gettmpfilename(sugname, "vote_close");
             if ((sug = fopen(sugname, "w")) != NULL) {
                 get_result_title();
+                if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE) {
+                    fprintf(sug, "\n【选项如下】\n");
+                    for (i = 0; i < currvote.totalitems; i++) {
+                        fprintf(sug, "(\033[1m%c\033[m) %-40s\n", 'A' + i,
+                                currvote.items[i]);
+                    }
+                }
                 fclose(sug);
             }
             sprintf(buf, "结束投票 <%s>", currvote.title);
@@ -1505,6 +1514,13 @@ int allnum, pagenum;
             gettmpfilename(sugname, "vote_delete");
             if ((sug = fopen(sugname, "w")) != NULL) {
                 get_result_title();
+                if (currvote.type != VOTE_ASKING && currvote.type != VOTE_VALUE) {
+                    fprintf(sug, "\n【选项如下】\n");
+                    for (i = 0; i < currvote.totalitems; i++) {
+                        fprintf(sug, "(\033[1m%c\033[m) %-40s\n", 'A' + i,
+                                currvote.items[i]);
+                    }
+                }
                 fclose(sug);
             }
             sprintf(buf, "关闭投票 <%s>", currvote.title);
