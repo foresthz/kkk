@@ -109,6 +109,9 @@ int suicide(void)
             || HAS_PERM(getCurrentUser(), PERM_ANNOUNCE)
             || HAS_PERM(getCurrentUser(), PERM_JURY) || HAS_PERM(getCurrentUser(), PERM_SUICIDE) || HAS_PERM(getCurrentUser(), PERM_CHATOP) || (!HAS_PERM(getCurrentUser(), PERM_POST))
             || HAS_PERM(getCurrentUser(), PERM_DENYMAIL)
+#ifdef MEMBER_MANAGER
+            || HAS_PERM(getCurrentUser(), PERM_MEMBER_MANAGER)
+#endif
             || HAS_PERM(getCurrentUser(), PERM_DENYRELAX)) {
         clear();
         move(11, 28);
