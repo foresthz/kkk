@@ -805,7 +805,7 @@ int board_security_report(const char *filename, struct userec *user, const char 
         fprintf(fout, "\033[33m文章标题: \033[4;32m%s\033[m\n", xfh->title);
         fprintf(fout, "\033[33m文章作者: \033[4;32m%s\033[m\n", xfh->owner);
         fprintf(fout, "\033[33m文章ID号: \033[4;32m%d\033[m\n", xfh->id);
-        fprintf(fout, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime(&t));
+        fprintf(fout, "\033[33m发表时间: \033[4;32m%24.24s\033[m\n", ctime_r(&t, timebuf));
     }
     fclose(fout);
     fh.eff_size = get_effsize_attach(buf, &fh.attachment);
@@ -900,7 +900,7 @@ int board_score_change_report(struct userec *user, const char *bname, int os, in
         fprintf(fn, "\033[33m文章标题: \033[4;32m%s\033[m\n", xfh->title);
         fprintf(fn, "\033[33m文章作者: \033[4;32m%s\033[m\n", xfh->owner);
         fprintf(fn, "\033[33m文章ID号: \033[4;32m%d\033[m\n", xfh->id);
-        fprintf(fn, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime(&t));
+        fprintf(fn, "\033[33m发表时间: \033[4;32m%24.24s\033[m\n", ctime_r(&t, timebuf));
     } 
     fclose(fn);
     fh.eff_size = get_effsize_attach(buf, &fh.attachment);
@@ -935,7 +935,7 @@ int board_score_change_report(struct userec *user, const char *bname, int os, in
 /* 积分奖励系统记录 */
 int score_award_report(struct boardheader *bh, struct userec *opt, struct userec *user, struct fileheader *fh, int score, int mode)
 {
-    char file[STRLEN], title[STRLEN];
+    char file[STRLEN], title[STRLEN], timebuf[STRLEN];
     FILE *fn;
     time_t t;
 
@@ -963,7 +963,7 @@ int score_award_report(struct boardheader *bh, struct userec *opt, struct userec
         fprintf(fn, "\n\033[36m本次操作对应文章信息\033[m\n");
         fprintf(fn, "\033[33m文章标题: \033[4;32m%s\033[m\n", fh->title);
         fprintf(fn, "\033[33m文章ID号: \033[4;32m%d\033[m\n", fh->id);
-        fprintf(fn, "\033[33m发表时间: \033[4;32m%s\033[m\n", ctime(&t));
+        fprintf(fn, "\033[33m发表时间: \033[4;32m%24.24s\033[m\n", ctime_r(&t, timebuf));
 
         fclose(fn);
 
