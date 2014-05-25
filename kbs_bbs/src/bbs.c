@@ -1379,7 +1379,7 @@ char *readdoent(char *buf, int num, struct fileheader *ent,struct fileheader* re
         return buf;
     }
 
-    if (toupper(type)=='Y') {
+    if (toupper(type)=='Y' || toupper(type)=='L') {
         sprintf(buf," \033[1;33m[±¸·Ý]\033[m%s %-13.13s%s %s" FIRSTARTICLE_SIGN " %s ",strbuf,owner,date,attachch,TITLE);
         return buf;
     }

@@ -457,7 +457,7 @@ int do_del_post(struct userec *user,struct write_dir_arg *dirarg,struct filehead
 #endif
 #ifdef BOARD_SECURITY_LOG
     /* 非同主题、非自删时记录 */
-    if (!(flag&ARG_BMFUNC_FLAG) && !isowner(user,&fh))
+    if (!owned)
         board_security_report(NULL, user, "删除", board, fileinfo);
 #endif
     return 0;
@@ -677,7 +677,7 @@ int do_undel_post(char* boardname, char *dirfname, int num, struct fileheader *f
     if (!dashf(buf)) {
         return -1;
     }
-    if (POSTFILE_BASENAME(fileinfo->filename)[0]=='E') {
+    if (POSTFILE_BASENAME(fileinfo->filename)[0]=='E' || POSTFILE_BASENAME(fileinfo->filename)[0]=='L') {
         return -1;
     }
     fp = fopen(buf, "r");
@@ -2242,6 +2242,16 @@ char get_article_flag(struct fileheader *ent, struct userec *user, const struct 
             *common_flag='e';
         return type;
     }
+
+#ifdef ENABLE_LIKE
+    /* 删除的LIKE */
+    if (POSTFILE_BASENAME(ent->filename)[0]=='L') {
+        type=(type==' '?'l':'L');
+        if (common_flag)
+            *common_flag='l';
+        return type;
+    }
+#endif
 
     if ((ent->accessed[0] & FILE_DIGEST)) {
         common_type = 'g';
