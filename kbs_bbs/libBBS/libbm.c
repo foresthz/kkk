@@ -782,7 +782,7 @@ int board_security_report(const char *filename, struct userec *user, const char 
         fprintf(fout, "发信站: %s (%24.24s)\n\n", BBS_FULL_NAME, ctime_r(&now, timebuf));
     }
     fprintf(fout, "\033[36m版面管理安全记录\033[m\n");
-    fprintf(fout, "\033[33m记录原因: \033[32m%s %s\033[m\n", (mode)?"":user->userid, title);
+    fprintf(fout, "\033[33m记录原因: \033[32m%s %s\033[m\n", (mode)?"":user->userid, fh.title);
     if (!mode)
         fprintf(fout, "\033[33m用户来源: \033[32m%s\033[m\n", getSession()->fromhost);
     if (filename != NULL) {
