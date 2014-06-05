@@ -48,7 +48,7 @@ void utmp_unlock(int fd)
     close(fd);
 }
 #else
-static int utmp_lock()
+int utmp_lock()
 {
     //signal(SIGALRM, longlock);
     //alarm(10);
@@ -57,7 +57,7 @@ static int utmp_lock()
     return 0;
 }
 
-static void utmp_unlock(int fd)
+void utmp_unlock(int fd)
 {
     unlock_sem_check(UTMP_SEMLOCK);
 }
