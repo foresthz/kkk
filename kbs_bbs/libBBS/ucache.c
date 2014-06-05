@@ -27,7 +27,7 @@ static int ucache_lock()
 {
     int lockfd;
     char errbuf[STRLEN];
-    lockfd = open(UCACHE, O_RDWR | O_CREAT, 0600);
+    lockfd = open(UCACHELK, O_RDWR | O_CREAT, 0600);
     if (lockfd < 0) {
         bbslog("3system", "CACHE:lock ucache:%s", strerror_r(errno, errbuf, STRLEN));
         return -1;

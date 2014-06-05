@@ -259,7 +259,7 @@ extern long ti;
 
 #define MAXGOPHERITEMS  9999                /* max of gopher items */
 #define PASSFILE        ".PASSWDS"          /* Name of file User records stored in */
-#define UCACHE          "cache/USERS"
+#define UCACHELK        "cache/USERS"
 #define ULIST           "cache/UTMP"              /* Names of users currently on line */
 #define POSTLOGFILE     ".post.X"           /* Name of file which log posting report */
 #ifdef ENABLE_MEMBER_CACHE
