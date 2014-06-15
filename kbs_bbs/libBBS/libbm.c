@@ -209,7 +209,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
     struct board_member member;
 #endif	
 #ifdef NEWSMTH
-    int score = 0;
+    int score = -1;
 #endif
 
     gettmpfilename(postfile, "ann_deny.%d", getpid());
@@ -298,33 +298,35 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
         time_t current=time(NULL);
 
         score = lookupuser->score_user>2000?2000:lookupuser->score_user;
-        tmp = AO_int_fetch_and_add(&(lookupuser->score_user), -score);
+        if (score>0) {
+            tmp = AO_int_fetch_and_add(&(lookupuser->score_user), -score);
 
-        /* 积分变更通知 */
-        sprintf(scoretitle, "%s 版封禁自动扣分", bh->filename);
-        score_change_mail(lookupuser, lookupuser->score_user+score, lookupuser->score_user, 0, 0, scoretitle);
+            /* 积分变更通知 */
+            sprintf(scoretitle, "%s 版封禁自动扣分", bh->filename);
+            score_change_mail(lookupuser, lookupuser->score_user+score, lookupuser->score_user, 0, 0, scoretitle);
 
-        /* score公告 */
-        sprintf(scoretitle, "[公告] 扣除 %s 积分 %d 分", lookupuser->userid, score);
-        gettmpfilename(filebuf, "deny_score");
-        if ((fn=fopen(filebuf, "w"))!=NULL) {
-            fprintf(fn, "说明：\n"
-                        "\t依据积分使用项目 008 号\n\n"
-                        "附件：\n\n");
-            /* 只能手动添加信头了 */
-            fprintf(fn,"发信人: %s (自动发信系统), 信区: %s\n", DELIVER, bh->filename);
-            fprintf(fn,"标  题: %s\n",title);
-            fprintf(fn,"发信站: %s自动发信系统 (%24.24s)\n\n",BBS_FULL_NAME,ctime_r(&current, strbuf));
+            /* score公告 */
+            sprintf(scoretitle, "[公告] 扣除 %s 积分 %d 分", lookupuser->userid, score);
+            gettmpfilename(filebuf, "deny_score");
+            if ((fn=fopen(filebuf, "w"))!=NULL) {
+                fprintf(fn, "说明：\n"
+                            "\t依据积分使用项目 008 号\n\n"
+                            "附件：\n\n");
+                /* 只能手动添加信头了 */
+                fprintf(fn,"发信人: %s (自动发信系统), 信区: %s\n", DELIVER, bh->filename);
+                fprintf(fn,"标  题: %s\n",title);
+                fprintf(fn,"发信站: %s自动发信系统 (%24.24s)\n\n",BBS_FULL_NAME,ctime_r(&current, strbuf));
 
-            if ((fn2=fopen(postfile, "r"))!=NULL) {
-                while (fgets(strbuf, 256, fn2)!=NULL)
-                    fprintf(fn, "%s", strbuf);
-                fclose(fn2);
+                if ((fn2=fopen(postfile, "r"))!=NULL) {
+                    while (fgets(strbuf, 256, fn2)!=NULL)
+                        fprintf(fn, "%s", strbuf);
+                    fclose(fn2);
+                }
+                fclose(fn);
             }
-            fclose(fn);
+            post_file(operator, "", filebuf, "Score", scoretitle, 0, 1, getSession());
+            unlink(filebuf);
         }
-        post_file(operator, "", filebuf, "Score", scoretitle, 0, 1, getSession());
-        unlink(filebuf);
     }
 #endif
 
@@ -378,7 +380,7 @@ int deny_announce(char *uident, const struct boardheader *bh, char *reason, int 
 
 /* 热点版面14d自动扣积分 */
 #ifdef NEWSMTH
-    if (score) {
+    if (score>=0) {
         char strbuf[STRLEN];
 
         /* denypost标题 */
